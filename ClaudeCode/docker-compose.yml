@@ -1,0 +1,11 @@
+services:
+  cc-code-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cc_gsd_${PROJECT_NAME}
+    volumes:
+      - ${PROJECT_PATH}:/home/sandbox
+    stdin_open: true   # keeps stdin open (like -i)
+    tty: true          # allocates a pseudo-TTY (like -t)
+    command: /bin/bash # overrides CMD to keep bash alive

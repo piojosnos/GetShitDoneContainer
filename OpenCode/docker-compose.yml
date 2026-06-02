@@ -1,0 +1,14 @@
+services:
+  oc-code-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oc_gsd_c
+    ports:
+      - "4096:4096"
+    volumes:
+      - /Users/demian/GSD_StaticSiteGenerator:/home/sandbox
+    stdin_open: true   # keeps stdin open (like -i)
+    tty: true          # allocates a pseudo-TTY (like -t)
+#    command: /bin/bash # overrides CMD to keep bash alive
+    command: bash -c "opencode web --hostname 0.0.0.0"
