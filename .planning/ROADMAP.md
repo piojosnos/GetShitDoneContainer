@@ -21,6 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 ## Phase Details
 
 ### Phase 1: Two-Mount Claude Sandbox
+
 **Goal**: The user can run a Claude Code sandbox on their Mac. Code lives in `<sandbox>/workspace` and Claude state lives in `<sandbox>/state/claude`. Nothing is mounted over `/home/sandbox`, and the Claude login survives recreating the container and rebuilding the image.
 **Mode:** mvp
 **Depends on**: Nothing (first phase)
@@ -31,15 +32,24 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The user logs in to `claude` once, then removes and recreates the container and rebuilds the image with `--no-cache`. `claude` is still logged in and earlier sessions can be resumed. `.claude.json`, settings, and session files are visible in `<sandbox>/state/claude` on the Mac, which is a directory mount (no single-file mount).
   4. Commands typed in the container shell are still in `history` after the container is removed and recreated.
   5. After `docker compose down` and a fresh `up`, every file in `<sandbox>/workspace` and `<sandbox>/state` is still on the Mac, and `docker volume ls` shows no volume holding sandbox data.
+
 **Plans:** 4 plans
 
 Plans:
+**Wave 1**
 - [ ] 01-01-PLAN.md — Supply-chain gate, then the tracer: base image, Claude image, compose with workspace and state/claude mounts, static check, quick-start doc
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 01-02-PLAN.md — Bash history, gh login and git identity survive recreate (the rest of the D-12 state layout)
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 01-03-PLAN.md — Fail-safe start: mount-check entrypoint, missing-folder preflight, no-new-privileges and cap_drop
+
+**Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 01-04-PLAN.md — Host verification checklist H-00..H-13 in SANDBOX.md, then the user runs it on the Mac
 
 ### Phase 2: Pinned Toolchain, GSD, and ccusage
+
 **Goal**: The sandbox has the full development toolchain plus Claude Code, GSD, and ccusage baked into the image at versions pinned in one `versions.env`. Rebuilding with changed pins delivers the new versions into the sandbox while login and history persist.
 **Mode:** mvp
 **Depends on**: Phase 1
@@ -50,9 +60,11 @@ Plans:
   3. After a rebuild, `claude --version` matches the pin, Claude reports that self-updating is disabled, and `~/.local` contains no self-installed Claude copy.
   4. After the GSD pin is bumped and the image rebuilt, starting the container syncs the image's `@opengsd/gsd-core` into the persisted `~/.claude`. The GSD version matches the new pin, the Claude login and session history are unchanged, and start-up works with networking disabled, with no `npx` or `@latest` installs in the start logs.
   5. `ccusage daily`, `ccusage monthly`, and `ccusage session` run in the container shell and report this project's real Claude usage from `<sandbox>/state/claude`.
+
 **Plans**: TBD
 
 ### Phase 3: Remembered Sandboxes and One-Command Upgrade
+
 **Goal**: The user registers each sandbox once, then starts, stops, and upgrades it by name alone. One command rebuilds the images and recreates the sandbox, and login and history survive.
 **Mode:** mvp
 **Depends on**: Phase 2
@@ -63,9 +75,11 @@ Plans:
   3. One command rebuilds the base image, then the Claude image, then recreates the sandbox. Afterwards Claude is still logged in and past sessions are still there.
   4. The versions of Claude Code, GSD, ccusage, Node, JDK, Maven, and Python are printed at the end of a rebuild and whenever a bash shell opens in the sandbox.
   5. All `sbx-*` scripts run under macOS's stock bash (3.2) and work with a host path that contains spaces.
+
 **Plans**: TBD
 
 ### Phase 4: Jump-In and Sandbox Housekeeping
+
 **Goal**: The user gets into any registered sandbox with one command, and can see and clean up their sandboxes without risking code, login, or history.
 **Mode:** mvp
 **Depends on**: Phase 3
@@ -75,9 +89,11 @@ Plans:
   2. The same command can launch `claude` directly instead of a shell, already logged in.
   3. The user lists all registered sandboxes with their host path and running or stopped status, and the status matches what `docker ps -a` shows.
   4. The user removes a sandbox's container, and optionally its registration. Its `workspace/` and `state/` folders on the Mac are left untouched, and re-registering the same path brings back the login and history.
+
 **Plans**: TBD
 
 ### Phase 5: Migration, Docs, and Old-Layout Retirement
+
 **Goal**: The user's existing sandboxes run on the new layout with login and history intact. The repo contains only the new layout, and the README describes exactly what exists, including its security limits.
 **Mode:** mvp
 **Depends on**: Phase 4
@@ -88,6 +104,7 @@ Plans:
   3. The README explains the two-mount layout, the `sbx-*` scripts, and the upgrade flow (edit `versions.env`, then run one rebuild command).
   4. The README has a short threat-model section covering what's isolated, the credential-exfiltration risk under skip-permissions, and files the agent can plant that the Mac later executes (git hooks, IDE run configs).
   5. A host-side verification checklist exists, and the user can run it end-to-end on the Mac. It confirms that login survives a rebuild, versions match the pins, ccusage works, and the home directory is not hidden.
+
 **Plans**: TBD
 
 ## Progress
