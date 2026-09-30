@@ -80,6 +80,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 - **Simplicity**: Keep shell scripts short and plain bash. Why: the user wants to grow the tooling slowly and keep it understandable.
 - **Toolchains**: JDK 21 LTS, Maven, Node.js, and Python in the shared base. Why: these are the stacks the user develops in.
 - **Verification**: Docker isn't available inside the dev sandbox, so plans must include host-side manual verification steps.
+- **Coexistence**: The old layout (`ClaudeCode/`, `cc-*` scripts, the whole-home mount) stays untouched until Phase 5. New work goes in new directories, and new containers, images, and compose projects use a name prefix different from `cc_gsd_<name>` / `cc_<name>`, so old and new sandboxes can run side by side. Why: the user keeps working in existing sandboxes (including the one this repo is developed in) while the new layout is built.
 
 ## Key Decisions
 
