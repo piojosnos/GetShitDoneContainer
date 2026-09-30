@@ -23,12 +23,28 @@ RUN useradd -m -s /bin/bash sandbox && \
     rm -rf /var/lib/apt/lists/*
 
 # --------------------------------------------------------------------------------
-# Install Claude CLI and get-shit-done-cc as root, baked into the image
+# Install the Claude Code CLI binary into /usr/local/bin.
+#
+# This path lives OUTSIDE /home/sandbox, so it is NOT shadowed by the host
+# bind mount at runtime. The binary survives every container and never needs
+# reinstalling per-home.
+#
+# GSD is deliberately NOT installed here: it lives in ~/.claude, which the host
+# bind mount covers at runtime, so anything baked into the image home is
+# invisible. GSD is installed into the live mounted home by docker-entrypoint.sh
+# on first run instead. See README.md ("Why the entrypoint installs GSD").
 # --------------------------------------------------------------------------------
 
 RUN curl -fsSL https://claude.ai/install.sh | bash && \
-    cp /root/.local/bin/claude /usr/local/bin/claude && \
-    npx -y @opengsd/get-shit-done-redux@latest --claude --global
+    cp /root/.local/bin/claude /usr/local/bin/claude
+
+# XXX: Experimental
+# RUN curl -LsSf https://astral.sh/uv/install.sh | bash
+#    uv tool install claude-monitor && \
+#RUN npm install ccusage && \
+#    chmod 755 node_modules/@ccusage/ccusage-linux-arm64/bin/ccusage && \
+#    mkdir -p $HOME/.local/bin/ && \
+#    ln -s $HOME/node_modules/@ccusage/ccusage-linux-arm64/bin/ccusage $HOME/.local/bin/ccusage
 
 # --------------------------------------------------------------------------------
 # Copy entrypoint script
