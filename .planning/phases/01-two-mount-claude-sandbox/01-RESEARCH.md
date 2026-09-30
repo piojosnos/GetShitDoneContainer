@@ -543,21 +543,21 @@ docker exec -it -w /home/sandbox/workspace/hostrepo sbx-demo claude
 | A13 | Same-origin `SHASUMS256.txt` (no GPG) is an acceptable integrity check for Phase 1 | Alternatives | Weaker authenticity than the official node image; Phase 2 can pin hashes in `versions.env` |
 | A14 | Future npm versions may block unlisted install scripts by default, so `--allow-scripts` is needed | Pattern 5 | None if wrong (flag is harmless); the build assert covers the skipped-postinstall case |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Which D-10 mechanism actually works on the user's Mac?**
+Resolved at planning time (2026-09-30, gsd-planner). The decisions are carried into 01-01..01-04.
+
+1. **Which D-10 mechanism actually works on the user's Mac?** RESOLVED: ship the layered defense. That is `create_host_path: false` on all five binds (01-01, 01-02), the mount-check entrypoint (01-03 T1), and the documented preflight loop (01-03 T2). The mandatory host test H-10 records what the user's Compose actually does (01-04 T2). The `env_file` sentinel fallback is NOT implemented. It is a conditional follow-up that applies only if H-10 shows Docker creating the folders, and it needs user approval because it amends D-12 (01-04 "Conditional follow-ups").
    - What we know: long-syntax `create_host_path: false` is documented to refuse; docker/compose#13602 (open) reports it being ignored on Compose v5.0.2, with comments up to 2026-08 still reproducing; the Engine itself refuses for `--mount` without `bind-create-src`.
    - What's unclear: behavior on the user's exact Docker Desktop + Compose versions.
-   - Recommendation: ship `create_host_path: false` + entrypoint + documented preflight line; run H-10 and record the result. If Docker creates the dirs, ask the user to approve the `env_file` sentinel fallback (an extra file at `<SBX_DIR>/` root, outside both mounts), since it amends the D-12 layout. Do not block the plan on this.
 
-2. **Is `cap_drop: [ALL]` acceptable on the user's Docker Desktop?**
+2. **Is `cap_drop: [ALL]` acceptable on the user's Docker Desktop?** RESOLVED: include it with `no-new-privileges` (01-03 T2). The H-series exercises git, claude and file writes. If a check fails only because of `cap_drop`, the documented fix (SANDBOX.md troubleshooting, 01-04 T1) is to drop `cap_drop` and keep `no-new-privileges`.
    - What we know: nothing in Phase 1's runtime needs capabilities (non-root user, VirtioFS writes performed by the host process).
    - What's unclear: no Docker here to test.
-   - Recommendation: include it; H-06/H-07/H-09 exercise git, claude, and file writes. If anything fails only because of it, drop `cap_drop` and keep `no-new-privileges`.
 
-3. **Console keyless login persistence (Pitfall 7)** — confirm the user uses a claude.ai login. If not, add `ANTHROPIC_CONFIG_DIR` + a mount in a later phase.
+3. **Console keyless login persistence (Pitfall 7).** RESOLVED: document it as a known limit in SANDBOX.md (01-04 T1) and in the claude-ai `user_setup` note, with a claude.ai login as the supported path. The scope is not expanded, so there is no `ANTHROPIC_CONFIG_DIR` mount in Phase 1.
 
-4. **Script-free D-10 preflight ergonomics** — the user must run a pasted loop each time until Phase 3. Acceptable for a test-bed phase? (If not, the env_file sentinel fallback removes the need.)
+4. **Script-free D-10 preflight ergonomics.** RESOLVED: acceptable for the Phase 1 test bed. The one-line preflight is documented right above `up` (01-03 T2), and Phase 3's scripts will run it automatically.
 
 ## Environment Availability
 

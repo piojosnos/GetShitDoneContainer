@@ -31,7 +31,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The user logs in to `claude` once, then removes and recreates the container and rebuilds the image with `--no-cache`. `claude` is still logged in and earlier sessions can be resumed. `.claude.json`, settings, and session files are visible in `<sandbox>/state/claude` on the Mac, which is a directory mount (no single-file mount).
   4. Commands typed in the container shell are still in `history` after the container is removed and recreated.
   5. After `docker compose down` and a fresh `up`, every file in `<sandbox>/workspace` and `<sandbox>/state` is still on the Mac, and `docker volume ls` shows no volume holding sandbox data.
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Supply-chain gate, then the tracer: base image, Claude image, compose with workspace and state/claude mounts, static check, quick-start doc
+- [ ] 01-02-PLAN.md — Bash history, gh login and git identity survive recreate (the rest of the D-12 state layout)
+- [ ] 01-03-PLAN.md — Fail-safe start: mount-check entrypoint, missing-folder preflight, no-new-privileges and cap_drop
+- [ ] 01-04-PLAN.md — Host verification checklist H-00..H-13 in SANDBOX.md, then the user runs it on the Mac
 
 ### Phase 2: Pinned Toolchain, GSD, and ccusage
 **Goal**: The sandbox has the full development toolchain plus Claude Code, GSD, and ccusage baked into the image at versions pinned in one `versions.env`. Rebuilding with changed pins delivers the new versions into the sandbox while login and history persist.
@@ -91,7 +97,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Two-Mount Claude Sandbox | 0/TBD | Not started | - |
+| 1. Two-Mount Claude Sandbox | 0/4 | Planned | - |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
 | 4. Jump-In and Sandbox Housekeeping | 0/TBD | Not started | - |

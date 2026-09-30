@@ -38,19 +38,20 @@ created: "2026-09-30"
 
 ## Per-Task Verification Map
 
-*The planner fills in task IDs. Requirement → check mapping:*
+*Task IDs filled by the planner (2026-09-30). Every task's quick run is `bash tests/static-check.sh`. The PASS label that proves each row is shown in quotes.*
 
-| Requirement | Secure Behavior | Test Type | Automated Command (static) | Host Check | Status |
-|-------------|-----------------|-----------|----------------------------|------------|--------|
-| LAY-01 | Nothing mounted over /home/sandbox | static + host | `grep -Fq 'target: /home/sandbox/workspace' compose.yml` | H-05 | ⬜ pending |
-| LAY-02 | State is a directory mount, never a single file | static + host | `grep -q 'CLAUDE_CONFIG_DIR=/home/sandbox/.claude' claude/Dockerfile` | H-07, H-09 | ⬜ pending |
-| LAY-03 | History persists | static + host | `grep -q 'HISTFILE=' base/Dockerfile` | H-08 | ⬜ pending |
-| LAY-04 | No data-deleting paths (no VOLUME, no down -v) | static + host | `! grep -nE '^\s*VOLUME\b' base/Dockerfile claude/Dockerfile` | H-09, H-11 | ⬜ pending |
-| IMG-02 | Claude image FROM base | static + host | `grep -Fxq 'FROM ${BASE_IMAGE}' claude/Dockerfile` | H-02 | ⬜ pending |
-| IMG-05 | Native arm64, no emulation | static + host | `! grep -rnE 'platform:\|--platform\|linux/amd64' base claude compose.yml` | H-01 | ⬜ pending |
-| IMG-06 | Non-root UID 1000, safe.directory | static + host | `grep -Fq "safe.directory '*'" base/Dockerfile` | H-04, H-06 | ⬜ pending |
-| D-10 | Refuse start on missing dirs | host | — | H-10, H-12 | ⬜ pending |
-| Coexistence | Old layout untouched, no cc_ names, no npx/GSD | static | `git diff --quiet <phase-base> -- ClaudeCode OpenCode` | coexistence note | ⬜ pending |
+| Requirement | Task(s) | Secure Behavior | Test Type | Automated Command (static) | Host Check | Status |
+|-------------|---------|-----------------|-----------|----------------------------|------------|--------|
+| LAY-01 | 01-01 T2 | Nothing mounted over /home/sandbox; `.local` sandbox-owned | static + host | `bash tests/static-check.sh` ("workspace bind target", "nothing mounted over /home/sandbox", "home directories created as the sandbox user") | H-05 | ⬜ pending |
+| LAY-02 | 01-01 T2, 01-02 T2 | State is a directory mount, never a single file | static + host | `bash tests/static-check.sh` ("CLAUDE_CONFIG_DIR is the claude state mount target", "exactly five bind mounts") | H-07, H-09 | ⬜ pending |
+| LAY-03 | 01-02 T1 | History persists | static + host | `bash tests/static-check.sh` ("HISTFILE and PROMPT_COMMAND in image ENV", "shell history bind target") | H-08 | ⬜ pending |
+| LAY-04 | 01-01 T2, 01-01 T3, 01-03 T1 | No data-deleting paths (no VOLUME, no volumes flag on down); no run without mounts | static + host | `bash tests/static-check.sh` ("no VOLUME instruction", "docs never remove volumes on down", "entrypoint checks mounts then execs") | H-09, H-11, H-12 | ⬜ pending |
+| IMG-02 | 01-01 T2, 01-03 T1 | Claude image FROM base, agent-only additions | static + host | `grep -Fxq 'FROM ${BASE_IMAGE}' claude/Dockerfile` | H-02 | ⬜ pending |
+| IMG-05 | 01-01 T2, 01-02 T2 | Native arm64, no emulation | static + host | `bash tests/static-check.sh` ("no platform override") | H-01 | ⬜ pending |
+| IMG-06 | 01-01 T2, 01-03 T2 | Non-root UID 1000, safe.directory, no-new-privileges, cap_drop | static + host | `grep -Fq "safe.directory '*'" base/Dockerfile` | H-04, H-06 | ⬜ pending |
+| D-10 | 01-01 T2, 01-03 T1, 01-03 T2 | Refuse start on missing dirs | static + host | `bash tests/static-check.sh` ("every bind mount sets create_host_path false", "docs carry the missing-folder preflight") | H-10, H-12 | ⬜ pending |
+| Coexistence | all tasks | Old layout untouched, no old-prefix names, no runtime installs, no compromised GSD | static | `git diff --quiet 934e2c5694dbc1524ae9993f2bf025ffa779358e -- ClaudeCode OpenCode README.md` (inside static-check: "old layout untouched") | coexistence note | ⬜ pending |
+| Supply chain | 01-01 T1 | Claude Code npm package approved before pin | human (blocking) | n/a | H-12 (version equals pin) | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -58,8 +59,8 @@ created: "2026-09-30"
 
 ## Wave 0 Requirements
 
-- [ ] `tests/static-check.sh` — plain-bash assertions for LAY-01..04, IMG-02, IMG-05, IMG-06, naming, pins, coexistence
-- [ ] `SANDBOX.md` — Phase 1 usage plus the H-00..H-13 host checklist
+- [ ] `tests/static-check.sh`: plain-bash assertions for LAY-01..04, IMG-02, IMG-05, IMG-06, naming, pins, coexistence. Created by the tracer (01-01 T2) and extended by every later task
+- [ ] `SANDBOX.md`: Phase 1 usage (01-01 T3, 01-02, 01-03) plus the H-00..H-13 host checklist (01-04 T1)
 
 ---
 
