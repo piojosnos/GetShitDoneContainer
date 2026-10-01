@@ -119,6 +119,19 @@ else
   fail "history mount target created as sandbox"
 fi
 
+# --- gh and git state (plan 01-02) ---
+hasall "gh 2.102.0 pinned and checksum-verified" $BASE '^ARG GH_VERSION=2\.102\.0$' 'checksums\.txt.*sha256sum -c'
+hasall "gh and git config in image ENV" $BASE 'GH_CONFIG_DIR=/home/sandbox/\.local/state/sbx/gh' 'GIT_CONFIG_GLOBAL=/home/sandbox/\.local/state/sbx/git/config'
+has "gh state bind target" '^[[:space:]]*target: /home/sandbox/\.local/state/sbx/gh$' $COMPOSE
+has "git state bind target" '^[[:space:]]*target: /home/sandbox/\.local/state/sbx/git$' $COMPOSE
+if awk '/^USER sandbox$/ { u=1 } u && /mkdir -p/ && /\/home\/sandbox\/\.local\/state\/sbx\/gh/ && /\/home\/sandbox\/\.local\/state\/sbx\/git/ { f=1 } END { exit !f }' $BASE; then
+  pass "state mount targets created as sandbox"
+else
+  fail "state mount targets created as sandbox"
+fi
+if [ "$n_bind" -eq 5 ]; then pass "exactly five bind mounts"; else fail "exactly five bind mounts"; fi
+has "quick-start creates every bind source" 'state/\{claude,shell,gh,git\}' $DOC
+
 # --- forbidden patterns ---
 lacks "no VOLUME instruction" '^[[:space:]]*VOLUME([[:space:]]|$)' $DOCKERFILES
 lacks "no platform override" 'platform:|--platform|linux/amd64' $ALLFILES

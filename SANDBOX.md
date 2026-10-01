@@ -30,7 +30,7 @@ export SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo
 Once per sandbox, create the two folders the container mounts:
 
 ```bash
-mkdir -p "$SBX_DIR"/workspace "$SBX_DIR"/state/claude "$SBX_DIR"/state/shell
+mkdir -p "$SBX_DIR"/workspace "$SBX_DIR"/state/{claude,shell,gh,git}
 ```
 
 What lives where:
@@ -40,10 +40,17 @@ What lives where:
 | `$SBX_DIR/workspace` | `/home/sandbox/workspace` | |
 | `$SBX_DIR/state/claude` | `/home/sandbox/.claude` | `CLAUDE_CONFIG_DIR` |
 | `$SBX_DIR/state/shell` (holds `bash_history`) | `/home/sandbox/.local/state/sbx/shell` | `HISTFILE` |
+| `$SBX_DIR/state/gh` (holds `hosts.yml`) | `/home/sandbox/.local/state/sbx/gh` | `GH_CONFIG_DIR` |
+| `$SBX_DIR/state/git` (holds `config`) | `/home/sandbox/.local/state/sbx/git` | `GIT_CONFIG_GLOBAL` |
 
 Everything else in `/home/sandbox` (`.bashrc`, `.local`, ...) comes from the image and is visible, not hidden by a mount.
 
 Bash history is written on every prompt, not when the shell exits. A command you typed is on the Mac at once, still there after `docker compose down` and a fresh `up`, and shared between all open shells.
+
+### gh and git identity
+
+- Run `gh auth login` once in the sandbox and it persists. With no keyring in the container, gh stores its token as plain text in `state/gh/hosts.yml`. That is why `state/` lives outside `workspace/`: the token never ends up in a git repo.
+- `git config --global user.name "Your Name"` and `git config --global user.email you@example.com` persist in `state/git/config`. The Mac's own `~/.gitconfig` is never read or touched.
 
 ## Start, enter, stop
 

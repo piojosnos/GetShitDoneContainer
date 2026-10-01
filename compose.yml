@@ -43,3 +43,16 @@ services:
         target: /home/sandbox/.local/state/sbx/shell
         bind:
           create_host_path: false
+      # gh login. Matches GH_CONFIG_DIR in base/Dockerfile.
+      - type: bind
+        source: "${SBX_DIR}/state/gh"
+        target: /home/sandbox/.local/state/sbx/gh
+        bind:
+          create_host_path: false
+      # git identity. A directory mount holding the config file git creates itself.
+      # Matches the directory of GIT_CONFIG_GLOBAL in base/Dockerfile.
+      - type: bind
+        source: "${SBX_DIR}/state/git"
+        target: /home/sandbox/.local/state/sbx/git
+        bind:
+          create_host_path: false

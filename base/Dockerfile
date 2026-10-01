@@ -5,6 +5,7 @@ FROM ubuntu:24.04
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ARG NODE_VERSION=24.21.0
+ARG GH_VERSION=2.102.0
 
 # --------------------------------------------------------------------------------
 # OS packages
@@ -33,6 +34,22 @@ RUN arch="$(dpkg --print-architecture)" \
     && rm "$f"
 
 # --------------------------------------------------------------------------------
+# GitHub CLI from the release tarball, checked against the release's checksums file.
+#
+# The tarball is pinned and checksum-verified, while the cli.github.com apt repo only
+# serves the current version and cannot be pinned. dpkg's architecture names
+# (amd64/arm64) match the release asset names, so arm64 gets the native build.
+# Only the gh binary is extracted, owned by root.
+# --------------------------------------------------------------------------------
+
+RUN arch="$(dpkg --print-architecture)" \
+    && d="gh_${GH_VERSION}_linux_${arch}" \
+    && curl -fsSLO "https://github.com/cli/cli/releases/download/v${GH_VERSION}/${d}.tar.gz" \
+    && curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_checksums.txt" | grep " ${d}.tar.gz\$" | sha256sum -c - \
+    && tar -xzf "${d}.tar.gz" -C /usr/local/bin --strip-components=2 --no-same-owner "${d}/bin/gh" \
+    && rm "${d}.tar.gz"
+
+# --------------------------------------------------------------------------------
 # The sandbox user.
 #
 # ubuntu:24.04 already ships an "ubuntu" user and group at UID/GID 1000, so remove
@@ -52,9 +69,13 @@ RUN git config --system safe.directory '*'
 # docker exec shells inherit image ENV but never run the entrypoint. "history -a" on
 # every prompt appends each command to the file on the Mac at once, so a shell that is
 # still open when the container is removed loses nothing, and concurrent shells see
-# each other's history.
+# each other's history. gh and git read their config location from the same ENV. Only
+# the git directory is mounted: git creates the config file itself (lock file plus
+# rename in the same directory), so a single-file mount is never needed.
 ENV HISTFILE=/home/sandbox/.local/state/sbx/shell/bash_history \
     PROMPT_COMMAND="history -a" \
+    GH_CONFIG_DIR=/home/sandbox/.local/state/sbx/gh \
+    GIT_CONFIG_GLOBAL=/home/sandbox/.local/state/sbx/git/config \
     LANG=C.UTF-8
 
 # --------------------------------------------------------------------------------
@@ -66,7 +87,7 @@ ENV HISTFILE=/home/sandbox/.local/state/sbx/shell/bash_history \
 # --------------------------------------------------------------------------------
 
 USER sandbox
-RUN mkdir -p /home/sandbox/workspace /home/sandbox/.local/state/sbx /home/sandbox/.local/state/sbx/shell
+RUN mkdir -p /home/sandbox/workspace /home/sandbox/.local/state/sbx /home/sandbox/.local/state/sbx/shell /home/sandbox/.local/state/sbx/gh /home/sandbox/.local/state/sbx/git
 
 WORKDIR /home/sandbox/workspace
 CMD ["bash"]
