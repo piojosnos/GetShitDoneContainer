@@ -48,10 +48,11 @@ lacks() {
 BASE=base/Dockerfile
 CLAUDE=claude/Dockerfile
 COMPOSE=compose.yml
+DOC=SANDBOX.md
 DOCKERFILES="$BASE $CLAUDE"
 ALLFILES="$BASE $CLAUDE $COMPOSE"
 
-need $BASE $CLAUDE $COMPOSE
+need $BASE $CLAUDE $COMPOSE $DOC
 
 # --- base image ---
 hasx "base image pinned to ubuntu:24.04" "FROM ubuntu:24.04" $BASE
@@ -114,9 +115,19 @@ lacks "no VOLUME instruction" '^[[:space:]]*VOLUME([[:space:]]|$)' $DOCKERFILES
 lacks "no platform override" 'platform:|--platform|linux/amd64' $ALLFILES
 lacks "no floating latest tags" ':latest|@latest' $ALLFILES
 lacks "no pipe-to-shell installers" '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(ba)?sh([[:space:]]|$)' $DOCKERFILES
-lacks "no compromised GSD package names" 'get-shit-done-cc|gsd-build' $ALLFILES
+lacks "no compromised GSD package names" 'get-shit-done-cc|gsd-build' $ALLFILES $DOC
 lacks "no runtime package runner" '\b(npx|bunx)\b|pnpm dlx|yarn dlx' $ALLFILES
 lacks "no old cc_ names" 'cc_gsd|\bcc_' $ALLFILES
+
+# --- quick-start doc ---
+hasall "quick-start builds both images and starts with up --wait" $DOC '^docker build -t sbx-base:local base/$' '^docker build -t sbx-claude:local claude/$' '^docker compose up -d --wait$'
+if grep -Eq '^[[:space:]]*image: sbx-claude:local$' $COMPOSE && grep -Fq 'docker build -t sbx-claude:local claude/' $DOC; then
+  pass "quick-start builds the image compose runs"
+else
+  fail "quick-start builds the image compose runs"
+fi
+lacks "docs never remove volumes on down" 'down[^#]*(-v\b|--volumes)' $DOC $COMPOSE
+lacks "docs use docker compose v2 only" 'docker-compose' $DOC $COMPOSE
 
 # --- coexistence: the old layout stays byte-for-byte unchanged ---
 BASE_COMMIT=934e2c5694dbc1524ae9993f2bf025ffa779358e
