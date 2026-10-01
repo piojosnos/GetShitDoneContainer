@@ -97,3 +97,15 @@ docker compose up -d --wait
 ```
 
 The login and history live in `state/` on the Mac, so the new container picks them up unchanged.
+
+## Safety checks
+
+The container refuses to run unless every folder it should write to is a real bind mount to a folder on the Mac. Otherwise your work would land in the container's own layer and disappear when the container is recreated.
+
+### Image-only smoke tests
+
+A plain `docker run` of either image, without the compose mounts, is refused by design with an `[sbx] ERROR` line and exit status 1. To check an image on its own, bypass the entrypoint:
+
+```bash
+docker run --rm --entrypoint claude sbx-claude:local --version
+```

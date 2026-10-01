@@ -49,10 +49,11 @@ BASE=base/Dockerfile
 CLAUDE=claude/Dockerfile
 COMPOSE=compose.yml
 DOC=SANDBOX.md
+ENTRY=base/sbx-entrypoint
 DOCKERFILES="$BASE $CLAUDE"
-ALLFILES="$BASE $CLAUDE $COMPOSE"
+ALLFILES="$BASE $CLAUDE $COMPOSE $ENTRY"
 
-need $BASE $CLAUDE $COMPOSE $DOC
+need $BASE $CLAUDE $COMPOSE $DOC $ENTRY
 
 # --- base image ---
 hasx "base image pinned to ubuntu:24.04" "FROM ubuntu:24.04" $BASE
@@ -131,6 +132,29 @@ else
 fi
 if [ "$n_bind" -eq 5 ]; then pass "exactly five bind mounts"; else fail "exactly five bind mounts"; fi
 has "quick-start creates every bind source" 'state/\{claude,shell,gh,git\}' $DOC
+
+# --- mount-check entrypoint (plan 01-03) ---
+if [ -x $ENTRY ]; then pass "entrypoint is executable"; else fail "entrypoint is executable"; fi
+if bash -n $ENTRY 2>/dev/null; then pass "entrypoint parses"; else fail "entrypoint parses"; fi
+last=$(grep -v '^[[:space:]]*$' $ENTRY | tail -n 1)
+if grep -Fq '/proc/self/mountinfo' $ENTRY && grep -Fq 'SBX_MOUNTS' $ENTRY && [ "$last" = 'exec "$@"' ]; then
+  pass "entrypoint checks mounts then execs"
+else
+  fail "entrypoint checks mounts then execs"
+fi
+ok=1
+for t in /home/sandbox/workspace /home/sandbox/.local/state/sbx/shell /home/sandbox/.local/state/sbx/gh /home/sandbox/.local/state/sbx/git; do
+  grep -Fq "$t" $ENTRY || ok=0
+done
+if [ "$ok" = 1 ]; then pass "entrypoint checks every base mount target"; else fail "entrypoint checks every base mount target"; fi
+if grep -Fxq 'COPY sbx-entrypoint /usr/local/bin/sbx-entrypoint' $BASE \
+   && grep -Fxq 'ENTRYPOINT ["/usr/local/bin/sbx-entrypoint"]' $BASE; then
+  pass "base image installs and uses the entrypoint"
+else
+  fail "base image installs and uses the entrypoint"
+fi
+has "claude image adds its state mount to SBX_MOUNTS" 'SBX_MOUNTS=/home/sandbox/\.claude' $CLAUDE
+has "docs show the entrypoint bypass for smoke tests" '--entrypoint claude sbx-claude:local' $DOC
 
 # --- forbidden patterns ---
 lacks "no VOLUME instruction" '^[[:space:]]*VOLUME([[:space:]]|$)' $DOCKERFILES

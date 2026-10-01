@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -eu
+
+# Mount sanity check, then run the command. Nothing else.
+#
+# This runs only when the container starts, never in docker exec shells, so it holds
+# no environment: everything a shell needs is image ENV. It checks that every state
+# and workspace path is a real, writable bind mount, because a container started
+# without them (a plain docker run, a broken compose file) would write its data into
+# the container layer, and that layer is discarded when the container is recreated.
+# It installs nothing and changes no ownership.
+#
+# SBX_MOUNTS is a space-separated list of extra mount targets. An agent image sets it
+# in its own ENV (the Claude image adds /home/sandbox/.claude), so this base script
+# never needs to know which agent sits on top of it.
+
+# Field 5 of /proc/self/mountinfo is the mount point; no util-linux "mountpoint" needed.
+is_mount() { awk -v p="$1" '$5==p { f=1 } END { exit !f }' /proc/self/mountinfo; }
+
+# ${SBX_MOUNTS:-} is deliberately unquoted so it splits into one word per path.
+for d in /home/sandbox/workspace /home/sandbox/.local/state/sbx/shell \
+         /home/sandbox/.local/state/sbx/gh /home/sandbox/.local/state/sbx/git ${SBX_MOUNTS:-}; do
+  if ! is_mount "$d"; then
+    echo "[sbx] ERROR: $d is not a bind mount; its data would be lost on recreate." >&2
+    echo "[sbx]        Start the sandbox with 'docker compose up' (see SANDBOX.md)." >&2
+    exit 1
+  fi
+  if [ ! -w "$d" ]; then
+    echo "[sbx] ERROR: $d is not writable by $(id -un)." >&2
+    exit 1
+  fi
+done
+
+exec "$@"

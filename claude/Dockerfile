@@ -22,7 +22,10 @@ RUN npm install -g --allow-scripts=@anthropic-ai/claude-code "@anthropic-ai/clau
 
 # Image ENV, not the entrypoint, so every docker exec shell sees these too.
 # CLAUDE_CONFIG_DIR is the target of the state/claude bind mount in compose.yml.
+# SBX_MOUNTS adds that same target to the base entrypoint's mount check, so the base
+# image never needs to know about Claude.
 ENV CLAUDE_CONFIG_DIR=/home/sandbox/.claude \
+    SBX_MOUNTS=/home/sandbox/.claude \
     DISABLE_UPDATES=1
 
 USER sandbox

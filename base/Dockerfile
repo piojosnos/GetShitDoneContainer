@@ -86,8 +86,20 @@ ENV HISTFILE=/home/sandbox/.local/state/sbx/shell/bash_history \
 # by sandbox so tools can create ~/.local/share and ~/.local/bin later.
 # --------------------------------------------------------------------------------
 
+# --------------------------------------------------------------------------------
+# Entrypoint: a mount check, then exec.
+#
+# Installed while still root so the file is owned by root and mode 755. It refuses to
+# start the container unless every mount target is a real, writable bind mount. It
+# installs nothing and sets no environment (see the comments in the script itself).
+# --------------------------------------------------------------------------------
+
+COPY sbx-entrypoint /usr/local/bin/sbx-entrypoint
+RUN chmod 755 /usr/local/bin/sbx-entrypoint
+
 USER sandbox
 RUN mkdir -p /home/sandbox/workspace /home/sandbox/.local/state/sbx /home/sandbox/.local/state/sbx/shell /home/sandbox/.local/state/sbx/gh /home/sandbox/.local/state/sbx/git
 
 WORKDIR /home/sandbox/workspace
+ENTRYPOINT ["/usr/local/bin/sbx-entrypoint"]
 CMD ["bash"]
