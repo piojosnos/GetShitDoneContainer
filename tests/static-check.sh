@@ -156,6 +156,12 @@ fi
 has "claude image adds its state mount to SBX_MOUNTS" 'SBX_MOUNTS=/home/sandbox/\.claude' $CLAUDE
 has "docs show the entrypoint bypass for smoke tests" '--entrypoint claude sbx-claude:local' $DOC
 
+# --- privileges and start-up safety (plan 01-03) ---
+has "no-new-privileges set" 'no-new-privileges:true' $COMPOSE
+if grep -A1 'cap_drop:' $COMPOSE | grep -Fq -- '- ALL'; then pass "all capabilities dropped"; else fail "all capabilities dropped"; fi
+if grep -Fq 'MISSING: $SBX_DIR/$d' $DOC; then pass "docs carry the missing-folder preflight"; else fail "docs carry the missing-folder preflight"; fi
+if grep -Fq 'docker compose logs' $DOC; then pass "docs tell the user to read compose logs"; else fail "docs tell the user to read compose logs"; fi
+
 # --- forbidden patterns ---
 lacks "no VOLUME instruction" '^[[:space:]]*VOLUME([[:space:]]|$)' $DOCKERFILES
 lacks "no platform override" 'platform:|--platform|linux/amd64' $ALLFILES

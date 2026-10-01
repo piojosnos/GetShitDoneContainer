@@ -109,3 +109,17 @@ A plain `docker run` of either image, without the compose mounts, is refused by 
 ```bash
 docker run --rm --entrypoint claude sbx-claude:local --version
 ```
+
+### Before every start: check the sandbox folder
+
+Compose is told not to create missing folders, but some Compose versions ignore that (docker/compose issue 13602). A mistyped `SBX_DIR` could then silently get empty folders, and Claude would ask you to log in again.
+
+Paste this one line right before `docker compose up -d --wait`. If it prints anything, fix `SBX_DIR` or run the `mkdir` from the quick-start above, and do not start:
+
+```bash
+for d in workspace state/claude state/shell state/gh state/git; do [ -d "$SBX_DIR/$d" ] || echo "MISSING: $SBX_DIR/$d"; done
+```
+
+Always start with `docker compose up -d --wait`, which reports a container that exits at once. If it fails, `docker compose logs` shows the `[sbx] ERROR` line that says which folder is not mounted.
+
+Phase 3's scripts will run this check for you.

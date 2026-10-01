@@ -21,6 +21,13 @@ services:
     init: true                     # tini as PID 1: reaps zombies, stops promptly on SIGTERM
     command: ["sleep", "infinity"] # shells come from: docker exec -it sbx-<name> bash
     working_dir: /home/sandbox/workspace
+    # Nothing in the sandbox needs a Linux capability (non-root user, all file writes go
+    # through the bind mounts), and no-new-privileges blocks setuid escalation. If a host
+    # check fails only because of cap_drop, remove cap_drop and keep no-new-privileges.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     labels:
       sbx.name: "${SBX_NAME}"
     # Long syntax, directories only. create_host_path: false asks Compose to refuse a
