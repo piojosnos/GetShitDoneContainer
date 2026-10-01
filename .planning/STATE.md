@@ -2,17 +2,17 @@
 gsd_state_version: "1.0"
 current_phase: 01
 current_phase_name: Two-Mount Claude Sandbox
-status: executing
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-10-01T18:42:48.125Z"
+status: verifying
+stopped_at: Completed 01-04-PLAN.md (Task 2 host verification deferred by user to Phase 2)
+last_updated: "2026-10-01T18:45:41.511Z"
 last_activity: 2026-09-30
 last_activity_desc: Phase 01 execution started
-state_head: 0cb93bb53d2f6b1ae16e28dbd41b2ffca2910b3a
+state_head: a25f7eb1641ca5bb701b7a00f9dfc60aef58d7ef
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-30)
 
 Phase: 01 (Two-Mount Claude Sandbox) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-09-30 — Phase 01 execution started
 
 Progress: [░░░░░░░░░░] 0%
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P01 | 10 min | 3 tasks | 5 files |
 | Phase 01 P02 | 2 min | 2 tasks | 4 files |
 | Phase 01 P03 | 3 min | 2 tasks | 6 files |
+| Phase 01 P04 | 2 min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,7 @@ Recent decisions affecting current work:
 - [Phase 01]: Home subdirectories created with mkdir -p after USER sandbox (not install -d) so ~/.local is sandbox-owned
 - [Phase 01]: Plan 01-02: history wired by image ENV only (HISTFILE plus PROMPT_COMMAND=history -a); git identity uses a state/git directory mount, never a single-file mount
 - [Phase 01]: 01-03: entrypoint detects missing mounts with awk over /proc/self/mountinfo field 5 and SBX_MOUNTS lets agent images add targets; compose drops all caps with no-new-privileges
+- [Phase 01]: 01-04: Host verification (H-00..H-13) DEFERRED by user to Phase 2 (not approved, not run); Phase 1 verified statically only
 
 ### Pending Todos
 
@@ -86,6 +88,7 @@ None yet.
 - [Phase 1]: Until Phase 3 there are no scripts, so the sandbox runs from a documented `docker compose` command
 - [Phase 2]: Confirm on the Mac that `DISABLE_UPDATES=1` really disables Claude's self-update (via `claude doctor`), and that ccusage's native binary is executable (chmod) on arm64
 - [Phase 5]: Decide whether SCR-08 ("remove whole-home-mount layout") also covers the out-of-scope `OpenCode/` directory, or whether it stays for the next milestone
+- Phase 1 host verification H-00..H-13 + coexistence unrun (user deferred to Phase 2, 2026-10-01). Carry in: H-10 env_file-sentinel trigger, H-12 installed version == 2.1.285 pin, compose/Docker Desktop versions
 
 ## Deferred Items
 
@@ -97,6 +100,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-01T18:42:48.096Z
-Stopped at: Completed 01-03-PLAN.md
+Last session: 2026-10-01T18:45:41.480Z
+Stopped at: Completed 01-04-PLAN.md (Task 2 host verification deferred by user to Phase 2)
 Resume file: None
