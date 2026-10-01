@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Commands typed in the container shell are still in `history` after the container is removed and recreated.
   5. After `docker compose down` and a fresh `up`, every file in `<sandbox>/workspace` and `<sandbox>/state` is still on the Mac, and `docker volume ls` shows no volume holding sandbox data.
 
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 **Wave 1**
@@ -43,7 +43,7 @@ Plans:
 - [x] 01-02-PLAN.md — Bash history, gh login and git identity survive recreate (the rest of the D-12 state layout)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 01-03-PLAN.md — Fail-safe start: mount-check entrypoint, missing-folder preflight, no-new-privileges and cap_drop
+- [x] 01-03-PLAN.md — Fail-safe start: mount-check entrypoint, missing-folder preflight, no-new-privileges and cap_drop
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 01-04-PLAN.md — Host verification checklist H-00..H-13 in SANDBOX.md, then the user runs it on the Mac
@@ -114,7 +114,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Two-Mount Claude Sandbox | 2/4 | In Progress|  |
+| 1. Two-Mount Claude Sandbox | 3/4 | In Progress|  |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
 | 4. Jump-In and Sandbox Housekeeping | 0/TBD | Not started | - |
