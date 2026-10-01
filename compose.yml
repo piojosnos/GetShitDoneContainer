@@ -1,0 +1,39 @@
+# One sbx sandbox: one container, two directory mounts, nothing over /home/sandbox.
+#
+# Usage, from the repo root:
+#   export SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo
+#   docker compose up -d --wait
+#
+# Every compose subcommand (up, down, ps, config) needs both variables, because the
+# whole file is interpolated before any subcommand runs. A missing variable stops
+# Compose with an error naming it, before anything is created.
+#
+# Never ask "down" to remove volumes. This layout has none: every mount below is a
+# bind to a folder on the Mac, and that is where all sandbox data lives.
+name: "sbx-${SBX_NAME:?SBX_NAME is required (lowercase letters, digits, - and _)}"
+
+services:
+  sandbox:
+    # Built on the Mac with: docker build -t sbx-claude:local claude/
+    image: sbx-claude:local
+    pull_policy: never             # a missing image is a clear error, never a pull from Docker Hub
+    container_name: "sbx-${SBX_NAME}"
+    init: true                     # tini as PID 1: reaps zombies, stops promptly on SIGTERM
+    command: ["sleep", "infinity"] # shells come from: docker exec -it sbx-<name> bash
+    working_dir: /home/sandbox/workspace
+    labels:
+      sbx.name: "${SBX_NAME}"
+    # Long syntax, directories only. create_host_path: false asks Compose to refuse a
+    # missing source instead of creating an empty folder at a mistyped path.
+    volumes:
+      - type: bind
+        source: "${SBX_DIR:?SBX_DIR is required (absolute host path of the sandbox folder)}/workspace"
+        target: /home/sandbox/workspace
+        bind:
+          create_host_path: false
+      # Claude login, settings and history. Matches CLAUDE_CONFIG_DIR in claude/Dockerfile.
+      - type: bind
+        source: "${SBX_DIR}/state/claude"
+        target: /home/sandbox/.claude
+        bind:
+          create_host_path: false

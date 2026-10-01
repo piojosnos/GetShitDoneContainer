@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# Static checks for the sbx layout. Runs without Docker: greps the files for pins,
+# the FROM chain, the mount layout and forbidden patterns. Host-side checks (real
+# builds, real mounts) live in the Mac checklist, not here.
+#
+# No "set -e": the script counts failures, and a zero-match grep exits 1.
+set -u
+cd "$(dirname "$0")/.."
+
+FAILS=0
+pass() { echo "PASS: $1"; }
+fail() { echo "FAIL: $1"; FAILS=$((FAILS + 1)); }
+
+# need FILE...: every file must exist.
+need() {
+  for f in "$@"; do
+    if [ -f "$f" ]; then pass "exists $f"; else fail "missing $f"; fi
+  done
+}
+# has LABEL ERE FILE...: the pattern must match in every file.
+has() {
+  local label=$1 re=$2; shift 2
+  local f ok=1
+  for f in "$@"; do grep -Eq -- "$re" "$f" 2>/dev/null || ok=0; done
+  if [ "$ok" = 1 ]; then pass "$label"; else fail "$label"; fi
+}
+# hasx LABEL LINE FILE...: a whole line must equal LINE in every file.
+hasx() {
+  local label=$1 line=$2; shift 2
+  local f ok=1
+  for f in "$@"; do grep -Fxq -- "$line" "$f" 2>/dev/null || ok=0; done
+  if [ "$ok" = 1 ]; then pass "$label"; else fail "$label"; fi
+}
+# hasall LABEL FILE ERE...: every pattern must match in FILE (one label for a group).
+hasall() {
+  local label=$1 f=$2 re ok=1; shift 2
+  for re in "$@"; do grep -Eq -- "$re" "$f" 2>/dev/null || ok=0; done
+  if [ "$ok" = 1 ]; then pass "$label"; else fail "$label"; fi
+}
+# lacks LABEL ERE FILE...: the pattern must match nowhere; offending lines are shown.
+lacks() {
+  local label=$1 re=$2; shift 2
+  local out
+  out=$(grep -En -- "$re" "$@" 2>/dev/null)
+  if [ -z "$out" ]; then pass "$label"; else echo "$out"; fail "$label"; fi
+}
+
+BASE=base/Dockerfile
+CLAUDE=claude/Dockerfile
+COMPOSE=compose.yml
+DOCKERFILES="$BASE $CLAUDE"
+ALLFILES="$BASE $CLAUDE $COMPOSE"
+
+need $BASE $CLAUDE $COMPOSE
+
+# --- base image ---
+hasx "base image pinned to ubuntu:24.04" "FROM ubuntu:24.04" $BASE
+hasall "Node 24.21.0 pinned and checksum-verified" $BASE '^ARG NODE_VERSION=24\.21\.0$' 'SHASUMS256\.txt.*sha256sum -c'
+has "sandbox user is uid 1000" 'useradd .*-u 1000' $BASE
+has "git safe.directory set system-wide" "^RUN git config --system safe\.directory '\*'$" $BASE
+if awk '/^USER sandbox$/ { u=1 } u && /mkdir -p/ && /\/home\/sandbox\/\.local\/state\/sbx/ { f=1 } END { exit !f }' $BASE; then
+  pass "home directories created as the sandbox user"
+else
+  fail "home directories created as the sandbox user"
+fi
+for f in $DOCKERFILES; do
+  last=$(grep -E '^USER' "$f" | tail -n 1)
+  name=${f%%/*}
+  if [ "$last" = "USER sandbox" ]; then pass "$name image ends as USER sandbox"; else fail "$name image ends as USER sandbox"; fi
+done
+lacks "no sudo in images" '\bsudo\b' $DOCKERFILES
+
+# --- claude image ---
+hasall "claude image builds FROM the base" $CLAUDE '^ARG BASE_IMAGE=sbx-base:local$' '^FROM \$\{BASE_IMAGE\}$'
+if [ "$(grep -c '^FROM' $CLAUDE)" -eq 1 ]; then pass "claude image has a single FROM"; else fail "claude image has a single FROM"; fi
+hasall "Claude Code pinned to 2.1.285 via npm" $CLAUDE '^ARG CLAUDE_CODE_VERSION=2\.1\.285$' 'npm install -g .*@anthropic-ai/claude-code@\$\{CLAUDE_CODE_VERSION\}'
+hasall "CLAUDE_CONFIG_DIR and DISABLE_UPDATES in image ENV" $CLAUDE 'CLAUDE_CONFIG_DIR=/home/sandbox/\.claude' 'DISABLE_UPDATES=1'
+
+# --- compose ---
+hasall "compose project and container named sbx-NAME" $COMPOSE '^name: "sbx-\$\{SBX_NAME:\?' 'container_name: "sbx-\$\{SBX_NAME\}"'
+has "SBX_NAME and SBX_DIR are required" '\$\{SBX_DIR:\?' $COMPOSE
+hasall "compose uses the local sbx-claude image only" $COMPOSE '^[[:space:]]*image: sbx-claude:local$' '^[[:space:]]*pull_policy: never'
+hasall "init plus sleep infinity keep-alive" $COMPOSE '^[[:space:]]*init: true' '^[[:space:]]*command: \["sleep", "infinity"\]'
+has "workspace bind target" '^[[:space:]]*target: /home/sandbox/workspace$' $COMPOSE
+has "claude state bind target" '^[[:space:]]*target: /home/sandbox/\.claude$' $COMPOSE
+n_bind=$(grep -Ec '^[[:space:]]*-?[[:space:]]*type: bind$' $COMPOSE)
+n_chp=$(grep -Ec '^[[:space:]]*create_host_path: false$' $COMPOSE)
+if [ "$n_bind" -ge 1 ] && [ "$n_bind" -eq "$n_chp" ]; then
+  pass "every bind mount sets create_host_path false"
+else
+  fail "every bind mount sets create_host_path false"
+fi
+n_src=$(grep -Ec '^[[:space:]]*source:' $COMPOSE)
+n_src_ok=$(grep -Ec '^[[:space:]]*source: "\$\{SBX_DIR' $COMPOSE)
+if [ "$n_src" -ge 1 ] && [ "$n_src" -eq "$n_src_ok" ]; then
+  pass "every mount source is under SBX_DIR"
+else
+  fail "every mount source is under SBX_DIR"
+fi
+lacks "nothing mounted over /home/sandbox" 'target:[[:space:]]*"?/home/sandbox"?[[:space:]]*$' $COMPOSE
+lacks "no short-syntax mounts" '^[[:space:]]*-[[:space:]]*"?(\$\{|/|\.|~)' $COMPOSE
+lacks "no docker socket mount" 'docker\.sock' $COMPOSE
+
+# --- cross-file wiring: the claude state mount target is CLAUDE_CONFIG_DIR ---
+cfg=$(grep -Eo 'CLAUDE_CONFIG_DIR=[^[:space:]\\]+' $CLAUDE | head -n 1 | cut -d= -f2)
+if [ -n "$cfg" ] && grep -Fxq "        target: $cfg" $COMPOSE; then
+  pass "CLAUDE_CONFIG_DIR is the claude state mount target"
+else
+  fail "CLAUDE_CONFIG_DIR is the claude state mount target"
+fi
+
+# --- forbidden patterns ---
+lacks "no VOLUME instruction" '^[[:space:]]*VOLUME([[:space:]]|$)' $DOCKERFILES
+lacks "no platform override" 'platform:|--platform|linux/amd64' $ALLFILES
+lacks "no floating latest tags" ':latest|@latest' $ALLFILES
+lacks "no pipe-to-shell installers" '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(ba)?sh([[:space:]]|$)' $DOCKERFILES
+lacks "no compromised GSD package names" 'get-shit-done-cc|gsd-build' $ALLFILES
+lacks "no runtime package runner" '\b(npx|bunx)\b|pnpm dlx|yarn dlx' $ALLFILES
+lacks "no old cc_ names" 'cc_gsd|\bcc_' $ALLFILES
+
+# --- coexistence: the old layout stays byte-for-byte unchanged ---
+BASE_COMMIT=934e2c5694dbc1524ae9993f2bf025ffa779358e
+if git diff --quiet "$BASE_COMMIT" -- ClaudeCode OpenCode README.md \
+   && [ -z "$(git ls-files --others --exclude-standard -- ClaudeCode OpenCode)" ]; then
+  pass "old layout untouched"
+else
+  fail "old layout untouched"
+fi
+
+if [ "$FAILS" -eq 0 ]; then
+  echo "All static checks passed"
+  exit 0
+fi
+echo "$FAILS static check(s) failed"
+exit 1
