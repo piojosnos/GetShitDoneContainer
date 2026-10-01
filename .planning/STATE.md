@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 01
 current_phase_name: Two-Mount Claude Sandbox
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-10-01T18:37:40.623Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-10-01T18:40:24.388Z"
 last_activity: 2026-09-30
 last_activity_desc: Phase 01 execution started
-state_head: 52cc2cc624b4b99623728d32792afed5bb970b26
+state_head: 59738d1bd503eeb734179b3547cf4652521b4c66
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-30)
 ## Current Position
 
 Phase: 01 (Two-Mount Claude Sandbox) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-09-30 — Phase 01 execution started
 
@@ -57,6 +57,7 @@ Progress: [░░░░░░░░░░] 0%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 01 P01 | 10 min | 3 tasks | 5 files |
+| Phase 01 P02 | 2 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,7 @@ Recent decisions affecting current work:
 - [Roadmap]: Every success criterion is verified on the Mac, because Docker isn't available in the dev sandbox
 - [Phase 01]: Pinned @anthropic-ai/claude-code at exactly 2.1.285 after human supply-chain approval (01-01 Task 1)
 - [Phase 01]: Home subdirectories created with mkdir -p after USER sandbox (not install -d) so ~/.local is sandbox-owned
+- [Phase 01]: Plan 01-02: history wired by image ENV only (HISTFILE plus PROMPT_COMMAND=history -a); git identity uses a state/git directory mount, never a single-file mount
 
 ### Pending Todos
 
@@ -93,6 +95,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-01T18:37:40.597Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-10-01T18:40:24.361Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
