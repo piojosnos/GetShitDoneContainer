@@ -37,3 +37,9 @@ services:
         target: /home/sandbox/.claude
         bind:
           create_host_path: false
+      # Bash history. A directory mount, never the history file itself. Matches HISTFILE in base/Dockerfile.
+      - type: bind
+        source: "${SBX_DIR}/state/shell"
+        target: /home/sandbox/.local/state/sbx/shell
+        bind:
+          create_host_path: false

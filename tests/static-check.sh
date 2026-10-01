@@ -110,6 +110,15 @@ else
   fail "CLAUDE_CONFIG_DIR is the claude state mount target"
 fi
 
+# --- shell history state (plan 01-02) ---
+has "shell history bind target" '^[[:space:]]*target: /home/sandbox/\.local/state/sbx/shell$' $COMPOSE
+hasall "HISTFILE and PROMPT_COMMAND in image ENV" $BASE 'HISTFILE=/home/sandbox/\.local/state/sbx/shell/bash_history' 'PROMPT_COMMAND="history -a"'
+if awk '/^USER sandbox$/ { u=1 } u && /mkdir -p/ && /\/home\/sandbox\/\.local\/state\/sbx\/shell/ { f=1 } END { exit !f }' $BASE; then
+  pass "history mount target created as sandbox"
+else
+  fail "history mount target created as sandbox"
+fi
+
 # --- forbidden patterns ---
 lacks "no VOLUME instruction" '^[[:space:]]*VOLUME([[:space:]]|$)' $DOCKERFILES
 lacks "no platform override" 'platform:|--platform|linux/amd64' $ALLFILES

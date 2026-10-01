@@ -48,7 +48,14 @@ RUN (userdel -r ubuntu || true) \
 # repos created on the Mac and bind-mounted in never trigger "dubious ownership".
 RUN git config --system safe.directory '*'
 
-ENV LANG=C.UTF-8
+# Per-shell configuration lives in image ENV, not in the entrypoint or a dotfile:
+# docker exec shells inherit image ENV but never run the entrypoint. "history -a" on
+# every prompt appends each command to the file on the Mac at once, so a shell that is
+# still open when the container is removed loses nothing, and concurrent shells see
+# each other's history.
+ENV HISTFILE=/home/sandbox/.local/state/sbx/shell/bash_history \
+    PROMPT_COMMAND="history -a" \
+    LANG=C.UTF-8
 
 # --------------------------------------------------------------------------------
 # Home directories and mount targets.
@@ -59,7 +66,7 @@ ENV LANG=C.UTF-8
 # --------------------------------------------------------------------------------
 
 USER sandbox
-RUN mkdir -p /home/sandbox/workspace /home/sandbox/.local/state/sbx
+RUN mkdir -p /home/sandbox/workspace /home/sandbox/.local/state/sbx /home/sandbox/.local/state/sbx/shell
 
 WORKDIR /home/sandbox/workspace
 CMD ["bash"]

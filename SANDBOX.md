@@ -30,7 +30,7 @@ export SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo
 Once per sandbox, create the two folders the container mounts:
 
 ```bash
-mkdir -p "$SBX_DIR"/workspace "$SBX_DIR"/state/claude
+mkdir -p "$SBX_DIR"/workspace "$SBX_DIR"/state/claude "$SBX_DIR"/state/shell
 ```
 
 What lives where:
@@ -39,8 +39,11 @@ What lives where:
 |---|---|---|
 | `$SBX_DIR/workspace` | `/home/sandbox/workspace` | |
 | `$SBX_DIR/state/claude` | `/home/sandbox/.claude` | `CLAUDE_CONFIG_DIR` |
+| `$SBX_DIR/state/shell` (holds `bash_history`) | `/home/sandbox/.local/state/sbx/shell` | `HISTFILE` |
 
 Everything else in `/home/sandbox` (`.bashrc`, `.local`, ...) comes from the image and is visible, not hidden by a mount.
+
+Bash history is written on every prompt, not when the shell exits. A command you typed is on the Mac at once, still there after `docker compose down` and a fresh `up`, and shared between all open shells.
 
 ## Start, enter, stop
 
