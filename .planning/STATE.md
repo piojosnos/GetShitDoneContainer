@@ -1,18 +1,18 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 1
+current_phase: 01
 current_phase_name: Two-Mount Claude Sandbox
 status: executing
-stopped_at: Phase 1 context gathered
-last_updated: "2026-09-30T22:11:55.037Z"
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-10-01T18:37:40.623Z"
 last_activity: 2026-09-30
-last_activity_desc: Roadmap created (5 phases, 26/26 v1 requirements mapped)
-state_head: 2436dcbd39c7e949f16a0bf78759244860a83121
+last_activity_desc: Phase 01 execution started
+state_head: 52cc2cc624b4b99623728d32792afed5bb970b26
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 4
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-30)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 1 - Two-Mount Claude Sandbox
+**Current focus:** Phase 01 — Two-Mount Claude Sandbox
 
 ## Current Position
 
-Phase: 1 (Two-Mount Claude Sandbox) — READY TO EXECUTE
-Plan: 0 of TBD in current phase
+Phase: 01 (Two-Mount Claude Sandbox) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-09-30 - Roadmap created (5 phases, 26/26 v1 requirements mapped)
+Last activity: 2026-09-30 — Phase 01 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -52,6 +52,11 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 01 P01 | 10 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -64,6 +69,8 @@ Recent decisions affecting current work:
 - [Roadmap]: Script priority order is kept: remembered args + upgrade (Phase 3), then jump-in + list/cleanup (Phase 4)
 - [Roadmap]: The old `ClaudeCode/` `cc-*` files stay in the repo until Phase 5, so the ~4 existing sandboxes keep working until the migration is documented
 - [Roadmap]: Every success criterion is verified on the Mac, because Docker isn't available in the dev sandbox
+- [Phase 01]: Pinned @anthropic-ai/claude-code at exactly 2.1.285 after human supply-chain approval (01-01 Task 1)
+- [Phase 01]: Home subdirectories created with mkdir -p after USER sandbox (not install -d) so ~/.local is sandbox-owned
 
 ### Pending Todos
 
@@ -86,6 +93,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-09-30T21:22:51.456Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-two-mount-claude-sandbox/01-CONTEXT.md
+Last session: 2026-10-01T18:37:40.597Z
+Stopped at: Completed 01-01-PLAN.md
+Resume file: None
