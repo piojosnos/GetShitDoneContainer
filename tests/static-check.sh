@@ -5,7 +5,7 @@
 #
 # No "set -e": the script counts failures, and a zero-match grep exits 1.
 set -u
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 
 FAILS=0
 pass() { echo "PASS: $1"; }
@@ -180,6 +180,34 @@ else
 fi
 lacks "docs never remove volumes on down" 'down[^#]*(-v\b|--volumes)' $DOC $COMPOSE
 lacks "docs use docker compose v2 only" 'docker-compose' $DOC $COMPOSE
+
+# --- host checklist and known limits (plan 01-04) ---
+ok=1
+for i in 00 01 02 03 04 05 06 07 08 09 10 11 12 13; do
+  if ! grep -Fq "H-$i" $DOC; then echo "missing H-$i in $DOC"; ok=0; fi
+done
+if [ "$ok" = 1 ]; then pass "docs carry host checks H-00..H-13"; else fail "docs carry host checks H-00..H-13"; fi
+has "docs cover the stale Claude lock" '\.claude\.json\.lock' $DOC
+has "docs state the Console sign-in limit" 'Console' $DOC
+has "docs carry the cap_drop fallback" 'cap_drop' $DOC
+results=$(awk '/^## Record your results/ { r=1; next } /^## / { r=0 } r' $DOC)
+if printf '%s\n' "$results" | grep -Fq 'docker compose version' && printf '%s\n' "$results" | grep -Fq 'H-10'; then
+  pass "docs record H-10 and the Compose version"
+else
+  fail "docs record H-10 and the Compose version"
+fi
+
+# --- optional linters: run when installed, never a project dependency ---
+if command -v shellcheck >/dev/null 2>&1; then
+  if shellcheck -S warning $ENTRY tests/static-check.sh; then pass "shellcheck"; else fail "shellcheck"; fi
+else
+  echo "SKIP: shellcheck not installed"
+fi
+if command -v hadolint >/dev/null 2>&1; then
+  if hadolint --ignore DL3008 --ignore DL3059 --ignore DL3066 $DOCKERFILES; then pass "hadolint"; else fail "hadolint"; fi
+else
+  echo "SKIP: hadolint not installed"
+fi
 
 # --- coexistence: the old layout stays byte-for-byte unchanged ---
 BASE_COMMIT=934e2c5694dbc1524ae9993f2bf025ffa779358e
