@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Static checks for the sbx layout. Runs without Docker: greps the files for pins,
-# the FROM chain, the mount layout and forbidden patterns. Host-side checks (real
-# builds, real mounts) live in the Mac checklist, not here.
-#
-# No "set -e": the script counts failures, and a zero-match grep exits 1.
+# Static checks for the sbx layout.
+# - Runs without Docker: greps the files.
+# - Checks pins, the FROM chain, the mount layout and forbidden patterns.
+# - Real builds and real mounts are checked on the Mac (SANDBOX.md checklist), not here.
+# - No "set -e": the script counts failures, and a grep with no match exits 1.
 set -u
 cd "$(dirname "$0")/.." || exit 1
 
