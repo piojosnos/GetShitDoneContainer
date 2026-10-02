@@ -4,31 +4,40 @@ set -eu
 # Mount sanity check, then run the command. Nothing else.
 #
 # This runs only when the container starts, never in docker exec shells, so it holds
-# no environment: everything a shell needs is image ENV. It checks that every state
-# and workspace path is a real, writable bind mount, because a container started
-# without them (a plain docker run, a broken compose file) would write its data into
-# the container layer, and that layer is discarded when the container is recreated.
-# It installs nothing and changes no ownership.
+# no environment: everything a shell needs is image ENV. It checks that the workspace
+# is a real, writable bind mount, because a container started without it (a plain
+# docker run, a broken compose file) would write its data into the container layer,
+# and that layer is discarded when the container is recreated. It installs nothing
+# and changes no ownership.
 #
-# SBX_MOUNTS is a space-separated list of extra mount targets. An agent image sets it
-# in its own ENV (the Claude image adds /home/sandbox/.claude), so this base script
-# never needs to know which agent sits on top of it.
+# SBX_STATE_DIRS is a space-separated list of extra state subfolders. An agent image
+# sets it in its own ENV (the Claude image adds "claude"), so this base script never
+# needs to know which agent sits on top of it.
+
+ws=/home/sandbox/workspace
+state=$ws/state
 
 # Field 5 of /proc/self/mountinfo is the mount point; no util-linux "mountpoint" needed.
 is_mount() { awk -v p="$1" '$5==p { f=1 } END { exit !f }' /proc/self/mountinfo; }
 
-# ${SBX_MOUNTS:-} is deliberately unquoted so it splits into one word per path.
-for d in /home/sandbox/workspace /home/sandbox/.local/state/sbx/shell \
-         /home/sandbox/.local/state/sbx/gh /home/sandbox/.local/state/sbx/git ${SBX_MOUNTS:-}; do
-  if ! is_mount "$d"; then
-    echo "[sbx] ERROR: $d is not a bind mount; its data would be lost on recreate." >&2
-    echo "[sbx]        Start the sandbox with 'docker compose up' (see SANDBOX.md)." >&2
-    exit 1
-  fi
-  if [ ! -w "$d" ]; then
-    echo "[sbx] ERROR: $d is not writable by $(id -un)." >&2
-    exit 1
-  fi
+die() {
+  echo "[sbx] ERROR: $1" >&2
+  echo "[sbx]        Start the sandbox with 'docker compose up' (see SANDBOX.md)." >&2
+  exit 1
+}
+
+is_mount "$ws" || die "$ws is not a bind mount; its data would be lost on recreate."
+[ -w "$ws" ] || die "$ws is not writable by $(id -un)."
+[ -n "${SBX_NAME:-}" ] || die "SBX_NAME is not set."
+
+# Both must already exist on the Mac. A mistyped SBX_DIR has neither, even if Docker
+# created the folder itself.
+[ -d "$ws/$SBX_NAME" ] || die "$ws/$SBX_NAME (the project folder) is missing."
+[ -d "$state" ] || die "$state is missing."
+
+# ${SBX_STATE_DIRS:-} is deliberately unquoted so it splits into one word per name.
+for d in shell gh git ${SBX_STATE_DIRS:-}; do
+  mkdir -p "$state/$d"
 done
 
 exec "$@"

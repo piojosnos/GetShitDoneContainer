@@ -1,6 +1,6 @@
 # sbx sandbox (new layout)
 
-An sbx sandbox is one Docker container per project that sees exactly two folders on your Mac: the code in `workspace/` and Claude's login, settings and history in `state/claude/`. Nothing is mounted over the container's home directory, so everything the image provides stays visible.
+An sbx sandbox is one Docker container per project that sees exactly one folder on your Mac, `$SBX_DIR`: the code in `$SBX_DIR/<name>/` and Claude's login, settings and history in `$SBX_DIR/state/`. Nothing is mounted over the container's home directory, so everything the image provides stays visible.
 
 It runs side by side with the old `ClaudeCode/` layout, which keeps working and stays documented in `README.md`.
 
@@ -27,29 +27,32 @@ Once per terminal, export both variables. Every compose subcommand (up, down, ps
 export SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo
 ```
 
-Once per sandbox, create the two folders the container mounts:
+Once per sandbox, create the project and state folders (the container creates the subfolders of `state/` itself):
 
 ```bash
-mkdir -p "$SBX_DIR"/workspace "$SBX_DIR"/state/{claude,shell,gh,git}
+mkdir -p "$SBX_DIR/$SBX_NAME" "$SBX_DIR/state"
 ```
 
 What lives where:
 
 | On the Mac | In the container | Env var |
 |---|---|---|
-| `$SBX_DIR/workspace` | `/home/sandbox/workspace` | |
-| `$SBX_DIR/state/claude` | `/home/sandbox/.claude` | `CLAUDE_CONFIG_DIR` |
-| `$SBX_DIR/state/shell` (holds `bash_history`) | `/home/sandbox/.local/state/sbx/shell` | `HISTFILE` |
-| `$SBX_DIR/state/gh` (holds `hosts.yml`) | `/home/sandbox/.local/state/sbx/gh` | `GH_CONFIG_DIR` |
-| `$SBX_DIR/state/git` (holds `config`) | `/home/sandbox/.local/state/sbx/git` | `GIT_CONFIG_GLOBAL` |
+| `$SBX_DIR` (the one mount) | `/home/sandbox/workspace` | |
+| `$SBX_DIR/$SBX_NAME` (your code) | `/home/sandbox/workspace/$SBX_NAME` (the shell starts here) | |
+| `$SBX_DIR/state/claude` | `/home/sandbox/workspace/state/claude` (also `~/.claude`) | `CLAUDE_CONFIG_DIR` |
+| `$SBX_DIR/state/shell` (holds `bash_history`) | `/home/sandbox/workspace/state/shell` | `HISTFILE` |
+| `$SBX_DIR/state/gh` (holds `hosts.yml`) | `/home/sandbox/workspace/state/gh` | `GH_CONFIG_DIR` |
+| `$SBX_DIR/state/git` (holds `config`) | `/home/sandbox/workspace/state/git` | `GIT_CONFIG_GLOBAL` |
 
 Everything else in `/home/sandbox` (`.bashrc`, `.local`, ...) comes from the image and is visible, not hidden by a mount.
+
+On the Mac, open `$SBX_DIR/$SBX_NAME` in your IDE, not `$SBX_DIR`: `state/` holds credentials.
 
 Bash history is written on every prompt, not when the shell exits. A command you typed is on the Mac at once, still there after `docker compose down` and a fresh `up`, and shared between all open shells.
 
 ### gh and git identity
 
-- Run `gh auth login` once in the sandbox and it persists. With no keyring in the container, gh stores its token as plain text in `state/gh/hosts.yml`. That is why `state/` lives outside `workspace/`: the token never ends up in a git repo.
+- Run `gh auth login` once in the sandbox and it persists. With no keyring in the container, gh stores its token as plain text in `state/gh/hosts.yml`. That is why `state/` lives next to your project folder, not inside it: the token never ends up in a git repo.
 - `git config --global user.name "Your Name"` and `git config --global user.email you@example.com` persist in `state/git/config`. The Mac's own `~/.gitconfig` is never read or touched.
 
 ## Start, enter, stop
@@ -66,16 +69,15 @@ Open a shell. This needs no variables if you type the name, and you can open as 
 docker exec -it "sbx-$SBX_NAME" bash
 ```
 
-Inside the shell, go to a repo under the workspace and start Claude:
+The shell starts in your project folder. Start Claude there:
 
 ```bash
-cd ~/workspace/REPO
 claude
 ```
 
 Log in once with a claude.ai account: Claude prints a URL, the browser shows a code, and you paste it at the prompt. The login is written to `$SBX_DIR/state/claude` on the Mac.
 
-Sessions are keyed by directory, so start `claude --continue` or `claude --resume` from the same repo directory you used before.
+Sessions are keyed by directory, so start `claude --continue` or `claude --resume` from the same directory you used before.
 
 Stop the sandbox with:
 
@@ -83,7 +85,7 @@ Stop the sandbox with:
 docker compose down
 ```
 
-This keeps everything in `workspace/` and `state/`. Never ask down to remove volumes. This layout uses no volumes at all, and that request is how the old layout lost data.
+This keeps everything in `$SBX_DIR`. Never ask down to remove volumes. This layout uses no volumes at all, and that request is how the old layout lost data.
 
 ## Rebuild without losing login
 
@@ -112,12 +114,12 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 
 ### Before every start: check the sandbox folder
 
-Compose is told not to create missing folders, but some Compose versions ignore that (docker/compose issue 13602). A mistyped `SBX_DIR` could then silently get empty folders, and Claude would ask you to log in again.
+Compose is told not to create missing folders, but some Compose versions ignore that (docker/compose issue 13602). A mistyped `SBX_DIR` could then silently get an empty folder. The container still refuses to start, because the project and state folders are missing, but the bogus folder is left on your Mac.
 
 Paste this one line right before `docker compose up -d --wait`. If it prints anything, fix `SBX_DIR` or run the `mkdir` from the quick-start above, and do not start:
 
 ```bash
-for d in workspace state/claude state/shell state/gh state/git; do [ -d "$SBX_DIR/$d" ] || echo "MISSING: $SBX_DIR/$d"; done
+for d in "$SBX_NAME" state; do [ -d "$SBX_DIR/$d" ] || echo "MISSING: $SBX_DIR/$d"; done
 ```
 
 Always start with `docker compose up -d --wait`, which reports a container that exits at once. If it fails, `docker compose logs` shows the `[sbx] ERROR` line that says which folder is not mounted.
@@ -148,8 +150,8 @@ docker compose version
 docker build -t sbx-base:local base/
 docker build -t sbx-claude:local claude/
 export SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo
-mkdir -p "$SBX_DIR"/workspace "$SBX_DIR"/state/{claude,shell,gh,git}
-for d in workspace state/claude state/shell state/gh state/git; do [ -d "$SBX_DIR/$d" ] || echo "MISSING: $SBX_DIR/$d"; done
+mkdir -p "$SBX_DIR/$SBX_NAME" "$SBX_DIR/state"
+for d in "$SBX_NAME" state; do [ -d "$SBX_DIR/$d" ] || echo "MISSING: $SBX_DIR/$d"; done
 docker compose config | head -3
 docker compose up -d --wait
 ```
@@ -202,8 +204,8 @@ Pass: `uid=1000(sandbox) gid=1000(sandbox)`.
 ### H-05: workspace and home layout
 
 ```bash
-docker exec sbx-demo sh -c 'touch /home/sandbox/workspace/x.txt; ls -a /home/sandbox'
-ls "$SBX_DIR/workspace"
+docker exec sbx-demo sh -c 'touch x.txt; ls -a /home/sandbox'
+ls "$SBX_DIR/demo"
 docker exec sbx-demo stat -c '%U %n' /home/sandbox/.local /home/sandbox/.local/state
 ```
 
@@ -212,8 +214,8 @@ Pass: `x.txt` shows up on the Mac, `ls -a` shows `.bashrc` and `.local`, and bot
 ### H-06: git works and the identity persists
 
 ```bash
-git init "$SBX_DIR/workspace/hostrepo"
-docker exec -w /home/sandbox/workspace/hostrepo sbx-demo git status
+git init "$SBX_DIR/demo"
+docker exec sbx-demo git status
 docker exec sbx-demo git config --system --get-all safe.directory
 docker exec sbx-demo sh -c 'git config --global user.name T && cat $GIT_CONFIG_GLOBAL'
 cat "$SBX_DIR/state/git/config"
@@ -224,7 +226,7 @@ Pass: no "dubious ownership" error, the system `safe.directory` value is `*`, an
 ### H-07: Claude login
 
 ```bash
-docker exec -it -w /home/sandbox/workspace/hostrepo sbx-demo claude
+docker exec -it sbx-demo claude
 ```
 
 Log in with a claude.ai account, then `/exit`. Then:
@@ -268,7 +270,7 @@ docker compose down
 docker build --no-cache -t sbx-base:local base/ && docker build --no-cache -t sbx-claude:local claude/
 docker compose up -d --wait
 docker exec sbx-demo claude auth status
-docker exec -it -w /home/sandbox/workspace/hostrepo sbx-demo claude --continue
+docker exec -it sbx-demo claude --continue
 ls -R "$SBX_DIR" | head
 docker volume ls
 docker inspect sbx-demo --format '{{json .Mounts}}'
@@ -277,10 +279,10 @@ docker inspect sbx-demo --format '{{json .Mounts}}'
 Pass:
 
 - `claude auth status` still shows `"loggedIn": true`.
-- `claude --continue` from the same repo directory resumes the earlier session.
-- Every file in `workspace/` and `state/` is still there on the Mac.
+- `claude --continue` from the same directory resumes the earlier session.
+- Every file in `$SBX_DIR/demo` and `$SBX_DIR/state` is still there on the Mac.
 - `docker volume ls` lists no volume holding sandbox data.
-- Every entry in the Mounts JSON has `"Type":"bind"` and a directory source (no single files).
+- The Mounts JSON has exactly one entry: `"Type":"bind"`, source `$SBX_DIR`, destination `/home/sandbox/workspace`.
 
 ### H-10: a missing folder is refused
 
@@ -300,7 +302,7 @@ docker compose up -d --wait
 ```bash
 time docker compose down
 docker ps -a --filter name=sbx-demo
-ls "$SBX_DIR/workspace" "$SBX_DIR/state"
+ls "$SBX_DIR/demo" "$SBX_DIR/state"
 docker compose up -d --wait
 ```
 

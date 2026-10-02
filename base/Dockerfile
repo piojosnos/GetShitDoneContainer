@@ -72,10 +72,10 @@ RUN git config --system safe.directory '*'
 # each other's history. gh and git read their config location from the same ENV. Only
 # the git directory is mounted: git creates the config file itself (lock file plus
 # rename in the same directory), so a single-file mount is never needed.
-ENV HISTFILE=/home/sandbox/.local/state/sbx/shell/bash_history \
+ENV HISTFILE=/home/sandbox/workspace/state/shell/bash_history \
     PROMPT_COMMAND="history -a" \
-    GH_CONFIG_DIR=/home/sandbox/.local/state/sbx/gh \
-    GIT_CONFIG_GLOBAL=/home/sandbox/.local/state/sbx/git/config \
+    GH_CONFIG_DIR=/home/sandbox/workspace/state/gh \
+    GIT_CONFIG_GLOBAL=/home/sandbox/workspace/state/git/config \
     LANG=C.UTF-8
 
 # --------------------------------------------------------------------------------
@@ -98,7 +98,7 @@ COPY sbx-entrypoint /usr/local/bin/sbx-entrypoint
 RUN chmod 755 /usr/local/bin/sbx-entrypoint
 
 USER sandbox
-RUN mkdir -p /home/sandbox/workspace /home/sandbox/.local/state/sbx /home/sandbox/.local/state/sbx/shell /home/sandbox/.local/state/sbx/gh /home/sandbox/.local/state/sbx/git
+RUN mkdir -p /home/sandbox/workspace /home/sandbox/.local/state
 
 WORKDIR /home/sandbox/workspace
 ENTRYPOINT ["/usr/local/bin/sbx-entrypoint"]

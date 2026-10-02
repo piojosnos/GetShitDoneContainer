@@ -1,4 +1,4 @@
-# One sbx sandbox: one container, two directory mounts, nothing over /home/sandbox.
+# One sbx sandbox: one container, one directory mount, nothing over /home/sandbox.
 #
 # Usage, from the repo root:
 #   export SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo
@@ -20,7 +20,9 @@ services:
     container_name: "sbx-${SBX_NAME}"
     init: true                     # tini as PID 1: reaps zombies, stops promptly on SIGTERM
     command: ["sleep", "infinity"] # shells come from: docker exec -it sbx-<name> bash
-    working_dir: /home/sandbox/workspace
+    working_dir: "/home/sandbox/workspace/${SBX_NAME}"
+    environment:
+      SBX_NAME: "${SBX_NAME}"
     # Nothing in the sandbox needs a Linux capability (non-root user, all file writes go
     # through the bind mounts), and no-new-privileges blocks setuid escalation. If a host
     # check fails only because of cap_drop, remove cap_drop and keep no-new-privileges.
@@ -34,32 +36,7 @@ services:
     # missing source instead of creating an empty folder at a mistyped path.
     volumes:
       - type: bind
-        source: "${SBX_DIR:?SBX_DIR is required (absolute host path of the sandbox folder)}/workspace"
+        source: "${SBX_DIR:?SBX_DIR is required (absolute host path of the sandbox folder)}"
         target: /home/sandbox/workspace
-        bind:
-          create_host_path: false
-      # Claude login, settings and history. Matches CLAUDE_CONFIG_DIR in claude/Dockerfile.
-      - type: bind
-        source: "${SBX_DIR}/state/claude"
-        target: /home/sandbox/.claude
-        bind:
-          create_host_path: false
-      # Bash history. A directory mount, never the history file itself. Matches HISTFILE in base/Dockerfile.
-      - type: bind
-        source: "${SBX_DIR}/state/shell"
-        target: /home/sandbox/.local/state/sbx/shell
-        bind:
-          create_host_path: false
-      # gh login. Matches GH_CONFIG_DIR in base/Dockerfile.
-      - type: bind
-        source: "${SBX_DIR}/state/gh"
-        target: /home/sandbox/.local/state/sbx/gh
-        bind:
-          create_host_path: false
-      # git identity. A directory mount holding the config file git creates itself.
-      # Matches the directory of GIT_CONFIG_GLOBAL in base/Dockerfile.
-      - type: bind
-        source: "${SBX_DIR}/state/git"
-        target: /home/sandbox/.local/state/sbx/git
         bind:
           create_host_path: false

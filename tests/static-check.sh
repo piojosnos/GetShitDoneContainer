@@ -60,7 +60,7 @@ hasx "base image pinned to ubuntu:24.04" "FROM ubuntu:24.04" $BASE
 hasall "Node 24.21.0 pinned and checksum-verified" $BASE '^ARG NODE_VERSION=24\.21\.0$' 'SHASUMS256\.txt.*sha256sum -c'
 has "sandbox user is uid 1000" 'useradd .*-u 1000' $BASE
 has "git safe.directory set system-wide" "^RUN git config --system safe\.directory '\*'$" $BASE
-if awk '/^USER sandbox$/ { u=1 } u && /mkdir -p/ && /\/home\/sandbox\/\.local\/state\/sbx/ { f=1 } END { exit !f }' $BASE; then
+if awk '/^USER sandbox$/ { u=1 } u && /mkdir -p/ && /\/home\/sandbox\/workspace/ && /\/home\/sandbox\/\.local\/state/ { f=1 } END { exit !f }' $BASE; then
   pass "home directories created as the sandbox user"
 else
   fail "home directories created as the sandbox user"
@@ -76,7 +76,8 @@ lacks "no sudo in images" '\bsudo\b' $DOCKERFILES
 hasall "claude image builds FROM the base" $CLAUDE '^ARG BASE_IMAGE=sbx-base:local$' '^FROM \$\{BASE_IMAGE\}$'
 if [ "$(grep -c '^FROM' $CLAUDE)" -eq 1 ]; then pass "claude image has a single FROM"; else fail "claude image has a single FROM"; fi
 hasall "Claude Code pinned to 2.1.285 via npm" $CLAUDE '^ARG CLAUDE_CODE_VERSION=2\.1\.285$' 'npm install -g .*@anthropic-ai/claude-code@\$\{CLAUDE_CODE_VERSION\}'
-hasall "CLAUDE_CONFIG_DIR and DISABLE_UPDATES in image ENV" $CLAUDE 'CLAUDE_CONFIG_DIR=/home/sandbox/\.claude' 'DISABLE_UPDATES=1'
+hasall "CLAUDE_CONFIG_DIR and DISABLE_UPDATES in image ENV" $CLAUDE 'CLAUDE_CONFIG_DIR=/home/sandbox/workspace/state/claude' 'DISABLE_UPDATES=1'
+has "~/.claude is a symlink to the claude state folder" 'ln -s /home/sandbox/workspace/state/claude /home/sandbox/\.claude' $CLAUDE
 
 # --- compose ---
 hasall "compose project and container named sbx-NAME" $COMPOSE '^name: "sbx-\$\{SBX_NAME:\?' 'container_name: "sbx-\$\{SBX_NAME\}"'
@@ -84,7 +85,8 @@ has "SBX_NAME and SBX_DIR are required" '\$\{SBX_DIR:\?' $COMPOSE
 hasall "compose uses the local sbx-claude image only" $COMPOSE '^[[:space:]]*image: sbx-claude:local$' '^[[:space:]]*pull_policy: never'
 hasall "init plus sleep infinity keep-alive" $COMPOSE '^[[:space:]]*init: true' '^[[:space:]]*command: \["sleep", "infinity"\]'
 has "workspace bind target" '^[[:space:]]*target: /home/sandbox/workspace$' $COMPOSE
-has "claude state bind target" '^[[:space:]]*target: /home/sandbox/\.claude$' $COMPOSE
+has "the bind source is SBX_DIR itself" '^[[:space:]]*source: "\$\{SBX_DIR:\?[^}]*\}"$' $COMPOSE
+hasall "shell starts in the project folder, SBX_NAME passed in" $COMPOSE '^[[:space:]]*working_dir: "/home/sandbox/workspace/\$\{SBX_NAME\}"$' '^[[:space:]]*SBX_NAME: "\$\{SBX_NAME\}"$'
 n_bind=$(grep -Ec '^[[:space:]]*-?[[:space:]]*type: bind$' $COMPOSE)
 n_chp=$(grep -Ec '^[[:space:]]*create_host_path: false$' $COMPOSE)
 if [ "$n_bind" -ge 1 ] && [ "$n_bind" -eq "$n_chp" ]; then
@@ -103,60 +105,41 @@ lacks "nothing mounted over /home/sandbox" 'target:[[:space:]]*"?/home/sandbox"?
 lacks "no short-syntax mounts" '^[[:space:]]*-[[:space:]]*"?(\$\{|/|\.|~)' $COMPOSE
 lacks "no docker socket mount" 'docker\.sock' $COMPOSE
 
-# --- cross-file wiring: the claude state mount target is CLAUDE_CONFIG_DIR ---
+# --- cross-file wiring: all state lives inside the one mount ---
 cfg=$(grep -Eo 'CLAUDE_CONFIG_DIR=[^[:space:]\\]+' $CLAUDE | head -n 1 | cut -d= -f2)
-if [ -n "$cfg" ] && grep -Fxq "        target: $cfg" $COMPOSE; then
-  pass "CLAUDE_CONFIG_DIR is the claude state mount target"
-else
-  fail "CLAUDE_CONFIG_DIR is the claude state mount target"
-fi
+case "$cfg" in
+  /home/sandbox/workspace/state/*) pass "CLAUDE_CONFIG_DIR is inside the workspace mount" ;;
+  *) fail "CLAUDE_CONFIG_DIR is inside the workspace mount" ;;
+esac
 
-# --- shell history state (plan 01-02) ---
-has "shell history bind target" '^[[:space:]]*target: /home/sandbox/\.local/state/sbx/shell$' $COMPOSE
-hasall "HISTFILE and PROMPT_COMMAND in image ENV" $BASE 'HISTFILE=/home/sandbox/\.local/state/sbx/shell/bash_history' 'PROMPT_COMMAND="history -a"'
-if awk '/^USER sandbox$/ { u=1 } u && /mkdir -p/ && /\/home\/sandbox\/\.local\/state\/sbx\/shell/ { f=1 } END { exit !f }' $BASE; then
-  pass "history mount target created as sandbox"
-else
-  fail "history mount target created as sandbox"
-fi
-
-# --- gh and git state (plan 01-02) ---
+# --- shell history, gh and git state ---
+hasall "HISTFILE and PROMPT_COMMAND in image ENV" $BASE 'HISTFILE=/home/sandbox/workspace/state/shell/bash_history' 'PROMPT_COMMAND="history -a"'
 hasall "gh 2.102.0 pinned and checksum-verified" $BASE '^ARG GH_VERSION=2\.102\.0$' 'checksums\.txt.*sha256sum -c'
-hasall "gh and git config in image ENV" $BASE 'GH_CONFIG_DIR=/home/sandbox/\.local/state/sbx/gh' 'GIT_CONFIG_GLOBAL=/home/sandbox/\.local/state/sbx/git/config'
-has "gh state bind target" '^[[:space:]]*target: /home/sandbox/\.local/state/sbx/gh$' $COMPOSE
-has "git state bind target" '^[[:space:]]*target: /home/sandbox/\.local/state/sbx/git$' $COMPOSE
-if awk '/^USER sandbox$/ { u=1 } u && /mkdir -p/ && /\/home\/sandbox\/\.local\/state\/sbx\/gh/ && /\/home\/sandbox\/\.local\/state\/sbx\/git/ { f=1 } END { exit !f }' $BASE; then
-  pass "state mount targets created as sandbox"
-else
-  fail "state mount targets created as sandbox"
-fi
-if [ "$n_bind" -eq 5 ]; then pass "exactly five bind mounts"; else fail "exactly five bind mounts"; fi
-has "quick-start creates every bind source" 'state/\{claude,shell,gh,git\}' $DOC
+hasall "gh and git config in image ENV" $BASE 'GH_CONFIG_DIR=/home/sandbox/workspace/state/gh' 'GIT_CONFIG_GLOBAL=/home/sandbox/workspace/state/git/config'
+if [ "$n_bind" -eq 1 ]; then pass "exactly one bind mount"; else fail "exactly one bind mount"; fi
+has "quick-start creates the project and state folders" 'mkdir -p "\$SBX_DIR/\$SBX_NAME" "\$SBX_DIR/state"' $DOC
 
-# --- mount-check entrypoint (plan 01-03) ---
+# --- mount-check entrypoint ---
 if [ -x $ENTRY ]; then pass "entrypoint is executable"; else fail "entrypoint is executable"; fi
 if bash -n $ENTRY 2>/dev/null; then pass "entrypoint parses"; else fail "entrypoint parses"; fi
 last=$(grep -v '^[[:space:]]*$' $ENTRY | tail -n 1)
-if grep -Fq '/proc/self/mountinfo' $ENTRY && grep -Fq 'SBX_MOUNTS' $ENTRY && [ "$last" = 'exec "$@"' ]; then
+if grep -Fq '/proc/self/mountinfo' $ENTRY && grep -Fq 'SBX_STATE_DIRS' $ENTRY && [ "$last" = 'exec "$@"' ]; then
   pass "entrypoint checks mounts then execs"
 else
   fail "entrypoint checks mounts then execs"
 fi
-ok=1
-for t in /home/sandbox/workspace /home/sandbox/.local/state/sbx/shell /home/sandbox/.local/state/sbx/gh /home/sandbox/.local/state/sbx/git; do
-  grep -Fq "$t" $ENTRY || ok=0
-done
-if [ "$ok" = 1 ]; then pass "entrypoint checks every base mount target"; else fail "entrypoint checks every base mount target"; fi
+hasall "entrypoint checks the mount, project and state folders" $ENTRY '^ws=/home/sandbox/workspace$' 'is_mount "\$ws"' '"\$ws/\$SBX_NAME"' '-d "\$state"'
+has "entrypoint creates the base state subfolders" '^for d in shell gh git \$\{SBX_STATE_DIRS:-\}; do$' $ENTRY
 if grep -Fxq 'COPY sbx-entrypoint /usr/local/bin/sbx-entrypoint' $BASE \
    && grep -Fxq 'ENTRYPOINT ["/usr/local/bin/sbx-entrypoint"]' $BASE; then
   pass "base image installs and uses the entrypoint"
 else
   fail "base image installs and uses the entrypoint"
 fi
-has "claude image adds its state mount to SBX_MOUNTS" 'SBX_MOUNTS=/home/sandbox/\.claude' $CLAUDE
+has "claude image adds its state folder to SBX_STATE_DIRS" 'SBX_STATE_DIRS=claude' $CLAUDE
 has "docs show the entrypoint bypass for smoke tests" '--entrypoint claude sbx-claude:local' $DOC
 
-# --- privileges and start-up safety (plan 01-03) ---
+# --- privileges and start-up safety ---
 has "no-new-privileges set" 'no-new-privileges:true' $COMPOSE
 if grep -A1 'cap_drop:' $COMPOSE | grep -Fq -- '- ALL'; then pass "all capabilities dropped"; else fail "all capabilities dropped"; fi
 if grep -Fq 'MISSING: $SBX_DIR/$d' $DOC; then pass "docs carry the missing-folder preflight"; else fail "docs carry the missing-folder preflight"; fi
@@ -181,7 +164,7 @@ fi
 lacks "docs never remove volumes on down" 'down[^#]*(-v\b|--volumes)' $DOC $COMPOSE
 lacks "docs use docker compose v2 only" 'docker-compose' $DOC $COMPOSE
 
-# --- host checklist and known limits (plan 01-04) ---
+# --- host checklist and known limits ---
 ok=1
 for i in 00 01 02 03 04 05 06 07 08 09 10 11 12 13; do
   if ! grep -Fq "H-$i" $DOC; then echo "missing H-$i in $DOC"; ok=0; fi
