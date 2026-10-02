@@ -48,6 +48,8 @@ Not in this phase: JDK/Maven/Python/uv, GSD, ccusage, `versions.env` (all Phase 
       └── git/config          (GIT_CONFIG_GLOBAL — git user.name/email persist)
   ```
   Only directory mounts are used, never single-file mounts. — **Reversibility:** costly — the Phase 5 migration docs and the users' existing state folders follow this shape.
+
+  **AMENDED 2026-10-02 (PR #1 review):** the container mounts one folder, `<SBX_DIR>` itself, at `/home/sandbox/workspace`. Code moves to `<SBX_DIR>/<name>/` (the shell's working dir); state stays in `<SBX_DIR>/state/{claude,shell,gh,git}` and is reached by image ENV, with `CLAUDE_CONFIG_DIR=/home/sandbox/workspace/state/claude`. `~/.claude` is an image symlink to it, only as a fallback for tools that hardcode the path. This also amends D-06 (Claude state is no longer mounted at `/home/sandbox/.claude`) and D-10 (the entrypoint now requires `<name>/` and `state/`, and creates the state subfolders). Why: five per-folder binds added lines and a new mount per state item without adding safety; every new state item (e.g. the Phase 2.1 bundle clone) is now just a subfolder.
 - **D-13:** Persisting `gh` auth and git identity is in scope for Phase 1. The user chose it because today they survive by accident through the whole-home mount, and the new layout would otherwise silently lose them on recreate. Env vars point the tools at state, so nothing shadows home.
 
 ### Claude's Discretion

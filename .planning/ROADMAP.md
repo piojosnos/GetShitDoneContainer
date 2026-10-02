@@ -2,7 +2,7 @@
 
 ## Overview
 
-This milestone makes the ClaudeCode sandbox solid. Each phase is a vertical slice that leaves the user with a sandbox they can actually use on the Mac, and each later phase builds on it. Phase 1 replaces the whole-home mount with two mounts: code in `workspace/` and Claude state in `state/claude/`. The home directory is no longer hidden, and login survives recreating the container and rebuilding the image. Phase 1.1 (inserted) ships the user's best-practices bundle (skills, standing rules, memories) in the image, synced into `~/.claude` on every start; Phase 2.1 (inserted) later moves that bundle to its own git repo so any sandbox can update it through a PR. Phase 2 bakes the full pinned toolchain, GSD, and ccusage into the image, so "upgrade = rebuild" becomes true and the image version always wins. Phases 3 and 4 add the small `sbx-*` scripts in the user's priority order: remembered args and one-command upgrade first, then jump-in, then list and cleanup. Phase 5 migrates the roughly four existing sandboxes, retires the old `cc-*` layout, and brings the README in line with reality. Docker doesn't run inside the dev sandbox, so every success criterion below is checked on the Mac.
+This milestone makes the ClaudeCode sandbox solid. Each phase is a vertical slice that leaves the user with a sandbox they can actually use on the Mac, and each later phase builds on it. Phase 1 replaces the whole-home mount with one sandbox folder mount: code in `<name>/` and all state (Claude, history, gh, git) in `state/`. The home directory is no longer hidden, and login survives recreating the container and rebuilding the image. Phase 1.1 (inserted) ships the user's best-practices bundle (skills, standing rules, memories) in the image, synced into `~/.claude` on every start; Phase 2.1 (inserted) later moves that bundle to its own git repo so any sandbox can update it through a PR. Phase 2 bakes the full pinned toolchain, GSD, and ccusage into the image, so "upgrade = rebuild" becomes true and the image version always wins. Phases 3 and 4 add the small `sbx-*` scripts in the user's priority order: remembered args and one-command upgrade first, then jump-in, then list and cleanup. Phase 5 migrates the roughly four existing sandboxes, retires the old `cc-*` layout, and brings the README in line with reality. Docker doesn't run inside the dev sandbox, so every success criterion below is checked on the Mac.
 
 ## Phases
 
@@ -24,16 +24,16 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 ### Phase 1: Two-Mount Claude Sandbox
 
-**Goal**: The user can run a Claude Code sandbox on their Mac. Code lives in `<sandbox>/workspace` and Claude state lives in `<sandbox>/state/claude`. Nothing is mounted over `/home/sandbox`, and the Claude login survives recreating the container and rebuilding the image.
+**Goal**: The user can run a Claude Code sandbox on their Mac. The sandbox folder `<sandbox>` is the container's only mount: code lives in `<sandbox>/<name>` and Claude state lives in `<sandbox>/state/claude`. Nothing is mounted over `/home/sandbox`, and the Claude login survives recreating the container and rebuilding the image.
 **Mode:** mvp
 **Depends on**: Nothing (first phase)
 **Requirements**: LAY-01, LAY-02, LAY-03, LAY-04, IMG-02, IMG-05, IMG-06
 **Success Criteria** (what must be TRUE):
   1. On the Mac, the user builds a minimal shared base image and a Claude image `FROM` it, then starts a sandbox for a host folder using the documented `docker compose` command. There are no helper scripts yet. The container runs natively on Apple Silicon: `uname -m` prints `aarch64` and there is no platform/emulation warning.
-  2. Inside the container, the shell runs as the non-root `sandbox` user. Files in `<sandbox>/workspace` on the Mac appear at `/home/sandbox/workspace`. `ls -a /home/sandbox` still shows the image's `.bashrc` and `.local`. `git status` in a repo under the workspace works without a "dubious ownership" error.
-  3. The user logs in to `claude` once, then removes and recreates the container and rebuilds the image with `--no-cache`. `claude` is still logged in and earlier sessions can be resumed. `.claude.json`, settings, and session files are visible in `<sandbox>/state/claude` on the Mac, which is a directory mount (no single-file mount).
+  2. Inside the container, the shell runs as the non-root `sandbox` user. The sandbox folder on the Mac appears at `/home/sandbox/workspace`, and the shell starts in the project folder `/home/sandbox/workspace/<name>`. `ls -a /home/sandbox` still shows the image's `.bashrc` and `.local`. `git status` in a repo under the workspace works without a "dubious ownership" error.
+  3. The user logs in to `claude` once, then removes and recreates the container and rebuilds the image with `--no-cache`. `claude` is still logged in and earlier sessions can be resumed. `.claude.json`, settings, and session files are visible in `<sandbox>/state/claude` on the Mac, inside the one directory mount (no single-file mount).
   4. Commands typed in the container shell are still in `history` after the container is removed and recreated.
-  5. After `docker compose down` and a fresh `up`, every file in `<sandbox>/workspace` and `<sandbox>/state` is still on the Mac, and `docker volume ls` shows no volume holding sandbox data.
+  5. After `docker compose down` and a fresh `up`, every file in `<sandbox>/<name>` and `<sandbox>/state` is still on the Mac, and `docker volume ls` shows no volume holding sandbox data.
 
 **Plans:** 4/4 plans executed
 
@@ -59,7 +59,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. The bundle is committed in this repo as plain files (not a tarball), so every change to it shows up in a diff. The Claude image copies it to a path outside every mount (for example `/opt/sbx/best-practices`).
   2. In a fresh sandbox, `/pr-reply` and `/merged` work, and Claude loads `AGENTS.md` and `code-conventions.md` as standing rules, with no manual install step.
-  3. The shared memories appear in the memory folder of the sandbox's project (`/home/sandbox/workspace`), each with one pointer line in `MEMORY.md`.
+  3. The shared memories appear in the memory folder of the sandbox's project (`/home/sandbox/workspace/<name>`), each with one pointer line in `MEMORY.md`.
   4. After the agent learns a new memory and the user edits `MEMORY.md`, a container recreate and a `--no-cache` rebuild keep both. Bundle memories are seeded only if missing; skills and standing rules are refreshed from the image on every start, so the image version wins.
   5. Container start still works with networking disabled, and the Phase 1 mount checks and layout still pass.
 
@@ -82,13 +82,13 @@ Plans:
 
 ### Phase 02.1: Best-practices from git, editable from any sandbox (INSERTED)
 
-**Goal**: The best-practices bundle lives in its own GitHub repo. Every sandbox keeps its own clone in its state folder, starts with the latest version, and can send improvements back as PRs. Updates survive restarts and rebuilds, and reach other sandboxes only after the user reviews and merges them.
+**Goal**: The best-practices bundle lives in its own GitHub repo. Every sandbox keeps its own clone in its sandbox folder, starts with the latest version, and can send improvements back as PRs. Updates survive restarts and rebuilds, and reach other sandboxes only after the user reviews and merges them.
 **Mode:** mvp
 **Depends on**: Phase 2
 **Requirements**: BP-03, BP-04, BP-05
 **Success Criteria** (what must be TRUE):
   1. The bundle repo exists on GitHub, and this repo no longer carries its own copy of the bundle (one source of truth).
-  2. Each sandbox has its own clone of the bundle repo in its state folder (for example `<sandbox>/state/best-practices`, a sixth directory bind). Edits there survive container recreate and image rebuild.
+  2. Each sandbox has its own clone of the bundle repo in its sandbox folder (for example `<sandbox>/best-practices`, a plain subfolder of the one mount, so no compose change). Edits there survive container recreate and image rebuild.
   3. From inside the sandbox, the user can edit a skill or memory in the clone, commit on a branch, push, and open a PR against the bundle repo using the sandbox's persisted gh login.
   4. Creating a sandbox pulls the latest bundle with a best-effort `git pull --ff-only`. With no network the start still succeeds, using the clone as it is. Running `git pull` in the clone updates a running sandbox, through the same sync rules as Phase 1.1.
   5. No folder is shared read-write between sandboxes: a change made in one sandbox reaches another only after its PR is merged and the other sandbox pulls.
@@ -102,8 +102,8 @@ Plans:
 **Depends on**: Phase 2
 **Requirements**: SCR-01, SCR-02, SCR-03, SCR-07
 **Success Criteria** (what must be TRUE):
-  1. `sbx-add <name> <host_path>` registers a sandbox once. It records the agent as `claude` by default and creates `workspace/` and `state/claude/` under the host path. After that, no script needs the host path again.
-  2. The user starts and stops a sandbox with only its name, and stopping never deletes anything in `workspace/` or `state/`.
+  1. `sbx-add <name> <host_path>` registers a sandbox once. It records the agent as `claude` by default and creates `<name>/` and `state/` under the host path. After that, no script needs the host path again.
+  2. The user starts and stops a sandbox with only its name, and stopping never deletes anything in `<name>/` or `state/`.
   3. One command rebuilds the base image, then the Claude image, then recreates the sandbox. Afterwards Claude is still logged in and past sessions are still there.
   4. The versions of Claude Code, GSD, ccusage, Node, JDK, Maven, and Python are printed at the end of a rebuild and whenever a bash shell opens in the sandbox.
   5. All `sbx-*` scripts run under macOS's stock bash (3.2) and work with a host path that contains spaces.
@@ -117,10 +117,10 @@ Plans:
 **Depends on**: Phase 3
 **Requirements**: SCR-04, SCR-05, SCR-06
 **Success Criteria** (what must be TRUE):
-  1. On a stopped sandbox, the jump-in command starts it and opens a bash shell in `/home/sandbox/workspace`. On a running sandbox, it just opens the shell.
+  1. On a stopped sandbox, the jump-in command starts it and opens a bash shell in `/home/sandbox/workspace/<name>`. On a running sandbox, it just opens the shell.
   2. The same command can launch `claude` directly instead of a shell, already logged in.
   3. The user lists all registered sandboxes with their host path and running or stopped status, and the status matches what `docker ps -a` shows.
-  4. The user removes a sandbox's container, and optionally its registration. Its `workspace/` and `state/` folders on the Mac are left untouched, and re-registering the same path brings back the login and history.
+  4. The user removes a sandbox's container, and optionally its registration. Its `<name>/` and `state/` folders on the Mac are left untouched, and re-registering the same path brings back the login and history.
 
 **Plans**: TBD
 
@@ -131,7 +131,7 @@ Plans:
 **Depends on**: Phase 4
 **Requirements**: SCR-08, DOC-01, DOC-02, DOC-03, DOC-04
 **Success Criteria** (what must be TRUE):
-  1. The user follows the README migration steps for an existing sandbox (for example `GSD_StaticSiteGenerator`, with code at `/home/sandbox/MyCode`): move code into `workspace/`, move state (including `.claude.json`) into `state/claude`, and rename the history project path. After jumping in, `claude` is logged in, old sessions show up for resume, and `ccusage` shows pre-migration usage.
+  1. The user follows the README migration steps for an existing sandbox (for example `GSD_StaticSiteGenerator`, with code at `/home/sandbox/MyCode`): move code into `<name>/`, move state (including `.claude.json`) into `state/claude`, and rename the history project path. After jumping in, `claude` is logged in, old sessions show up for resume, and `ccusage` shows pre-migration usage.
   2. The old `cc-*` scripts and the whole-home-mount compose and entrypoint files are gone from the repo. Every script, file, and command the README mentions actually exists, and there is no phantom `cc-upgrade.sh`.
   3. The README explains the two-mount layout, the `sbx-*` scripts, and the upgrade flow (edit `versions.env`, then run one rebuild command).
   4. The README has a short threat-model section covering what's isolated, the credential-exfiltration risk under skip-permissions, and files the agent can plant that the Mac later executes (git hooks, IDE run configs).

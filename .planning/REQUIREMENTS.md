@@ -9,8 +9,8 @@ Requirements for this milestone (ClaudeCode sandbox made solid). Each maps to ro
 
 ### Layout
 
-- [ ] **LAY-01**: The host folder `<sandbox>/workspace` appears at `/home/sandbox/workspace` in the container. Nothing is mounted over `/home/sandbox`, so the image's `.bashrc`, `.local`, etc. are visible
-- [ ] **LAY-02**: Claude login, settings, and session history live in `<sandbox>/state/claude` on the Mac (via `CLAUDE_CONFIG_DIR`, a directory mount, never a single-file mount) and survive both container recreate and image rebuild
+- [ ] **LAY-01**: The sandbox folder `<sandbox>` is the container's only mount, at `/home/sandbox/workspace`; code lives in `<sandbox>/<name>` and state in `<sandbox>/state`. Nothing is mounted over `/home/sandbox`, so the image's `.bashrc`, `.local`, etc. are visible
+- [ ] **LAY-02**: Claude login, settings, and session history live in `<sandbox>/state/claude` on the Mac (via `CLAUDE_CONFIG_DIR`, inside the one directory mount, never a single-file mount) and survive both container recreate and image rebuild
 - [ ] **LAY-03**: Bash history persists in the sandbox state folder and survives container recreate
 - [ ] **LAY-04**: Stopping, removing, or recreating a container never deletes workspace or state data (no `down -v`, no `VOLUME /home/sandbox`)
 
@@ -39,7 +39,7 @@ The shared agent bundle: skills, standing rules (`AGENTS.md`, `code-conventions.
 
 - [ ] **BP-01**: The image ships the best-practices bundle (from the repo, not a runtime download) at a path outside every mount, so no host mount can hide it
 - [ ] **BP-02**: On every container start, the bundle's skills and standing rules are synced into the persisted `~/.claude` (the image version wins), and its memories are seeded only if missing. Memories the agent learned, and the user's own `MEMORY.md` lines, are never overwritten. Start still needs no network
-- [ ] **BP-03**: The bundle lives in its own git repo. Each sandbox keeps its own clone in its state folder, so edits survive container recreate and image rebuild
+- [ ] **BP-03**: The bundle lives in its own git repo. Each sandbox keeps its own clone in its sandbox folder, so edits survive container recreate and image rebuild
 - [ ] **BP-04**: From inside any sandbox, the user (or agent) can edit the bundle, commit on a branch, push, and open a PR against the bundle repo
 - [ ] **BP-05**: A new sandbox starts with the latest bundle from git (a best-effort `git pull --ff-only` that never blocks an offline start), and a manual `git pull` in the clone updates a running sandbox
 
@@ -59,7 +59,7 @@ Generic `sbx-*` scripts: short, plain bash, and runnable with macOS's stock bash
 ### Documentation
 
 - [ ] **DOC-01**: The README describes the new layout, scripts, and upgrade flow, and matches what's in the repo (no phantom `cc-upgrade.sh`)
-- [ ] **DOC-02**: The README documents how to migrate an existing sandbox: move code into `workspace/`, move state (including `.claude.json`) into `state/claude`, and rename the history project path so old sessions still show up
+- [ ] **DOC-02**: The README documents how to migrate an existing sandbox: move code into `<name>/`, move state (including `.claude.json`) into `state/claude`, and rename the history project path so old sessions still show up
 - [ ] **DOC-03**: The README has a short threat-model section covering what's isolated, the credential-exfiltration risk under skip-permissions, and files the agent can plant that the Mac later executes (git hooks, IDE run configs)
 - [ ] **DOC-04**: A host-side verification checklist exists for the Mac: login survives rebuild, versions match pins, ccusage works, home is not hidden
 
