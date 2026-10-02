@@ -33,6 +33,16 @@ Requirements for this milestone (ClaudeCode sandbox made solid). Each maps to ro
 
 - [ ] **USE-01**: The user can run `ccusage` (`daily`, `monthly`, `session`, …) in the container shell and see this project's real Claude usage
 
+### Best Practices
+
+The shared agent bundle: skills, standing rules (`AGENTS.md`, `code-conventions.md`), and memories.
+
+- [ ] **BP-01**: The image ships the best-practices bundle (from the repo, not a runtime download) at a path outside every mount, so no host mount can hide it
+- [ ] **BP-02**: On every container start, the bundle's skills and standing rules are synced into the persisted `~/.claude` (the image version wins), and its memories are seeded only if missing. Memories the agent learned, and the user's own `MEMORY.md` lines, are never overwritten. Start still needs no network
+- [ ] **BP-03**: The bundle lives in its own git repo. Each sandbox keeps its own clone in its state folder, so edits survive container recreate and image rebuild
+- [ ] **BP-04**: From inside any sandbox, the user (or agent) can edit the bundle, commit on a branch, push, and open a PR against the bundle repo
+- [ ] **BP-05**: A new sandbox starts with the latest bundle from git (a best-effort `git pull --ff-only` that never blocks an offline start), and a manual `git pull` in the clone updates a running sandbox
+
 ### Helper Scripts
 
 Generic `sbx-*` scripts: short, plain bash, and runnable with macOS's stock bash.
@@ -86,7 +96,8 @@ Deferred. Tracked but not in the current roadmap.
 |---------|--------|
 | Several projects in one container | The model is one container per project, for isolation |
 | Migration script | Only about 4 sandboxes. Documented manual steps first, script only if they prove painful |
-| Runtime `install` commands and in-container self-updates (including `/gsd-update` inside a sandbox) | They break "image wins". Upgrades happen only by rebuilding |
+| Runtime `install` commands and in-container self-updates (including `/gsd-update` inside a sandbox) | They break "image wins". Upgrades happen only by rebuilding. The one exception is the best-practices bundle (BP-05): it is config, not tools, and its pull is best-effort |
+| One best-practices folder shared read-write by every sandbox | One sandbox could silently change what every other agent loads. Each sandbox keeps its own clone; changes reach the others only through a reviewed PR |
 | Mounting docker.sock, host `~/.ssh`, host `~/.claude`, or the whole host home | Each would defeat the isolation that is the reason this project exists |
 | Profiles, slots, layered config, CLI framework/TUI | Contradicts "small, plain bash scripts grown incrementally" |
 | Old `get-shit-done-cc` / `gsd-build` GSD package | Compromised distribution. Never reintroduce it |
@@ -111,6 +122,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TOOL-02 | Phase 2 | Pending |
 | TOOL-03 | Phase 2 | Pending |
 | USE-01 | Phase 2 | Pending |
+| BP-01 | Phase 1.1 | Pending |
+| BP-02 | Phase 1.1 | Pending |
+| BP-03 | Phase 2.1 | Pending |
+| BP-04 | Phase 2.1 | Pending |
+| BP-05 | Phase 2.1 | Pending |
 | SCR-01 | Phase 3 | Pending |
 | SCR-02 | Phase 3 | Pending |
 | SCR-03 | Phase 3 | Pending |
@@ -125,10 +141,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOC-04 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 26 total
-- Mapped to phases: 26
+- v1 requirements: 31 total
+- Mapped to phases: 31
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-30*
-*Last updated: 2026-09-30 after roadmap creation (traceability filled)*
+*Last updated: 2026-10-02 after inserting Phases 1.1 and 2.1 (BP-01..BP-05)*
