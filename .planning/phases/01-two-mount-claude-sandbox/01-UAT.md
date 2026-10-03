@@ -9,7 +9,7 @@ updated: 2026-10-01T19:20:00Z
 ## Current Test
 
 number: 1
-name: Full host checklist H-00..H-13 plus Coexistence (SANDBOX.md)
+name: Full host checklist H-00..H-13 plus Coexistence (tests/host-checklist.md)
 expected: |
   Every check meets its stated pass condition, and the "Record your results" table is filled in with the `docker compose version` and Docker Desktop versions.
   On 2026-10-01 the user deferred this to Phase 2. It has not been run.
@@ -17,7 +17,7 @@ awaiting: user response
 
 ## Tests
 
-### 1. Full host checklist H-00..H-13 plus Coexistence (SANDBOX.md)
+### 1. Full host checklist H-00..H-13 plus Coexistence (tests/host-checklist.md)
 expected: Every check meets its pass condition. This is the only evidence for SC1-SC5. Fix WR-02 (H-06 overwrites the git identity) before running it.
 result: [pending]
 
