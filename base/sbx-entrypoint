@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -eu
+
+# Container start check, then run the command.
+# - Runs only at container start, never in docker exec shells, so it sets no
+#   environment (shells get everything from image ENV).
+# - Refuses to start unless the workspace is a real, writable mount. Without it
+#   (a plain docker run, a broken compose file), data would land in the container
+#   layer and be lost on recreate.
+# - Refuses to start unless the project and state folders exist. A mistyped
+#   SBX_DIR has neither.
+# - Creates the state subfolders that are missing. Installs nothing.
+# - SBX_STATE_DIRS: extra state subfolders, set by the agent image (Claude adds
+#   "claude"), so this base script never needs to know which agent is on top.
+
+ws=/home/sandbox/workspace
+state=$ws/state
+
+# Field 5 of /proc/self/mountinfo is the mount point; no util-linux "mountpoint" needed.
+is_mount() { awk -v p="$1" '$5==p { f=1 } END { exit !f }' /proc/self/mountinfo; }
+
+die() {
+  echo "[sbx] ERROR: $1" >&2
+  echo "[sbx]        Start the sandbox with 'docker compose up' (see SANDBOX.md)." >&2
+  exit 1
+}
+
+is_mount "$ws" || die "$ws is not a bind mount; its data would be lost on recreate."
+[ -w "$ws" ] || die "$ws is not writable by $(id -un)."
+[ -n "${SBX_NAME:-}" ] || die "SBX_NAME is not set."
+
+[ -d "$ws/$SBX_NAME" ] || die "$ws/$SBX_NAME (the project folder) is missing."
+[ -d "$state" ] || die "$state is missing."
+
+# ${SBX_STATE_DIRS:-} is unquoted on purpose: one word per folder name.
+for d in shell gh git ${SBX_STATE_DIRS:-}; do
+  mkdir -p "$state/$d"
+done
+
+exec "$@"

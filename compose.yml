@@ -1,0 +1,45 @@
+# One sbx sandbox: one container, one folder mounted from the Mac.
+#
+# Usage, from the repo root:
+#   export SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo
+#   docker compose up -d --wait
+#
+# - Every subcommand (up, down, ps, config) needs both variables: Compose reads the
+#   whole file first.
+# - A missing variable stops Compose with an error naming it, before anything is created.
+# - Never ask "down" to remove volumes. There are none; all data is in $SBX_DIR on the Mac.
+name: "sbx-${SBX_NAME:?SBX_NAME is required (lowercase letters, digits, - and _)}"
+
+services:
+  sandbox:
+    # Built on the Mac with: docker build -t sbx-claude:local claude/
+    image: sbx-claude:local
+    pull_policy: never             # a missing image is an error, never a pull from Docker Hub
+    container_name: "sbx-${SBX_NAME}"
+    init: true                     # tini as PID 1: reaps zombies, stops promptly
+    command: ["sleep", "infinity"] # shells come from: docker exec -it sbx-<name> bash
+    # Shells start in the project folder. The entrypoint needs SBX_NAME to check it exists.
+    working_dir: "/home/sandbox/workspace/${SBX_NAME}"
+    environment:
+      SBX_NAME: "${SBX_NAME}"
+    # Privileges:
+    # - No Linux capability is needed: non-root user, all writes go to the mounted folder.
+    # - no-new-privileges blocks setuid escalation.
+    # - If a host check fails only because of cap_drop, remove cap_drop, keep no-new-privileges.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels:
+      sbx.name: "${SBX_NAME}"
+    # The one mount:
+    # - $SBX_DIR on the Mac appears at /home/sandbox/workspace.
+    # - It holds <name>/ (code) and state/ (Claude, history, gh, git).
+    # - create_host_path: false asks Compose to refuse a missing folder instead of
+    #   creating an empty one at a mistyped path.
+    volumes:
+      - type: bind
+        source: "${SBX_DIR:?SBX_DIR is required (absolute host path of the sandbox folder)}"
+        target: /home/sandbox/workspace
+        bind:
+          create_host_path: false
