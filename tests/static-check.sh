@@ -49,6 +49,7 @@ BASE=base/Dockerfile
 CLAUDE=claude/Dockerfile
 COMPOSE=compose.yml
 DOC=SANDBOX.md
+CHECKLIST=tests/host-checklist.md
 ENTRY=base/sbx-entrypoint
 DOCKERFILES="$BASE $CLAUDE"
 ALLFILES="$BASE $CLAUDE $COMPOSE $ENTRY"
@@ -167,13 +168,13 @@ lacks "docs use docker compose v2 only" 'docker-compose' $DOC $COMPOSE
 # --- host checklist and known limits ---
 ok=1
 for i in 00 01 02 03 04 05 06 07 08 09 10 11 12 13; do
-  if ! grep -Fq "H-$i" $DOC; then echo "missing H-$i in $DOC"; ok=0; fi
+  if ! grep -Fq "H-$i" $CHECKLIST; then echo "missing H-$i in $CHECKLIST"; ok=0; fi
 done
 if [ "$ok" = 1 ]; then pass "docs carry host checks H-00..H-13"; else fail "docs carry host checks H-00..H-13"; fi
 has "docs cover the stale Claude lock" '\.claude\.json\.lock' $DOC
 has "docs state the Console sign-in limit" 'Console' $DOC
 has "docs carry the cap_drop fallback" 'cap_drop' $DOC
-results=$(awk '/^## Record your results/ { r=1; next } /^## / { r=0 } r' $DOC)
+results=$(awk '/^## Record your results/ { r=1; next } /^## / { r=0 } r' $CHECKLIST)
 if printf '%s\n' "$results" | grep -Fq 'docker compose version' && printf '%s\n' "$results" | grep -Fq 'H-10'; then
   pass "docs record H-10 and the Compose version"
 else
