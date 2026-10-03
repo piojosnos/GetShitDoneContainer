@@ -19,6 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login
 - [ ] **Phase 4: Jump-In and Sandbox Housekeeping** - One command drops you into a sandbox shell or Claude, and you can list and clean up sandboxes safely
 - [ ] **Phase 5: Migration, Docs, and Old-Layout Retirement** - Existing sandboxes move over with history intact, the old `cc-*` layout is gone, and the README matches the repo
+- [ ] **Phase 6: Automated checks (CI)** - GitHub runs the guard on every PR push and shows it as a PR check
 
 ## Phase Details
 
@@ -139,10 +140,25 @@ Plans:
 
 **Plans**: TBD
 
+### Phase 6: Automated checks (CI)
+
+**Goal**: The repo's automated checks run on their own. GitHub runs `tests/guard.sh` on every push to a PR and shows the result as a check on the PR, without running anything on the Mac or in a sandbox container.
+**Mode:** mvp
+**Depends on**: Phase 5
+**Requirements**: CI-01
+**Success Criteria** (what must be TRUE):
+  1. Every push to a PR runs `tests/guard.sh` on GitHub's machines, and the PR shows it as a passing or failing check.
+  2. Breaking a guard rule on a PR branch turns the check red; fixing it turns it green.
+  3. Nothing runs on the Mac or in a sandbox container: no git hook, nothing the agent could edit that the Mac executes.
+  4. Running `bash tests/guard.sh` by hand still works the same way.
+  5. Candidates to add when planned: shellcheck for the scripts, hadolint for the Dockerfiles.
+
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5
+Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -153,3 +169,4 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
 | 4. Jump-In and Sandbox Housekeeping | 0/TBD | Not started | - |
 | 5. Migration, Docs, and Old-Layout Retirement | 0/TBD | Not started | - |
+| 6. Automated checks (CI) | 0/TBD | Not started | - |
