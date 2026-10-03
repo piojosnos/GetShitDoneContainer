@@ -4,12 +4,12 @@ current_phase: 01
 current_phase_name: Two-Mount Claude Sandbox
 status: verifying
 stopped_at: Completed 01-04-PLAN.md (Task 2 host verification deferred by user to Phase 2)
-last_updated: "2026-10-02T06:16:17.002Z"
+last_updated: "2026-10-03T22:41:14.539Z"
 last_activity: 2026-09-30
 last_activity_desc: Phase 01 execution started
-state_head: 4c74790b9debd08ec6a5dfcaf5277f56835628dc
+state_head: 9161ff8c8c3a5eabcf0e344c02ea9b268572a42a
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 0
   total_plans: 4
   completed_plans: 4
@@ -94,6 +94,7 @@ None yet.
 
 - Phase 01.1 inserted after Phase 1: Best-practices bundle baked into the image (stopgap) (URGENT)
 - Phase 02.1 inserted after Phase 2: Best-practices from git, editable from any sandbox
+- Phase 6 added: Automated checks (CI): run tests/guard.sh on every PR push, from the PR #1 review
 
 ## Deferred Items
 

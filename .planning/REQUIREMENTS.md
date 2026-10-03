@@ -56,6 +56,10 @@ Generic `sbx-*` scripts: short, plain bash, and runnable with macOS's stock bash
 - [ ] **SCR-07**: Tool versions (Claude, GSD, ccusage, Node, JDK, Maven, Python) are printed after a rebuild and on shell entry
 - [ ] **SCR-08**: The old `cc-*` scripts and the whole-home-mount layout are removed from the repo
 
+### Automation
+
+- [ ] **CI-01**: GitHub runs `tests/guard.sh` on every push to a PR and shows the result as a PR check. Nothing runs on the Mac or in a sandbox container
+
 ### Documentation
 
 - [ ] **DOC-01**: The README describes the new layout, scripts, and upgrade flow, and matches what's in the repo (no phantom `cc-upgrade.sh`)
@@ -139,12 +143,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOC-02 | Phase 5 | Pending |
 | DOC-03 | Phase 5 | Pending |
 | DOC-04 | Phase 5 | Pending |
+| CI-01 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 31 total
-- Mapped to phases: 31
+- v1 requirements: 32 total
+- Mapped to phases: 32
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-30*
-*Last updated: 2026-10-02 after inserting Phases 1.1 and 2.1 (BP-01..BP-05)*
+*Last updated: 2026-10-03 after adding Phase 6 (CI-01)*
