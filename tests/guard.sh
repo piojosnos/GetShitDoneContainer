@@ -5,6 +5,7 @@
 # - These are mistakes a manual test would not notice, because the sandbox still works.
 # - Real behavior is tested on the Mac: tests/host-checklist.md.
 # - Usage, from anywhere: bash tests/guard.sh   (exit 0 = all rules hold)
+# - Runs only when started by hand: you, or an agent's verify step. No hook, no CI.
 set -u
 cd "$(dirname "$0")/.." || exit 1
 
@@ -15,7 +16,8 @@ ENTRY=base/sbx-entrypoint
 DOCKERFILES="$BASE $CLAUDE"
 SANDBOX_FILES="$BASE $CLAUDE $COMPOSE $ENTRY"
 
-# The commit on main that holds the old layout, before any of this work.
+# Used by old_layout_untouched: the old ClaudeCode/ layout as it is on main.
+# Remove both when the old layout is retired.
 OLD_LAYOUT_COMMIT=304f80d1a0705d9ab668ef2ed4acd9fcf65060ac
 
 # --- helpers ---
