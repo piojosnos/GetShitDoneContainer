@@ -20,6 +20,9 @@ SANDBOX_FILES="$BASE $CLAUDE $COMPOSE $ENTRY"
 HOST_FILES="tests/host/*.sh tests/host/manual/*.sh"
 HOST_UNATTENDED_FILES="tests/host/*.sh"
 
+# Internal planning references: decision IDs, test-plan IDs, phase numbers, planning documents.
+PLANNING_ID_REGEX='\bD-[0-9]{2}\b|\bHT-0[0-9]\b|Phase [0-9]|CONTEXT\.md|\.planning'
+
 # Used by old_layout_untouched: the old ClaudeCode/ layout as it is on main.
 # Remove both when the old layout is retired.
 OLD_LAYOUT_COMMIT=304f80d1a0705d9ab668ef2ed4acd9fcf65060ac
@@ -125,9 +128,37 @@ versions_are_pinned() {
     && grep -Eq '^ARG CLAUDE_CODE_VERSION=[0-9]+\.[0-9]+\.[0-9]+$' $CLAUDE
 }
 
-# Nothing is installed when the container starts: the image is the only source of tools.
+# Nothing is installed when the container starts: the image is the only source of tools. This
+# covers the entrypoint and every start hook.
 no_installs_at_container_start() {
-  nowhere_matches '\b(npm|npx|bunx|pip|apt-get|apt|curl|wget)\b' $ENTRY
+  nowhere_matches '\b(npm|npx|bunx|pip|apt-get|apt|curl|wget)\b' $ENTRY claude/start.d/*
+}
+
+# Start hooks run in text order, so every hook name is two digits, a hyphen, then lowercase
+# letters, digits or hyphens (a name like 100- would sort before 20-).
+start_hooks_have_two_digit_names() {
+  local hook
+  local found=0
+  local ok=0
+
+  for hook in claude/start.d/*; do
+    if [ ! -f "$hook" ]; then
+      continue
+    fi
+
+    found=1
+    if ! basename "$hook" | grep -Eq '^[0-9]{2}-[a-z0-9-]+$'; then
+      echo "    $hook: the name must be two digits, a hyphen, then lowercase letters, digits or hyphens"
+      ok=1
+    fi
+  done
+
+  if [ "$found" -eq 0 ]; then
+    echo "    claude/start.d holds no start hook"
+    ok=1
+  fi
+
+  return "$ok"
 }
 
 # Exactly one mount: the sandbox folder, at /home/sandbox/workspace. Never over
@@ -210,7 +241,14 @@ host_checks_declare_dependencies() {
 
 # Internal planning IDs mean nothing to a reader of the scripts: keep them out.
 host_tests_have_no_planning_ids() {
-  nowhere_matches '\bD-[0-9]{2}\b|\bHT-0[0-9]\b|Phase [0-9]|CONTEXT\.md|\.planning' $HOST_FILES tests/host-selftest.sh
+  nowhere_matches "$PLANNING_ID_REGEX" $HOST_FILES tests/host-selftest.sh
+}
+
+# The same holds for the sandbox code and docs: readers do not have the planning docs.
+# best-practices/ is exempt: its rules quote such references as examples of what not to write, and
+# the merged skill reads a GSD roadmap.
+sandbox_code_has_no_planning_ids() {
+  nowhere_matches "$PLANNING_ID_REGEX|\bBP-0[0-9]\b" $SANDBOX_FILES claude/start.d/* .dockerignore SANDBOX.md tests/host-checklist.md tests/bundle-selftest.sh
 }
 
 # Only the test sandbox is named: container sbx-hosttest, images sbx-base and sbx-claude. The old
@@ -437,6 +475,7 @@ for rule in \
   no_floating_latest_versions \
   versions_are_pinned \
   no_installs_at_container_start \
+  start_hooks_have_two_digit_names \
   exactly_one_mount_and_not_over_home \
   runs_without_privileges \
   old_layout_untouched \
@@ -445,6 +484,7 @@ for rule in \
   host_tests_are_unattended \
   host_checks_declare_dependencies \
   host_tests_have_no_planning_ids \
+  sandbox_code_has_no_planning_ids \
   host_tests_only_name_the_test_sandbox \
   bundle_is_plain_files_only \
   bundle_files_have_generated_header \

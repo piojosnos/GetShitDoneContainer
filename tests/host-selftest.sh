@@ -36,8 +36,10 @@ cat >"$WORK/bin/docker" <<'SHIM'
 # FAKE_NO_HISTORY, FAKE_DOWN_LOSES_HISTORY, FAKE_VOLUMES, FAKE_VOLUMES_AFTER_BUILD,
 # FAKE_EXTRA_MOUNT, FAKE_DOWN_KEEPS, FAKE_H10 (honored, ignored or started),
 # FAKE_NO_SYNC (compose up skips the start hook), FAKE_CONTEXT_SCOPED (the fake /context also lists
-# path-scoped rules), FAKE_CONTEXT_NO_SKILLS (the fake /context lists no skills).
-# Compose up executes the real start hook, as the real entrypoint does.
+# path-scoped rules), FAKE_CONTEXT_NO_SKILLS (the fake /context lists no skills), FAKE_OFFLINE_FAIL
+# (a run with --network none fails to start), FAKE_HOOK_IGNORED (a run whose hook fails still runs
+# its command).
+# Compose up and a run with --network none execute the real start hook, as the real entrypoint does.
 # State lives in FAKE_STATE; every call is logged to FAKE_LOG.
 printf 'ENV SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
   "${SBX_NAME-unset}" "${SBX_DIR-unset}" "${COMPOSE_PROJECT_NAME-unset}" "$*" >>"$FAKE_LOG"
@@ -217,6 +219,41 @@ case "${1:-}" in
     ;;
   run)
     case "$*" in
+      *"--network none"*)
+        hookBroken=0
+        case "$*" in
+          *"CLAUDE_CONFIG_DIR=/proc/"*) hookBroken=1 ;;
+        esac
+        if [ "$hookBroken" = 1 ] && [ "${FAKE_HOOK_IGNORED:-0}" != 1 ]; then
+          echo "[sbx] ERROR: start hook /etc/sbx/start.d/10-best-practices failed; the container was not started." >&2
+          exit 1
+        fi
+        if [ "$hookBroken" = 0 ] && [ "${FAKE_OFFLINE_FAIL:-0}" = 1 ]; then
+          echo "fake docker: the container could not start with networking disabled" >&2
+          exit 1
+        fi
+        mountSource=""
+        lastArg=""
+        for runArg in "$@"; do
+          case "$runArg" in
+            type=bind,source=*)
+              mountSource=${runArg#type=bind,source=}
+              mountSource=${mountSource%%,target=*}
+              ;;
+          esac
+          lastArg=$runArg
+        done
+        if [ "$hookBroken" = 0 ]; then
+          mkdir -p "$mountSource/state/claude"
+          if ! SBX_BUNDLE_DIR="$FAKE_REPO/best-practices" CLAUDE_CONFIG_DIR="$mountSource/state/claude" \
+            bash "$FAKE_REPO/claude/start.d/10-best-practices"; then
+            echo "[sbx] ERROR: start hook /etc/sbx/start.d/10-best-practices failed; the container was not started." >&2
+            exit 1
+          fi
+        fi
+        sh -c "$lastArg"
+        exit $?
+        ;;
       *"--entrypoint claude"*)
         fakePin=$(sed -n 's/^ARG CLAUDE_CODE_VERSION=//p' "$FAKE_REPO/claude/Dockerfile")
         printf '%s (Claude Code)\n' "${FAKE_CLAUDE_VERSION:-$fakePin}"
@@ -526,11 +563,12 @@ expect "runner: healthy run prints PASS: H-09" has_text "$WORK/out.healthy" "PAS
 expect "runner: healthy run prints PASS: H-10" has_text "$WORK/out.healthy" "PASS: H-10"
 expect "runner: healthy run prints PASS: H-11" has_text "$WORK/out.healthy" "PASS: H-11"
 expect "runner: healthy run prints PASS: H-12" has_text "$WORK/out.healthy" "PASS: H-12"
-expect "runner: healthy run has 15 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "15"
+expect "runner: healthy run has 16 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "16"
 expect "runner: healthy run prints PASS: Coexistence" has_text "$WORK/out.healthy" "PASS: Coexistence"
 expect "runner: healthy run prints PASS: H-13" has_text "$WORK/out.healthy" "PASS: H-13"
 expect "runner: healthy run prints PASS: H-15" has_text "$WORK/out.healthy" "PASS: H-15"
-expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 15 passed, 0 failed, 0 not run"
+expect "runner: healthy run prints PASS: H-17" has_text "$WORK/out.healthy" "PASS: H-17"
+expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 16 passed, 0 failed, 0 not run"
 expect "runner: healthy run prints the manual pass commands" has_text "$WORK/out.healthy" "manual/h07-login.sh"
 expect "runner: the cleanup line has docker compose down and the run folder" \
   has_text "$WORK/out.healthy" "SBX_DIR=$healthyRunDir docker compose down && rm -rf $healthyRunDir"
@@ -560,7 +598,7 @@ reset_state
 run_runner "$WORK/out.badid" FAKE_ID="uid=0(root) gid=0(root)"
 expect "runner: a wrong id exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a wrong id prints FAIL: H-04" has_text "$WORK/out.badid" "FAIL: H-04"
-expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 14 passed, 1 failed, 0 not run"
+expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 15 passed, 1 failed, 0 not run"
 expect "runner: a wrong id still prints the Next block" has_text "$WORK/out.badid" "manual/h13-doctor.sh"
 
 echo "--- sandbox started without the bundle sync"
@@ -787,6 +825,29 @@ FIXTURE=""
 run_standalone "$WORK/out.h15.none" h15-bundle-synced-and-visible.sh
 expect "H-15: no test sandbox fails" equals "$CHECK_RC" "1"
 expect "H-15: no test sandbox says to run run-all.sh first" has_text "$WORK/out.h15.none" "run-all.sh first"
+
+echo "--- H-17 on its own"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h17" h17-start-offline-and-failing-hook.sh
+expect "H-17: an offline start that syncs and a failing hook that stops pass" equals "$CHECK_RC" "0"
+expect "H-17: prints PASS: H-17" has_text "$WORK/out.h17" "PASS: H-17"
+expect "H-17: the offline start synced the rules into its own folder"   diff -r -q "$REPO/best-practices/rules" "$FIXTURE/h17/state/claude/rules"
+expect "H-17: the test sandbox state was not touched" test ! -e "$FIXTURE/state/claude"
+sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.h17"
+expect "H-17: both containers run with --rm, no network, no capabilities, no new privileges"   equals "$(grep -c '^run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true ' "$WORK/args.h17")" "2"
+expect "H-17: only the failing container gets a broken config folder"   equals "$(grep -c 'CLAUDE_CONFIG_DIR=/proc/no-such-dir' "$WORK/args.h17")" "1"
+run_standalone "$WORK/out.h17.offline" h17-start-offline-and-failing-hook.sh FAKE_OFFLINE_FAIL=1
+expect "H-17: an offline start that fails fails the check" equals "$CHECK_RC" "1"
+expect "H-17: the offline start is named" has_text "$WORK/out.h17.offline" "offline start"
+run_standalone "$WORK/out.h17.ignored" h17-start-offline-and-failing-hook.sh FAKE_HOOK_IGNORED=1
+expect "H-17: a failing hook that does not stop the start fails the check" equals "$CHECK_RC" "1"
+expect "H-17: the command that ran is reported" has_text "$WORK/out.h17.ignored" "command ran"
+reset_state
+FIXTURE=""
+run_standalone "$WORK/out.h17.none" h17-start-offline-and-failing-hook.sh
+expect "H-17: no run folder fails" equals "$CHECK_RC" "1"
+expect "H-17: no run folder says so" has_text "$WORK/out.h17.none" "no run folder"
 
 echo "--- Coexistence on its own"
 reset_state
