@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 1
-current_phase_name: Two-Mount Claude Sandbox
+current_phase: "01.2"
+current_phase_name: Best-practices bundle baked into the image (stopgap)
 status: planning
-stopped_at: Phase 01.1 complete, ready to plan Phase 1
-last_updated: "2026-10-04T02:12:14.112Z"
+stopped_at: Phase 1 complete, ready to plan Phase 01.2
+last_updated: "2026-10-04T02:26:01.376Z"
 last_activity: 2026-10-04
-last_activity_desc: Phase 01.1 complete, transitioned to Phase 1
-state_head: 6fc034deda52348f1bf761964c16c2e5cc47011d
+last_activity_desc: Phase 1 complete, transitioned to Phase 01.2
+state_head: 8342ba664351c75d055dd579754d821fdd73ff3e
 progress:
   total_phases: 9
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
   completed_plans: 8
-  percent: 11
+  percent: 22
 ---
 
 # Project State
@@ -27,17 +27,17 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 
 ## Current Position
 
-Phase: 1 — Two-Mount Claude Sandbox
+Phase: 01.2 — Best-practices bundle baked into the image (stopgap)
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-04 — Phase 01.1 complete, transitioned to Phase 1
+Last activity: 2026-10-04 — Phase 1 complete, transitioned to Phase 01.2
 
-Progress: [█░░░░░░░░░] 11%
+Progress: [██░░░░░░░░] 22%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 8
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -46,6 +46,7 @@ Progress: [█░░░░░░░░░] 11%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01.1 | 4 | - | - |
+| 1 | 4 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -117,5 +118,5 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-04T02:03:25.646Z
-Stopped at: Phase 01.1 complete; Phase 1 needs re-verification
+Stopped at: Phase 1 complete, ready to plan Phase 01.2
 Resume file: None

@@ -9,19 +9,19 @@ Requirements for this milestone (ClaudeCode sandbox made solid). Each maps to ro
 
 ### Layout
 
-- [ ] **LAY-01**: The sandbox folder `<sandbox>` is the container's only mount, at `/home/sandbox/workspace`; code lives in `<sandbox>/<name>` and state in `<sandbox>/state`. Nothing is mounted over `/home/sandbox`, so the image's `.bashrc`, `.local`, etc. are visible
-- [ ] **LAY-02**: Claude login, settings, and session history live in `<sandbox>/state/claude` on the Mac (via `CLAUDE_CONFIG_DIR`, inside the one directory mount, never a single-file mount) and survive both container recreate and image rebuild
-- [ ] **LAY-03**: Bash history persists in the sandbox state folder and survives container recreate
-- [ ] **LAY-04**: Stopping, removing, or recreating a container never deletes workspace or state data (no `down -v`, no `VOLUME /home/sandbox`)
+- [x] **LAY-01**: The sandbox folder `<sandbox>` is the container's only mount, at `/home/sandbox/workspace`; code lives in `<sandbox>/<name>` and state in `<sandbox>/state`. Nothing is mounted over `/home/sandbox`, so the image's `.bashrc`, `.local`, etc. are visible
+- [x] **LAY-02**: Claude login, settings, and session history live in `<sandbox>/state/claude` on the Mac (via `CLAUDE_CONFIG_DIR`, inside the one directory mount, never a single-file mount) and survive both container recreate and image rebuild
+- [x] **LAY-03**: Bash history persists in the sandbox state folder and survives container recreate
+- [x] **LAY-04**: Stopping, removing, or recreating a container never deletes workspace or state data (no `down -v`, no `VOLUME /home/sandbox`)
 
 ### Image
 
 - [ ] **IMG-01**: A single shared base image provides common Linux tools, git, gh, Node.js 24, Python 3 + uv, JDK 21 (Temurin), and Maven
-- [ ] **IMG-02**: The Claude image builds `FROM` the shared base and adds only agent-specific tools
+- [x] **IMG-02**: The Claude image builds `FROM` the shared base and adds only agent-specific tools
 - [ ] **IMG-03**: Every version (base OS tag, toolchains, Claude Code, GSD, ccusage) is pinned in one `versions.env`. No floating `latest` and no runtime installs
 - [ ] **IMG-04**: Adding a new tool means editing one line (Dockerfile or `versions.env`) and rebuilding
-- [ ] **IMG-05**: Images build and run natively on Apple Silicon (arm64) with Docker Desktop
-- [ ] **IMG-06**: The agent runs as the non-root `sandbox` user, and git works on mounted repos without "dubious ownership" errors
+- [x] **IMG-05**: Images build and run natively on Apple Silicon (arm64) with Docker Desktop
+- [x] **IMG-06**: The agent runs as the non-root `sandbox` user, and git works on mounted repos without "dubious ownership" errors
 
 ### Agent Tools
 
@@ -122,16 +122,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LAY-01 | Phase 1 | Pending |
-| LAY-02 | Phase 1 | Pending |
-| LAY-03 | Phase 1 | Pending |
-| LAY-04 | Phase 1 | Pending |
+| LAY-01 | Phase 1 | Complete |
+| LAY-02 | Phase 1 | Complete |
+| LAY-03 | Phase 1 | Complete |
+| LAY-04 | Phase 1 | Complete |
 | IMG-01 | Phase 2 | Pending |
-| IMG-02 | Phase 1 | Pending |
+| IMG-02 | Phase 1 | Complete |
 | IMG-03 | Phase 2 | Pending |
 | IMG-04 | Phase 2 | Pending |
-| IMG-05 | Phase 1 | Pending |
-| IMG-06 | Phase 1 | Pending |
+| IMG-05 | Phase 1 | Complete |
+| IMG-06 | Phase 1 | Complete |
 | TOOL-01 | Phase 2 | Pending |
 | TOOL-02 | Phase 2 | Pending |
 | TOOL-03 | Phase 2 | Pending |
