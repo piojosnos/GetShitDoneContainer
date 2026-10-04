@@ -18,16 +18,18 @@ trap 'exit 130' INT TERM
 trap print_next_block EXIT
 
 # Check lists, in run order. Each check names what it needs in its "# Depends on:" line.
+# - The Compose check is fatal: without Compose v2 nothing else can run.
 # - Checks that need nothing from the sandbox come first.
 # - Then the checks on the running sandbox; a failure does not stop the others.
 # - Then the chain of checks that stop and restart the sandbox; it stops at its first failure.
 # - Then Coexistence, which compares against the state at the start of the run.
-noSandboxCheckList=""
+fatalCheck="h00-compose-v2.sh"
+noSandboxCheckList="h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh"
 sandboxCheckList="h04-nonroot-user.sh"
 chainCheckList=""
 finalCheckList=""
 
-remainingList="$noSandboxCheckList $sandboxCheckList $chainCheckList $finalCheckList"
+remainingList="$fatalCheck $noSandboxCheckList $sandboxCheckList $chainCheckList $finalCheckList"
 passedCount=0
 failedCount=0
 notRunCount=0
@@ -137,6 +139,10 @@ snapshot_old_containers >"$RUN/logs/old-containers.before"
 
 if ! remove_leftover_test_container; then
   fatal "an earlier sbx-hosttest container is in the way and was not removed (see the messages above)"
+fi
+
+if ! run_check "$fatalCheck"; then
+  finish "the Compose check failed"
 fi
 
 info "building the images (logs in $RUN/logs)"

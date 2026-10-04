@@ -359,8 +359,11 @@ expect "docker log: no down with a volume flag" lacks_match "$WORK/args.healthy"
 expect "docker log: the caller's decoy values never reach docker" lacks_match "$FAKE_LOG" 'demo|evil|/elsewhere'
 expect "docker log: every exec and inspect names sbx-hosttest" \
   equals "$(grep -E '^(exec|container inspect) ' "$WORK/args.healthy" | grep -vc 'sbx-hosttest')" "0"
-expect "docker log: every compose call but the SBX_DIR probe carries the test name and the run folder" \
-  equals "$(grep 'ARGS: compose' "$FAKE_LOG" | grep -v ' config' | grep -vc "SBX_NAME=hosttest SBX_DIR=$healthyRunDir ")" "0"
+expect "docker log: every compose up and down carries the test name and the run folder" \
+  equals "$(grep -E 'ARGS: compose .* (up|down)( |$)' "$FAKE_LOG" | grep -vc "SBX_NAME=hosttest SBX_DIR=$healthyRunDir ")" "0"
+expect "docker log: the sandbox was started" has_match "$FAKE_LOG" 'ARGS: compose .* up -d --wait'
+expect "docker log: every compose call names the test name" \
+  equals "$(grep 'ARGS: compose' "$FAKE_LOG" | grep -vc 'SBX_NAME=hosttest ')" "0"
 expect "docker log: the SBX_DIR probe runs without SBX_DIR and with the test name" \
   has_match "$FAKE_LOG" 'SBX_NAME=hosttest SBX_DIR=unset COMPOSE_PROJECT_NAME=unset ARGS: compose .* config'
 expect "docker log: the plain docker run uses the real image tag" has_match "$WORK/args.healthy" '^run --rm sbx-claude:local claude --version'
@@ -374,7 +377,7 @@ reset_state
 run_runner "$WORK/out.badid" FAKE_ID="uid=0(root) gid=0(root)"
 expect "runner: a wrong id exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a wrong id prints FAIL: H-04" has_text "$WORK/out.badid" "FAIL: H-04"
-expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 0 passed, 1 failed, 0 not run"
+expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 4 passed, 1 failed, 0 not run"
 expect "runner: a wrong id still prints the Next block" has_text "$WORK/out.badid" "manual/h13-doctor.sh"
 
 echo "--- failed build"
