@@ -22,11 +22,13 @@ trap print_next_block EXIT
 # - Checks that need nothing from the sandbox come first.
 # - Then the checks on the running sandbox; a failure does not stop the others.
 # - Then the chain of checks that stop and restart the sandbox; it stops at its first failure.
+#   H-10 is last because it is the most likely to fail for an environmental reason (Compose may
+#   create a missing folder), and it leaves the sandbox up either way.
 # - Then Coexistence, which compares against the state at the start of the run.
 fatalCheck="h00-compose-v2.sh"
 noSandboxCheckList="h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh"
 sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh"
-chainCheckList="h08-history-survives-recreate.sh"
+chainCheckList="h08-history-survives-recreate.sh h11-stop-is-quick-and-safe.sh h09-rebuild-keeps-files-no-volumes.sh h10-missing-folder-refused.sh"
 finalCheckList="coexistence.sh"
 
 remainingList="$fatalCheck $noSandboxCheckList $sandboxCheckList $chainCheckList $finalCheckList"
