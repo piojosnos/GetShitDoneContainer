@@ -1,15 +1,13 @@
 ---
 phase: 01-two-mount-claude-sandbox
-reviewed: 2026-10-01T00:00:00Z
+reviewed: 2026-10-04T00:00:00Z
 depth: standard
-files_reviewed: 6
+files_reviewed: 4
 files_reviewed_list:
-  - SANDBOX.md
   - base/Dockerfile
   - base/sbx-entrypoint
   - claude/Dockerfile
   - compose.yml
-  - tests/static-check.sh
 findings:
   critical: 0
   warning: 3
@@ -20,78 +18,86 @@ status: issues_found
 
 # Phase 1: Code Review Report
 
-**Reviewed:** 2026-10-01
+**Reviewed:** 2026-10-04
 **Depth:** standard
-**Files Reviewed:** 6
+**Files Reviewed:** 4
 **Status:** issues_found
 
 ## Summary
 
-Reviewed the two-mount sandbox layout: base and Claude images, the mount-check entrypoint, compose.yml, the host checklist in SANDBOX.md and the static checker. `tests/static-check.sh` runs clean here (all PASS; shellcheck and hadolint not installed). The entrypoint is executable in git (mode 100755). The `--allow-scripts` npm flag is documented as observed in the phase research, so it is not flagged.
+Re-review of the single-mount layout: base image, Claude image, the entrypoint mount guard and `compose.yml`. Docker is not available here, so nothing was built or run; findings come from reading the files and from Docker/Compose behaviour as documented.
 
-No data-loss or isolation-breaking defects were found in the static artifacts. Three warnings need attention. One is a documented behaviour the code does not deliver. One is a host checklist step that overwrites the user's real git identity. One is a supply-chain integrity gap in a project whose stated concern is supply-chain safety. Docker was not available, so none of the runtime behaviour was exercised.
+Carried over from the previous review and still open: the Claude Code install integrity gap (WR-03), the "bind mount" wording in the entrypoint (IN-01) and the missing absolute-path check on `SBX_DIR` (IN-02). Fixed since the previous review: the history "shared between shells" claim is gone from `base/Dockerfile`, and the orphaned mkdir banner now sits above the `RUN mkdir`. The previous WR-02 and IN-04 live in SANDBOX.md and tests/static-check.sh, which are out of scope for this pass.
+
+New this round: the project-folder guard in the entrypoint can never fire because of `working_dir`, and a comment in `base/Dockerfile` states the opposite of what Compose is known to do. No data-loss or isolation-breaking defects were found.
 
 ## Warnings
 
-### WR-01: "History is shared between all open shells" is not delivered by `history -a` alone
+### WR-01: The entrypoint's "project folder is missing" check is defeated by `working_dir`
 
-**File:** `base/Dockerfile:68-79` (also `SANDBOX.md:48`)
-**Issue:** The Dockerfile comment says "concurrent shells see each other's history", and SANDBOX.md says history is "shared between all open shells". `PROMPT_COMMAND="history -a"` only appends this shell's new commands to the file. It never reads other shells' commands into the running shell (that needs `history -n` or `history -r`). A shell already open will not see commands typed in another shell until a new shell starts. Persistence works. The sharing claim does not. H-08 does not catch this, because it opens a fresh shell after the recreate.
-**Fix:** Either make the behaviour match the claim:
-```dockerfile
-PROMPT_COMMAND="history -a; history -n"
+**File:** `compose.yml:22`, `base/sbx-entrypoint:32`
+**Issue:** `working_dir: /home/sandbox/workspace/${SBX_NAME}` points inside the bind mount. When the container is created, the Docker daemon creates a missing working directory (and chowns it to the container user) before the entrypoint runs. A mistyped `SBX_NAME` against a valid `SBX_DIR` therefore gets an empty `$SBX_DIR/<typo>/` created on the Mac, and `[ -d "$ws/$SBX_NAME" ]` always passes. The check is dead code for the one case it was written for. SANDBOX.md (line 116 and the troubleshooting row at line 155) and the comment at `compose.yml:21` ("The entrypoint needs SBX_NAME to check it exists") promise an error that cannot happen. Check H-10 only exercises a missing `SBX_DIR`, so it does not catch this.
+**Fix:** Do not let Docker create the directory. Either start in a folder that always exists and `cd` after the check:
+```yaml
+working_dir: /home/sandbox/workspace
 ```
-or drop the "shared between all open shells" and "concurrent shells see each other's history" wording from both files, and say new shells see everything written so far.
-
-### WR-02: H-06 overwrites the user's persistent git identity with "T"
-
-**File:** `SANDBOX.md:218`
-**Issue:** `git config --global user.name T` writes to `$GIT_CONFIG_GLOBAL`, which is `state/git/config` on the Mac. That file is the persistent identity this layout exists to keep. A user who already set a real name, or who re-runs the checklist on a live sandbox, has `user.name` silently replaced with `T`. Later commits are then authored as "T". The checklist never restores it.
-**Fix:** Use a throwaway config for the persistence probe, or set a probe key and unset it:
 ```bash
-docker exec sbx-demo sh -c 'git config --global sbx.probe 1 && cat $GIT_CONFIG_GLOBAL && git config --global --unset sbx.probe'
+# end of base/sbx-entrypoint, before exec
+cd "$ws/$SBX_NAME"
+exec "$@"
 ```
-Alternatively, say explicitly that the step sets the real identity and tell the user to substitute their own name and email.
+(docker exec shells would then start at `workspace/`; give them the project folder with a `bash` wrapper or `-w`.) Or keep `working_dir` and drop the check and its documentation, accepting that a typo creates an empty folder. Add a host test for "valid SBX_DIR, mistyped SBX_NAME".
 
-### WR-03: Claude Code install has no integrity verification, and the Node and gh checksums come from the same origin as the artifacts
+### WR-02: `create_host_path: false` is known to be ignored, and `base/Dockerfile` says the opposite
 
-**File:** `claude/Dockerfile:19`, `base/Dockerfile:28-50`
-**Issue:** The comments present Node and gh as "checksum-verified". The SHASUMS256.txt and checksums.txt files are fetched over HTTPS from the same host as the tarballs, with no signature check (nodejs.org publishes SHASUMS256.txt.asc). That detects corruption but not a compromised origin. Claude Code, which holds the login token and runs with network access, is installed by version pin only. The npm integrity hash is not compared to a known value. The project's constraints exist because a package was already compromised once, and an unverified npm install is the weakest link in the image.
-**Fix:** At minimum, pin the expected integrity and compare it at build time:
+**File:** `base/Dockerfile:79-80`, `compose.yml:35-45`
+**Issue:** `base/Dockerfile` says compose "never creates anything on the Mac". SANDBOX.md (lines 128-129 and 158) records that some Compose versions ignore `create_host_path: false`, and the H-10 self-test treats a Docker-created folder as an expected failure mode. The `compose.yml` comment ("asks Compose to refuse") is hedged, but the Dockerfile comment is flatly wrong, and the compose setting offers no real protection on the affected versions. The entrypoint then refuses to start, but the stray folder stays behind.
+**Fix:** Correct the Dockerfile comment to "Compose is asked not to create it, but may ignore that; the entrypoint refuses an empty folder". For an actual guard, use the sentinel approach already noted in SANDBOX.md: an `env_file` at the root of `SBX_DIR`, which makes Compose itself fail before any container exists.
+
+### WR-03: Claude Code install has no integrity verification; Node and gh checksums share an origin with the artifacts
+
+**File:** `claude/Dockerfile:17`, `base/Dockerfile:23-41`
+**Issue:** Unchanged from the previous review. Node's `SHASUMS256.txt` and gh's checksums file are fetched over HTTPS from the same host as the tarballs, with no signature check (nodejs.org publishes `SHASUMS256.txt.asc`). That detects corruption, not a compromised origin. Claude Code, which holds the login token, is installed by version pin only, with no comparison of the npm integrity hash. This project exists partly because a package was compromised once.
+**Fix:** Pin expected hashes as ARGs and compare at build time:
 ```dockerfile
 ARG CLAUDE_CODE_INTEGRITY=sha512-...
-RUN test "$(npm view "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" dist.integrity)" = "${CLAUDE_CODE_INTEGRITY}" && npm install -g ...
+RUN test "$(npm view "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" dist.integrity)" = "${CLAUDE_CODE_INTEGRITY}" \
+    && npm install -g ...
 ```
-Also consider hardcoding the Node and gh SHA-256 values per architecture as ARGs, or verifying the Node GPG signature. Otherwise, reword the comments to say "corruption check" and record the accepted risk.
+Consider hardcoded per-arch SHA-256 values for Node and gh, or GPG verification of Node's SHASUMS. Otherwise state in the comments that these are corruption checks and record the accepted risk.
 
 ## Info
 
-### IN-01: Entrypoint cannot tell a bind mount from tmpfs or a named volume, but its message and the docs claim it can
+### IN-01: Entrypoint message says "bind mount" but only checks for a mount point
 
-**File:** `base/sbx-entrypoint:17-27`, `SANDBOX.md:103`
-**Issue:** `is_mount` only checks that the path is a mount point. A `--tmpfs` mount passes and loses data on stop. A named volume also passes, which contradicts the "no volumes" rule. The error text says "is not a bind mount" and the docs say "a real bind mount to a folder on the Mac". The guard covers the actual accident (no mounts at all) but overstates its strength.
-**Fix:** Soften the wording to "is not a mount point". Optionally also compare the filesystem type in field 9 onward of `mountinfo`, and reject `tmpfs`.
+**File:** `base/sbx-entrypoint:28`
+**Issue:** `is_mount` accepts any mount at the path, including `tmpfs` (data lost on stop) and a named volume (contradicts the "no volumes" rule in `compose.yml:10`). The error text "is not a bind mount" and the header comment "a real, writable mount" overstate the guard.
+**Fix:** Say "is not a mount point", or also read the filesystem type from `mountinfo` (fields after the `-` separator) and reject `tmpfs`.
 
-### IN-02: Orphaned section comment in base/Dockerfile
+### IN-02: `compose.yml` does not enforce an absolute `SBX_DIR`
 
-**File:** `base/Dockerfile:81-87`
-**Issue:** The "Home directories and mount targets ... Created AFTER switching to sandbox" banner sits before the entrypoint block and the `USER sandbox` line. The `mkdir` it describes is at line 101, after the entrypoint section, so the comment describes code that is not beneath it.
-**Fix:** Move the banner down to sit directly above `RUN mkdir -p ...`.
+**File:** `compose.yml:42`
+**Issue:** The error text asks for an "absolute host path", but only emptiness is checked. A relative value is resolved against the compose file's directory, which can mount a folder inside the repo. A `~/` path is not expanded by Compose and fails confusingly.
+**Fix:** Cheapest option is a shell preflight (`case "$SBX_DIR" in /*) ;; *) echo "SBX_DIR must be absolute" >&2 ;; esac`) in the documented start steps; Compose cannot validate the shape itself.
 
-### IN-03: SANDBOX.md misdescribes the SBX_NAME rule
+### IN-03: Base image and apt packages are not pinned by digest
 
-**File:** `SANDBOX.md:11`
-**Issue:** It says the name "must start with a letter or digit". The project name is `sbx-${SBX_NAME}`, so the leading character is always `s`, and `-foo` or `_foo` would be accepted. The real constraint is lowercase letters, digits, `-` and `_`. Separately, `compose.yml` does not enforce an absolute `SBX_DIR`, even though the doc says to use one. A relative value is resolved by Compose against the compose file's directory, which could mount a folder inside the repo.
-**Fix:** Drop the "must start with" clause. Optionally state that `SBX_DIR` must be absolute, and add it to the preflight loop.
+**File:** `base/Dockerfile:4`, `base/Dockerfile:16`
+**Issue:** `ubuntu:24.04` is a moving tag and the apt packages are unpinned, while Node, gh and Claude Code are pinned exactly. Rebuilds can differ without any version bump.
+**Fix:** Pin `FROM ubuntu:24.04@sha256:<digest>` and bump it deliberately, or note in the header comment that the OS layer is intentionally rolling.
 
-### IN-04: Hardcoded base commit in the static checker will fail on any later legitimate edit
+### IN-04: Entrypoint reports a raw `mkdir` error when `state/` is not writable
 
-**File:** `tests/static-check.sh:213-219`
-**Issue:** `BASE_COMMIT=934e2c5...` is compared against the working tree for `ClaudeCode`, `OpenCode` and `README.md`. Any intended later change, such as a README update for the new layout, makes the check fail permanently. The Constraints section says the old layout stays untouched only until Phase 5.
-**Fix:** Retire the check or change its scope when the old layout is removed in Phase 5. Alternatively, drop `README.md` from the pathspec and note the Phase 5 expiry in a comment.
+**File:** `base/sbx-entrypoint:33-38`
+**Issue:** Only `$ws` writability is checked with a friendly message. If `$state` exists but is not writable (for example created by a different user), `mkdir -p` fails under `set -eu` with a bare "Permission denied" and no `[sbx]` hint. The unquoted `${SBX_STATE_DIRS:-}` is also subject to globbing, so a name containing `*` would expand.
+**Fix:**
+```bash
+[ -w "$state" ] || die "$state is not writable by $(id -un)."
+```
+and add `set -f` before the loop (or after it, `set +f`) if glob-safety is wanted.
 
 ---
 
-_Reviewed: 2026-10-01_
+_Reviewed: 2026-10-04_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
