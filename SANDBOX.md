@@ -138,7 +138,9 @@ If `up` fails, `docker compose logs` shows the `[sbx] ERROR` line that says what
 
 ## Verify a new build
 
-After building, or after changing anything under `base/`, `claude/` or `compose.yml`, run the Mac test plan in [`tests/host-checklist.md`](tests/host-checklist.md).
+After building, or after changing anything under `base/`, `claude/` or `compose.yml`, run `bash tests/host/run-all.sh` on the Mac, then the short manual pass in [`tests/host-checklist.md`](tests/host-checklist.md).
+
+It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
 
 ## Troubleshooting and known limits
 
