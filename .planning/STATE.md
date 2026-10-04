@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.1"
 current_phase_name: Automated host tests (INSERTED)
 status: executing
-stopped_at: Completed 01.1-02-PLAN.md
-last_updated: "2026-10-04T01:25:23.187Z"
+stopped_at: Completed 01.1-03-PLAN.md
+last_updated: "2026-10-04T01:29:45.588Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 01.1 execution started
-state_head: ccf576c043f62f839251b7be4f34bc03166cabd0
+state_head: 8d880486e4a855c77afc11f5b069207a8344e596
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-30)
 ## Current Position
 
 Phase: 01.1 (Automated host tests (INSERTED)) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-10-04 — Phase 01.1 execution started
 
@@ -62,6 +62,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P04 | 2 min | 1 tasks | 2 files |
 | Phase 01.1 P01 | 10 min | 3 tasks | 9 files |
 | Phase 01.1 P02 | 15 min | 3 tasks | 11 files |
+| Phase 01.1 P03 | 8 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,8 @@ Recent decisions affecting current work:
 - [Phase 01.1]: 01.1-01: H-00 passes for Compose major 2 or higher (releases jumped from 2.x to 5.x), run_timeout polls so no sleeping orphan holds a captured pipe, and the never-delete guard exempts only the printed cleanup line
 - [Phase 01.1]: Coexistence writes only logs/old-containers.after, never the baseline; with no baseline it checks git alone (git only; no baseline)
 - [Phase 01.1]: H-10 always ends with the real sandbox up and folds a failed restart into its FAIL line; H-08 recreates only after its first half passes
+- [Phase 01.1]: Manual helpers put the terminal guard before sourcing lib.sh, because host_init already makes a docker call
+- [Phase 01.1]: H-09 helper re-asserts the test sandbox after compose_up, before opening Claude
 
 ### Pending Todos
 
@@ -111,6 +114,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-04T01:25:23.142Z
-Stopped at: Completed 01.1-02-PLAN.md
+Last session: 2026-10-04T01:29:45.542Z
+Stopped at: Completed 01.1-03-PLAN.md
 Resume file: None

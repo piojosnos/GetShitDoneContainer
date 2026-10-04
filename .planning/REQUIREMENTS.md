@@ -39,8 +39,8 @@ Automated checks that run on the Mac, where Docker runs.
 
 - [x] **HT-01**: One script per host check (H-00 to H-13, plus Coexistence) under `tests/host/`, each printing a `PASS`/`FAIL` line with its check ID and exiting 0 or 1
 - [x] **HT-02**: `tests/host/run-all.sh` runs every automatable check unattended with no required environment variables: it builds the images, creates a throwaway sandbox, prints a summary, and exits non-zero on any failure. It never deletes files; it prints the cleanup command instead
-- [ ] **HT-03**: Steps that need a human (Claude login, resume after rebuild, `claude doctor`) are a manual pass in `tests/host-checklist.md`, each run through a helper script that checks what it can automatically
-- [ ] **HT-04**: The scripts run with macOS stock bash 3.2 and Docker Desktop, and never touch real sandboxes, the user's git identity, or old-layout containers
+- [x] **HT-03**: Steps that need a human (Claude login, resume after rebuild, `claude doctor`) are a manual pass in `tests/host-checklist.md`, each run through a helper script that checks what it can automatically
+- [x] **HT-04**: The scripts run with macOS stock bash 3.2 and Docker Desktop, and never touch real sandboxes, the user's git identity, or old-layout containers
 - [ ] **HT-05**: All host checks pass on the Mac, which closes Phase 1's deferred host verification
 
 ### Best Practices
@@ -138,8 +138,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | USE-01 | Phase 2 | Pending |
 | HT-01 | Phase 1.1 | Complete |
 | HT-02 | Phase 1.1 | Complete |
-| HT-03 | Phase 1.1 | Pending |
-| HT-04 | Phase 1.1 | Pending |
+| HT-03 | Phase 1.1 | Complete |
+| HT-04 | Phase 1.1 | Complete |
 | HT-05 | Phase 1.1 | Pending |
 | BP-01 | Phase 1.2 | Pending |
 | BP-02 | Phase 1.2 | Pending |
