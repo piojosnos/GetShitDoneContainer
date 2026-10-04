@@ -12,7 +12,7 @@ name: "sbx-${SBX_NAME:?SBX_NAME is required (lowercase letters, digits, - and _)
 
 services:
   sandbox:
-    # Built on the Mac with: docker build -t sbx-claude:local claude/
+    # Built on the Mac with: docker build -f claude/Dockerfile -t sbx-claude:local .
     image: sbx-claude:local
     pull_policy: never             # a missing image is an error, never a pull from Docker Hub
     container_name: "sbx-${SBX_NAME}"

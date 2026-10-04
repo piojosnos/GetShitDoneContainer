@@ -248,10 +248,10 @@ build_images() {
   for imageName in base claude; do
     logFile="$RUN/logs/$logPrefix-$imageName.log"
     if [ "$cacheFlag" = "--no-cache" ]; then
-      docker build --no-cache -t "sbx-$imageName:local" "$REPO_DIR/$imageName" >"$logFile" 2>&1 </dev/null
+      docker build --no-cache -f "$REPO_DIR/$imageName/Dockerfile" -t "sbx-$imageName:local" "$REPO_DIR" >"$logFile" 2>&1 </dev/null
       buildStatus=$?
     else
-      docker build -t "sbx-$imageName:local" "$REPO_DIR/$imageName" >"$logFile" 2>&1 </dev/null
+      docker build -f "$REPO_DIR/$imageName/Dockerfile" -t "sbx-$imageName:local" "$REPO_DIR" >"$logFile" 2>&1 </dev/null
       buildStatus=$?
     fi
 

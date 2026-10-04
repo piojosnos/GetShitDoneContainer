@@ -21,9 +21,11 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 From the repo root. Build the base first: the Claude image starts `FROM` it.
 
 ```bash
-docker build -t sbx-base:local base/
-docker build -t sbx-claude:local claude/
+docker build -f base/Dockerfile -t sbx-base:local .
+docker build -f claude/Dockerfile -t sbx-claude:local .
 ```
+
+Both build from the repo root (the final `.`). A `.dockerignore` lets only `base/`, `claude/` and `best-practices/` into the build.
 
 ## Create a sandbox folder
 
@@ -101,8 +103,8 @@ Stop, rebuild both images (add `--no-cache` for a clean build), start again:
 
 ```bash
 docker compose down
-docker build -t sbx-base:local base/
-docker build -t sbx-claude:local claude/
+docker build -f base/Dockerfile -t sbx-base:local .
+docker build -f claude/Dockerfile -t sbx-claude:local .
 docker compose up -d --wait
 ```
 
@@ -138,7 +140,7 @@ If `up` fails, `docker compose logs` shows the `[sbx] ERROR` line that says what
 
 ## Verify a new build
 
-After building, or after changing anything under `base/`, `claude/` or `compose.yml`, run `bash tests/host/run-all.sh` on the Mac, then the short manual pass in [`tests/host-checklist.md`](tests/host-checklist.md).
+After building, or after changing anything under `base/`, `claude/`, `best-practices/` or `compose.yml`, run `bash tests/host/run-all.sh` on the Mac, then the short manual pass in [`tests/host-checklist.md`](tests/host-checklist.md).
 
 It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
 

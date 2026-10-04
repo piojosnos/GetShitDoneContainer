@@ -228,6 +228,7 @@ case "${1:-}" in
     while [ "$#" -gt 0 ]; do
       case "$1" in
         -t) imageTag=$2; shift 2 ;;
+        -f) shift 2 ;;
         *) shift ;;
       esac
     done
@@ -511,9 +512,9 @@ expect "docker log: the SBX_DIR probe runs without SBX_DIR and with the test nam
   has_match "$FAKE_LOG" 'SBX_NAME=hosttest SBX_DIR=unset COMPOSE_PROJECT_NAME=unset ARGS: compose .* config'
 expect "docker log: the plain docker run uses the real image tag" has_match "$WORK/args.healthy" '^run --rm sbx-claude:local claude --version'
 expect "docker log: the builds use the real tags" \
-  has_match "$WORK/args.healthy" '^build -t sbx-base:local .*/base$'
+  has_match "$WORK/args.healthy" '^build -f .*/base/Dockerfile -t sbx-base:local /'
 expect "docker log: the claude image is built after the base image" \
-  has_match "$WORK/args.healthy" '^build -t sbx-claude:local .*/claude$'
+  has_match "$WORK/args.healthy" '^build -f .*/claude/Dockerfile -t sbx-claude:local /'
 
 echo "--- failing check"
 reset_state
@@ -830,7 +831,7 @@ reset_state
 run_runner "$WORK/out.nocache" SBXTEST_NO_CACHE=1
 sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.nocache"
 expect "runner: SBXTEST_NO_CACHE=1 run exits 0" equals "$RUNNER_RC" "0"
-expect "runner: the first builds use the cache" equals "$(grep -c '^build -t ' "$WORK/args.nocache")" "2"
+expect "runner: the first builds use the cache" equals "$(grep -c '^build -f ' "$WORK/args.nocache")" "2"
 expect "runner: only the rebuild uses --no-cache" equals "$(grep -c '^build --no-cache ' "$WORK/args.nocache")" "2"
 
 echo "--- fatal H-00 in the runner"
