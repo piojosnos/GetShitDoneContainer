@@ -2,17 +2,17 @@
 gsd_state_version: "1.0"
 current_phase: "01.2"
 current_phase_name: Best-practices bundle baked into the image (stopgap)
-status: planning
-stopped_at: Phase 01.2 context gathered
-last_updated: "2026-10-04T05:08:16.195Z"
+status: verifying
+stopped_at: Completed 01.2-06-PLAN.md
+last_updated: "2026-10-04T08:01:41.264Z"
 last_activity: 2026-10-04
-last_activity_desc: Phase 1 complete, transitioned to Phase 01.2
-state_head: 11f3a169bc17668b18bd8f042de15a97f7a271af
+last_activity_desc: Phase 01.2 execution started
+state_head: a467f6115e04a4f1e377706c436ecb9f2d7b298a
 progress:
   total_phases: 9
   completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 14
+  completed_plans: 14
   percent: 22
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-04)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 01.2: Best-practices bundle baked into the image (stopgap)
+**Current focus:** Phase 01.2 — Best-practices bundle baked into the image (stopgap)
 
 ## Current Position
 
-Phase: 01.2 — Best-practices bundle baked into the image (stopgap)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-10-04 — Phase 1 complete, transitioned to Phase 01.2
+Phase: 01.2 (Best-practices bundle baked into the image (stopgap)) — EXECUTING
+Plan: 6 of 6
+Status: Phase complete — ready for verification
+Last activity: 2026-10-04 — Phase 01.2 execution started
 
 Progress: [██░░░░░░░░] 22%
 
@@ -65,6 +65,12 @@ Progress: [██░░░░░░░░] 22%
 | Phase 01.1 P02 | 15 min | 3 tasks | 11 files |
 | Phase 01.1 P03 | 8 min | 2 tasks | 5 files |
 | Phase 01.1 P04 | 35min | 3 tasks | 1 files |
+| Phase 01.2 P01 | 9 min | 2 tasks | 11 files |
+| Phase 01.2 P02 | 14 min | 2 tasks | 9 files |
+| Phase 01.2 P03 | 5 min | 2 tasks | 5 files |
+| Phase 01.2 P04 | 6 min | 2 tasks | 5 files |
+| Phase 01.2 P05 | 8 min | 2 tasks | 10 files |
+| Phase 01.2 P06 | 25 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -89,6 +95,16 @@ Recent decisions affecting current work:
 - [Phase 01.1]: H-09 helper re-asserts the test sandbox after compose_up, before opening Claude
 - [Phase 01.1]: H-10 passed on the Mac (Compose 2.40.0-desktop.1 honors create_host_path false); no compose.yml change, env_file sentinel follow-up not needed
 - [Phase 01]: Re-verified 5/5 against the one-mount layout, using the Phase 1.1 Mac run (01-UAT.md) as the host evidence; marked complete 2026-10-04
+- [Phase 01.2]: Start hook folder /etc/sbx/start.d runs in name order and fails fast with its own [sbx] ERROR line (no die() compose hint); sync list file is .best-practices-skills; both images build from the repo root with an allowlist .dockerignore
+- [Phase 01.2]: Bundle conflicts resolved AGENTS.md first, then newest memory; superseded merge-confirmation text dropped
+- [Phase 01.2]: GSD ship/pr-branch non-default-target caveat lives in the GSD workflow section of git-workflow.md
+- [Phase 01.2]: H-17 runs in the no-sandbox stage on its own $RUN/h17 folder, so the running test sandbox state is never touched — A failing or odd start hook must not disturb the sandbox the other checks share
+- [Phase 01.2]: The failing-hook container uses CLAUDE_CONFIG_DIR=/proc/no-such-dir so the real hook exits 1 without any test-only code path — mkdir under set -e fails there; the hook and entrypoint stay unchanged
+- [Phase 01.2]: Start hook needed no change: all refresh, safety and failure scenarios passed against the existing hook
+- [Phase 01.2]: H-16 runs right after H-08 in the restart chain (h08, h16, h11, h09, h10)
+- [Phase 01.2]: Managed settings hold exactly four Edit deny entries (rules, skill list, each bundle skill); guard rule managed_settings_cover_bundle keeps them in step with the bundle
+- [Phase 01.2]: H-14 reads owners and modes with find -printf inside the container, so the host portability rule on stat -c needs no exception
+- [Phase 01.2]: H-18 runs in the sandbox stage and is droppable; the fake API protocol from research needed no change at the pinned Claude
 
 ### Pending Todos
 
@@ -119,6 +135,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-04T05:08:16.136Z
-Stopped at: Phase 01.2 context gathered
-Resume file: .planning/phases/01.2-best-practices-bundle-baked-into-the-image-stopgap/01.2-CONTEXT.md
+Last session: 2026-10-04T08:01:41.196Z
+Stopped at: Completed 01.2-06-PLAN.md
+Resume file: None

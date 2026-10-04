@@ -47,8 +47,8 @@ Automated checks that run on the Mac, where Docker runs.
 
 The shared agent bundle: skills, standing rules (`AGENTS.md`, `code-conventions.md`), and memories.
 
-- [ ] **BP-01**: The image ships the best-practices bundle (from the repo, not a runtime download) at a path outside every mount, so no host mount can hide it
-- [ ] **BP-02**: On every container start, the bundle's skills and standing rules are synced into the persisted `~/.claude` (the image version wins). The bundle ships no memories, and memories the agent learned are never touched. Start still needs no network
+- [x] **BP-01**: The image ships the best-practices bundle (from the repo, not a runtime download) at a path outside every mount, so no host mount can hide it
+- [x] **BP-02**: On every container start, the bundle's skills and standing rules are synced into the persisted `~/.claude` (the image version wins). The bundle ships no memories, and memories the agent learned are never touched. Start still needs no network
 - [ ] **BP-03**: The bundle lives in its own git repo. Each sandbox keeps its own clone in its sandbox folder, so edits survive container recreate and image rebuild
 - [ ] **BP-04**: From inside any sandbox, the user (or agent) can edit the bundle, commit on a branch, push, and open a PR against the bundle repo
 - [ ] **BP-05**: A new sandbox starts with the latest bundle from git (a best-effort `git pull --ff-only` that never blocks an offline start), and a manual `git pull` in the clone updates a running sandbox
@@ -141,8 +141,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HT-03 | Phase 1.1 | Complete |
 | HT-04 | Phase 1.1 | Complete |
 | HT-05 | Phase 1.1 | Complete |
-| BP-01 | Phase 1.2 | Pending |
-| BP-02 | Phase 1.2 | Pending |
+| BP-01 | Phase 1.2 | Complete |
+| BP-02 | Phase 1.2 | Complete |
 | BP-03 | Phase 2.1 | Pending |
 | BP-04 | Phase 2.1 | Pending |
 | BP-05 | Phase 2.1 | Pending |
