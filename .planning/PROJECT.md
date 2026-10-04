@@ -93,6 +93,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 | Shared base image for common tools, with thin per-agent images on top | One place for Linux tools, JDK, Maven, etc. Sets up OpenCode and future agents | — Pending |
 | ClaudeCode first, OpenCode next, pluggable later | Get one sandbox solid before generalizing | — Pending |
 | Migration is documented, not scripted | Only about 4 existing sandboxes. Script only if it proves painful | — Pending |
+| One unattended host test run (`tests/host/run-all.sh`) plus a short manual pass verifies every image change on the Mac | The manual checklist was too slow, and Docker cannot run in the dev sandbox | Good: 14 of 14 checks and the 3 helpers passed on the Mac (2026-10-03) |
 
 ## Evolution
 
@@ -112,4 +113,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-30 after initialization*
+*Last updated: 2026-10-04 after Phase 1.1*

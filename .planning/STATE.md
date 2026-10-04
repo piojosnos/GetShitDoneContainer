@@ -20,10 +20,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-09-30)
+See: .planning/PROJECT.md (updated 2026-10-04)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 01.1 — Automated host tests (INSERTED)
+**Current focus:** Phase 1 — re-run verification (its host checks now pass via tests/host/run-all.sh), then mark it complete
 
 ## Current Position
 
@@ -94,11 +94,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 1]: Docker Desktop bind-mount ownership (the git "dubious ownership" issue) is inferred from community reports. Check it on the real Mac
 - [Phase 1]: Until Phase 3 there are no scripts, so the sandbox runs from a documented `docker compose` command
-- [Phase 2]: Confirm on the Mac that `DISABLE_UPDATES=1` really disables Claude's self-update (via `claude doctor`), and that ccusage's native binary is executable (chmod) on arm64
+- [Phase 2]: Confirm that ccusage's native binary is executable (chmod) on arm64 (DISABLE_UPDATES was confirmed by `claude doctor` in the Phase 1.1 Mac run)
 - [Phase 5]: Decide whether SCR-08 ("remove whole-home-mount layout") also covers the out-of-scope `OpenCode/` directory, or whether it stays for the next milestone
-- Phase 1 host verification H-00..H-13 + coexistence unrun (user deferred to Phase 2, 2026-10-01). Carry in: H-10 env_file-sentinel trigger, H-12 installed version == 2.1.285 pin, compose/Docker Desktop versions
+- [Phase 1]: Not marked complete yet; 01-VERIFICATION.md is stale. Re-run `/gsd-execute-phase 1` (host checks passed on the Mac in Phase 1.1)
+- [Phase 1.1]: Code review left 14 findings open (CR-01: run_timeout does not stop a docker call behind a shell function; WR-01..08 robustness). See 01.1-REVIEW-DISPOSITION.md
 
 ### Roadmap Evolution
 
@@ -117,5 +117,5 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-04T02:03:25.646Z
-Stopped at: Phase 01.1 complete, ready to plan Phase 1
+Stopped at: Phase 01.1 complete; Phase 1 needs re-verification
 Resume file: None
