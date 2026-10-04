@@ -12,6 +12,8 @@ set -eu
 # - Creates the state subfolders that are missing. Installs nothing.
 # - SBX_STATE_DIRS: extra state subfolders, set by the agent image (Claude adds
 #   "claude"), so this base script never needs to know which agent is on top.
+# - Then it runs the start hooks in /etc/sbx/start.d (agent images add theirs there),
+#   and the first failure stops the start.
 
 ws=/home/sandbox/workspace
 state=$ws/state
@@ -35,6 +37,22 @@ is_mount "$ws" || die "$ws is not a bind mount; its data would be lost on recrea
 # ${SBX_STATE_DIRS:-} is unquoted on purpose: one word per folder name.
 for d in shell gh git ${SBX_STATE_DIRS:-}; do
   mkdir -p "$state/$d"
+done
+
+# Every executable in /etc/sbx/start.d runs in name order, after the checks above and before
+# the command. The first failure stops the start. Names sort as text, so hooks use two-digit
+# prefixes (10-, 20-).
+hookDir=/etc/sbx/start.d
+
+for hook in "$hookDir"/*; do
+  if [ ! -f "$hook" ] || [ ! -x "$hook" ]; then
+    continue
+  fi
+
+  if ! "$hook"; then
+    echo "[sbx] ERROR: start hook $hook failed; the container was not started." >&2
+    exit 1
+  fi
 done
 
 exec "$@"

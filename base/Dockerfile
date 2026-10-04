@@ -1,6 +1,6 @@
 # Shared base for every sbx agent image.
 # - Holds nothing agent-specific.
-# - Build from the repo root: docker build -t sbx-base:local base/
+# - Build from the repo root: docker build -f base/Dockerfile -t sbx-base:local .
 FROM ubuntu:24.04
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -69,8 +69,14 @@ ENV HISTFILE=/home/sandbox/workspace/state/shell/bash_history \
 # --- Entrypoint ---
 # - Copied while still root: owned by root, mode 755.
 # - At start it checks the mount, then runs the command. See the script itself.
-COPY sbx-entrypoint /usr/local/bin/sbx-entrypoint
+COPY base/sbx-entrypoint /usr/local/bin/sbx-entrypoint
 RUN chmod 755 /usr/local/bin/sbx-entrypoint
+
+# --- Start hooks ---
+# - The entrypoint runs every executable here at container start, in name order.
+# - Root-owned and outside the mount.
+# - Agent images add their scripts here.
+RUN mkdir -p /etc/sbx/start.d
 
 # --- Home folders ---
 # - Runs at build time, inside the image. No mount exists yet.
