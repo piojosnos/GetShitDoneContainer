@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.2"
 current_phase_name: Best-practices bundle baked into the image (stopgap)
 status: executing
-stopped_at: Completed 01.2-04-PLAN.md
-last_updated: "2026-10-04T07:43:39.884Z"
+stopped_at: Completed 01.2-05-PLAN.md
+last_updated: "2026-10-04T07:54:17.567Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 01.2 execution started
-state_head: a4df3a50e0a3f26b3fa5301753a67364d17d1748
+state_head: 51980ffc5d9c46b81749633480745415c6a0a87a
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 14
-  completed_plans: 12
+  completed_plans: 13
   percent: 22
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 01.2 (Best-practices bundle baked into the image (stopgap)) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-10-04 — Phase 01.2 execution started
 
@@ -69,6 +69,7 @@ Progress: [██░░░░░░░░] 22%
 | Phase 01.2 P02 | 14 min | 2 tasks | 9 files |
 | Phase 01.2 P03 | 5 min | 2 tasks | 5 files |
 | Phase 01.2 P04 | 6 min | 2 tasks | 5 files |
+| Phase 01.2 P05 | 8 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -100,6 +101,8 @@ Recent decisions affecting current work:
 - [Phase 01.2]: The failing-hook container uses CLAUDE_CONFIG_DIR=/proc/no-such-dir so the real hook exits 1 without any test-only code path — mkdir under set -e fails there; the hook and entrypoint stay unchanged
 - [Phase 01.2]: Start hook needed no change: all refresh, safety and failure scenarios passed against the existing hook
 - [Phase 01.2]: H-16 runs right after H-08 in the restart chain (h08, h16, h11, h09, h10)
+- [Phase 01.2]: Managed settings hold exactly four Edit deny entries (rules, skill list, each bundle skill); guard rule managed_settings_cover_bundle keeps them in step with the bundle
+- [Phase 01.2]: H-14 reads owners and modes with find -printf inside the container, so the host portability rule on stat -c needs no exception
 
 ### Pending Todos
 
@@ -130,6 +133,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-04T07:43:39.815Z
-Stopped at: Completed 01.2-04-PLAN.md
+Last session: 2026-10-04T07:54:17.490Z
+Stopped at: Completed 01.2-05-PLAN.md
 Resume file: None
