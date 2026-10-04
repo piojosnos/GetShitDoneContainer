@@ -1,18 +1,18 @@
 ---
 gsd_state_version: "1.0"
 current_phase: "01.1"
-current_phase_name: Automated host tests
+current_phase_name: Automated host tests (INSERTED)
 status: executing
-stopped_at: Phase 01.1 context gathered
-last_updated: "2026-10-04T01:03:26.321Z"
-last_activity: 2026-09-30
-last_activity_desc: Phase 01 execution started
-state_head: 23b0a54423daf14e03a5993780957218a308b496
+stopped_at: Completed 01.1-01-PLAN.md
+last_updated: "2026-10-04T01:16:05.515Z"
+last_activity: 2026-10-04
+last_activity_desc: Phase 01.1 execution started
+state_head: 22cdf35abad9507804ec9816ea3c5d83a114f1c8
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 8
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-30)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 01 — Two-Mount Claude Sandbox
+**Current focus:** Phase 01.1 — Automated host tests (INSERTED)
 
 ## Current Position
 
-Phase: 01.1 (Automated host tests) — READY TO EXECUTE
-Plan: 4 of 4
+Phase: 01.1 (Automated host tests (INSERTED)) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-09-30 — Phase 01 execution started
+Last activity: 2026-10-04 — Phase 01.1 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P02 | 2 min | 2 tasks | 4 files |
 | Phase 01 P03 | 3 min | 2 tasks | 6 files |
 | Phase 01 P04 | 2 min | 1 tasks | 2 files |
+| Phase 01.1 P01 | 10 min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,7 @@ Recent decisions affecting current work:
 - [Phase 01]: Plan 01-02: history wired by image ENV only (HISTFILE plus PROMPT_COMMAND=history -a); git identity uses a state/git directory mount, never a single-file mount
 - [Phase 01]: 01-03: entrypoint detects missing mounts with awk over /proc/self/mountinfo field 5 and SBX_MOUNTS lets agent images add targets; compose drops all caps with no-new-privileges
 - [Phase 01]: 01-04: Host verification (H-00..H-13) DEFERRED by user to Phase 2 (not approved, not run); Phase 1 verified statically only
+- [Phase 01.1]: 01.1-01: H-00 passes for Compose major 2 or higher (releases jumped from 2.x to 5.x), run_timeout polls so no sleeping orphan holds a captured pipe, and the never-delete guard exempts only the printed cleanup line
 
 ### Pending Todos
 
@@ -106,6 +108,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-04T00:10:16.097Z
-Stopped at: Phase 01.1 context gathered
-Resume file: .planning/phases/01.1-automated-host-tests/01.1-CONTEXT.md
+Last session: 2026-10-04T01:16:05.471Z
+Stopped at: Completed 01.1-01-PLAN.md
+Resume file: None

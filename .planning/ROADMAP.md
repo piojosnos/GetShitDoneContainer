@@ -65,11 +65,11 @@ Plans:
   4. The scripts run on the Mac with stock bash 3.2 and Docker Desktop, and never touch the user's real sandboxes, real git identity, or old-layout containers.
   5. On the Mac, `tests/host/run-all.sh` passes every check. This also closes Phase 1's deferred host verification. `tests/host-checklist.md` shrinks to "run `tests/host/run-all.sh`", the manual pass, and how to read a failure.
 
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 01.1-01-PLAN.md: Tracer: lib.sh, run-all.sh, H-00/H-02/H-03/H-04/H-12, fake-docker self-test, guard rules (wave 1)
+- [x] 01.1-01-PLAN.md: Tracer: lib.sh, run-all.sh, H-00/H-02/H-03/H-04/H-12, fake-docker self-test, guard rules (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 01.1-02-PLAN.md: Remaining automated checks H-01, H-05, H-06, H-13, chain H-08/H-11/H-09/H-10, Coexistence (wave 2)
@@ -190,7 +190,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Two-Mount Claude Sandbox | 4/4 | In Progress|  |
-| 1.1. Automated host tests | 0/TBD | Not started | - |
+| 1.1. Automated host tests | 1/4 | In Progress|  |
 | 1.2. Best-practices bundle baked into the image (stopgap) | 0/TBD | Not started | - |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
