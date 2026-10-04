@@ -110,12 +110,59 @@ docker compose up -d --wait
 
 The login and history live in `state/` on the Mac, so the new container picks them up unchanged.
 
+## Best-practices bundle
+
+Every sandbox starts with the same standing rules and skills (`/pr-reply`, `/merged`), so you set nothing up per project.
+
+| Where | What |
+|---|---|
+| `best-practices/` in this repo | The source: `rules/` and `skills/`, plain Markdown |
+| `/opt/sbx/best-practices` in the image | A copy, outside the mount, read-only to the sandbox user |
+| `$SBX_DIR/state/claude` (`~/.claude`) | The working copy Claude reads, refreshed at every start |
+
+A start needs no network. What it does in `state/claude`:
+
+| In `state/claude` | What a start does |
+|---|---|
+| `rules/` | Replaced by the image's rules. A hand edit or a stray file is lost. |
+| Each bundle skill folder in `skills/` | Replaced by the image's copy. Its name is recorded in `.best-practices-skills`. |
+| Other skills (GSD's, your own) | Never touched. |
+| `projects/` (memories), `CLAUDE.md`, `settings.json`, the login | Never touched. |
+
+How a rule loads:
+
+| Rule file | Loads |
+|---|---|
+| No frontmatter | In every session |
+| `paths:` frontmatter (globs in quotes) | When Claude touches a matching file |
+
+Change a rule or a skill:
+
+1. Edit `best-practices/` in this repo.
+2. Open a PR and merge it.
+3. Rebuild both images (see "Rebuild without losing login").
+4. Restart the sandbox.
+
+An edit to the copy in `state/claude` is lost at the next start.
+
+Edit protection:
+
+- Managed settings in the image make Claude refuse to edit the synced rules, the skill list and the bundle skills, even with permissions bypassed.
+- It guards against accidental edits by Claude. It is not a security boundary: a script Claude runs can still write there until the next start.
+- Your own skills and `state/claude/CLAUDE.md` stay editable.
+
+Memories are not shipped. They belong to each project. A memory that proves general becomes a bundle rule by PR.
+
 ## Safety checks
 
 At start, the container refuses to run unless:
 
 - `/home/sandbox/workspace` is a real, writable mount of a folder on the Mac. Otherwise your work would land in the container's own layer and be lost on recreate.
 - The project folder (`$SBX_DIR/$SBX_NAME`) and `$SBX_DIR/state` exist. A mistyped `SBX_DIR` has neither.
+
+After the checks, the start runs the image's start hooks (the bundle sync is one):
+
+- A failing hook stops the start, so a sandbox never runs with a half-synced bundle.
 
 ### Image-only smoke tests
 
@@ -157,4 +204,7 @@ It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
 | `[sbx] ERROR: ... (the project folder) is missing` | Create it: `mkdir -p "$SBX_DIR/$SBX_NAME"`. Or `SBX_DIR` / `SBX_NAME` is mistyped. |
 | `claude --resume` shows nothing | Sessions are keyed by directory; start it from the same directory as before. |
 | A plain `docker run` is refused | Intended. Bypass the entrypoint, as in "Image-only smoke tests". |
+| The container stops right after `up` | Run `docker logs sbx-<name>`. The `[sbx] ERROR: start hook ... failed` line and the hook's own error above it say what broke. |
+| Claude refuses to edit a file under `~/.claude/rules` or a bundle skill | Intended. Edit `best-practices/` in this repo (see "Best-practices bundle"). |
+| A sandbox migrated from the old layout loads the same rules twice | Remove the `@AGENTS.md` and `@code-conventions.md` imports from `state/claude/CLAUDE.md`. |
 | Host check H-10 showed Docker creating the missing folder | Planned follow-up: an `env_file` sentinel file at the root of `SBX_DIR`, which makes Compose fail when the folder is missing. It changes the folder layout, so it waits for your approval. |

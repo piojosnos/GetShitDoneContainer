@@ -1,8 +1,8 @@
-# Host checklist (H-00..H-13)
+# Host checklist (H-00..H-19)
 
-The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them; three short helpers cover the steps that need you.
+The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them; four short helpers cover the steps that need you.
 
-- **IDs:** each check has an ID, H-00 to H-13 (H for host), so results can be reported by ID ("H-10 failed").
+- **IDs:** each check has an ID, H-00 to H-19 (H for host), so results can be reported by ID ("H-10 failed").
 - **When:** once after building a new version of the images or `compose.yml`.
 - **Setup and daily use:** see [`SANDBOX.md`](../SANDBOX.md).
 - Commands run from the repo root.
@@ -45,11 +45,16 @@ What each check proves:
 | H-06 | Git works and the identity persists | `h06-git-and-identity.sh` | automatic |
 | H-07 | Claude login lands in the state folder | `manual/h07-login.sh` | manual only |
 | H-08 | Shell history survives a recreate | `h08-history-survives-recreate.sh` | automatic |
-| H-09 | Files survive a rebuild, no volumes exist; the login and the session survive too | `h09-rebuild-keeps-files-no-volumes.sh`, `manual/h09-rebuild-resume.sh` | automatic part, manual part |
+| H-09 | Files and a planted memory survive a rebuild, no volumes exist; the login and the session survive too | `h09-rebuild-keeps-files-no-volumes.sh`, `manual/h09-rebuild-resume.sh` | automatic part, manual part |
 | H-10 | A missing folder is refused | `h10-missing-folder-refused.sh` | automatic |
 | H-11 | Stopping is quick and keeps everything | `h11-stop-is-quick-and-safe.sh` | automatic |
 | H-12 | A plain `docker run` is refused; the pinned Claude is installed | `h12-plain-run-refused-pin-installed.sh` | automatic |
 | H-13 | Environment is visible and self-update is off; `claude doctor` agrees | `h13-env-and-no-self-update.sh`, `manual/h13-doctor.sh` | automatic part, manual part |
+| H-14 | The image holds the bundle, equal to the repo; owners, modes and no mount are right; the managed settings parse | `h14-bundle-in-image.sh` | automatic |
+| H-15 | Rules and skills are synced and equal to the repo; Claude lists the always-on rules and the skills, not the path-scoped rules | `h15-bundle-synced-and-visible.sh` | automatic |
+| H-16 | A restart refreshes the bundle and keeps user skills, GSD skills, memories and `CLAUDE.md` | `h16-sync-refreshes-and-spares.sh` | automatic |
+| H-17 | A start works with networking off; a failing start hook stops the start | `h17-start-offline-and-failing-hook.sh` | automatic |
+| H-19 | Skills in Claude, a rule followed, a language rule on demand, a refused edit, the managed settings source | `manual/h19-bundle-behaviour.sh` | manual only |
 | Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |
 
 ## Manual pass
@@ -60,6 +65,7 @@ Run after `run-all.sh`, in this order. Each needs a real terminal and uses the s
 bash tests/host/manual/h07-login.sh
 bash tests/host/manual/h09-rebuild-resume.sh
 bash tests/host/manual/h13-doctor.sh
+bash tests/host/manual/h19-bundle-behaviour.sh
 ```
 
 | Helper | You do | It checks |
@@ -67,6 +73,7 @@ bash tests/host/manual/h13-doctor.sh
 | `h07-login.sh` | Log in with a claude.ai account, then `/exit` | `.claude.json`, `.credentials.json` and `projects/` are in the run folder's `state/claude`; `claude auth status` shows `"loggedIn": true`; there is no `~/.claude.json` in the container home |
 | `h09-rebuild-resume.sh` | Confirm the earlier session resumes in `claude --continue`, then `/exit` | Rebuilds the images, recreates the sandbox, `claude auth status` is still logged in |
 | `h13-doctor.sh` | Confirm `claude doctor` shows auto-updates disabled | Nothing more; the wording is for you to judge |
+| `h19-bundle-behaviour.sh` | Follow five steps in Claude: the skills are listed, an always-on rule is followed, a language rule loads on a matching file, an edit of a synced rule is refused, `/status` shows the managed settings | The copy of `communication.md` in the run folder still equals the repo file |
 
 - Add `--no-cache` to `h09-rebuild-resume.sh` for a clean rebuild: `bash tests/host/manual/h09-rebuild-resume.sh --no-cache`. It is slow.
 - Each helper prints `PASS` or `FAIL` lines and exits 0 only when every line is `PASS`.
@@ -75,12 +82,15 @@ bash tests/host/manual/h13-doctor.sh
 ## Reading a failure
 
 - **FAIL line:** shows the check ID and what went wrong, with detail lines under it.
-- **NOT RUN:** an earlier step failed: the setup, or an earlier link of the chain H-08, H-11, H-09, H-10. Fix that one first.
+- **NOT RUN:** an earlier step failed: the setup, or an earlier link of the chain H-08, H-16, H-11, H-09, H-10. Fix that one first.
 - **Build failure:** the output names the log path, inside the run folder's `logs/`.
 - **"Mounts denied" during setup:** Docker Desktop does not share `$TMPDIR`. Add it in Settings, Resources, File sharing.
 - **H-10 says Docker created the missing folder:** Compose ignored `create_host_path: false`. That is a real finding, not a script bug.
   - Do not change `compose.yml`.
   - See the env_file follow-up in [`SANDBOX.md`, Troubleshooting](../SANDBOX.md#troubleshooting-and-known-limits). It needs your approval.
+- **H-15 fails after a Claude Code pin change:** the format of `/context` may have changed. Compare with what `manual/h19-bundle-behaviour.sh` shows before suspecting the bundle.
+- **H-15 and a login:** H-15 runs Claude without a login, so `state/claude/.claude.json` exists before `h07-login.sh` runs. The login proof in `h07-login.sh` is `.credentials.json` and `claude auth status`.
+- **After the managed settings landed:** run `manual/h13-doctor.sh` once to see that `claude doctor` still reports updates disabled.
 - **Coexistence fails:** if you started or stopped a `cc_` container during the run, run it again.
 - **Rebuilding retags the images:** your running sandboxes keep their old image until their next `docker compose up`. That is safe: all their data is in their folder.
 

@@ -607,6 +607,7 @@ expect "runner: healthy run prints PASS: H-15" has_text "$WORK/out.healthy" "PAS
 expect "runner: healthy run prints PASS: H-17" has_text "$WORK/out.healthy" "PASS: H-17"
 expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 18 passed, 0 failed, 0 not run"
 expect "runner: healthy run prints the manual pass commands" has_text "$WORK/out.healthy" "manual/h07-login.sh"
+expect "runner: healthy run prints the bundle behaviour helper" has_text "$WORK/out.healthy" "manual/h19-bundle-behaviour.sh"
 expect "runner: the cleanup line has docker compose down and the run folder" \
   has_text "$WORK/out.healthy" "SBX_DIR=$healthyRunDir docker compose down && rm -rf $healthyRunDir"
 expect "runner: the run folder is still there afterwards" test -d "$healthyRunDir"

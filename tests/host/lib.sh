@@ -291,6 +291,7 @@ print_next_block() {
   printf '    bash %q\n' "${HOST_DIR:-}/manual/h07-login.sh"
   printf '    bash %q\n' "${HOST_DIR:-}/manual/h09-rebuild-resume.sh"
   printf '    bash %q\n' "${HOST_DIR:-}/manual/h13-doctor.sh"
+  printf '    bash %q\n' "${HOST_DIR:-}/manual/h19-bundle-behaviour.sh"
 
   if [ -n "${RUN:-}" ]; then
     printf '  Cleanup when you are done. The run folder holds the Claude login after the manual pass:\n'
