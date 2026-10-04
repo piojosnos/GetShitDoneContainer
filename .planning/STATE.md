@@ -2,17 +2,17 @@
 gsd_state_version: "1.0"
 current_phase: "01.1"
 current_phase_name: Automated host tests (INSERTED)
-status: executing
-stopped_at: Completed 01.1-03-PLAN.md
-last_updated: "2026-10-04T01:29:45.588Z"
+status: verifying
+stopped_at: Completed 01.1-04-PLAN.md
+last_updated: "2026-10-04T02:03:25.698Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 01.1 execution started
-state_head: 8d880486e4a855c77afc11f5b069207a8344e596
+state_head: ea07a4ef390bf381f4cb2ade6a88987e5219fe33
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-30)
 
 Phase: 01.1 (Automated host tests (INSERTED)) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-04 — Phase 01.1 execution started
 
 Progress: [░░░░░░░░░░] 0%
@@ -63,6 +63,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01.1 P01 | 10 min | 3 tasks | 9 files |
 | Phase 01.1 P02 | 15 min | 3 tasks | 11 files |
 | Phase 01.1 P03 | 8 min | 2 tasks | 5 files |
+| Phase 01.1 P04 | 35min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,7 @@ Recent decisions affecting current work:
 - [Phase 01.1]: H-10 always ends with the real sandbox up and folds a failed restart into its FAIL line; H-08 recreates only after its first half passes
 - [Phase 01.1]: Manual helpers put the terminal guard before sourcing lib.sh, because host_init already makes a docker call
 - [Phase 01.1]: H-09 helper re-asserts the test sandbox after compose_up, before opening Claude
+- [Phase 01.1]: H-10 passed on the Mac (Compose 2.40.0-desktop.1 honors create_host_path false); no compose.yml change, env_file sentinel follow-up not needed
 
 ### Pending Todos
 
@@ -114,6 +116,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-04T01:29:45.542Z
-Stopped at: Completed 01.1-03-PLAN.md
+Last session: 2026-10-04T02:03:25.646Z
+Stopped at: Completed 01.1-04-PLAN.md
 Resume file: None
