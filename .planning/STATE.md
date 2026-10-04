@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.2"
 current_phase_name: Best-practices bundle baked into the image (stopgap)
 status: executing
-stopped_at: Completed 01.2-03-PLAN.md
-last_updated: "2026-10-04T07:37:31.152Z"
+stopped_at: Completed 01.2-04-PLAN.md
+last_updated: "2026-10-04T07:43:39.884Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 01.2 execution started
-state_head: a0c9557cacb61e4a060145477537dfd869c33088
+state_head: a4df3a50e0a3f26b3fa5301753a67364d17d1748
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 14
-  completed_plans: 11
+  completed_plans: 12
   percent: 22
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 01.2 (Best-practices bundle baked into the image (stopgap)) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-10-04 — Phase 01.2 execution started
 
@@ -68,6 +68,7 @@ Progress: [██░░░░░░░░] 22%
 | Phase 01.2 P01 | 9 min | 2 tasks | 11 files |
 | Phase 01.2 P02 | 14 min | 2 tasks | 9 files |
 | Phase 01.2 P03 | 5 min | 2 tasks | 5 files |
+| Phase 01.2 P04 | 6 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,8 @@ Recent decisions affecting current work:
 - [Phase 01.2]: GSD ship/pr-branch non-default-target caveat lives in the GSD workflow section of git-workflow.md
 - [Phase 01.2]: H-17 runs in the no-sandbox stage on its own $RUN/h17 folder, so the running test sandbox state is never touched — A failing or odd start hook must not disturb the sandbox the other checks share
 - [Phase 01.2]: The failing-hook container uses CLAUDE_CONFIG_DIR=/proc/no-such-dir so the real hook exits 1 without any test-only code path — mkdir under set -e fails there; the hook and entrypoint stay unchanged
+- [Phase 01.2]: Start hook needed no change: all refresh, safety and failure scenarios passed against the existing hook
+- [Phase 01.2]: H-16 runs right after H-08 in the restart chain (h08, h16, h11, h09, h10)
 
 ### Pending Todos
 
@@ -127,6 +130,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-04T07:37:31.084Z
-Stopped at: Completed 01.2-03-PLAN.md
+Last session: 2026-10-04T07:43:39.815Z
+Stopped at: Completed 01.2-04-PLAN.md
 Resume file: None
