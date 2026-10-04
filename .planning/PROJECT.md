@@ -21,12 +21,11 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 - ✓ Claude login persists across container restarts (it lives in the mounted folder) — existing
 - ✓ GSD (`@opengsd/gsd-core`) is installed into the live home on first run, gated by a `.initialized` marker — existing (to be replaced)
 - ✓ `cc-bash.sh` opens a shell and `cc-down.sh` stops the container — existing
+- ✓ The host mount no longer covers `/home/sandbox`: one sandbox folder is mounted at `/home/sandbox/workspace`, so the image's `.bashrc` and `.local` stay visible — Phase 1
+- ✓ Agent state (Claude login, `~/.claude.json`, settings, session history, shell history) lives in `<sandbox>/state` on the host and survives recreate and rebuild — Phase 1
 
 ### Active
 
-**Mount layout (problem 1: the home directory gets hidden)**
-- [ ] The host mount no longer covers `/home/sandbox`. Code is mounted in a dedicated workspace directory, so the image's `.bashrc`, `.local`, etc. stay visible.
-- [ ] Agent state (Claude login, `~/.claude.json`, settings, session history) lives in a host folder inside or next to the sandbox path and survives image rebuilds.
 
 **Upgrade flow (problem 2)**
 - [ ] All tools (Claude Code, GSD, ccusage, JDK 21, Maven, Node.js, Python) are baked into the image. Nothing is installed into the mounted folder at runtime.
@@ -86,8 +85,8 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Stop mounting over `/home/sandbox`. Mount code into a dedicated workspace directory and agent state into specific paths | Fixes the hidden home directory and lets image-provided home content stay visible | — Pending |
-| Persist agent state (login, settings, history) in a host folder | Rebuilds must never log the user out, and the state stays inspectable on the laptop | — Pending |
+| Stop mounting over `/home/sandbox`. Mount one sandbox folder at `/home/sandbox/workspace`; image ENV points agent state into `<sandbox>/state` | Fixes the hidden home directory and lets image-provided home content stay visible | Good: Phase 1 verified on the Mac (14 of 14 host checks) |
+| Persist agent state (login, settings, history) in a host folder | Rebuilds must never log the user out, and the state stays inspectable on the laptop | Good: login and history survived recreate and rebuild on the Mac (Phase 1) |
 | Bake all tools into the image. The image version wins over persisted state | "Upgrade = rebuild" becomes true, and runtime installs into the mount go away | — Pending |
 | One container per project | Matches the current `cc-up.sh` model and the isolation goal | — Pending |
 | Shared base image for common tools, with thin per-agent images on top | One place for Linux tools, JDK, Maven, etc. Sets up OpenCode and future agents | — Pending |
@@ -113,4 +112,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-04 after Phase 1.1*
+*Last updated: 2026-10-04 after Phase 1*

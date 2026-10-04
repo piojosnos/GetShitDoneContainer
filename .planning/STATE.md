@@ -23,7 +23,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-04)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 1 — re-run verification (its host checks now pass via tests/host/run-all.sh), then mark it complete
+**Current focus:** Phase 01.2: Best-practices bundle baked into the image (stopgap)
 
 ## Current Position
 
@@ -88,6 +88,7 @@ Recent decisions affecting current work:
 - [Phase 01.1]: Manual helpers put the terminal guard before sourcing lib.sh, because host_init already makes a docker call
 - [Phase 01.1]: H-09 helper re-asserts the test sandbox after compose_up, before opening Claude
 - [Phase 01.1]: H-10 passed on the Mac (Compose 2.40.0-desktop.1 honors create_host_path false); no compose.yml change, env_file sentinel follow-up not needed
+- [Phase 01]: Re-verified 5/5 against the one-mount layout, using the Phase 1.1 Mac run (01-UAT.md) as the host evidence; marked complete 2026-10-04
 
 ### Pending Todos
 
@@ -98,7 +99,8 @@ None yet.
 - [Phase 1]: Until Phase 3 there are no scripts, so the sandbox runs from a documented `docker compose` command
 - [Phase 2]: Confirm that ccusage's native binary is executable (chmod) on arm64 (DISABLE_UPDATES was confirmed by `claude doctor` in the Phase 1.1 Mac run)
 - [Phase 5]: Decide whether SCR-08 ("remove whole-home-mount layout") also covers the out-of-scope `OpenCode/` directory, or whether it stays for the next milestone
-- [Phase 1]: Not marked complete yet; 01-VERIFICATION.md is stale. Re-run `/gsd-execute-phase 1` (host checks passed on the Mac in Phase 1.1)
+- [Phase 1]: Re-review left 7 findings open (WR-01: the missing-project-folder check in base/sbx-entrypoint cannot fire because compose working_dir creates the folder; WR-02: base/Dockerfile comment overclaims create_host_path; WR-03: Claude Code has no integrity hash). See 01-REVIEW-DISPOSITION.md
+- [Phase 1]: SC3 says rebuild with `--no-cache`; the Mac run did not record it. One run of `bash tests/host/manual/h09-rebuild-resume.sh --no-cache` would confirm
 - [Phase 1.1]: Code review left 14 findings open (CR-01: run_timeout does not stop a docker call behind a shell function; WR-01..08 robustness). See 01.1-REVIEW-DISPOSITION.md
 
 ### Roadmap Evolution
@@ -117,6 +119,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-04T02:03:25.646Z
+Last session: 2026-10-04
 Stopped at: Phase 1 complete, ready to plan Phase 01.2
 Resume file: None
