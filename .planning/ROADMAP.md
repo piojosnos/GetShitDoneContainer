@@ -2,7 +2,7 @@
 
 ## Overview
 
-This milestone makes the ClaudeCode sandbox solid. Each phase is a vertical slice that leaves the user with a sandbox they can actually use on the Mac, and each later phase builds on it. Phase 1 replaces the whole-home mount with one sandbox folder mount: code in `<name>/` and all state (Claude, history, gh, git) in `state/`. The home directory is no longer hidden, and login survives recreating the container and rebuilding the image. Phase 1.1 (inserted) ships the user's best-practices bundle (skills, standing rules, memories) in the image, synced into `~/.claude` on every start; Phase 2.1 (inserted) later moves that bundle to its own git repo so any sandbox can update it through a PR. Phase 2 bakes the full pinned toolchain, GSD, and ccusage into the image, so "upgrade = rebuild" becomes true and the image version always wins. Phases 3 and 4 add the small `sbx-*` scripts in the user's priority order: remembered args and one-command upgrade first, then jump-in, then list and cleanup. Phase 5 migrates the roughly four existing sandboxes, retires the old `cc-*` layout, and brings the README in line with reality. Docker doesn't run inside the dev sandbox, so every success criterion below is checked on the Mac.
+This milestone makes the ClaudeCode sandbox solid. Each phase is a vertical slice that leaves the user with a sandbox they can actually use on the Mac, and each later phase builds on it. Phase 1 replaces the whole-home mount with one sandbox folder mount: code in `<name>/` and all state (Claude, history, gh, git) in `state/`. The home directory is no longer hidden, and login survives recreating the container and rebuilding the image. Phase 1.1 (inserted) automates the Mac host checks, so every later image change is verified by one script run. Phase 1.2 (inserted) ships the user's best-practices bundle (skills, standing rules, memories) in the image, synced into `~/.claude` on every start; Phase 2.1 (inserted) later moves that bundle to its own git repo so any sandbox can update it through a PR. Phase 2 bakes the full pinned toolchain, GSD, and ccusage into the image, so "upgrade = rebuild" becomes true and the image version always wins. Phases 3 and 4 add the small `sbx-*` scripts in the user's priority order: remembered args and one-command upgrade first, then jump-in, then list and cleanup. Phase 5 migrates the roughly four existing sandboxes, retires the old `cc-*` layout, and brings the README in line with reality. Docker doesn't run inside the dev sandbox, so every success criterion below is checked on the Mac.
 
 ## Phases
 
@@ -13,7 +13,8 @@ This milestone makes the ClaudeCode sandbox solid. Each phase is a vertical slic
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Two-Mount Claude Sandbox** - A Claude sandbox that runs on the Mac with code and state in separate host folders, a visible image home, and a login that survives rebuilds
-- [ ] **Phase 1.1: Best-practices bundle baked into the image (stopgap)** (INSERTED) - New sandboxes start with the user's skills, standing rules, and shared memories installed, taken from files in this repo
+- [ ] **Phase 1.1: Automated host tests** (INSERTED) - One command on the Mac runs every host check (H-00 to H-13) with a PASS/FAIL line each; the only manual step is the Claude login
+- [ ] **Phase 1.2: Best-practices bundle baked into the image (stopgap)** (INSERTED) - New sandboxes start with the user's skills, standing rules, and shared memories installed, taken from files in this repo
 - [ ] **Phase 2: Pinned Toolchain, GSD, and ccusage** - Every tool is baked in at a version pinned in `versions.env`, the image's GSD wins over persisted state, and `ccusage` reports real usage
 - [ ] **Phase 2.1: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs
 - [ ] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login
@@ -51,11 +52,26 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 - [x] 01-04-PLAN.md — Host verification checklist H-00..H-13 in SANDBOX.md, then the user runs it on the Mac
 
-### Phase 01.1: Best-practices bundle baked into the image (stopgap) (INSERTED)
+### Phase 01.1: Automated host tests (INSERTED)
+
+**Goal**: Every Mac host check runs from one command. The user runs `tests/host/run-all.sh` on the Mac, logs in to Claude once when asked, and gets a PASS or FAIL line per check plus a summary. No manual checklist, no required environment variables.
+**Mode:** mvp
+**Depends on**: Phase 1
+**Requirements**: HT-01, HT-02, HT-03, HT-04, HT-05
+**Success Criteria** (what must be TRUE):
+  1. `tests/host/` has one script per host check (H-00 to H-13, plus Coexistence). Each prints `PASS: H-xx <what it proves>` or `FAIL: H-xx <what went wrong>` and exits 0 or 1. Each can also be run on its own.
+  2. `tests/host/run-all.sh` builds the images, creates a throwaway sandbox (its own temporary folder and a fixed test name), runs every check in order, prints a summary, removes the test container and folder, and exits non-zero if any check failed. It needs no exported variables; optional variables only override defaults (for example a slow `--no-cache` rebuild for H-09).
+  3. The only manual step is the Claude login: the runner pauses before H-07, prints the exact command to run, waits for the user to confirm, then checks the login and everything after it automatically.
+  4. The scripts run on the Mac with stock bash 3.2 and Docker Desktop, and never touch the user's real sandboxes, real git identity, or old-layout containers.
+  5. On the Mac, `tests/host/run-all.sh` passes every check. This also closes Phase 1's deferred host verification. `tests/host-checklist.md` shrinks to "run `tests/host/run-all.sh`" plus how to read a failure.
+
+**Plans**: TBD
+
+### Phase 01.2: Best-practices bundle baked into the image (stopgap) (INSERTED)
 
 **Goal**: Every new sandbox starts with the user's best-practices bundle already installed: the `/pr-reply` and `/merged` skills, the standing rules (`AGENTS.md`, `code-conventions.md`, loaded through a user-level `CLAUDE.md`), and the shared memories. This is a stopgap: the bundle comes from files committed in this repo (taken from `claude-best-practices-export.tar.gz`) until Phase 2.1 moves it to its own git repo.
 **Mode:** mvp
-**Depends on**: Phase 1
+**Depends on**: Phase 1.1 (its image change is verified with `tests/host/run-all.sh`)
 **Requirements**: BP-01, BP-02
 **Success Criteria** (what must be TRUE):
   1. The bundle is committed in this repo as plain files (not a tarball), so every change to it shows up in a diff. The Claude image copies it to a path outside every mount (for example `/opt/sbx/best-practices`).
@@ -70,7 +86,7 @@ Plans:
 
 **Goal**: The sandbox has the full development toolchain plus Claude Code, GSD, and ccusage baked into the image at versions pinned in one `versions.env`. Rebuilding with changed pins delivers the new versions into the sandbox while login and history persist.
 **Mode:** mvp
-**Depends on**: Phase 1.1 (reuses its start-time sync into `~/.claude` for GSD)
+**Depends on**: Phase 1.2 (reuses its start-time sync into `~/.claude` for GSD)
 **Requirements**: IMG-01, IMG-03, IMG-04, TOOL-01, TOOL-02, TOOL-03, USE-01
 **Success Criteria** (what must be TRUE):
   1. In the container shell, `git`, `gh`, `node -v` (24.x), `python3`, `uv`, `java -version` (Temurin 21), and `mvn -v` all work as native arm64 binaries. They come from the shared base image, not the Claude image.
@@ -91,7 +107,7 @@ Plans:
   1. The bundle repo exists on GitHub, and this repo no longer carries its own copy of the bundle (one source of truth).
   2. Each sandbox has its own clone of the bundle repo in its sandbox folder (for example `<sandbox>/best-practices`, a plain subfolder of the one mount, so no compose change). Edits there survive container recreate and image rebuild.
   3. From inside the sandbox, the user can edit a skill or memory in the clone, commit on a branch, push, and open a PR against the bundle repo using the sandbox's persisted gh login.
-  4. Creating a sandbox pulls the latest bundle with a best-effort `git pull --ff-only`. With no network the start still succeeds, using the clone as it is. Running `git pull` in the clone updates a running sandbox, through the same sync rules as Phase 1.1.
+  4. Creating a sandbox pulls the latest bundle with a best-effort `git pull --ff-only`. With no network the start still succeeds, using the clone as it is. Running `git pull` in the clone updates a running sandbox, through the same sync rules as Phase 1.2.
   5. No folder is shared read-write between sandboxes: a change made in one sandbox reaches another only after its PR is merged and the other sandbox pulls.
 
 **Plans**: TBD
@@ -158,12 +174,13 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Two-Mount Claude Sandbox | 4/4 | In Progress|  |
-| 1.1. Best-practices bundle baked into the image (stopgap) | 0/TBD | Not started | - |
+| 1.1. Automated host tests | 0/TBD | Not started | - |
+| 1.2. Best-practices bundle baked into the image (stopgap) | 0/TBD | Not started | - |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |

@@ -33,6 +33,16 @@ Requirements for this milestone (ClaudeCode sandbox made solid). Each maps to ro
 
 - [ ] **USE-01**: The user can run `ccusage` (`daily`, `monthly`, `session`, …) in the container shell and see this project's real Claude usage
 
+### Host Tests
+
+Automated checks that run on the Mac, where Docker runs.
+
+- [ ] **HT-01**: One script per host check (H-00 to H-13, plus Coexistence) under `tests/host/`, each printing a `PASS`/`FAIL` line with its check ID and exiting 0 or 1
+- [ ] **HT-02**: `tests/host/run-all.sh` runs every check in order with no required environment variables: it builds the images, creates and removes a throwaway sandbox, prints a summary, and exits non-zero on any failure
+- [ ] **HT-03**: The Claude login is the only manual step: the runner pauses, prints the command, and continues after the user confirms
+- [ ] **HT-04**: The scripts run with macOS stock bash 3.2 and Docker Desktop, and never touch real sandboxes, the user's git identity, or old-layout containers
+- [ ] **HT-05**: All host checks pass on the Mac, which closes Phase 1's deferred host verification
+
 ### Best Practices
 
 The shared agent bundle: skills, standing rules (`AGENTS.md`, `code-conventions.md`), and memories.
@@ -126,8 +136,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TOOL-02 | Phase 2 | Pending |
 | TOOL-03 | Phase 2 | Pending |
 | USE-01 | Phase 2 | Pending |
-| BP-01 | Phase 1.1 | Pending |
-| BP-02 | Phase 1.1 | Pending |
+| HT-01 | Phase 1.1 | Pending |
+| HT-02 | Phase 1.1 | Pending |
+| HT-03 | Phase 1.1 | Pending |
+| HT-04 | Phase 1.1 | Pending |
+| HT-05 | Phase 1.1 | Pending |
+| BP-01 | Phase 1.2 | Pending |
+| BP-02 | Phase 1.2 | Pending |
 | BP-03 | Phase 2.1 | Pending |
 | BP-04 | Phase 2.1 | Pending |
 | BP-05 | Phase 2.1 | Pending |
@@ -146,10 +161,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CI-01 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 32 total
-- Mapped to phases: 32
+- v1 requirements: 37 total
+- Mapped to phases: 37
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-30*
-*Last updated: 2026-10-03 after adding Phase 6 (CI-01)*
+*Last updated: 2026-10-03 after inserting Phase 1.1, automated host tests (HT-01..HT-05); bundle phase renumbered to 1.2*
