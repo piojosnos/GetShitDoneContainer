@@ -32,7 +32,8 @@ cat >"$WORK/bin/docker" <<'SHIM'
 # FAKE_PS, FAKE_ID, FAKE_COMPOSE_VERSION, FAKE_COMPOSE_FAIL, FAKE_BASE_LAYERS,
 # FAKE_CLAUDE_LAYERS, FAKE_CONFIG_NAME, FAKE_CONFIG_LAX, FAKE_CLAUDE_VERSION, FAKE_PLAIN_OK,
 # FAKE_IMAGE_ARCH, FAKE_CLAUDE_ARCH, FAKE_UNAME, FAKE_NO_TOUCH, FAKE_STAT_OWNER, FAKE_ENV_MISSING,
-# FAKE_UPDATE_ON, FAKE_SHARE_EXISTS.
+# FAKE_UPDATE_ON, FAKE_SHARE_EXISTS, FAKE_GIT_DUBIOUS, FAKE_SAFE_DIR, FAKE_NO_GIT_WRITE,
+# FAKE_NO_HISTORY, FAKE_DOWN_LOSES_HISTORY.
 # State lives in FAKE_STATE; every call is logged to FAKE_LOG.
 printf 'ENV SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
   "${SBX_NAME-unset}" "${SBX_DIR-unset}" "${COMPOSE_PROJECT_NAME-unset}" "$*" >>"$FAKE_LOG"
@@ -99,6 +100,9 @@ case "${1:-}" in
         exit 0
         ;;
       down)
+        if [ "${FAKE_DOWN_LOSES_HISTORY:-0}" = 1 ] && [ -f "$FAKE_STATE/container.dir" ]; then
+          rm -f "$(cat "$FAKE_STATE/container.dir")/state/shell/bash_history"
+        fi
         rm -f "$FAKE_STATE/container" "$FAKE_STATE/container.dir"
         exit 0
         ;;
@@ -251,6 +255,39 @@ case "${1:-}" in
           echo "Updates are disabled by your administrator"
         fi
         ;;
+      "git status")
+        if [ "${FAKE_GIT_DUBIOUS:-0}" = 1 ]; then
+          echo "fatal: detected dubious ownership in repository at '/home/sandbox/workspace/hosttest'" >&2
+          exit 128
+        fi
+        echo "On branch main"
+        ;;
+      "git config --system --get-all safe.directory") printf '%s\n' "${FAKE_SAFE_DIR:-*}" ;;
+      "git config --global user.name T")
+        if [ "${FAKE_NO_GIT_WRITE:-0}" != 1 ]; then
+          mkdir -p "$(cat "$FAKE_STATE/container.dir")/state/git"
+          printf '[user]\n\tname = T\n' >"$(cat "$FAKE_STATE/container.dir")/state/git/config"
+        fi
+        ;;
+      "bash -i")
+        historyPath="$(cat "$FAKE_STATE/container.dir")/state/shell/bash_history"
+        while IFS= read -r shellLine; do
+          case "$shellLine" in
+            echo*)
+              if [ "${FAKE_NO_HISTORY:-0}" != 1 ]; then
+                mkdir -p "$(dirname "$historyPath")"
+                printf '%s\n' "$shellLine" >>"$historyPath"
+              fi
+              ;;
+            history)
+              if [ -f "$historyPath" ]; then
+                nl -ba "$historyPath"
+              fi
+              ;;
+            exit) exit 0 ;;
+          esac
+        done
+        ;;
       "sh -c test ! -e"*)
         if [ "${FAKE_SHARE_EXISTS:-0}" = 1 ]; then
           exit 1
@@ -401,9 +438,12 @@ expect "runner: healthy run prints PASS: H-02" has_text "$WORK/out.healthy" "PAS
 expect "runner: healthy run prints PASS: H-03" has_text "$WORK/out.healthy" "PASS: H-03"
 expect "runner: healthy run prints PASS: H-04" has_text "$WORK/out.healthy" "PASS: H-04"
 expect "runner: healthy run prints PASS: H-05" has_text "$WORK/out.healthy" "PASS: H-05"
+expect "runner: healthy run prints PASS: H-06" has_text "$WORK/out.healthy" "PASS: H-06"
+expect "runner: healthy run prints PASS: H-08" has_text "$WORK/out.healthy" "PASS: H-08"
 expect "runner: healthy run prints PASS: H-12" has_text "$WORK/out.healthy" "PASS: H-12"
+expect "runner: healthy run prints PASS: Coexistence" has_text "$WORK/out.healthy" "PASS: Coexistence"
 expect "runner: healthy run prints PASS: H-13" has_text "$WORK/out.healthy" "PASS: H-13"
-expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 8 passed, 0 failed, 0 not run"
+expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 11 passed, 0 failed, 0 not run"
 expect "runner: healthy run prints the manual pass commands" has_text "$WORK/out.healthy" "manual/h07-login.sh"
 expect "runner: the cleanup line has docker compose down and the run folder" \
   has_text "$WORK/out.healthy" "SBX_DIR=$healthyRunDir docker compose down && rm -rf $healthyRunDir"
@@ -433,7 +473,7 @@ reset_state
 run_runner "$WORK/out.badid" FAKE_ID="uid=0(root) gid=0(root)"
 expect "runner: a wrong id exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a wrong id prints FAIL: H-04" has_text "$WORK/out.badid" "FAIL: H-04"
-expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 7 passed, 1 failed, 0 not run"
+expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 10 passed, 1 failed, 0 not run"
 expect "runner: a wrong id still prints the Next block" has_text "$WORK/out.badid" "manual/h13-doctor.sh"
 
 echo "--- failed build"
@@ -578,6 +618,80 @@ run_standalone "$WORK/out.h13.update" h13-env-and-no-self-update.sh FAKE_UPDATE_
 expect "H-13: an update that runs fails" equals "$CHECK_RC" "1"
 run_standalone "$WORK/out.h13.share" h13-env-and-no-self-update.sh FAKE_SHARE_EXISTS=1
 expect "H-13: an existing share folder fails" equals "$CHECK_RC" "1"
+
+echo "--- H-06 on its own"
+reset_state
+make_fixture_run
+mkdir -p "$WORK/fakehome/tpl"
+printf 'template marker\n' >"$WORK/fakehome/tpl/MARK"
+printf '[init]\n\ttemplateDir = %s\n[user]\n\tname = Real Person\n' "$WORK/fakehome/tpl" >"$WORK/fakehome/.gitconfig"
+cp "$WORK/fakehome/.gitconfig" "$WORK/gitconfig.before"
+run_standalone "$WORK/out.h06" h06-git-and-identity.sh HOME="$WORK/fakehome"
+expect "H-06: no dubious ownership, safe.directory * and the identity file pass" equals "$CHECK_RC" "0"
+expect "H-06: prints PASS: H-06" has_text "$WORK/out.h06" "PASS: H-06"
+expect "H-06: the host-side git init made a repository" test -d "$FIXTURE/hosttest/.git"
+expect "H-06: the identity file is in the run folder" has_text "$FIXTURE/state/git/config" "name = T"
+expect "H-06: the host git config is not read (its template folder was not used)" test ! -e "$FIXTURE/hosttest/.git/MARK"
+expect "H-06: the host git config file is untouched" cmp -s "$WORK/fakehome/.gitconfig" "$WORK/gitconfig.before"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h06.dubious" h06-git-and-identity.sh FAKE_GIT_DUBIOUS=1
+expect "H-06: a dubious ownership message fails" equals "$CHECK_RC" "1"
+expect "H-06: the dubious ownership message is shown" has_text "$WORK/out.h06.dubious" "dubious ownership"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h06.nowrite" h06-git-and-identity.sh FAKE_NO_GIT_WRITE=1
+expect "H-06: a missing identity file fails" equals "$CHECK_RC" "1"
+expect "H-06: the missing identity file is named" has_text "$WORK/out.h06.nowrite" "state/git/config"
+run_standalone "$WORK/out.h06.safe" h06-git-and-identity.sh FAKE_SAFE_DIR=/home/sandbox/workspace
+expect "H-06: a safe.directory value that is not * fails" equals "$CHECK_RC" "1"
+
+echo "--- H-08 on its own"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h08" h08-history-survives-recreate.sh
+expect "H-08: a marker written while a shell is open survives the recreate" equals "$CHECK_RC" "0"
+expect "H-08: prints PASS: H-08" has_text "$WORK/out.h08" "PASS: H-08"
+expect "H-08: the history file is in the run folder" has_text "$FIXTURE/state/shell/bash_history" "echo marker-"
+expect "H-08: the sandbox is down and up once" equals "$(grep -c 'ARGS: compose .* \(up\|down\)' "$FAKE_LOG")" "2"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h08.nohist" h08-history-survives-recreate.sh FAKE_NO_HISTORY=1
+expect "H-08: a marker that never reaches the history file fails" equals "$CHECK_RC" "1"
+expect "H-08: the failing half is the first one" has_text "$WORK/out.h08.nohist" "before the recreate"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h08.lost" h08-history-survives-recreate.sh FAKE_DOWN_LOSES_HISTORY=1
+expect "H-08: history lost by the recreate fails" equals "$CHECK_RC" "1"
+expect "H-08: the failing half is the second one" has_text "$WORK/out.h08.lost" "after the recreate"
+
+echo "--- Coexistence on its own"
+reset_state
+make_fixture_run
+printf 'deadbeef0001 cc_oldbox running\n' >"$FIXTURE/logs/old-containers.before"
+run_standalone "$WORK/out.co" coexistence.sh
+expect "Coexistence: equal snapshots and clean old folders pass" equals "$CHECK_RC" "0"
+expect "Coexistence: prints PASS: Coexistence" has_text "$WORK/out.co" "PASS: Coexistence"
+run_standalone "$WORK/out.co.changed" coexistence.sh FAKE_PS="deadbeef0001 cc_oldbox exited"
+expect "Coexistence: a changed snapshot fails" equals "$CHECK_RC" "1"
+expect "Coexistence: a changed snapshot shows the before side" has_text "$WORK/out.co.changed" "cc_oldbox running"
+expect "Coexistence: a changed snapshot shows the after side" has_text "$WORK/out.co.changed" "cc_oldbox exited"
+expect "Coexistence: a changed snapshot says to re-run" has_text "$WORK/out.co.changed" "re-run"
+expect "Coexistence: the baseline is left as it was" \
+  equals "$(cat "$FIXTURE/logs/old-containers.before")" "deadbeef0001 cc_oldbox running"
+reset_state
+FIXTURE=""
+run_standalone "$WORK/out.co.nobase" coexistence.sh
+expect "Coexistence: no baseline passes on git alone" equals "$CHECK_RC" "0"
+expect "Coexistence: no baseline says so" has_text "$WORK/out.co.nobase" "git only; no baseline"
+mkdir -p "$WORK/scratchrepo/tests/host" "$WORK/scratchrepo/ClaudeCode"
+cp tests/host/*.sh "$WORK/scratchrepo/tests/host/"
+git -C "$WORK/scratchrepo" init -q
+: >"$WORK/scratchrepo/ClaudeCode/stray.txt"
+CHECK_RC=0
+env SBXTEST_DIR="" bash "$WORK/scratchrepo/tests/host/coexistence.sh" >"$WORK/out.co.git" 2>&1 </dev/null || CHECK_RC=$?
+expect "Coexistence: a change under ClaudeCode/ fails" equals "$CHECK_RC" "1"
+expect "Coexistence: the changed path is shown" has_text "$WORK/out.co.git" "stray.txt"
 
 echo "--- fatal H-00 in the runner"
 reset_state
