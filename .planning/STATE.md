@@ -2,17 +2,17 @@
 gsd_state_version: "1.0"
 current_phase: "01.2"
 current_phase_name: Best-practices bundle baked into the image (stopgap)
-status: planning
-stopped_at: Phase 01.2 context gathered
-last_updated: "2026-10-04T05:08:16.195Z"
+status: executing
+stopped_at: Completed 01.2-01-PLAN.md
+last_updated: "2026-10-04T07:25:03.669Z"
 last_activity: 2026-10-04
-last_activity_desc: Phase 1 complete, transitioned to Phase 01.2
-state_head: 11f3a169bc17668b18bd8f042de15a97f7a271af
+last_activity_desc: Phase 01.2 execution started
+state_head: a449ed92d7f9ff23cd56e32bdb05bbca8ba524b8
 progress:
   total_phases: 9
   completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 14
+  completed_plans: 9
   percent: 22
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-04)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 01.2: Best-practices bundle baked into the image (stopgap)
+**Current focus:** Phase 01.2 — Best-practices bundle baked into the image (stopgap)
 
 ## Current Position
 
-Phase: 01.2 — Best-practices bundle baked into the image (stopgap)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-10-04 — Phase 1 complete, transitioned to Phase 01.2
+Phase: 01.2 (Best-practices bundle baked into the image (stopgap)) — EXECUTING
+Plan: 2 of 6
+Status: Ready to execute
+Last activity: 2026-10-04 — Phase 01.2 execution started
 
 Progress: [██░░░░░░░░] 22%
 
@@ -65,6 +65,7 @@ Progress: [██░░░░░░░░] 22%
 | Phase 01.1 P02 | 15 min | 3 tasks | 11 files |
 | Phase 01.1 P03 | 8 min | 2 tasks | 5 files |
 | Phase 01.1 P04 | 35min | 3 tasks | 1 files |
+| Phase 01.2 P01 | 9 min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,7 @@ Recent decisions affecting current work:
 - [Phase 01.1]: H-09 helper re-asserts the test sandbox after compose_up, before opening Claude
 - [Phase 01.1]: H-10 passed on the Mac (Compose 2.40.0-desktop.1 honors create_host_path false); no compose.yml change, env_file sentinel follow-up not needed
 - [Phase 01]: Re-verified 5/5 against the one-mount layout, using the Phase 1.1 Mac run (01-UAT.md) as the host evidence; marked complete 2026-10-04
+- [Phase 01.2]: Start hook folder /etc/sbx/start.d runs in name order and fails fast with its own [sbx] ERROR line (no die() compose hint); sync list file is .best-practices-skills; both images build from the repo root with an allowlist .dockerignore
 
 ### Pending Todos
 
@@ -119,6 +121,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-04T05:08:16.136Z
-Stopped at: Phase 01.2 context gathered
-Resume file: .planning/phases/01.2-best-practices-bundle-baked-into-the-image-stopgap/01.2-CONTEXT.md
+Last session: 2026-10-04T07:25:03.605Z
+Stopped at: Completed 01.2-01-PLAN.md
+Resume file: None
