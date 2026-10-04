@@ -399,6 +399,34 @@ EOF
   return "$ok"
 }
 
+# An unquoted glob in a rule's frontmatter is invalid YAML, so Claude silently loads the rule at
+# every session start instead of only when a matching file is touched.
+bundle_path_globs_are_quoted() {
+  local file item
+  local ok=0
+
+  for file in best-practices/rules/*.md; do
+    if [ ! -f "$file" ] || [ "$(sed -n 1p "$file")" != "---" ]; then
+      continue
+    fi
+
+    while IFS= read -r item; do
+      if [ -z "$item" ]; then
+        continue
+      fi
+
+      if ! echo "$item" | grep -Eq '^[[:space:]]*-[[:space:]]+"'; then
+        echo "    $file: unquoted list item in the frontmatter: $item"
+        ok=1
+      fi
+    done <<EOF
+$(frontmatter_of "$file" | grep -E '^[[:space:]]*-[[:space:]]')
+EOF
+  done
+
+  return "$ok"
+}
+
 # --- runner ---
 
 FAILS=0
@@ -421,7 +449,8 @@ for rule in \
   bundle_is_plain_files_only \
   bundle_files_have_generated_header \
   bundle_has_no_dash_punctuation \
-  bundle_reaches_build_context
+  bundle_reaches_build_context \
+  bundle_path_globs_are_quoted
 do
   if "$rule"; then
     echo "PASS: $rule"
