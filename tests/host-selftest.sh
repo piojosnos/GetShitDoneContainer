@@ -29,7 +29,9 @@ mkdir -p "$WORK/bin" "$WORK/state" "$WORK/tmp"
 cat >"$WORK/bin/docker" <<'SHIM'
 #!/usr/bin/env bash
 # Fake docker. Knobs: FAKE_INFO_FAIL, FAKE_ARCH, FAKE_BUILD_FAIL, FAKE_UP_RC, FAKE_LABEL,
-# FAKE_PS, FAKE_ID. State lives in FAKE_STATE; every call is logged to FAKE_LOG.
+# FAKE_PS, FAKE_ID, FAKE_COMPOSE_VERSION, FAKE_COMPOSE_FAIL, FAKE_BASE_LAYERS,
+# FAKE_CLAUDE_LAYERS, FAKE_CONFIG_NAME, FAKE_CONFIG_LAX, FAKE_CLAUDE_VERSION, FAKE_PLAIN_OK.
+# State lives in FAKE_STATE; every call is logged to FAKE_LOG.
 printf 'ENV SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
   "${SBX_NAME-unset}" "${SBX_DIR-unset}" "${COMPOSE_PROJECT_NAME-unset}" "$*" >>"$FAKE_LOG"
 
@@ -53,6 +55,10 @@ case "${1:-}" in
     fi
     exit 0
     ;;
+  version)
+    printf 'Docker Desktop 4.99.0 (fake)\n'
+    exit 0
+    ;;
   compose)
     shift
     if [ "${1:-}" = "-f" ]; then
@@ -61,6 +67,22 @@ case "${1:-}" in
     composeSub=${1:-}
     shift
     case "$composeSub" in
+      version)
+        if [ "${FAKE_COMPOSE_FAIL:-0}" = 1 ]; then
+          echo "docker: 'compose' is not a docker command." >&2
+          exit 1
+        fi
+        printf '%s\n' "${FAKE_COMPOSE_VERSION:-2.39.1}"
+        exit 0
+        ;;
+      config)
+        if [ -z "${SBX_DIR:-}" ] && [ "${FAKE_CONFIG_LAX:-0}" != 1 ]; then
+          echo "required variable SBX_DIR is missing a value: SBX_DIR is required (absolute host path of the sandbox folder)" >&2
+          exit 15
+        fi
+        printf 'name: %s\nservices:\n  sandbox: {}\n' "${FAKE_CONFIG_NAME:-sbx-${SBX_NAME:-unset}}"
+        exit 0
+        ;;
       up)
         if [ -z "${SBX_DIR:-}" ]; then
           echo "required variable SBX_DIR is missing a value: SBX_DIR is required" >&2
@@ -105,6 +127,48 @@ case "${1:-}" in
       *) unhandled "container inspect $template" ;;
     esac
     exit 0
+    ;;
+  image)
+    shift
+    if [ "${1:-}" != "inspect" ]; then
+      unhandled "image $*"
+    fi
+    shift
+    if [ "${1:-}" = "--format" ]; then
+      shift 2
+    fi
+    imageRef=${1:-}
+    baseLayers=${FAKE_BASE_LAYERS:-sha256:b1 sha256:b2}
+    case "$imageRef" in
+      sbx-base:local) layerList=$baseLayers ;;
+      sbx-claude:local) layerList=${FAKE_CLAUDE_LAYERS:-$baseLayers sha256:c1 sha256:c2} ;;
+      *)
+        echo "Error: No such image: $imageRef" >&2
+        exit 1
+        ;;
+    esac
+    for layer in $layerList; do
+      printf '%s\n' "$layer"
+    done
+    exit 0
+    ;;
+  run)
+    case "$*" in
+      *"--entrypoint claude"*)
+        fakePin=$(sed -n 's/^ARG CLAUDE_CODE_VERSION=//p' "$FAKE_REPO/claude/Dockerfile")
+        printf '%s (Claude Code)\n' "${FAKE_CLAUDE_VERSION:-$fakePin}"
+        exit 0
+        ;;
+      *)
+        if [ "${FAKE_PLAIN_OK:-0}" = 1 ]; then
+          echo "started without a mount"
+          exit 0
+        fi
+        echo "[sbx] ERROR: /home/sandbox/workspace is not a bind mount; its data would be lost on recreate." >&2
+        echo "[sbx]        Start the sandbox with 'docker compose up' (see SANDBOX.md)." >&2
+        exit 1
+        ;;
+    esac
     ;;
   build)
     shift
@@ -217,6 +281,24 @@ run_runner() {
     bash tests/host/run-all.sh >"$outFile" 2>&1 </dev/null || RUNNER_RC=$?
 }
 
+# make_fixture_run: makes a run folder and a running fake test container that mounts it; sets FIXTURE.
+make_fixture_run() {
+  FIXTURE=$(lib_eval 'make_run_dir; printf "%s" "$RUN"')
+  pre_create_container "$FIXTURE"
+}
+
+# run_standalone OUTFILE SCRIPT [VAR=VALUE...]: runs one check alone, with the decoys exported
+# and SBXTEST_DIR pointing at FIXTURE (when set); sets CHECK_RC.
+run_standalone() {
+  local outFile=$1
+  local script=$2
+
+  shift 2
+  CHECK_RC=0
+  env SBX_NAME=demo SBX_DIR=/elsewhere COMPOSE_PROJECT_NAME=evil SBXTEST_DIR="${FIXTURE:-}" "$@" \
+    bash "tests/host/$script" >"$outFile" 2>&1 </dev/null || CHECK_RC=$?
+}
+
 # last_run_dir: the run folder the latest runner made.
 last_run_dir() {
   ls -d "$WORK"/tmp/sbx-hosttest-* 2>/dev/null | tail -n 1
@@ -260,8 +342,12 @@ healthyRunDir=$(last_run_dir)
 sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.healthy"
 
 expect "runner: healthy run exits 0" equals "$RUNNER_RC" "0"
+expect "runner: healthy run prints PASS: H-00" has_text "$WORK/out.healthy" "PASS: H-00"
+expect "runner: healthy run prints PASS: H-02" has_text "$WORK/out.healthy" "PASS: H-02"
+expect "runner: healthy run prints PASS: H-03" has_text "$WORK/out.healthy" "PASS: H-03"
 expect "runner: healthy run prints PASS: H-04" has_text "$WORK/out.healthy" "PASS: H-04"
-expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 1 passed, 0 failed, 0 not run"
+expect "runner: healthy run prints PASS: H-12" has_text "$WORK/out.healthy" "PASS: H-12"
+expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 5 passed, 0 failed, 0 not run"
 expect "runner: healthy run prints the manual pass commands" has_text "$WORK/out.healthy" "manual/h07-login.sh"
 expect "runner: the cleanup line has docker compose down and the run folder" \
   has_text "$WORK/out.healthy" "SBX_DIR=$healthyRunDir docker compose down && rm -rf $healthyRunDir"
@@ -273,8 +359,15 @@ expect "docker log: no down with a volume flag" lacks_match "$WORK/args.healthy"
 expect "docker log: the caller's decoy values never reach docker" lacks_match "$FAKE_LOG" 'demo|evil|/elsewhere'
 expect "docker log: every exec and inspect names sbx-hosttest" \
   equals "$(grep -E '^(exec|container inspect) ' "$WORK/args.healthy" | grep -vc 'sbx-hosttest')" "0"
-expect "docker log: every compose call carries the test name and the run folder" \
-  equals "$(grep 'ARGS: compose' "$FAKE_LOG" | grep -vc "SBX_NAME=hosttest SBX_DIR=$healthyRunDir ")" "0"
+expect "docker log: every compose call but the SBX_DIR probe carries the test name and the run folder" \
+  equals "$(grep 'ARGS: compose' "$FAKE_LOG" | grep -v ' config' | grep -vc "SBX_NAME=hosttest SBX_DIR=$healthyRunDir ")" "0"
+expect "docker log: the SBX_DIR probe runs without SBX_DIR and with the test name" \
+  has_match "$FAKE_LOG" 'SBX_NAME=hosttest SBX_DIR=unset COMPOSE_PROJECT_NAME=unset ARGS: compose .* config'
+expect "docker log: the plain docker run uses the real image tag" has_match "$WORK/args.healthy" '^run --rm sbx-claude:local claude --version'
+expect "docker log: the builds use the real tags" \
+  has_match "$WORK/args.healthy" '^build -t sbx-base:local .*/base$'
+expect "docker log: the claude image is built after the base image" \
+  has_match "$WORK/args.healthy" '^build -t sbx-claude:local .*/claude$'
 
 echo "--- failing check"
 reset_state
@@ -306,6 +399,93 @@ run_runner "$WORK/out.up" FAKE_UP_RC=1
 expect "runner: a failed up exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a failed up prints FAIL: SETUP" has_text "$WORK/out.up" "FAIL: SETUP"
 expect "runner: a failed up marks the sandbox checks not run" has_text "$WORK/out.up" "NOT RUN: h04-nonroot-user.sh"
+
+echo "--- H-00 on its own"
+reset_state
+FIXTURE=""
+run_standalone "$WORK/out.h00" h00-compose-v2.sh
+expect "H-00: Compose 2.x passes" equals "$CHECK_RC" "0"
+expect "H-00: prints PASS: H-00" has_text "$WORK/out.h00" "PASS: H-00"
+expect "H-00: prints the Compose version" has_text "$WORK/out.h00" "INFO: Compose version 2.39.1"
+expect "H-00: prints the Docker Desktop version" has_text "$WORK/out.h00" "Docker Desktop 4.99.0"
+run_standalone "$WORK/out.h00.five" h00-compose-v2.sh FAKE_COMPOSE_VERSION=v5.0.2
+expect "H-00: Compose 5.x with a leading v passes" equals "$CHECK_RC" "0"
+run_standalone "$WORK/out.h00.one" h00-compose-v2.sh FAKE_COMPOSE_VERSION=1.29.2
+expect "H-00: Compose 1.x fails" equals "$CHECK_RC" "1"
+expect "H-00: Compose 1.x prints FAIL: H-00" has_text "$WORK/out.h00.one" "FAIL: H-00"
+run_standalone "$WORK/out.h00.broken" h00-compose-v2.sh FAKE_COMPOSE_FAIL=1
+expect "H-00: a failing docker compose version fails" equals "$CHECK_RC" "1"
+expect "H-00: a failing docker compose version prints FAIL: H-00" has_text "$WORK/out.h00.broken" "FAIL: H-00"
+
+echo "--- H-02 on its own"
+run_standalone "$WORK/out.h02" h02-claude-on-base.sh
+expect "H-02: base layers under the Claude layers pass" equals "$CHECK_RC" "0"
+expect "H-02: prints PASS: H-02" has_text "$WORK/out.h02" "PASS: H-02"
+run_standalone "$WORK/out.h02.bad" h02-claude-on-base.sh FAKE_CLAUDE_LAYERS="sha256:b1 sha256:x9 sha256:c1"
+expect "H-02: a differing layer fails" equals "$CHECK_RC" "1"
+expect "H-02: a differing layer prints FAIL: H-02" has_text "$WORK/out.h02.bad" "FAIL: H-02"
+expect "H-02: a differing layer shows both layers" \
+  has_text "$WORK/out.h02.bad" "sha256:b2"
+expect "H-02: a differing layer shows the Claude side too" \
+  has_text "$WORK/out.h02.bad" "sha256:x9"
+
+echo "--- H-03 on its own"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h03" h03-variable-interpolation.sh
+expect "H-03: both halves right pass" equals "$CHECK_RC" "0"
+expect "H-03: prints PASS: H-03" has_text "$WORK/out.h03" "PASS: H-03"
+FIXTURE=""
+reset_state
+run_standalone "$WORK/out.h03.norun" h03-variable-interpolation.sh
+expect "H-03: passes without a running sandbox" equals "$CHECK_RC" "0"
+run_standalone "$WORK/out.h03.name" h03-variable-interpolation.sh FAKE_CONFIG_NAME=sbx-other
+expect "H-03: a wrong project name fails" equals "$CHECK_RC" "1"
+expect "H-03: a wrong project name names that half" has_text "$WORK/out.h03.name" "name: sbx-hosttest"
+run_standalone "$WORK/out.h03.lax" h03-variable-interpolation.sh FAKE_CONFIG_LAX=1
+expect "H-03: a config that works without SBX_DIR fails" equals "$CHECK_RC" "1"
+expect "H-03: a config that works without SBX_DIR names that half" has_text "$WORK/out.h03.lax" "SBX_DIR is required"
+
+echo "--- H-04 on its own"
+reset_state
+FIXTURE=""
+run_standalone "$WORK/out.h04.none" h04-nonroot-user.sh
+expect "H-04: no test sandbox fails" equals "$CHECK_RC" "1"
+expect "H-04: no test sandbox says to run run-all.sh" has_text "$WORK/out.h04.none" "run-all.sh"
+make_fixture_run
+run_standalone "$WORK/out.h04.ok" h04-nonroot-user.sh
+expect "H-04: the test sandbox passes" equals "$CHECK_RC" "0"
+run_standalone "$WORK/out.h04.foreign" h04-nonroot-user.sh FAKE_LABEL=other
+expect "H-04: a container with another label is refused" equals "$CHECK_RC" "1"
+
+echo "--- H-12 on its own"
+reset_state
+FIXTURE=""
+run_standalone "$WORK/out.h12" h12-plain-run-refused-pin-installed.sh
+expect "H-12: refused plain run and the pinned version pass" equals "$CHECK_RC" "0"
+expect "H-12: prints PASS: H-12" has_text "$WORK/out.h12" "PASS: H-12"
+run_standalone "$WORK/out.h12.pin" h12-plain-run-refused-pin-installed.sh FAKE_CLAUDE_VERSION=0.0.1
+expect "H-12: a different installed version fails" equals "$CHECK_RC" "1"
+expect "H-12: a different installed version prints FAIL: H-12" has_text "$WORK/out.h12.pin" "FAIL: H-12"
+run_standalone "$WORK/out.h12.plain" h12-plain-run-refused-pin-installed.sh FAKE_PLAIN_OK=1
+expect "H-12: a plain run that starts fails" equals "$CHECK_RC" "1"
+
+echo "--- fatal H-00 in the runner"
+reset_state
+run_runner "$WORK/out.h00fatal" FAKE_COMPOSE_VERSION=1.29.2
+expect "runner: Compose 1.x exits 1" equals "$RUNNER_RC" "1"
+expect "runner: Compose 1.x prints FAIL: H-00" has_text "$WORK/out.h00fatal" "FAIL: H-00"
+expect "runner: Compose 1.x builds nothing" lacks_text "$FAKE_LOG" "ARGS: build"
+expect "runner: Compose 1.x still prints the Next block" has_text "$WORK/out.h00fatal" "manual/h07-login.sh"
+
+echo "--- H-02 failure does not stop the runner"
+reset_state
+run_runner "$WORK/out.h02keep" FAKE_CLAUDE_LAYERS="sha256:x1 sha256:c1"
+expect "runner: an H-02 failure exits 1" equals "$RUNNER_RC" "1"
+expect "runner: an H-02 failure prints FAIL: H-02" has_text "$WORK/out.h02keep" "FAIL: H-02"
+expect "runner: an H-02 failure still runs H-04" has_text "$WORK/out.h02keep" "PASS: H-04"
+expect "runner: an H-02 failure still runs H-12" has_text "$WORK/out.h02keep" "PASS: H-12"
+expect "runner: an H-02 failure is in the summary" has_text "$WORK/out.h02keep" "Failed: h02-claude-on-base.sh"
 
 if [ "$FAILS" -eq 0 ]; then
   echo "All cases pass."
