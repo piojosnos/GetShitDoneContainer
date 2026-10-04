@@ -30,7 +30,9 @@ cat >"$WORK/bin/docker" <<'SHIM'
 #!/usr/bin/env bash
 # Fake docker. Knobs: FAKE_INFO_FAIL, FAKE_ARCH, FAKE_BUILD_FAIL, FAKE_UP_RC, FAKE_LABEL,
 # FAKE_PS, FAKE_ID, FAKE_COMPOSE_VERSION, FAKE_COMPOSE_FAIL, FAKE_BASE_LAYERS,
-# FAKE_CLAUDE_LAYERS, FAKE_CONFIG_NAME, FAKE_CONFIG_LAX, FAKE_CLAUDE_VERSION, FAKE_PLAIN_OK.
+# FAKE_CLAUDE_LAYERS, FAKE_CONFIG_NAME, FAKE_CONFIG_LAX, FAKE_CLAUDE_VERSION, FAKE_PLAIN_OK,
+# FAKE_IMAGE_ARCH, FAKE_CLAUDE_ARCH, FAKE_UNAME, FAKE_NO_TOUCH, FAKE_STAT_OWNER, FAKE_ENV_MISSING,
+# FAKE_UPDATE_ON, FAKE_SHARE_EXISTS.
 # State lives in FAKE_STATE; every call is logged to FAKE_LOG.
 printf 'ENV SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
   "${SBX_NAME-unset}" "${SBX_DIR-unset}" "${COMPOSE_PROJECT_NAME-unset}" "$*" >>"$FAKE_LOG"
@@ -134,9 +136,26 @@ case "${1:-}" in
       unhandled "image $*"
     fi
     shift
+    imageTemplate=""
     if [ "${1:-}" = "--format" ]; then
+      imageTemplate=$2
       shift 2
     fi
+    case "$imageTemplate" in
+      *Architecture*)
+        for imageRef in "$@"; do
+          case "$imageRef" in
+            sbx-claude:local) printf '%s\n' "${FAKE_CLAUDE_ARCH:-${FAKE_IMAGE_ARCH:-arm64}}" ;;
+            sbx-base:local) printf '%s\n' "${FAKE_IMAGE_ARCH:-arm64}" ;;
+            *)
+              echo "Error: No such image: $imageRef" >&2
+              exit 1
+              ;;
+          esac
+        done
+        exit 0
+        ;;
+    esac
     imageRef=${1:-}
     baseLayers=${FAKE_BASE_LAYERS:-sha256:b1 sha256:b2}
     case "$imageRef" in
@@ -203,6 +222,40 @@ case "${1:-}" in
     fi
     case "$*" in
       id) printf '%s\n' "${FAKE_ID:-uid=1000(sandbox) gid=1000(sandbox) groups=1000(sandbox)}" ;;
+      "uname -m") printf '%s\n' "${FAKE_UNAME:-aarch64}" ;;
+      "sh -c touch"*)
+        if [ "${FAKE_NO_TOUCH:-0}" != 1 ]; then
+          mkdir -p "$(cat "$FAKE_STATE/container.dir")/hosttest"
+          : >"$(cat "$FAKE_STATE/container.dir")/hosttest/x.txt"
+        fi
+        printf '.\n..\n.bashrc\n.local\nworkspace\n'
+        ;;
+      "stat -c"*)
+        shift 3
+        for statPath in "$@"; do
+          printf '%s %s\n' "${FAKE_STAT_OWNER:-sandbox}" "$statPath"
+        done
+        ;;
+      env)
+        for envName in CLAUDE_CONFIG_DIR DISABLE_UPDATES HISTFILE GH_CONFIG_DIR GIT_CONFIG_GLOBAL; do
+          if [ "$envName" != "${FAKE_ENV_MISSING:-}" ]; then
+            printf '%s=/fake/%s\n' "$envName" "$envName"
+          fi
+        done
+        printf 'HOME=/home/sandbox\n'
+        ;;
+      "claude update")
+        if [ "${FAKE_UPDATE_ON:-0}" = 1 ]; then
+          echo "Checking for updates... installed 9.9.9"
+        else
+          echo "Updates are disabled by your administrator"
+        fi
+        ;;
+      "sh -c test ! -e"*)
+        if [ "${FAKE_SHARE_EXISTS:-0}" = 1 ]; then
+          exit 1
+        fi
+        ;;
       *) unhandled "exec $execName $*" ;;
     esac
     exit 0
@@ -343,11 +396,14 @@ sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.healthy"
 
 expect "runner: healthy run exits 0" equals "$RUNNER_RC" "0"
 expect "runner: healthy run prints PASS: H-00" has_text "$WORK/out.healthy" "PASS: H-00"
+expect "runner: healthy run prints PASS: H-01" has_text "$WORK/out.healthy" "PASS: H-01"
 expect "runner: healthy run prints PASS: H-02" has_text "$WORK/out.healthy" "PASS: H-02"
 expect "runner: healthy run prints PASS: H-03" has_text "$WORK/out.healthy" "PASS: H-03"
 expect "runner: healthy run prints PASS: H-04" has_text "$WORK/out.healthy" "PASS: H-04"
+expect "runner: healthy run prints PASS: H-05" has_text "$WORK/out.healthy" "PASS: H-05"
 expect "runner: healthy run prints PASS: H-12" has_text "$WORK/out.healthy" "PASS: H-12"
-expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 5 passed, 0 failed, 0 not run"
+expect "runner: healthy run prints PASS: H-13" has_text "$WORK/out.healthy" "PASS: H-13"
+expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 8 passed, 0 failed, 0 not run"
 expect "runner: healthy run prints the manual pass commands" has_text "$WORK/out.healthy" "manual/h07-login.sh"
 expect "runner: the cleanup line has docker compose down and the run folder" \
   has_text "$WORK/out.healthy" "SBX_DIR=$healthyRunDir docker compose down && rm -rf $healthyRunDir"
@@ -377,7 +433,7 @@ reset_state
 run_runner "$WORK/out.badid" FAKE_ID="uid=0(root) gid=0(root)"
 expect "runner: a wrong id exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a wrong id prints FAIL: H-04" has_text "$WORK/out.badid" "FAIL: H-04"
-expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 4 passed, 1 failed, 0 not run"
+expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 7 passed, 1 failed, 0 not run"
 expect "runner: a wrong id still prints the Next block" has_text "$WORK/out.badid" "manual/h13-doctor.sh"
 
 echo "--- failed build"
@@ -472,6 +528,56 @@ expect "H-12: a different installed version fails" equals "$CHECK_RC" "1"
 expect "H-12: a different installed version prints FAIL: H-12" has_text "$WORK/out.h12.pin" "FAIL: H-12"
 run_standalone "$WORK/out.h12.plain" h12-plain-run-refused-pin-installed.sh FAKE_PLAIN_OK=1
 expect "H-12: a plain run that starts fails" equals "$CHECK_RC" "1"
+
+echo "--- H-01 on its own"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h01" h01-native-arch.sh
+expect "H-01: matching image and container architectures pass" equals "$CHECK_RC" "0"
+expect "H-01: prints PASS: H-01" has_text "$WORK/out.h01" "PASS: H-01"
+run_standalone "$WORK/out.h01.amd" h01-native-arch.sh FAKE_CLAUDE_ARCH=amd64
+expect "H-01: an amd64 image on an aarch64 daemon fails" equals "$CHECK_RC" "1"
+expect "H-01: the wrong image is named" has_text "$WORK/out.h01.amd" "sbx-claude:local"
+run_standalone "$WORK/out.h01.uname" h01-native-arch.sh FAKE_UNAME=x86_64
+expect "H-01: a container uname that differs from the daemon fails" equals "$CHECK_RC" "1"
+run_standalone "$WORK/out.h01.unknown" h01-native-arch.sh FAKE_ARCH=riscv64
+expect "H-01: an unknown daemon architecture fails" equals "$CHECK_RC" "1"
+printf 'WARNING: requested image platform does not match the detected host platform\n' >"$FIXTURE/logs/build-base.log"
+run_standalone "$WORK/out.h01.warn" h01-native-arch.sh
+expect "H-01: a platform mismatch warning in a build log fails" equals "$CHECK_RC" "1"
+expect "H-01: the warning log is named" has_text "$WORK/out.h01.warn" "build-base.log"
+
+echo "--- H-05 on its own"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h05" h05-workspace-and-home.sh
+expect "H-05: x.txt on the host, .bashrc and .local listed, sandbox owners pass" equals "$CHECK_RC" "0"
+expect "H-05: prints PASS: H-05" has_text "$WORK/out.h05" "PASS: H-05"
+expect "H-05: x.txt exists in the run folder" test -f "$FIXTURE/hosttest/x.txt"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h05.notouch" h05-workspace-and-home.sh FAKE_NO_TOUCH=1
+expect "H-05: a file that never reaches the host fails" equals "$CHECK_RC" "1"
+expect "H-05: the missing file is named" has_text "$WORK/out.h05.notouch" "x.txt"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h05.root" h05-workspace-and-home.sh FAKE_STAT_OWNER=root
+expect "H-05: a root owner fails" equals "$CHECK_RC" "1"
+expect "H-05: the root owner is shown" has_text "$WORK/out.h05.root" "root /home/sandbox/.local"
+
+echo "--- H-13 on its own"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h13" h13-env-and-no-self-update.sh
+expect "H-13: five variables, updates disabled and no share folder pass" equals "$CHECK_RC" "0"
+expect "H-13: prints PASS: H-13" has_text "$WORK/out.h13" "PASS: H-13"
+run_standalone "$WORK/out.h13.env" h13-env-and-no-self-update.sh FAKE_ENV_MISSING=HISTFILE
+expect "H-13: a missing variable fails" equals "$CHECK_RC" "1"
+expect "H-13: the missing variable is named" has_text "$WORK/out.h13.env" "HISTFILE"
+run_standalone "$WORK/out.h13.update" h13-env-and-no-self-update.sh FAKE_UPDATE_ON=1
+expect "H-13: an update that runs fails" equals "$CHECK_RC" "1"
+run_standalone "$WORK/out.h13.share" h13-env-and-no-self-update.sh FAKE_SHARE_EXISTS=1
+expect "H-13: an existing share folder fails" equals "$CHECK_RC" "1"
 
 echo "--- fatal H-00 in the runner"
 reset_state
