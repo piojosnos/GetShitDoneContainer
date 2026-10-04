@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.2"
 current_phase_name: Best-practices bundle baked into the image (stopgap)
 status: executing
-stopped_at: Completed 01.2-02-PLAN.md
-last_updated: "2026-10-04T07:30:29.271Z"
+stopped_at: Completed 01.2-03-PLAN.md
+last_updated: "2026-10-04T07:37:31.152Z"
 last_activity: 2026-10-04
 last_activity_desc: Phase 01.2 execution started
-state_head: 8d8b963696ee82f3ea3e6966b410def74edd42b0
+state_head: a0c9557cacb61e4a060145477537dfd869c33088
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 14
-  completed_plans: 10
+  completed_plans: 11
   percent: 22
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-04)
 ## Current Position
 
 Phase: 01.2 (Best-practices bundle baked into the image (stopgap)) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-10-04 — Phase 01.2 execution started
 
@@ -67,6 +67,7 @@ Progress: [██░░░░░░░░] 22%
 | Phase 01.1 P04 | 35min | 3 tasks | 1 files |
 | Phase 01.2 P01 | 9 min | 2 tasks | 11 files |
 | Phase 01.2 P02 | 14 min | 2 tasks | 9 files |
+| Phase 01.2 P03 | 5 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,8 @@ Recent decisions affecting current work:
 - [Phase 01.2]: Start hook folder /etc/sbx/start.d runs in name order and fails fast with its own [sbx] ERROR line (no die() compose hint); sync list file is .best-practices-skills; both images build from the repo root with an allowlist .dockerignore
 - [Phase 01.2]: Bundle conflicts resolved AGENTS.md first, then newest memory; superseded merge-confirmation text dropped
 - [Phase 01.2]: GSD ship/pr-branch non-default-target caveat lives in the GSD workflow section of git-workflow.md
+- [Phase 01.2]: H-17 runs in the no-sandbox stage on its own $RUN/h17 folder, so the running test sandbox state is never touched — A failing or odd start hook must not disturb the sandbox the other checks share
+- [Phase 01.2]: The failing-hook container uses CLAUDE_CONFIG_DIR=/proc/no-such-dir so the real hook exits 1 without any test-only code path — mkdir under set -e fails there; the hook and entrypoint stay unchanged
 
 ### Pending Todos
 
@@ -124,6 +127,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-04T07:30:29.205Z
-Stopped at: Completed 01.2-02-PLAN.md
+Last session: 2026-10-04T07:37:31.084Z
+Stopped at: Completed 01.2-03-PLAN.md
 Resume file: None

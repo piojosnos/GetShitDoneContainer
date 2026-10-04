@@ -91,7 +91,7 @@ Plans:
   4. After the agent learns a new memory, a container recreate and a `--no-cache` rebuild keep it. Skills and rules are refreshed from the image on every start, so the image version wins, and an accidental edit to a synced file is undone by the next start.
   5. Container start still works with networking disabled, and the Phase 1 mount checks and layout still pass.
 
-**Plans:** 2/6 plans executed
+**Plans:** 3/6 plans executed
 
 Plans:
 **Wave 1**
@@ -101,7 +101,7 @@ Plans:
 - [x] 01.2-02-PLAN.md: Full bundle: every rule and both skills, header and no dash punctuation, held by guard rules
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 01.2-03-PLAN.md: Start path proven on the Mac: H-15 synced and visible to Claude, H-17 offline start and failing hook
+- [x] 01.2-03-PLAN.md: Start path proven on the Mac: H-15 synced and visible to Claude, H-17 offline start and failing hook
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 01.2-04-PLAN.md: Image wins, user data spared: full sync scenarios, H-16 restart refresh, H-09 memory sentinel
@@ -210,7 +210,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 |-------|----------------|--------|-----------|
 | 1. Two-Mount Claude Sandbox | 4/4 | Complete    | 2026-10-04 |
 | 1.1. Automated host tests | 4/4 | Complete    | 2026-10-04 |
-| 1.2. Best-practices bundle baked into the image (stopgap) | 2/6 | In Progress|  |
+| 1.2. Best-practices bundle baked into the image (stopgap) | 3/6 | In Progress|  |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
