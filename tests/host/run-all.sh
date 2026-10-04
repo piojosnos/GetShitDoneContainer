@@ -27,7 +27,7 @@ trap print_next_block EXIT
 # - Then Coexistence, which compares against the state at the start of the run.
 fatalCheck="h00-compose-v2.sh"
 noSandboxCheckList="h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh"
-sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh"
+sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h15-bundle-synced-and-visible.sh"
 chainCheckList="h08-history-survives-recreate.sh h11-stop-is-quick-and-safe.sh h09-rebuild-keeps-files-no-volumes.sh h10-missing-folder-refused.sh"
 finalCheckList="coexistence.sh"
 

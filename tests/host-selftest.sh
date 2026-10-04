@@ -34,7 +34,10 @@ cat >"$WORK/bin/docker" <<'SHIM'
 # FAKE_IMAGE_ARCH, FAKE_CLAUDE_ARCH, FAKE_UNAME, FAKE_NO_TOUCH, FAKE_STAT_OWNER, FAKE_ENV_MISSING,
 # FAKE_UPDATE_ON, FAKE_SHARE_EXISTS, FAKE_GIT_DUBIOUS, FAKE_SAFE_DIR, FAKE_NO_GIT_WRITE,
 # FAKE_NO_HISTORY, FAKE_DOWN_LOSES_HISTORY, FAKE_VOLUMES, FAKE_VOLUMES_AFTER_BUILD,
-# FAKE_EXTRA_MOUNT, FAKE_DOWN_KEEPS, FAKE_H10 (honored, ignored or started).
+# FAKE_EXTRA_MOUNT, FAKE_DOWN_KEEPS, FAKE_H10 (honored, ignored or started),
+# FAKE_NO_SYNC (compose up skips the start hook), FAKE_CONTEXT_SCOPED (the fake /context also lists
+# path-scoped rules), FAKE_CONTEXT_NO_SKILLS (the fake /context lists no skills).
+# Compose up executes the real start hook, as the real entrypoint does.
 # State lives in FAKE_STATE; every call is logged to FAKE_LOG.
 printf 'ENV SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
   "${SBX_NAME-unset}" "${SBX_DIR-unset}" "${COMPOSE_PROJECT_NAME-unset}" "$*" >>"$FAKE_LOG"
@@ -118,6 +121,14 @@ case "${1:-}" in
         fi
         : >"$FAKE_STATE/container"
         printf '%s\n' "$SBX_DIR" >"$FAKE_STATE/container.dir"
+        mkdir -p "$SBX_DIR/state/claude"
+        if [ "${FAKE_NO_SYNC:-0}" != 1 ]; then
+          if ! SBX_BUNDLE_DIR="$FAKE_REPO/best-practices" CLAUDE_CONFIG_DIR="$SBX_DIR/state/claude" \
+            bash "$FAKE_REPO/claude/start.d/10-best-practices"; then
+            echo "[sbx] ERROR: start hook /etc/sbx/start.d/10-best-practices failed; the container was not started." >&2
+            exit 1
+          fi
+        fi
         exit 0
         ;;
       down)
@@ -337,6 +348,26 @@ case "${1:-}" in
           exit 1
         fi
         ;;
+      *"claude -p /context")
+        contextRules=$FAKE_REPO/best-practices/rules
+        echo "### Memory Files"
+        echo "| Type | Path | Tokens |"
+        echo "|------|------|--------|"
+        for contextRel in $(cd "$contextRules" && find . -type f | sed 's|^\./||' | sort); do
+          if [ "$(sed -n 1p "$contextRules/$contextRel")" != "---" ] || [ "${FAKE_CONTEXT_SCOPED:-0}" = 1 ]; then
+            printf '| User | /home/sandbox/workspace/state/claude/rules/%s | 10 |\n' "$contextRel"
+          fi
+        done
+        echo
+        echo "### Skills"
+        echo "| Skill | Source | Tokens |"
+        echo "|-------|--------|--------|"
+        if [ "${FAKE_CONTEXT_NO_SKILLS:-0}" != 1 ]; then
+          for contextSkill in "$FAKE_REPO"/best-practices/skills/*/; do
+            printf '| %s | User | < 20 |\n' "$(basename "$contextSkill")"
+          done
+        fi
+        ;;
       *) unhandled "exec $execName $*" ;;
     esac
     exit 0
@@ -433,6 +464,13 @@ run_standalone() {
     bash "tests/host/$script" >"$outFile" 2>&1 </dev/null || CHECK_RC=$?
 }
 
+# fake_start_sync DIR: runs the real start hook into DIR/state/claude, as a container start would.
+fake_start_sync() {
+  mkdir -p "$1/state/claude"
+  SBX_BUNDLE_DIR="$REPO/best-practices" CLAUDE_CONFIG_DIR="$1/state/claude" \
+    bash "$REPO/claude/start.d/10-best-practices"
+}
+
 # last_run_dir: the run folder the latest runner made.
 last_run_dir() {
   ls -d "$WORK"/tmp/sbx-hosttest-* 2>/dev/null | tail -n 1
@@ -488,10 +526,11 @@ expect "runner: healthy run prints PASS: H-09" has_text "$WORK/out.healthy" "PAS
 expect "runner: healthy run prints PASS: H-10" has_text "$WORK/out.healthy" "PASS: H-10"
 expect "runner: healthy run prints PASS: H-11" has_text "$WORK/out.healthy" "PASS: H-11"
 expect "runner: healthy run prints PASS: H-12" has_text "$WORK/out.healthy" "PASS: H-12"
-expect "runner: healthy run has 14 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "14"
+expect "runner: healthy run has 15 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "15"
 expect "runner: healthy run prints PASS: Coexistence" has_text "$WORK/out.healthy" "PASS: Coexistence"
 expect "runner: healthy run prints PASS: H-13" has_text "$WORK/out.healthy" "PASS: H-13"
-expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 14 passed, 0 failed, 0 not run"
+expect "runner: healthy run prints PASS: H-15" has_text "$WORK/out.healthy" "PASS: H-15"
+expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 15 passed, 0 failed, 0 not run"
 expect "runner: healthy run prints the manual pass commands" has_text "$WORK/out.healthy" "manual/h07-login.sh"
 expect "runner: the cleanup line has docker compose down and the run folder" \
   has_text "$WORK/out.healthy" "SBX_DIR=$healthyRunDir docker compose down && rm -rf $healthyRunDir"
@@ -521,8 +560,14 @@ reset_state
 run_runner "$WORK/out.badid" FAKE_ID="uid=0(root) gid=0(root)"
 expect "runner: a wrong id exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a wrong id prints FAIL: H-04" has_text "$WORK/out.badid" "FAIL: H-04"
-expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 13 passed, 1 failed, 0 not run"
+expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 14 passed, 1 failed, 0 not run"
 expect "runner: a wrong id still prints the Next block" has_text "$WORK/out.badid" "manual/h13-doctor.sh"
+
+echo "--- sandbox started without the bundle sync"
+reset_state
+run_runner "$WORK/out.nosync" FAKE_NO_SYNC=1
+expect "runner: a start that never synced exits 1" equals "$RUNNER_RC" "1"
+expect "runner: a start that never synced prints FAIL: H-15" has_text "$WORK/out.nosync" "FAIL: H-15"
 
 echo "--- failed build"
 reset_state
@@ -712,6 +757,36 @@ make_fixture_run
 run_standalone "$WORK/out.h08.lost" h08-history-survives-recreate.sh FAKE_DOWN_LOSES_HISTORY=1
 expect "H-08: history lost by the recreate fails" equals "$CHECK_RC" "1"
 expect "H-08: the failing half is the second one" has_text "$WORK/out.h08.lost" "after the recreate"
+
+echo "--- H-15 on its own"
+reset_state
+make_fixture_run
+fake_start_sync "$FIXTURE"
+run_standalone "$WORK/out.h15" h15-bundle-synced-and-visible.sh
+expect "H-15: a synced bundle that Claude lists passes" equals "$CHECK_RC" "0"
+expect "H-15: prints PASS: H-15" has_text "$WORK/out.h15" "PASS: H-15"
+expect "H-15: the probe runs claude -p /context with a dummy key and no network" \
+  has_match "$FAKE_LOG" 'ARGS: exec sbx-hosttest env ANTHROPIC_API_KEY=sk-ant-dummy ANTHROPIC_BASE_URL=http://127.0.0.1:1 claude -p /context$'
+run_standalone "$WORK/out.h15.scoped" h15-bundle-synced-and-visible.sh FAKE_CONTEXT_SCOPED=1
+expect "H-15: a path-scoped rule loaded at start fails" equals "$CHECK_RC" "1"
+expect "H-15: the loaded path-scoped rule is named" has_text "$WORK/out.h15.scoped" "shell.md"
+run_standalone "$WORK/out.h15.noskills" h15-bundle-synced-and-visible.sh FAKE_CONTEXT_NO_SKILLS=1
+expect "H-15: skills that Claude does not list fail" equals "$CHECK_RC" "1"
+expect "H-15: the missing skill is named" has_text "$WORK/out.h15.noskills" "merged"
+printf 'tampered\n' >>"$FIXTURE/state/claude/rules/communication.md"
+run_standalone "$WORK/out.h15.tamper" h15-bundle-synced-and-visible.sh
+expect "H-15: a synced rule that differs from the repo fails" equals "$CHECK_RC" "1"
+expect "H-15: the differing rule is named" has_text "$WORK/out.h15.tamper" "communication.md"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h15.nosync" h15-bundle-synced-and-visible.sh
+expect "H-15: a start where the hook never ran fails" equals "$CHECK_RC" "1"
+expect "H-15: the missing rules folder is named" has_text "$WORK/out.h15.nosync" "state/claude/rules"
+reset_state
+FIXTURE=""
+run_standalone "$WORK/out.h15.none" h15-bundle-synced-and-visible.sh
+expect "H-15: no test sandbox fails" equals "$CHECK_RC" "1"
+expect "H-15: no test sandbox says to run run-all.sh first" has_text "$WORK/out.h15.none" "run-all.sh first"
 
 echo "--- Coexistence on its own"
 reset_state
