@@ -38,7 +38,8 @@ cat >"$WORK/bin/docker" <<'SHIM'
 # FAKE_NO_SYNC (compose up skips the start hook), FAKE_CONTEXT_SCOPED (the fake /context also lists
 # path-scoped rules), FAKE_CONTEXT_NO_SKILLS (the fake /context lists no skills), FAKE_OFFLINE_FAIL
 # (a run with --network none fails to start), FAKE_HOOK_IGNORED (a run whose hook fails still runs
-# its command).
+# its command), FAKE_SYNC_CLOBBERS (compose up deletes state/claude/skills and projects before the
+# hook, as a broken sync would).
 # Compose up and a run with --network none execute the real start hook, as the real entrypoint does.
 # State lives in FAKE_STATE; every call is logged to FAKE_LOG.
 printf 'ENV SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
@@ -124,6 +125,9 @@ case "${1:-}" in
         : >"$FAKE_STATE/container"
         printf '%s\n' "$SBX_DIR" >"$FAKE_STATE/container.dir"
         mkdir -p "$SBX_DIR/state/claude"
+        if [ "${FAKE_SYNC_CLOBBERS:-0}" = 1 ]; then
+          rm -rf "$SBX_DIR/state/claude/skills" "$SBX_DIR/state/claude/projects"
+        fi
         if [ "${FAKE_NO_SYNC:-0}" != 1 ]; then
           if ! SBX_BUNDLE_DIR="$FAKE_REPO/best-practices" CLAUDE_CONFIG_DIR="$SBX_DIR/state/claude" \
             bash "$FAKE_REPO/claude/start.d/10-best-practices"; then
@@ -560,15 +564,16 @@ expect "runner: healthy run prints PASS: H-05" has_text "$WORK/out.healthy" "PAS
 expect "runner: healthy run prints PASS: H-06" has_text "$WORK/out.healthy" "PASS: H-06"
 expect "runner: healthy run prints PASS: H-08" has_text "$WORK/out.healthy" "PASS: H-08"
 expect "runner: healthy run prints PASS: H-09" has_text "$WORK/out.healthy" "PASS: H-09"
+expect "runner: healthy run prints PASS: H-16" has_text "$WORK/out.healthy" "PASS: H-16"
 expect "runner: healthy run prints PASS: H-10" has_text "$WORK/out.healthy" "PASS: H-10"
 expect "runner: healthy run prints PASS: H-11" has_text "$WORK/out.healthy" "PASS: H-11"
 expect "runner: healthy run prints PASS: H-12" has_text "$WORK/out.healthy" "PASS: H-12"
-expect "runner: healthy run has 16 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "16"
+expect "runner: healthy run has 17 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "17"
 expect "runner: healthy run prints PASS: Coexistence" has_text "$WORK/out.healthy" "PASS: Coexistence"
 expect "runner: healthy run prints PASS: H-13" has_text "$WORK/out.healthy" "PASS: H-13"
 expect "runner: healthy run prints PASS: H-15" has_text "$WORK/out.healthy" "PASS: H-15"
 expect "runner: healthy run prints PASS: H-17" has_text "$WORK/out.healthy" "PASS: H-17"
-expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 16 passed, 0 failed, 0 not run"
+expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 17 passed, 0 failed, 0 not run"
 expect "runner: healthy run prints the manual pass commands" has_text "$WORK/out.healthy" "manual/h07-login.sh"
 expect "runner: the cleanup line has docker compose down and the run folder" \
   has_text "$WORK/out.healthy" "SBX_DIR=$healthyRunDir docker compose down && rm -rf $healthyRunDir"
@@ -598,7 +603,7 @@ reset_state
 run_runner "$WORK/out.badid" FAKE_ID="uid=0(root) gid=0(root)"
 expect "runner: a wrong id exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a wrong id prints FAIL: H-04" has_text "$WORK/out.badid" "FAIL: H-04"
-expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 15 passed, 1 failed, 0 not run"
+expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 16 passed, 1 failed, 0 not run"
 expect "runner: a wrong id still prints the Next block" has_text "$WORK/out.badid" "manual/h13-doctor.sh"
 
 echo "--- sandbox started without the bundle sync"
@@ -796,6 +801,43 @@ run_standalone "$WORK/out.h08.lost" h08-history-survives-recreate.sh FAKE_DOWN_L
 expect "H-08: history lost by the recreate fails" equals "$CHECK_RC" "1"
 expect "H-08: the failing half is the second one" has_text "$WORK/out.h08.lost" "after the recreate"
 
+echo "--- H-16 on its own"
+reset_state
+make_fixture_run
+fake_start_sync "$FIXTURE"
+run_standalone "$WORK/out.h16" h16-sync-refreshes-and-spares.sh
+expect "H-16: a restart that refreshes the bundle and spares user files passes" equals "$CHECK_RC" "0"
+expect "H-16: prints PASS: H-16" has_text "$WORK/out.h16" "PASS: H-16"
+expect "H-16: the stale rule is gone" test ! -e "$FIXTURE/state/claude/rules/h16-stale.md"
+expect "H-16: the old bundle skill is gone" test ! -e "$FIXTURE/state/claude/skills/h16-old-bundle-skill"
+expect "H-16: the user skill keeps its sentinel" has_text "$FIXTURE/state/claude/skills/h16-user-skill/SKILL.md" "h16-"
+expect "H-16: the GSD-style skill keeps its sentinel" has_text "$FIXTURE/state/claude/skills/gsd-h16-sample/SKILL.md" "h16-"
+expect "H-16: the memory keeps its sentinel" \
+  has_text "$FIXTURE/state/claude/projects/-home-sandbox-workspace-hosttest/memory/h16-memory.md" "h16-"
+expect "H-16: CLAUDE.md keeps its sentinel" has_text "$FIXTURE/state/claude/CLAUDE.md" "h16-"
+expect "H-16: rules equal the repo again" diff -r -q "$REPO/best-practices/rules" "$FIXTURE/state/claude/rules"
+expect "H-16: the edited bundle skill equals the repo again" \
+  diff -r -q "$REPO/best-practices/skills/merged" "$FIXTURE/state/claude/skills/merged"
+expect "H-16: the sandbox is down and up once" equals "$(grep -c 'ARGS: compose .* \(up\|down\)' "$FAKE_LOG")" "2"
+expect "H-16: the sandbox is up at the end" test -f "$WORK/state/container"
+reset_state
+make_fixture_run
+fake_start_sync "$FIXTURE"
+run_standalone "$WORK/out.h16.nosync" h16-sync-refreshes-and-spares.sh FAKE_NO_SYNC=1
+expect "H-16: a restart where the hook never ran fails" equals "$CHECK_RC" "1"
+expect "H-16: the stale rule is named" has_text "$WORK/out.h16.nosync" "h16-stale.md"
+reset_state
+make_fixture_run
+fake_start_sync "$FIXTURE"
+run_standalone "$WORK/out.h16.clobber" h16-sync-refreshes-and-spares.sh FAKE_SYNC_CLOBBERS=1
+expect "H-16: a restart that deletes user skills fails" equals "$CHECK_RC" "1"
+expect "H-16: the lost user skill is named" has_text "$WORK/out.h16.clobber" "h16-user-skill"
+reset_state
+FIXTURE=""
+run_standalone "$WORK/out.h16.none" h16-sync-refreshes-and-spares.sh
+expect "H-16: no test sandbox fails" equals "$CHECK_RC" "1"
+expect "H-16: no test sandbox says to run run-all.sh first" has_text "$WORK/out.h16.none" "run-all.sh first"
+
 echo "--- H-15 on its own"
 reset_state
 make_fixture_run
@@ -919,6 +961,13 @@ sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.h09.nocache"
 expect "H-09: SBXTEST_NO_CACHE=1 still passes" equals "$CHECK_RC" "0"
 expect "H-09: SBXTEST_NO_CACHE=1 adds --no-cache to both builds" \
   equals "$(grep -c '^build --no-cache ' "$WORK/args.h09.nocache")" "2"
+expect "H-09: the memory sentinel survives" \
+  test -f "$FIXTURE/state/claude/projects/-home-sandbox-workspace-hosttest/memory/h09-memory.md"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h09.clobber" h09-rebuild-keeps-files-no-volumes.sh FAKE_SYNC_CLOBBERS=1
+expect "H-09: a restart that deletes the memories fails" equals "$CHECK_RC" "1"
+expect "H-09: the lost memory is named" has_text "$WORK/out.h09.clobber" "h09-memory.md"
 
 echo "--- H-10 on its own"
 reset_state
