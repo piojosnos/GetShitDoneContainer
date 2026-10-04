@@ -6,34 +6,34 @@ findings:
   - id: WR-01
     severity: warning
     disposition: open
-    title: "\"History is shared between all open shells\" is not delivered by `history -a` alone"
+    title: "The entrypoint's \"project folder is missing\" check is defeated by `working_dir`"
   - id: WR-02
     severity: warning
     disposition: open
-    title: "H-06 overwrites the user's persistent git identity with \"T\""
+    title: "`create_host_path: false` is known to be ignored, and `base/Dockerfile` says the opposite"
   - id: WR-03
     severity: warning
     disposition: open
-    title: "Claude Code install has no integrity verification, and the Node and gh checksums come from the same origin as the artifacts"
+    title: "Claude Code install has no integrity verification; Node and gh checksums share an origin with the artifacts"
   - id: IN-01
     severity: info
     disposition: open
-    title: "Entrypoint cannot tell a bind mount from tmpfs or a named volume, but its message and the docs claim it can"
+    title: "Entrypoint message says \"bind mount\" but only checks for a mount point"
   - id: IN-02
     severity: info
     disposition: open
-    title: "Orphaned section comment in base/Dockerfile"
+    title: "`compose.yml` does not enforce an absolute `SBX_DIR`"
   - id: IN-03
     severity: info
     disposition: open
-    title: "SANDBOX.md misdescribes the SBX_NAME rule"
+    title: "Base image and apt packages are not pinned by digest"
   - id: IN-04
     severity: info
     disposition: open
-    title: "Hardcoded base commit in the static checker will fail on any later legitimate edit"
+    title: "Entrypoint reports a raw `mkdir` error when `state/` is not writable"
 open: 7
 total: 7
-recorded: 2026-10-01T18:48:50.911Z
+recorded: 2026-10-04T02:22:33.919Z
 ---
 
 # Phase 01: Code Review Disposition
