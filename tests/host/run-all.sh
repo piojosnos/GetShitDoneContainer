@@ -25,7 +25,7 @@ trap print_next_block EXIT
 # - Then Coexistence, which compares against the state at the start of the run.
 fatalCheck="h00-compose-v2.sh"
 noSandboxCheckList="h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh"
-sandboxCheckList="h04-nonroot-user.sh"
+sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h13-env-and-no-self-update.sh"
 chainCheckList=""
 finalCheckList=""
 
