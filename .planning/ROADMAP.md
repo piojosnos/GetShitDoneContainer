@@ -13,7 +13,7 @@ This milestone makes the ClaudeCode sandbox solid. Each phase is a vertical slic
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Two-Mount Claude Sandbox** - A Claude sandbox that runs on the Mac with code and state in separate host folders, a visible image home, and a login that survives rebuilds
-- [ ] **Phase 1.1: Automated host tests** (INSERTED) - One command on the Mac runs every host check (H-00 to H-13) with a PASS/FAIL line each; the only manual step is the Claude login
+- [ ] **Phase 1.1: Automated host tests** (INSERTED) - One unattended command on the Mac runs every automatable host check (H-00 to H-13) with a PASS/FAIL line each; login, resume and doctor are a short manual pass with helper scripts
 - [ ] **Phase 1.2: Best-practices bundle baked into the image (stopgap)** (INSERTED) - New sandboxes start with the user's skills, standing rules, and shared memories installed, taken from files in this repo
 - [ ] **Phase 2: Pinned Toolchain, GSD, and ccusage** - Every tool is baked in at a version pinned in `versions.env`, the image's GSD wins over persisted state, and `ccusage` reports real usage
 - [ ] **Phase 2.1: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs
@@ -54,16 +54,16 @@ Plans:
 
 ### Phase 01.1: Automated host tests (INSERTED)
 
-**Goal**: Every Mac host check runs from one command. The user runs `tests/host/run-all.sh` on the Mac, logs in to Claude once when asked, and gets a PASS or FAIL line per check plus a summary. No manual checklist, no required environment variables.
+**Goal**: Every Mac host check that needs no human runs from one unattended command. The user runs `tests/host/run-all.sh` on the Mac and gets a PASS or FAIL line per check plus a summary, with no required environment variables. The few steps that need a human (Claude login, resume, doctor) are a short manual pass, each driven by a helper script.
 **Mode:** mvp
 **Depends on**: Phase 1
 **Requirements**: HT-01, HT-02, HT-03, HT-04, HT-05
 **Success Criteria** (what must be TRUE):
-  1. `tests/host/` has one script per host check (H-00 to H-13, plus Coexistence). Each prints `PASS: H-xx <what it proves>` or `FAIL: H-xx <what went wrong>` and exits 0 or 1. Each can also be run on its own.
-  2. `tests/host/run-all.sh` builds the images, creates a throwaway sandbox (its own temporary folder and a fixed test name), runs every check in order, prints a summary, removes the test container and folder, and exits non-zero if any check failed. It needs no exported variables; optional variables only override defaults (for example a slow `--no-cache` rebuild for H-09).
-  3. The only manual step is the Claude login: the runner pauses before H-07, prints the exact command to run, waits for the user to confirm, then checks the login and everything after it automatically.
+  1. `tests/host/` has one script per automated host check (H-00 to H-13, plus Coexistence). Each prints `PASS: H-xx <what it proves>` or `FAIL: H-xx <what went wrong>`, exits 0 or 1, states its dependencies in a `# Depends on:` line, and can also be run on its own.
+  2. `tests/host/run-all.sh` never waits for input. It builds the images, creates a throwaway sandbox (a fresh `mktemp` folder and a fixed test name), runs the independent checks first and the chained ones after, prints a summary, and exits non-zero if any check failed. It never deletes files: it ends by printing the manual-pass commands and a cleanup command to copy and paste. It needs no exported variables; optional variables only override defaults (for example a slow `--no-cache` rebuild).
+  3. The steps that need a human (Claude login for H-07, login and `claude --continue` after a rebuild for H-09, `claude doctor` for H-13) are listed in `tests/host-checklist.md` and run through helper scripts in `tests/host/manual/`, which check everything they can automatically.
   4. The scripts run on the Mac with stock bash 3.2 and Docker Desktop, and never touch the user's real sandboxes, real git identity, or old-layout containers.
-  5. On the Mac, `tests/host/run-all.sh` passes every check. This also closes Phase 1's deferred host verification. `tests/host-checklist.md` shrinks to "run `tests/host/run-all.sh`" plus how to read a failure.
+  5. On the Mac, `tests/host/run-all.sh` passes every check. This also closes Phase 1's deferred host verification. `tests/host-checklist.md` shrinks to "run `tests/host/run-all.sh`", the manual pass, and how to read a failure.
 
 **Plans**: TBD
 

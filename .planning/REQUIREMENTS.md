@@ -38,8 +38,8 @@ Requirements for this milestone (ClaudeCode sandbox made solid). Each maps to ro
 Automated checks that run on the Mac, where Docker runs.
 
 - [ ] **HT-01**: One script per host check (H-00 to H-13, plus Coexistence) under `tests/host/`, each printing a `PASS`/`FAIL` line with its check ID and exiting 0 or 1
-- [ ] **HT-02**: `tests/host/run-all.sh` runs every check in order with no required environment variables: it builds the images, creates and removes a throwaway sandbox, prints a summary, and exits non-zero on any failure
-- [ ] **HT-03**: The Claude login is the only manual step: the runner pauses, prints the command, and continues after the user confirms
+- [ ] **HT-02**: `tests/host/run-all.sh` runs every automatable check unattended with no required environment variables: it builds the images, creates a throwaway sandbox, prints a summary, and exits non-zero on any failure. It never deletes files; it prints the cleanup command instead
+- [ ] **HT-03**: Steps that need a human (Claude login, resume after rebuild, `claude doctor`) are a manual pass in `tests/host-checklist.md`, each run through a helper script that checks what it can automatically
 - [ ] **HT-04**: The scripts run with macOS stock bash 3.2 and Docker Desktop, and never touch real sandboxes, the user's git identity, or old-layout containers
 - [ ] **HT-05**: All host checks pass on the Mac, which closes Phase 1's deferred host verification
 
