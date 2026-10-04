@@ -33,7 +33,8 @@ cat >"$WORK/bin/docker" <<'SHIM'
 # FAKE_CLAUDE_LAYERS, FAKE_CONFIG_NAME, FAKE_CONFIG_LAX, FAKE_CLAUDE_VERSION, FAKE_PLAIN_OK,
 # FAKE_IMAGE_ARCH, FAKE_CLAUDE_ARCH, FAKE_UNAME, FAKE_NO_TOUCH, FAKE_STAT_OWNER, FAKE_ENV_MISSING,
 # FAKE_UPDATE_ON, FAKE_SHARE_EXISTS, FAKE_GIT_DUBIOUS, FAKE_SAFE_DIR, FAKE_NO_GIT_WRITE,
-# FAKE_NO_HISTORY, FAKE_DOWN_LOSES_HISTORY.
+# FAKE_NO_HISTORY, FAKE_DOWN_LOSES_HISTORY, FAKE_VOLUMES, FAKE_VOLUMES_AFTER_BUILD,
+# FAKE_EXTRA_MOUNT, FAKE_DOWN_KEEPS, FAKE_H10 (honored, ignored or started).
 # State lives in FAKE_STATE; every call is logged to FAKE_LOG.
 printf 'ENV SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
   "${SBX_NAME-unset}" "${SBX_DIR-unset}" "${COMPOSE_PROJECT_NAME-unset}" "$*" >>"$FAKE_LOG"
@@ -91,6 +92,26 @@ case "${1:-}" in
           echo "required variable SBX_DIR is missing a value: SBX_DIR is required" >&2
           exit 15
         fi
+        if [ ! -d "$SBX_DIR" ]; then
+          case "${FAKE_H10:-honored}" in
+            ignored)
+              mkdir -p "$SBX_DIR"
+              : >"$FAKE_STATE/container"
+              printf '%s\n' "$SBX_DIR" >"$FAKE_STATE/container.dir"
+              echo "[sbx] ERROR: the project folder is missing." >&2
+              exit 1
+              ;;
+            started)
+              : >"$FAKE_STATE/container"
+              printf '%s\n' "$SBX_DIR" >"$FAKE_STATE/container.dir"
+              exit 0
+              ;;
+            *)
+              echo "fake compose: bind source path does not exist: $SBX_DIR" >&2
+              exit 1
+              ;;
+          esac
+        fi
         if [ "${FAKE_UP_RC:-0}" != 0 ]; then
           echo "fake compose: up failed" >&2
           exit "$FAKE_UP_RC"
@@ -103,7 +124,9 @@ case "${1:-}" in
         if [ "${FAKE_DOWN_LOSES_HISTORY:-0}" = 1 ] && [ -f "$FAKE_STATE/container.dir" ]; then
           rm -f "$(cat "$FAKE_STATE/container.dir")/state/shell/bash_history"
         fi
-        rm -f "$FAKE_STATE/container" "$FAKE_STATE/container.dir"
+        if [ "${FAKE_DOWN_KEEPS:-0}" != 1 ]; then
+          rm -f "$FAKE_STATE/container" "$FAKE_STATE/container.dir"
+        fi
         exit 0
         ;;
       *) unhandled "compose $composeSub $*" ;;
@@ -128,6 +151,12 @@ case "${1:-}" in
     case "$template" in
       '') exit 0 ;;
       *sbx.name*) printf '%s\n' "${FAKE_LABEL:-hosttest}" ;;
+      *.Type*)
+        printf 'bind /home/sandbox/workspace %s\n' "$(cat "$FAKE_STATE/container.dir")"
+        if [ "${FAKE_EXTRA_MOUNT:-0}" = 1 ]; then
+          printf 'volume /home/sandbox/extra /var/lib/docker/volumes/extra\n'
+        fi
+        ;;
       *Mounts*) cat "$FAKE_STATE/container.dir" ;;
       *State.Running*) printf 'true\n' ;;
       *) unhandled "container inspect $template" ;;
@@ -206,7 +235,21 @@ case "${1:-}" in
       echo "ERROR: failed to solve: fake build failure for $imageTag" >&2
       exit 1
     fi
+    : >"$FAKE_STATE/built"
     echo "built $imageTag"
+    exit 0
+    ;;
+  volume)
+    if [ "${2:-}" != "ls" ]; then
+      unhandled "volume $*"
+    fi
+    volumeList=${FAKE_VOLUMES:-}
+    if [ -f "$FAKE_STATE/built" ] && [ -n "${FAKE_VOLUMES_AFTER_BUILD:-}" ]; then
+      volumeList=$FAKE_VOLUMES_AFTER_BUILD
+    fi
+    for volumeName in $volumeList; do
+      printf '%s\n' "$volumeName"
+    done
     exit 0
     ;;
   ps)
@@ -440,10 +483,14 @@ expect "runner: healthy run prints PASS: H-04" has_text "$WORK/out.healthy" "PAS
 expect "runner: healthy run prints PASS: H-05" has_text "$WORK/out.healthy" "PASS: H-05"
 expect "runner: healthy run prints PASS: H-06" has_text "$WORK/out.healthy" "PASS: H-06"
 expect "runner: healthy run prints PASS: H-08" has_text "$WORK/out.healthy" "PASS: H-08"
+expect "runner: healthy run prints PASS: H-09" has_text "$WORK/out.healthy" "PASS: H-09"
+expect "runner: healthy run prints PASS: H-10" has_text "$WORK/out.healthy" "PASS: H-10"
+expect "runner: healthy run prints PASS: H-11" has_text "$WORK/out.healthy" "PASS: H-11"
 expect "runner: healthy run prints PASS: H-12" has_text "$WORK/out.healthy" "PASS: H-12"
+expect "runner: healthy run has 14 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "14"
 expect "runner: healthy run prints PASS: Coexistence" has_text "$WORK/out.healthy" "PASS: Coexistence"
 expect "runner: healthy run prints PASS: H-13" has_text "$WORK/out.healthy" "PASS: H-13"
-expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 11 passed, 0 failed, 0 not run"
+expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 14 passed, 0 failed, 0 not run"
 expect "runner: healthy run prints the manual pass commands" has_text "$WORK/out.healthy" "manual/h07-login.sh"
 expect "runner: the cleanup line has docker compose down and the run folder" \
   has_text "$WORK/out.healthy" "SBX_DIR=$healthyRunDir docker compose down && rm -rf $healthyRunDir"
@@ -456,7 +503,7 @@ expect "docker log: the caller's decoy values never reach docker" lacks_match "$
 expect "docker log: every exec and inspect names sbx-hosttest" \
   equals "$(grep -E '^(exec|container inspect) ' "$WORK/args.healthy" | grep -vc 'sbx-hosttest')" "0"
 expect "docker log: every compose up and down carries the test name and the run folder" \
-  equals "$(grep -E 'ARGS: compose .* (up|down)( |$)' "$FAKE_LOG" | grep -vc "SBX_NAME=hosttest SBX_DIR=$healthyRunDir ")" "0"
+  equals "$(grep -E 'ARGS: compose .* (up|down)( |$)' "$FAKE_LOG" | grep -vcE "SBX_NAME=hosttest SBX_DIR=$healthyRunDir(/does-not-exist)? ")" "0"
 expect "docker log: the sandbox was started" has_match "$FAKE_LOG" 'ARGS: compose .* up -d --wait'
 expect "docker log: every compose call names the test name" \
   equals "$(grep 'ARGS: compose' "$FAKE_LOG" | grep -vc 'SBX_NAME=hosttest ')" "0"
@@ -473,7 +520,7 @@ reset_state
 run_runner "$WORK/out.badid" FAKE_ID="uid=0(root) gid=0(root)"
 expect "runner: a wrong id exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a wrong id prints FAIL: H-04" has_text "$WORK/out.badid" "FAIL: H-04"
-expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 10 passed, 1 failed, 0 not run"
+expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 13 passed, 1 failed, 0 not run"
 expect "runner: a wrong id still prints the Next block" has_text "$WORK/out.badid" "manual/h13-doctor.sh"
 
 echo "--- failed build"
@@ -692,6 +739,99 @@ CHECK_RC=0
 env SBXTEST_DIR="" bash "$WORK/scratchrepo/tests/host/coexistence.sh" >"$WORK/out.co.git" 2>&1 </dev/null || CHECK_RC=$?
 expect "Coexistence: a change under ClaudeCode/ fails" equals "$CHECK_RC" "1"
 expect "Coexistence: the changed path is shown" has_text "$WORK/out.co.git" "stray.txt"
+
+echo "--- H-11 on its own"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h11" h11-stop-is-quick-and-safe.sh
+expect "H-11: a quick stop that keeps the folders passes" equals "$CHECK_RC" "0"
+expect "H-11: prints PASS: H-11" has_text "$WORK/out.h11" "PASS: H-11"
+expect "H-11: the sentinel in the project folder is intact" test -f "$FIXTURE/hosttest/h11-sentinel.txt"
+expect "H-11: the sentinel in the state folder is intact" test -f "$FIXTURE/state/h11-sentinel.txt"
+expect "H-11: the sandbox is up again" test -f "$WORK/state/container"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h11.kept" h11-stop-is-quick-and-safe.sh FAKE_DOWN_KEEPS=1
+expect "H-11: a container still present after down fails" equals "$CHECK_RC" "1"
+expect "H-11: the kept container is the reason" has_text "$WORK/out.h11.kept" "still exists"
+
+echo "--- H-09 on its own"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h09" h09-rebuild-keeps-files-no-volumes.sh FAKE_VOLUMES="olddata"
+expect "H-09: sentinels, volumes and the one bind mount pass" equals "$CHECK_RC" "0"
+expect "H-09: prints PASS: H-09" has_text "$WORK/out.h09" "PASS: H-09"
+sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.h09"
+expect "H-09: both images are rebuilt" equals "$(grep -c '^build ' "$WORK/args.h09")" "2"
+expect "H-09: the rebuild uses the cache by default" lacks_text "$WORK/args.h09" "--no-cache"
+expect "H-09: the sandbox is up again" test -f "$WORK/state/container"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h09.mount" h09-rebuild-keeps-files-no-volumes.sh FAKE_EXTRA_MOUNT=1
+expect "H-09: a second mount fails" equals "$CHECK_RC" "1"
+expect "H-09: the second mount is shown" has_text "$WORK/out.h09.mount" "/home/sandbox/extra"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h09.vol" h09-rebuild-keeps-files-no-volumes.sh FAKE_VOLUMES="a" FAKE_VOLUMES_AFTER_BUILD="a b"
+expect "H-09: a changed volume list fails" equals "$CHECK_RC" "1"
+expect "H-09: the volume change is reported" has_text "$WORK/out.h09.vol" "volume"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h09.nocache" h09-rebuild-keeps-files-no-volumes.sh SBXTEST_NO_CACHE=1
+sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.h09.nocache"
+expect "H-09: SBXTEST_NO_CACHE=1 still passes" equals "$CHECK_RC" "0"
+expect "H-09: SBXTEST_NO_CACHE=1 adds --no-cache to both builds" \
+  equals "$(grep -c '^build --no-cache ' "$WORK/args.h09.nocache")" "2"
+
+echo "--- H-10 on its own"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h10.ok" h10-missing-folder-refused.sh
+expect "H-10: a refused missing folder with the path absent passes" equals "$CHECK_RC" "0"
+expect "H-10: prints PASS: H-10" has_text "$WORK/out.h10.ok" "PASS: H-10"
+expect "H-10: the bad path was not created" test ! -e "$FIXTURE/does-not-exist"
+expect "H-10: the real sandbox is up at the end" test -f "$WORK/state/container"
+lastComposeCall=$(grep 'ARGS: compose' "$FAKE_LOG" | tail -n 1)
+expect "H-10: the last compose call is an up with the real run folder" \
+  string_matches "SBX_DIR=$FIXTURE COMPOSE_PROJECT_NAME=unset ARGS: compose .* up -d --wait$" "$lastComposeCall"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h10.ign" h10-missing-folder-refused.sh FAKE_H10=ignored
+expect "H-10: a path that Docker created fails" equals "$CHECK_RC" "1"
+expect "H-10: the created path is reported as create_host_path ignored" has_text "$WORK/out.h10.ign" "create_host_path ignored"
+expect "H-10: the report carries the Compose version" has_text "$WORK/out.h10.ign" "Compose 2.39.1"
+expect "H-10: the created path is left for the printed cleanup" test -d "$FIXTURE/does-not-exist"
+expect "H-10: the real sandbox is up at the end after a created path" test -f "$WORK/state/container"
+expect "H-10: the real sandbox mounts the real run folder" equals "$(cat "$WORK/state/container.dir")" "$FIXTURE"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h10.start" h10-missing-folder-refused.sh FAKE_H10=started
+expect "H-10: a start on a missing folder fails" equals "$CHECK_RC" "1"
+expect "H-10: a start on a missing folder says so" has_text "$WORK/out.h10.start" "started on a missing folder"
+expect "H-10: the real sandbox is up at the end after a start" test -f "$WORK/state/container"
+expect "H-10: the real sandbox mounts the real run folder after a start" equals "$(cat "$WORK/state/container.dir")" "$FIXTURE"
+
+echo "--- full chain in the runner"
+reset_state
+run_runner "$WORK/out.chain.ign" FAKE_H10=ignored
+expect "runner: a created missing folder exits 1" equals "$RUNNER_RC" "1"
+expect "runner: a created missing folder prints FAIL: H-10" has_text "$WORK/out.chain.ign" "FAIL: H-10"
+expect "runner: a created missing folder still runs Coexistence" has_text "$WORK/out.chain.ign" "PASS: Coexistence"
+expect "runner: a created missing folder still prints the Next block" has_text "$WORK/out.chain.ign" "manual/h13-doctor.sh"
+reset_state
+run_runner "$WORK/out.chain.keep" FAKE_DOWN_KEEPS=1
+expect "runner: a kept container exits 1" equals "$RUNNER_RC" "1"
+expect "runner: a kept container prints FAIL: H-11" has_text "$WORK/out.chain.keep" "FAIL: H-11"
+expect "runner: the chain stops, so H-09 is not run" has_text "$WORK/out.chain.keep" "NOT RUN: h09-rebuild-keeps-files-no-volumes.sh"
+expect "runner: the chain stops, so H-10 is not run" has_text "$WORK/out.chain.keep" "NOT RUN: h10-missing-folder-refused.sh"
+expect "runner: H-09 prints no result after the chain stopped" lacks_match "$WORK/out.chain.keep" '^(PASS|FAIL): H-(09|10)'
+expect "runner: Coexistence still runs after the chain stopped" has_text "$WORK/out.chain.keep" "PASS: Coexistence"
+reset_state
+run_runner "$WORK/out.nocache" SBXTEST_NO_CACHE=1
+sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.nocache"
+expect "runner: SBXTEST_NO_CACHE=1 run exits 0" equals "$RUNNER_RC" "0"
+expect "runner: the first builds use the cache" equals "$(grep -c '^build -t ' "$WORK/args.nocache")" "2"
+expect "runner: only the rebuild uses --no-cache" equals "$(grep -c '^build --no-cache ' "$WORK/args.nocache")" "2"
 
 echo "--- fatal H-00 in the runner"
 reset_state
