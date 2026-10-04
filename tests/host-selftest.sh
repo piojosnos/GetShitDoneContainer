@@ -39,7 +39,10 @@ cat >"$WORK/bin/docker" <<'SHIM'
 # path-scoped rules), FAKE_CONTEXT_NO_SKILLS (the fake /context lists no skills), FAKE_OFFLINE_FAIL
 # (a run with --network none fails to start), FAKE_HOOK_IGNORED (a run whose hook fails still runs
 # its command), FAKE_SYNC_CLOBBERS (compose up deletes state/claude/skills and projects before the
-# hook, as a broken sync would).
+# hook, as a broken sync would), FAKE_BUNDLE_DRIFT (the bundle copied out of the image has an extra
+# file), FAKE_BUNDLE_OWNER (the owner of /opt/sbx/best-practices), FAKE_BUNDLE_WRITABLE (the sandbox
+# user can write in the bundle), FAKE_BUNDLE_MOUNT (a mount sits under /opt/sbx), FAKE_MANAGED_BAD
+# (the managed settings do not parse).
 # Compose up and a run with --network none execute the real start hook, as the real entrypoint does.
 # State lives in FAKE_STATE; every call is logged to FAKE_LOG.
 printf 'ENV SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
@@ -309,6 +312,17 @@ case "${1:-}" in
     printf '%s\n' "${FAKE_PS-deadbeef0001 cc_oldbox running}"
     exit 0
     ;;
+  cp)
+    shift
+    if ! has_container || [ "$#" -ne 2 ] || [ "$1" != "sbx-hosttest:/opt/sbx/best-practices" ]; then
+      unhandled "cp $*"
+    fi
+    cp -R "$FAKE_REPO/best-practices" "$2"
+    if [ "${FAKE_BUNDLE_DRIFT:-0}" = 1 ]; then
+      printf 'drift\n' >"$2/rules/h14-drift.md"
+    fi
+    exit 0
+    ;;
   exec)
     shift
     while [ "$#" -gt 0 ] && [ "${1#-}" != "$1" ]; do
@@ -383,6 +397,23 @@ case "${1:-}" in
             exit) exit 0 ;;
           esac
         done
+        ;;
+      "sh -c : h14-probe"*)
+        printf 'OWNER /opt/sbx/best-practices %s:%s 755\n' "${FAKE_BUNDLE_OWNER:-root}" "${FAKE_BUNDLE_OWNER:-root}"
+        printf 'OWNER /etc/sbx/start.d root:root 755\n'
+        printf 'OWNER /etc/sbx/start.d/10-best-practices root:root 755\n'
+        printf 'OWNER /etc/claude-code/managed-settings.json root:root 644\n'
+        if [ "${FAKE_BUNDLE_WRITABLE:-0}" = 1 ]; then
+          printf 'WRITABLE /opt/sbx/best-practices/rules/communication.md\n'
+        fi
+        if [ "${FAKE_BUNDLE_MOUNT:-0}" = 1 ]; then
+          printf 'MOUNT /opt/sbx/best-practices\n'
+        fi
+        if [ "${FAKE_MANAGED_BAD:-0}" = 1 ]; then
+          printf 'JSON bad\n'
+        else
+          printf 'JSON ok\n'
+        fi
         ;;
       "sh -c test ! -e"*)
         if [ "${FAKE_SHARE_EXISTS:-0}" = 1 ]; then
@@ -568,12 +599,13 @@ expect "runner: healthy run prints PASS: H-16" has_text "$WORK/out.healthy" "PAS
 expect "runner: healthy run prints PASS: H-10" has_text "$WORK/out.healthy" "PASS: H-10"
 expect "runner: healthy run prints PASS: H-11" has_text "$WORK/out.healthy" "PASS: H-11"
 expect "runner: healthy run prints PASS: H-12" has_text "$WORK/out.healthy" "PASS: H-12"
-expect "runner: healthy run has 17 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "17"
+expect "runner: healthy run has 18 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "18"
 expect "runner: healthy run prints PASS: Coexistence" has_text "$WORK/out.healthy" "PASS: Coexistence"
 expect "runner: healthy run prints PASS: H-13" has_text "$WORK/out.healthy" "PASS: H-13"
+expect "runner: healthy run prints PASS: H-14" has_text "$WORK/out.healthy" "PASS: H-14"
 expect "runner: healthy run prints PASS: H-15" has_text "$WORK/out.healthy" "PASS: H-15"
 expect "runner: healthy run prints PASS: H-17" has_text "$WORK/out.healthy" "PASS: H-17"
-expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 17 passed, 0 failed, 0 not run"
+expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 18 passed, 0 failed, 0 not run"
 expect "runner: healthy run prints the manual pass commands" has_text "$WORK/out.healthy" "manual/h07-login.sh"
 expect "runner: the cleanup line has docker compose down and the run folder" \
   has_text "$WORK/out.healthy" "SBX_DIR=$healthyRunDir docker compose down && rm -rf $healthyRunDir"
@@ -603,7 +635,7 @@ reset_state
 run_runner "$WORK/out.badid" FAKE_ID="uid=0(root) gid=0(root)"
 expect "runner: a wrong id exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a wrong id prints FAIL: H-04" has_text "$WORK/out.badid" "FAIL: H-04"
-expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 16 passed, 1 failed, 0 not run"
+expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 17 passed, 1 failed, 0 not run"
 expect "runner: a wrong id still prints the Next block" has_text "$WORK/out.badid" "manual/h13-doctor.sh"
 
 echo "--- sandbox started without the bundle sync"
@@ -800,6 +832,38 @@ make_fixture_run
 run_standalone "$WORK/out.h08.lost" h08-history-survives-recreate.sh FAKE_DOWN_LOSES_HISTORY=1
 expect "H-08: history lost by the recreate fails" equals "$CHECK_RC" "1"
 expect "H-08: the failing half is the second one" has_text "$WORK/out.h08.lost" "after the recreate"
+
+echo "--- H-14 on its own"
+reset_state
+make_fixture_run
+run_standalone "$WORK/out.h14" h14-bundle-in-image.sh
+expect "H-14: a bundle equal to the repo with root owners and no mount passes" equals "$CHECK_RC" "0"
+expect "H-14: prints PASS: H-14" has_text "$WORK/out.h14" "PASS: H-14"
+expect "H-14: the copy from the image is in the run folder's logs" \
+  diff -r -q "$REPO/best-practices" "$(ls -d "$FIXTURE"/logs/h14-bundle-* | head -n 1)"
+expect "H-14: docker cp reads /opt/sbx/best-practices from the test container" \
+  has_match "$FAKE_LOG" 'ARGS: cp sbx-hosttest:/opt/sbx/best-practices .*/logs/h14-bundle-'
+run_standalone "$WORK/out.h14.drift" h14-bundle-in-image.sh FAKE_BUNDLE_DRIFT=1
+expect "H-14: an image copy with an extra file fails" equals "$CHECK_RC" "1"
+expect "H-14: the extra file is named" has_text "$WORK/out.h14.drift" "h14-drift.md"
+run_standalone "$WORK/out.h14.owner" h14-bundle-in-image.sh FAKE_BUNDLE_OWNER=sandbox
+expect "H-14: a bundle owned by sandbox fails" equals "$CHECK_RC" "1"
+expect "H-14: the bundle path is named" has_text "$WORK/out.h14.owner" "/opt/sbx/best-practices is"
+expect "H-14: the wrong owner is shown" has_text "$WORK/out.h14.owner" "sandbox:sandbox 755"
+run_standalone "$WORK/out.h14.writable" h14-bundle-in-image.sh FAKE_BUNDLE_WRITABLE=1
+expect "H-14: a path the sandbox user can write fails" equals "$CHECK_RC" "1"
+expect "H-14: the writable path is named" has_text "$WORK/out.h14.writable" "/opt/sbx/best-practices/rules/communication.md"
+run_standalone "$WORK/out.h14.mount" h14-bundle-in-image.sh FAKE_BUNDLE_MOUNT=1
+expect "H-14: a mount under /opt/sbx fails" equals "$CHECK_RC" "1"
+expect "H-14: the mount point is named" has_text "$WORK/out.h14.mount" "a mount sits under"
+run_standalone "$WORK/out.h14.json" h14-bundle-in-image.sh FAKE_MANAGED_BAD=1
+expect "H-14: managed settings that do not parse fail" equals "$CHECK_RC" "1"
+expect "H-14: the parse failure is named" has_text "$WORK/out.h14.json" "do not parse"
+reset_state
+FIXTURE=""
+run_standalone "$WORK/out.h14.none" h14-bundle-in-image.sh
+expect "H-14: no test sandbox fails" equals "$CHECK_RC" "1"
+expect "H-14: no test sandbox says to run run-all.sh first" has_text "$WORK/out.h14.none" "run-all.sh first"
 
 echo "--- H-16 on its own"
 reset_state

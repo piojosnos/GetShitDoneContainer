@@ -248,7 +248,7 @@ host_tests_have_no_planning_ids() {
 # best-practices/ is exempt: its rules quote such references as examples of what not to write, and
 # the merged skill reads a GSD roadmap.
 sandbox_code_has_no_planning_ids() {
-  nowhere_matches "$PLANNING_ID_REGEX|\bBP-0[0-9]\b" $SANDBOX_FILES claude/start.d/* .dockerignore SANDBOX.md tests/host-checklist.md tests/bundle-selftest.sh
+  nowhere_matches "$PLANNING_ID_REGEX|\bBP-0[0-9]\b" $SANDBOX_FILES claude/start.d/* claude/managed-settings.json .dockerignore SANDBOX.md tests/host-checklist.md tests/bundle-selftest.sh
 }
 
 # Only the test sandbox is named: container sbx-hosttest, images sbx-base and sbx-claude. The old
@@ -465,6 +465,69 @@ EOF
   return "$ok"
 }
 
+# A skill added to the bundle must also be protected, and a deny entry for a skill that is gone is
+# noise. Only Edit entries count (Claude never consults Write or NotebookEdit entries), and no
+# wholesale skills entry, which would also block the user's own and GSD's skills.
+managed_settings_cover_bundle() {
+  local managed=claude/managed-settings.json
+  local denyPrefix='"Edit(//home/sandbox/workspace/state/claude/'
+  local skillDir skillName entryName
+  local ok=0
+
+  if [ ! -f "$managed" ]; then
+    echo "    $managed: missing"
+    return 1
+  fi
+
+  if command -v node >/dev/null 2>&1; then
+    if ! node -e 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' "$managed" 2>/dev/null; then
+      echo "    $managed: does not parse as JSON"
+      ok=1
+    fi
+  else
+    echo "    note: node is not on PATH, so the JSON parse of $managed was skipped"
+  fi
+
+  if ! grep -Fq -- "${denyPrefix}rules/**)\"" "$managed"; then
+    echo "    $managed: missing the rules/** entry"
+    ok=1
+  fi
+
+  if ! grep -Fq -- "${denyPrefix}.best-practices-skills)\"" "$managed"; then
+    echo "    $managed: missing the .best-practices-skills entry"
+    ok=1
+  fi
+
+  for skillDir in best-practices/skills/*/; do
+    if [ ! -d "$skillDir" ]; then
+      continue
+    fi
+
+    skillName=$(basename "$skillDir")
+    if ! grep -Fq -- "${denyPrefix}skills/$skillName/**)\"" "$managed"; then
+      echo "    $managed: no entry for the bundle skill $skillName"
+      ok=1
+    fi
+  done
+
+  for entryName in $(grep -oE 'claude/skills/[^/"]+/\*\*\)' "$managed" | sed -E 's|^claude/skills/([^/]+)/.*|\1|'); do
+    if [ ! -d "best-practices/skills/$entryName" ]; then
+      echo "    $managed: an entry names the skill $entryName, which the bundle does not have"
+      ok=1
+    fi
+  done
+
+  if ! nowhere_matches '(Write|NotebookEdit)\(' "$managed"; then
+    ok=1
+  fi
+
+  if ! nowhere_matches 'skills/\*\*\)' "$managed"; then
+    ok=1
+  fi
+
+  return "$ok"
+}
+
 # --- runner ---
 
 FAILS=0
@@ -490,7 +553,8 @@ for rule in \
   bundle_files_have_generated_header \
   bundle_has_no_dash_punctuation \
   bundle_reaches_build_context \
-  bundle_path_globs_are_quoted
+  bundle_path_globs_are_quoted \
+  managed_settings_cover_bundle
 do
   if "$rule"; then
     echo "PASS: $rule"

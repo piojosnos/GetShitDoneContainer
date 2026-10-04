@@ -35,10 +35,17 @@ ENV CLAUDE_CONFIG_DIR=/home/sandbox/workspace/state/claude \
 # - The start hook in /etc/sbx/start.d copies it into CLAUDE_CONFIG_DIR at every start,
 #   so the image version wins.
 # - Needs no network.
+# - Managed settings deny Claude's own edit tools on the synced copies and on the skill list.
+#   This guards against accidental edits; it is not a security boundary, because a script
+#   Claude runs can still write there until the next start.
+# - Invalid managed settings stop Claude from starting, so the build parses the file.
 COPY best-practices /opt/sbx/best-practices
 COPY claude/start.d/ /etc/sbx/start.d/
+COPY claude/managed-settings.json /etc/claude-code/managed-settings.json
 RUN chmod -R u=rwX,go=rX /opt/sbx/best-practices \
-    && chmod 755 /etc/sbx/start.d/*
+    && chmod 755 /etc/sbx/start.d/* \
+    && chmod 644 /etc/claude-code/managed-settings.json \
+    && node -e 'JSON.parse(require("fs").readFileSync("/etc/claude-code/managed-settings.json", "utf8"))'
 
 USER sandbox
 
