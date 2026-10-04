@@ -9,19 +9,19 @@ Requirements for this milestone (ClaudeCode sandbox made solid). Each maps to ro
 
 ### Layout
 
-- [ ] **LAY-01**: The sandbox folder `<sandbox>` is the container's only mount, at `/home/sandbox/workspace`; code lives in `<sandbox>/<name>` and state in `<sandbox>/state`. Nothing is mounted over `/home/sandbox`, so the image's `.bashrc`, `.local`, etc. are visible
-- [ ] **LAY-02**: Claude login, settings, and session history live in `<sandbox>/state/claude` on the Mac (via `CLAUDE_CONFIG_DIR`, inside the one directory mount, never a single-file mount) and survive both container recreate and image rebuild
-- [ ] **LAY-03**: Bash history persists in the sandbox state folder and survives container recreate
-- [ ] **LAY-04**: Stopping, removing, or recreating a container never deletes workspace or state data (no `down -v`, no `VOLUME /home/sandbox`)
+- [x] **LAY-01**: The sandbox folder `<sandbox>` is the container's only mount, at `/home/sandbox/workspace`; code lives in `<sandbox>/<name>` and state in `<sandbox>/state`. Nothing is mounted over `/home/sandbox`, so the image's `.bashrc`, `.local`, etc. are visible
+- [x] **LAY-02**: Claude login, settings, and session history live in `<sandbox>/state/claude` on the Mac (via `CLAUDE_CONFIG_DIR`, inside the one directory mount, never a single-file mount) and survive both container recreate and image rebuild
+- [x] **LAY-03**: Bash history persists in the sandbox state folder and survives container recreate
+- [x] **LAY-04**: Stopping, removing, or recreating a container never deletes workspace or state data (no `down -v`, no `VOLUME /home/sandbox`)
 
 ### Image
 
 - [ ] **IMG-01**: A single shared base image provides common Linux tools, git, gh, Node.js 24, Python 3 + uv, JDK 21 (Temurin), and Maven
-- [ ] **IMG-02**: The Claude image builds `FROM` the shared base and adds only agent-specific tools
+- [x] **IMG-02**: The Claude image builds `FROM` the shared base and adds only agent-specific tools
 - [ ] **IMG-03**: Every version (base OS tag, toolchains, Claude Code, GSD, ccusage) is pinned in one `versions.env`. No floating `latest` and no runtime installs
 - [ ] **IMG-04**: Adding a new tool means editing one line (Dockerfile or `versions.env`) and rebuilding
-- [ ] **IMG-05**: Images build and run natively on Apple Silicon (arm64) with Docker Desktop
-- [ ] **IMG-06**: The agent runs as the non-root `sandbox` user, and git works on mounted repos without "dubious ownership" errors
+- [x] **IMG-05**: Images build and run natively on Apple Silicon (arm64) with Docker Desktop
+- [x] **IMG-06**: The agent runs as the non-root `sandbox` user, and git works on mounted repos without "dubious ownership" errors
 
 ### Agent Tools
 
@@ -37,11 +37,11 @@ Requirements for this milestone (ClaudeCode sandbox made solid). Each maps to ro
 
 Automated checks that run on the Mac, where Docker runs.
 
-- [ ] **HT-01**: One script per host check (H-00 to H-13, plus Coexistence) under `tests/host/`, each printing a `PASS`/`FAIL` line with its check ID and exiting 0 or 1
-- [ ] **HT-02**: `tests/host/run-all.sh` runs every check in order with no required environment variables: it builds the images, creates and removes a throwaway sandbox, prints a summary, and exits non-zero on any failure
-- [ ] **HT-03**: The Claude login is the only manual step: the runner pauses, prints the command, and continues after the user confirms
-- [ ] **HT-04**: The scripts run with macOS stock bash 3.2 and Docker Desktop, and never touch real sandboxes, the user's git identity, or old-layout containers
-- [ ] **HT-05**: All host checks pass on the Mac, which closes Phase 1's deferred host verification
+- [x] **HT-01**: One script per host check (H-00 to H-13, plus Coexistence) under `tests/host/`, each printing a `PASS`/`FAIL` line with its check ID and exiting 0 or 1
+- [x] **HT-02**: `tests/host/run-all.sh` runs every automatable check unattended with no required environment variables: it builds the images, creates a throwaway sandbox, prints a summary, and exits non-zero on any failure. It never deletes files; it prints the cleanup command instead
+- [x] **HT-03**: Steps that need a human (Claude login, resume after rebuild, `claude doctor`) are a manual pass in `tests/host-checklist.md`, each run through a helper script that checks what it can automatically
+- [x] **HT-04**: The scripts run with macOS stock bash 3.2 and Docker Desktop, and never touch real sandboxes, the user's git identity, or old-layout containers
+- [x] **HT-05**: All host checks pass on the Mac, which closes Phase 1's deferred host verification
 
 ### Best Practices
 
@@ -122,25 +122,25 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LAY-01 | Phase 1 | Pending |
-| LAY-02 | Phase 1 | Pending |
-| LAY-03 | Phase 1 | Pending |
-| LAY-04 | Phase 1 | Pending |
+| LAY-01 | Phase 1 | Complete |
+| LAY-02 | Phase 1 | Complete |
+| LAY-03 | Phase 1 | Complete |
+| LAY-04 | Phase 1 | Complete |
 | IMG-01 | Phase 2 | Pending |
-| IMG-02 | Phase 1 | Pending |
+| IMG-02 | Phase 1 | Complete |
 | IMG-03 | Phase 2 | Pending |
 | IMG-04 | Phase 2 | Pending |
-| IMG-05 | Phase 1 | Pending |
-| IMG-06 | Phase 1 | Pending |
+| IMG-05 | Phase 1 | Complete |
+| IMG-06 | Phase 1 | Complete |
 | TOOL-01 | Phase 2 | Pending |
 | TOOL-02 | Phase 2 | Pending |
 | TOOL-03 | Phase 2 | Pending |
 | USE-01 | Phase 2 | Pending |
-| HT-01 | Phase 1.1 | Pending |
-| HT-02 | Phase 1.1 | Pending |
-| HT-03 | Phase 1.1 | Pending |
-| HT-04 | Phase 1.1 | Pending |
-| HT-05 | Phase 1.1 | Pending |
+| HT-01 | Phase 1.1 | Complete |
+| HT-02 | Phase 1.1 | Complete |
+| HT-03 | Phase 1.1 | Complete |
+| HT-04 | Phase 1.1 | Complete |
+| HT-05 | Phase 1.1 | Complete |
 | BP-01 | Phase 1.2 | Pending |
 | BP-02 | Phase 1.2 | Pending |
 | BP-03 | Phase 2.1 | Pending |

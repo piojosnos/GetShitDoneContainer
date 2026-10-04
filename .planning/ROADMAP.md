@@ -12,8 +12,8 @@ This milestone makes the ClaudeCode sandbox solid. Each phase is a vertical slic
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Two-Mount Claude Sandbox** - A Claude sandbox that runs on the Mac with code and state in separate host folders, a visible image home, and a login that survives rebuilds
-- [ ] **Phase 1.1: Automated host tests** (INSERTED) - One command on the Mac runs every host check (H-00 to H-13) with a PASS/FAIL line each; the only manual step is the Claude login
+- [x] **Phase 1: Two-Mount Claude Sandbox** - A Claude sandbox that runs on the Mac with code and state in separate host folders, a visible image home, and a login that survives rebuilds (completed 2026-10-04)
+- [x] **Phase 1.1: Automated host tests** (INSERTED) - One unattended command on the Mac runs every automatable host check (H-00 to H-13) with a PASS/FAIL line each; login, resume and doctor are a short manual pass with helper scripts (completed 2026-10-04)
 - [ ] **Phase 1.2: Best-practices bundle baked into the image (stopgap)** (INSERTED) - New sandboxes start with the user's skills, standing rules, and shared memories installed, taken from files in this repo
 - [ ] **Phase 2: Pinned Toolchain, GSD, and ccusage** - Every tool is baked in at a version pinned in `versions.env`, the image's GSD wins over persisted state, and `ccusage` reports real usage
 - [ ] **Phase 2.1: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs
@@ -37,7 +37,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Commands typed in the container shell are still in `history` after the container is removed and recreated.
   5. After `docker compose down` and a fresh `up`, every file in `<sandbox>/<name>` and `<sandbox>/state` is still on the Mac, and `docker volume ls` shows no volume holding sandbox data.
 
-**Plans:** 4/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 **Wave 1**
@@ -54,18 +54,29 @@ Plans:
 
 ### Phase 01.1: Automated host tests (INSERTED)
 
-**Goal**: Every Mac host check runs from one command. The user runs `tests/host/run-all.sh` on the Mac, logs in to Claude once when asked, and gets a PASS or FAIL line per check plus a summary. No manual checklist, no required environment variables.
+**Goal**: Every Mac host check that needs no human runs from one unattended command. The user runs `tests/host/run-all.sh` on the Mac and gets a PASS or FAIL line per check plus a summary, with no required environment variables. The few steps that need a human (Claude login, resume, doctor) are a short manual pass, each driven by a helper script.
 **Mode:** mvp
 **Depends on**: Phase 1
 **Requirements**: HT-01, HT-02, HT-03, HT-04, HT-05
 **Success Criteria** (what must be TRUE):
-  1. `tests/host/` has one script per host check (H-00 to H-13, plus Coexistence). Each prints `PASS: H-xx <what it proves>` or `FAIL: H-xx <what went wrong>` and exits 0 or 1. Each can also be run on its own.
-  2. `tests/host/run-all.sh` builds the images, creates a throwaway sandbox (its own temporary folder and a fixed test name), runs every check in order, prints a summary, removes the test container and folder, and exits non-zero if any check failed. It needs no exported variables; optional variables only override defaults (for example a slow `--no-cache` rebuild for H-09).
-  3. The only manual step is the Claude login: the runner pauses before H-07, prints the exact command to run, waits for the user to confirm, then checks the login and everything after it automatically.
+  1. `tests/host/` has one script per automated host check (H-00 to H-13, plus Coexistence). Each prints `PASS: H-xx <what it proves>` or `FAIL: H-xx <what went wrong>`, exits 0 or 1, states its dependencies in a `# Depends on:` line, and can also be run on its own.
+  2. `tests/host/run-all.sh` never waits for input. It builds the images, creates a throwaway sandbox (a fresh `mktemp` folder and a fixed test name), runs the independent checks first and the chained ones after, prints a summary, and exits non-zero if any check failed. It never deletes files: it ends by printing the manual-pass commands and a cleanup command to copy and paste. It needs no exported variables; optional variables only override defaults (for example a slow `--no-cache` rebuild).
+  3. The steps that need a human (Claude login for H-07, login and `claude --continue` after a rebuild for H-09, `claude doctor` for H-13) are listed in `tests/host-checklist.md` and run through helper scripts in `tests/host/manual/`, which check everything they can automatically.
   4. The scripts run on the Mac with stock bash 3.2 and Docker Desktop, and never touch the user's real sandboxes, real git identity, or old-layout containers.
-  5. On the Mac, `tests/host/run-all.sh` passes every check. This also closes Phase 1's deferred host verification. `tests/host-checklist.md` shrinks to "run `tests/host/run-all.sh`" plus how to read a failure.
+  5. On the Mac, `tests/host/run-all.sh` passes every check. This also closes Phase 1's deferred host verification. `tests/host-checklist.md` shrinks to "run `tests/host/run-all.sh`", the manual pass, and how to read a failure.
 
-**Plans**: TBD
+**Plans:** 4/4 plans complete
+
+Plans:
+**Wave 1**
+- [x] 01.1-01-PLAN.md: Tracer: lib.sh, run-all.sh, H-00/H-02/H-03/H-04/H-12, fake-docker self-test, guard rules (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 01.1-02-PLAN.md: Remaining automated checks H-01, H-05, H-06, H-13, chain H-08/H-11/H-09/H-10, Coexistence (wave 2)
+- [x] 01.1-03-PLAN.md: Manual helpers (login, rebuild and resume, doctor), shrunk checklist, SANDBOX.md pointer (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 01.1-04-PLAN.md: Mac run of run-all.sh and the manual pass, H-10 decision if needed, close Phase 1 UAT (wave 3, checkpoint)
 
 ### Phase 01.2: Best-practices bundle baked into the image (stopgap) (INSERTED)
 
@@ -178,8 +189,8 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Two-Mount Claude Sandbox | 4/4 | In Progress|  |
-| 1.1. Automated host tests | 0/TBD | Not started | - |
+| 1. Two-Mount Claude Sandbox | 4/4 | Complete    | 2026-10-04 |
+| 1.1. Automated host tests | 4/4 | Complete    | 2026-10-04 |
 | 1.2. Best-practices bundle baked into the image (stopgap) | 0/TBD | Not started | - |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
