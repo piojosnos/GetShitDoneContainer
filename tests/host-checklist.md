@@ -1,6 +1,6 @@
 # Host checklist (H-00..H-13)
 
-The manual test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox.
+The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them; three short helpers cover the steps that need you.
 
 - **IDs:** each check has an ID, H-00 to H-13 (H for host), so results can be reported by ID ("H-10 failed").
 - **When:** once after building a new version of the images or `compose.yml`.
@@ -9,283 +9,94 @@ The manual test plan for the sbx sandbox: checks that can only be proven on your
 
 How to run it:
 
-- Run the setup block, then each check top to bottom.
-- Each check has the commands to paste and a pass condition.
-- Write each outcome into "Record your results" below.
+1. Run the automated checks.
+2. Do the manual pass.
+3. Clean up.
+
+## Run the automated checks
+
+```bash
+bash tests/host/run-all.sh
+```
+
+What it does:
+
+- Builds `sbx-base:local` and `sbx-claude:local`, the real image tags.
+- Makes a fresh folder under `$TMPDIR` named `sbx-hosttest-...` and starts a test sandbox named `sbx-hosttest` on it.
+- Prints `PASS`, `FAIL` or `NOT RUN` per check, then a summary. Exit status 0 means every check passed.
+- Never waits for input and never deletes files.
+- Leaves the test sandbox running for the manual pass.
+- Ends by printing the next commands.
+
+It needs no exported variables and ignores `SBX_NAME` and `SBX_DIR` from your terminal, so your own sandboxes are never touched.
+
+Optional: `SBXTEST_NO_CACHE=1 bash tests/host/run-all.sh` rebuilds the images without the cache in H-09. It is slow.
 
 What each check proves:
 
-| Proves | Checks |
-|---|---|
-| Builds natively; the Claude image sits on the base | H-00, H-01, H-02, H-03 |
-| Non-root user; workspace and home layout; git works | H-04, H-05, H-06 |
-| Claude login survives recreate and rebuild | H-07, H-09 |
-| Shell history persists | H-08 |
-| Nothing deletes code or state | H-09, H-11 |
-| Safety layers: missing folder refused, start check, pinned Claude with updates off | H-10, H-12, H-13 |
+| ID | What it proves | Script (in `tests/host/`) | Run |
+|---|---|---|---|
+| H-00 | Compose v2 or newer is installed | `h00-compose-v2.sh` | automatic |
+| H-01 | Images build natively (arm64 on Apple silicon) | `h01-native-arch.sh` | automatic |
+| H-02 | The Claude image sits on the base image | `h02-claude-on-base.sh` | automatic |
+| H-03 | Name and folder variables are required | `h03-variable-interpolation.sh` | automatic |
+| H-04 | The user is non-root (uid 1000) | `h04-nonroot-user.sh` | automatic |
+| H-05 | Workspace and home layout | `h05-workspace-and-home.sh` | automatic |
+| H-06 | Git works and the identity persists | `h06-git-and-identity.sh` | automatic |
+| H-07 | Claude login lands in the state folder | `manual/h07-login.sh` | manual only |
+| H-08 | Shell history survives a recreate | `h08-history-survives-recreate.sh` | automatic |
+| H-09 | Files survive a rebuild, no volumes exist; the login and the session survive too | `h09-rebuild-keeps-files-no-volumes.sh`, `manual/h09-rebuild-resume.sh` | automatic part, manual part |
+| H-10 | A missing folder is refused | `h10-missing-folder-refused.sh` | automatic |
+| H-11 | Stopping is quick and keeps everything | `h11-stop-is-quick-and-safe.sh` | automatic |
+| H-12 | A plain `docker run` is refused; the pinned Claude is installed | `h12-plain-run-refused-pin-installed.sh` | automatic |
+| H-13 | Environment is visible and self-update is off; `claude doctor` agrees | `h13-env-and-no-self-update.sh`, `manual/h13-doctor.sh` | automatic part, manual part |
+| Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |
 
-## Setup (once)
+## Manual pass
 
-Replace `/Users/you/sbx-demo` with a folder on your Mac that Docker Desktop can share.
-
-```bash
-cd /path/to/this/repo
-docker compose version
-docker build -t sbx-base:local base/
-docker build -t sbx-claude:local claude/
-export SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo
-mkdir -p "$SBX_DIR/$SBX_NAME" "$SBX_DIR/state"
-for d in "$SBX_NAME" state; do [ -d "$SBX_DIR/$d" ] || echo "MISSING: $SBX_DIR/$d"; done
-docker compose config | head -3
-docker compose up -d --wait
-```
-
-- The `for` loop must print nothing.
-- The container is named `sbx-demo`. Every command below assumes `SBX_NAME=demo`.
-
-## H-00: Compose v2
+Run after `run-all.sh`, in this order. Each needs a real terminal and uses the same test sandbox.
 
 ```bash
-docker compose version
+bash tests/host/manual/h07-login.sh
+bash tests/host/manual/h09-rebuild-resume.sh
+bash tests/host/manual/h13-doctor.sh
 ```
 
-Pass: prints a Compose v2 version. Write down that version and the Docker Desktop version (Docker Desktop, About).
+| Helper | You do | It checks |
+|---|---|---|
+| `h07-login.sh` | Log in with a claude.ai account, then `/exit` | `.claude.json`, `.credentials.json` and `projects/` are in the run folder's `state/claude`; `claude auth status` shows `"loggedIn": true`; there is no `~/.claude.json` in the container home |
+| `h09-rebuild-resume.sh` | Confirm the earlier session resumes in `claude --continue`, then `/exit` | Rebuilds the images, recreates the sandbox, `claude auth status` is still logged in |
+| `h13-doctor.sh` | Confirm `claude doctor` shows auto-updates disabled | Nothing more; the wording is for you to judge |
 
-## H-01: native arm64
+- Add `--no-cache` to `h09-rebuild-resume.sh` for a clean rebuild: `bash tests/host/manual/h09-rebuild-resume.sh --no-cache`. It is slow.
+- Each helper prints `PASS` or `FAIL` lines and exits 0 only when every line is `PASS`.
+- A helper run without a terminal, or when the test sandbox is not running, stops before it does anything.
 
-```bash
-docker image inspect sbx-base:local sbx-claude:local --format '{{.Architecture}}'
-docker exec sbx-demo uname -m
-```
+## Reading a failure
 
-Pass:
+- **FAIL line:** shows the check ID and what went wrong, with detail lines under it.
+- **NOT RUN:** an earlier step failed: the setup, or an earlier link of the chain H-08, H-11, H-09, H-10. Fix that one first.
+- **Build failure:** the output names the log path, inside the run folder's `logs/`.
+- **"Mounts denied" during setup:** Docker Desktop does not share `$TMPDIR`. Add it in Settings, Resources, File sharing.
+- **H-10 says Docker created the missing folder:** Compose ignored `create_host_path: false`. That is a real finding, not a script bug.
+  - Do not change `compose.yml`.
+  - See the env_file follow-up in [`SANDBOX.md`, Troubleshooting](../SANDBOX.md#troubleshooting-and-known-limits). It needs your approval.
+- **Coexistence fails:** if you started or stopped a `cc_` container during the run, run it again.
+- **Rebuilding retags the images:** your running sandboxes keep their old image until their next `docker compose up`. That is safe: all their data is in their folder.
 
-- `arm64` twice, then `aarch64`.
-- No "requested image's platform ... does not match" warning during the builds or `up`.
+## Clean up
 
-## H-02: the Claude image is built on the base
+Run the cleanup command that `run-all.sh` printed. It stops `sbx-hosttest` and deletes the run folder.
 
-```bash
-docker history sbx-claude:local | head -30
-grep '^FROM' claude/Dockerfile
-```
-
-Pass: the Claude layers sit on top of the base layers, and the only `FROM` line is `FROM ${BASE_IMAGE}`.
-
-## H-03: variable interpolation
-
-```bash
-docker compose config | head -3
-SBX_NAME=demo docker compose config
-```
-
-Pass:
-
-- The first command shows `name: sbx-demo`.
-- The second, run where `SBX_DIR` is not exported (a fresh terminal, or prefix it with `env -u SBX_DIR`), fails with the "SBX_DIR is required" message.
-
-## H-04: non-root user
-
-```bash
-docker exec sbx-demo id
-```
-
-Pass: `uid=1000(sandbox) gid=1000(sandbox)`.
-
-## H-05: workspace and home layout
-
-```bash
-docker exec sbx-demo sh -c 'touch x.txt; ls -a /home/sandbox'
-ls "$SBX_DIR/demo"
-docker exec sbx-demo stat -c '%U %n' /home/sandbox/.local /home/sandbox/.local/state
-```
-
-Pass:
-
-- `x.txt` shows up in `$SBX_DIR/demo` on the Mac.
-- `ls -a` shows `.bashrc` and `.local`.
-- Both `stat` lines start with `sandbox`.
-
-## H-06: git works and the identity persists
-
-```bash
-git init "$SBX_DIR/demo"
-docker exec sbx-demo git status
-docker exec sbx-demo git config --system --get-all safe.directory
-docker exec sbx-demo sh -c 'git config --global user.name T && cat $GIT_CONFIG_GLOBAL'
-cat "$SBX_DIR/state/git/config"
-```
-
-Pass:
-
-- No "dubious ownership" error.
-- The system `safe.directory` value is `*`.
-- The identity file appears at `$SBX_DIR/state/git/config` on the Mac.
-
-## H-07: Claude login
-
-```bash
-docker exec -it sbx-demo claude
-```
-
-Log in with a claude.ai account, then `/exit`. Then:
-
-```bash
-ls -la "$SBX_DIR/state/claude"
-docker exec sbx-demo claude auth status
-docker exec sbx-demo sh -c 'ls -a $HOME | grep -c "^\.claude\.json$"'
-```
-
-Pass:
-
-- `.claude.json`, `.credentials.json` and `projects/` are in `$SBX_DIR/state/claude` on the Mac.
-- `claude auth status` shows `"loggedIn": true`.
-- The last command prints `0` (no `~/.claude.json` in the container home).
-
-## H-08: shell history survives recreate
-
-Open a shell, type a marker command, and **leave this first shell open**:
-
-```bash
-docker exec -it sbx-demo bash
-echo marker-$RANDOM
-```
-
-In another terminal, with the same two variables exported, recreate the container:
-
-```bash
-docker compose down && docker compose up -d --wait
-```
-
-Open a new shell and look for the marker:
-
-```bash
-docker exec -it sbx-demo bash
-history | grep marker
-```
-
-Pass: the marker is in `history`, and `grep marker "$SBX_DIR/state/shell/bash_history"` on the Mac finds it too.
-
-## H-09: login and files survive a clean rebuild, and no volumes exist
-
-```bash
-docker compose down
-docker build --no-cache -t sbx-base:local base/ && docker build --no-cache -t sbx-claude:local claude/
-docker compose up -d --wait
-docker exec sbx-demo claude auth status
-docker exec -it sbx-demo claude --continue
-ls -R "$SBX_DIR" | head
-docker volume ls
-docker inspect sbx-demo --format '{{json .Mounts}}'
-```
-
-Pass:
-
-- `claude auth status` still shows `"loggedIn": true`.
-- `claude --continue` resumes the earlier session.
-- Every file in `$SBX_DIR/demo` and `$SBX_DIR/state` is still there on the Mac.
-- `docker volume ls` lists no volume holding sandbox data.
-- The Mounts JSON has exactly one entry: `"Type":"bind"`, source `$SBX_DIR`, destination `/home/sandbox/workspace`.
-
-## H-10: a missing folder is refused
-
-```bash
-docker compose down
-SBX_NAME=demo SBX_DIR=/Users/you/does-not-exist docker compose up -d --wait; echo rc=$?; ls /Users/you/does-not-exist
-```
-
-Pass: `up` errors, and the `ls` says the path does not exist.
-
-- Write down exactly what happened, with the Compose and Docker Desktop versions.
-- If Docker created `/Users/you/does-not-exist`, that is a failure:
-  - Remove it: `rm -r /Users/you/does-not-exist`.
-  - See the env_file follow-up in [`SANDBOX.md`, Troubleshooting](../SANDBOX.md#troubleshooting-and-known-limits).
-
-Then bring the real sandbox back for the next checks:
-
-```bash
-docker compose up -d --wait
-```
-
-## H-11: stopping is quick and keeps everything
-
-```bash
-time docker compose down
-docker ps -a --filter name=sbx-demo
-ls "$SBX_DIR/demo" "$SBX_DIR/state"
-docker compose up -d --wait
-```
-
-Pass:
-
-- `down` returns in a few seconds.
-- The container is gone from `docker ps -a`.
-- The project and state folders are intact.
-
-## H-12: a plain docker run is refused, and the pinned version is installed
-
-```bash
-docker run --rm sbx-claude:local claude --version; echo rc=$?
-docker run --rm --entrypoint claude sbx-claude:local --version
-```
-
-Pass:
-
-- The first prints `[sbx] ERROR ... not a bind mount` and `rc=1`.
-- The second prints `2.1.285 (Claude Code)`: the version you approved. The installed version must equal that pin.
-
-## H-13: environment is visible, and self-update is off
-
-```bash
-docker exec sbx-demo env | grep -E '^(CLAUDE_CONFIG_DIR|DISABLE_UPDATES|HISTFILE|GH_CONFIG_DIR|GIT_CONFIG_GLOBAL)='
-docker exec sbx-demo claude update
-docker exec -it sbx-demo claude doctor
-docker exec sbx-demo sh -c 'ls ~/.local/share/claude 2>&1'
-```
-
-Pass:
-
-- All five variables are present through `docker exec`.
-- `claude update` says "Updates are disabled by your administrator".
-- `claude doctor` shows auto-updates disabled.
-- `~/.local/share/claude` does not exist.
-
-## Coexistence
-
-```bash
-docker ps
-git status
-```
-
-Pass:
-
-- `docker ps` still lists your old-layout containers, running and untouched.
-- `git status` in the repo shows no change under `ClaudeCode/` or `OpenCode/`.
+- Do it after the manual pass, because the folder then holds a real Claude login.
+- The images stay.
 
 ## Record your results
 
-Copy this table and fill it in.
-
-| ID | pass/fail | notes |
-|---|---|---|
-| H-00 | | |
-| H-01 | | |
-| H-02 | | |
-| H-03 | | |
-| H-04 | | |
-| H-05 | | |
-| H-06 | | |
-| H-07 | | |
-| H-08 | | |
-| H-09 | | |
-| H-10 | | |
-| H-11 | | |
-| H-12 | | |
-| H-13 | | |
-| Coexistence | | |
+Paste the `run-all.sh` summary and the helper lines.
 
 - `docker compose version` output:
 - Docker Desktop version:
-- H-10 observation (what `up` printed, its exit code, whether the folder existed afterwards):
+- H-10 observation (what `up` printed, whether the folder existed afterwards):
 
 Any failure becomes input for gap-closure planning.
