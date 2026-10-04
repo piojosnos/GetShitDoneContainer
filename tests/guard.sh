@@ -241,7 +241,7 @@ host_checks_declare_dependencies() {
 
 # Internal planning IDs mean nothing to a reader of the scripts: keep them out.
 host_tests_have_no_planning_ids() {
-  nowhere_matches "$PLANNING_ID_REGEX" $HOST_FILES tests/host-selftest.sh
+  nowhere_matches "$PLANNING_ID_REGEX" $HOST_FILES tests/host/support/* tests/host-selftest.sh
 }
 
 # The same holds for the sandbox code and docs: readers do not have the planning docs.

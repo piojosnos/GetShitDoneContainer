@@ -54,6 +54,7 @@ What each check proves:
 | H-15 | Rules and skills are synced and equal to the repo; Claude lists the always-on rules and the skills, not the path-scoped rules | `h15-bundle-synced-and-visible.sh` | automatic |
 | H-16 | A restart refreshes the bundle and keeps user skills, GSD skills, memories and `CLAUDE.md` | `h16-sync-refreshes-and-spares.sh` | automatic |
 | H-17 | A start works with networking off; a failing start hook stops the start | `h17-start-offline-and-failing-hook.sh` | automatic |
+| H-18 | In the real image, a path-scoped rule loads only after Claude reads a matching file, and the managed deny refuses edits to synced files under `bypassPermissions`; no login or network needed | `h18-scope-and-deny.sh` | automatic |
 | H-19 | Skills in Claude, a rule followed, a language rule on demand, a refused edit, the managed settings source | `manual/h19-bundle-behaviour.sh` | manual only |
 | Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |
 
@@ -90,6 +91,10 @@ bash tests/host/manual/h19-bundle-behaviour.sh
   - See the env_file follow-up in [`SANDBOX.md`, Troubleshooting](../SANDBOX.md#troubleshooting-and-known-limits). It needs your approval.
 - **H-15 fails after a Claude Code pin change:** the format of `/context` may have changed. Compare with what `manual/h19-bundle-behaviour.sh` shows before suspecting the bundle.
 - **H-15 and a login:** H-15 runs Claude without a login, so `state/claude/.claude.json` exists before `h07-login.sh` runs. The login proof in `h07-login.sh` is `.credentials.json` and `claude auth status`.
+- **H-18 fails after a Claude Code pin change:** H-18 follows the wire format of the pinned Claude through a small fake API.
+  - Run `bash tests/bundle-selftest.sh` in the dev sandbox first. If it fails too, the fake API needs updating, not the image.
+  - If only H-18 fails, `manual/h19-bundle-behaviour.sh` still covers both behaviours by hand.
+  - To drop H-18, delete its script, its entry in `run-all.sh` and its cases in `host-selftest.sh`. No other check depends on it.
 - **After the managed settings landed:** run `manual/h13-doctor.sh` once to see that `claude doctor` still reports updates disabled.
 - **Coexistence fails:** if you started or stopped a `cc_` container during the run, run it again.
 - **Rebuilding retags the images:** your running sandboxes keep their old image until their next `docker compose up`. That is safe: all their data is in their folder.

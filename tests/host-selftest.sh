@@ -42,7 +42,9 @@ cat >"$WORK/bin/docker" <<'SHIM'
 # hook, as a broken sync would), FAKE_BUNDLE_DRIFT (the bundle copied out of the image has an extra
 # file), FAKE_BUNDLE_OWNER (the owner of /opt/sbx/best-practices), FAKE_BUNDLE_WRITABLE (the sandbox
 # user can write in the bundle), FAKE_BUNDLE_MOUNT (a mount sits under /opt/sbx), FAKE_MANAGED_BAD
-# (the managed settings do not parse).
+# (the managed settings do not parse), FAKE_SCOPE_EAGER (the fake H-18 scope run shows the path-scoped
+# rule in the first request), FAKE_DENY_BROKEN (the fake H-18 deny run changes the first always-on
+# rule and plants a file), FAKE_H18_TOOLS_OFF (the fake H-18 deny run never edits the project file).
 # Compose up and a run with --network none execute the real start hook, as the real entrypoint does.
 # State lives in FAKE_STATE; every call is logged to FAKE_LOG.
 printf 'ENV SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
@@ -398,6 +400,41 @@ case "${1:-}" in
           esac
         done
         ;;
+      "env H18_SCRIPT="*)
+        h18Log=""
+        for h18Arg in "$@"; do
+          case "$h18Arg" in
+            H18_LOG=*) h18Log=${h18Arg#H18_LOG=} ;;
+          esac
+        done
+        h18Root=$(cat "$FAKE_STATE/container.dir")
+        h18Log="$h18Root/${h18Log#/home/sandbox/workspace/}"
+        case "$h18Log" in
+          *scope*)
+            if [ "${FAKE_SCOPE_EAGER:-0}" = 1 ]; then
+              printf 'step=0 always=yes scoped=yes\n' >"$h18Log"
+            else
+              printf 'step=0 always=yes scoped=no\n' >"$h18Log"
+            fi
+            printf 'step=1 always=yes scoped=yes\n' >>"$h18Log"
+            ;;
+          *deny*)
+            if [ "${FAKE_H18_TOOLS_OFF:-0}" != 1 ]; then
+              sed 's/before/after/' "$h18Root/hosttest/h18/control.txt" >"$h18Root/hosttest/h18/control.tmp"
+              mv "$h18Root/hosttest/h18/control.tmp" "$h18Root/hosttest/h18/control.txt"
+              if [ "${FAKE_DENY_BROKEN:-0}" = 1 ]; then
+                for h18Rule in $(cd "$h18Root/state/claude/rules" && find . -type f -name '*.md' | sed 's|^\./||' | sort); do
+                  if [ "$(sed -n 1p "$h18Root/state/claude/rules/$h18Rule")" != "---" ]; then
+                    printf 'scribble\n' >>"$h18Root/state/claude/rules/$h18Rule"
+                    break
+                  fi
+                done
+                printf 'planted\n' >"$h18Root/state/claude/rules/h18-planted.md"
+              fi
+            fi
+            ;;
+        esac
+        ;;
       "sh -c : h14-probe"*)
         printf 'OWNER /opt/sbx/best-practices %s:%s 755\n' "${FAKE_BUNDLE_OWNER:-root}" "${FAKE_BUNDLE_OWNER:-root}"
         printf 'OWNER /etc/sbx/start.d root:root 755\n'
@@ -599,13 +636,14 @@ expect "runner: healthy run prints PASS: H-16" has_text "$WORK/out.healthy" "PAS
 expect "runner: healthy run prints PASS: H-10" has_text "$WORK/out.healthy" "PASS: H-10"
 expect "runner: healthy run prints PASS: H-11" has_text "$WORK/out.healthy" "PASS: H-11"
 expect "runner: healthy run prints PASS: H-12" has_text "$WORK/out.healthy" "PASS: H-12"
-expect "runner: healthy run has 18 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "18"
+expect "runner: healthy run has 19 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "19"
 expect "runner: healthy run prints PASS: Coexistence" has_text "$WORK/out.healthy" "PASS: Coexistence"
 expect "runner: healthy run prints PASS: H-13" has_text "$WORK/out.healthy" "PASS: H-13"
 expect "runner: healthy run prints PASS: H-14" has_text "$WORK/out.healthy" "PASS: H-14"
 expect "runner: healthy run prints PASS: H-15" has_text "$WORK/out.healthy" "PASS: H-15"
 expect "runner: healthy run prints PASS: H-17" has_text "$WORK/out.healthy" "PASS: H-17"
-expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 18 passed, 0 failed, 0 not run"
+expect "runner: healthy run prints PASS: H-18" has_text "$WORK/out.healthy" "PASS: H-18"
+expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 19 passed, 0 failed, 0 not run"
 expect "runner: healthy run prints the manual pass commands" has_text "$WORK/out.healthy" "manual/h07-login.sh"
 expect "runner: healthy run prints the bundle behaviour helper" has_text "$WORK/out.healthy" "manual/h19-bundle-behaviour.sh"
 expect "runner: the cleanup line has docker compose down and the run folder" \
@@ -636,7 +674,7 @@ reset_state
 run_runner "$WORK/out.badid" FAKE_ID="uid=0(root) gid=0(root)"
 expect "runner: a wrong id exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a wrong id prints FAIL: H-04" has_text "$WORK/out.badid" "FAIL: H-04"
-expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 17 passed, 1 failed, 0 not run"
+expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 18 passed, 1 failed, 0 not run"
 expect "runner: a wrong id still prints the Next block" has_text "$WORK/out.badid" "manual/h13-doctor.sh"
 
 echo "--- sandbox started without the bundle sync"
@@ -956,6 +994,37 @@ run_standalone "$WORK/out.h17.none" h17-start-offline-and-failing-hook.sh
 expect "H-17: no run folder fails" equals "$CHECK_RC" "1"
 expect "H-17: no run folder says so" has_text "$WORK/out.h17.none" "no run folder"
 
+echo "--- H-18 on its own"
+reset_state
+make_fixture_run
+fake_start_sync "$FIXTURE"
+run_standalone "$WORK/out.h18" h18-scope-and-deny.sh
+expect "H-18: a scoped rule that loads late and a deny that holds pass" equals "$CHECK_RC" "0"
+expect "H-18: prints PASS: H-18" has_text "$WORK/out.h18" "PASS: H-18"
+expect "H-18: the fake API server is copied into the run folder's logs" test -f "$FIXTURE/logs/fake-claude-api.js"
+expect "H-18: the probe file is under the project folder" test -f "$FIXTURE/hosttest/h18/deep/probe.sh"
+expect "H-18: the project file was edited" equals "$(cat "$FIXTURE/hosttest/h18/control.txt")" "h18 control after"
+expect "H-18: both scenario scripts name container paths" has_text "$FIXTURE/logs/h18-deny.json" "/home/sandbox/workspace/state/claude/rules/"
+expect "H-18: the exec runs with the fake API script and log in the environment" \
+  has_match "$FAKE_LOG" 'ARGS: exec sbx-hosttest env H18_SCRIPT=/home/sandbox/workspace/logs/h18-scope.json H18_LOG=/home/sandbox/workspace/logs/h18-scope.log '
+run_standalone "$WORK/out.h18.eager" h18-scope-and-deny.sh FAKE_SCOPE_EAGER=1
+expect "H-18: a path-scoped rule loaded at the first request fails" equals "$CHECK_RC" "1"
+expect "H-18: the eager load is named" has_text "$WORK/out.h18.eager" "loaded before any matching file was touched"
+fake_start_sync "$FIXTURE"
+run_standalone "$WORK/out.h18.broken" h18-scope-and-deny.sh FAKE_DENY_BROKEN=1
+expect "H-18: a broken deny fails" equals "$CHECK_RC" "1"
+expect "H-18: the changed rule is named" has_text "$WORK/out.h18.broken" "state/claude/rules/coding-general.md was changed"
+expect "H-18: the planted file is named" has_text "$WORK/out.h18.broken" "h18-planted.md"
+fake_start_sync "$FIXTURE"
+run_standalone "$WORK/out.h18.off" h18-scope-and-deny.sh FAKE_H18_TOOLS_OFF=1
+expect "H-18: tools that never ran fail" equals "$CHECK_RC" "1"
+expect "H-18: tools that never ran say the deny result proves nothing" has_text "$WORK/out.h18.off" "the edit tool never ran, so the deny result proves nothing"
+reset_state
+FIXTURE=""
+run_standalone "$WORK/out.h18.none" h18-scope-and-deny.sh
+expect "H-18: no test sandbox fails" equals "$CHECK_RC" "1"
+expect "H-18: no test sandbox says to run run-all.sh first" has_text "$WORK/out.h18.none" "run-all.sh first"
+
 echo "--- Coexistence on its own"
 reset_state
 make_fixture_run
@@ -1083,6 +1152,16 @@ sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.nocache"
 expect "runner: SBXTEST_NO_CACHE=1 run exits 0" equals "$RUNNER_RC" "0"
 expect "runner: the first builds use the cache" equals "$(grep -c '^build -f ' "$WORK/args.nocache")" "2"
 expect "runner: only the rebuild uses --no-cache" equals "$(grep -c '^build --no-cache ' "$WORK/args.nocache")" "2"
+
+echo "--- H-18 failure does not stop the runner"
+reset_state
+run_runner "$WORK/out.h18keep" FAKE_DENY_BROKEN=1
+expect "runner: an H-18 failure exits 1" equals "$RUNNER_RC" "1"
+expect "runner: an H-18 failure prints FAIL: H-18" has_text "$WORK/out.h18keep" "FAIL: H-18"
+expect "runner: an H-18 failure marks no check not run" lacks_text "$WORK/out.h18keep" "NOT RUN"
+expect "runner: an H-18 failure still runs the chain" has_text "$WORK/out.h18keep" "PASS: H-16"
+expect "runner: an H-18 failure is in the summary" has_text "$WORK/out.h18keep" "Summary: 18 passed, 1 failed, 0 not run"
+expect "runner: an H-18 failure is listed" has_text "$WORK/out.h18keep" "Failed: h18-scope-and-deny.sh"
 
 echo "--- fatal H-00 in the runner"
 reset_state
