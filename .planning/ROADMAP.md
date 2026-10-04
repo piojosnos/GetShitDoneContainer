@@ -80,15 +80,15 @@ Plans:
 
 ### Phase 01.2: Best-practices bundle baked into the image (stopgap) (INSERTED)
 
-**Goal**: Every new sandbox starts with the user's best-practices bundle already installed: the `/pr-reply` and `/merged` skills, the standing rules (`AGENTS.md`, `code-conventions.md`, loaded through a user-level `CLAUDE.md`), and the shared memories. This is a stopgap: the bundle comes from files committed in this repo (taken from `claude-best-practices-export.tar.gz`) until Phase 2.1 moves it to its own git repo.
+**Goal**: Every new sandbox starts with the user's best-practices bundle already installed: the `/pr-reply` and `/merged` skills, and the standing rules (general rules always loaded, language rules loaded when Claude touches a matching file). This is a stopgap: the bundle comes from files committed in this repo (restructured from `claude-best-practices-export.tar.gz`) until Phase 2.1 moves it to its own git repo.
 **Mode:** mvp
 **Depends on**: Phase 1.1 (its image change is verified with `tests/host/run-all.sh`)
 **Requirements**: BP-01, BP-02
 **Success Criteria** (what must be TRUE):
   1. The bundle is committed in this repo as plain files (not a tarball), so every change to it shows up in a diff. The Claude image copies it to a path outside every mount (for example `/opt/sbx/best-practices`).
-  2. In a fresh sandbox, `/pr-reply` and `/merged` work, and Claude loads `AGENTS.md` and `code-conventions.md` as standing rules, with no manual install step.
-  3. The shared memories appear in the memory folder of the sandbox's project (`/home/sandbox/workspace/<name>`), each with one pointer line in `MEMORY.md`.
-  4. After the agent learns a new memory and the user edits `MEMORY.md`, a container recreate and a `--no-cache` rebuild keep both. Bundle memories are seeded only if missing; skills and standing rules are refreshed from the image on every start, so the image version wins.
+  2. In a fresh sandbox, `/pr-reply` and `/merged` work, Claude follows the bundle's always-on rules, and loads a language rule when it touches a matching file, with no manual install step.
+  3. A rule or skill removed or renamed in a later image is gone from the sandbox after a rebuild and restart, while GSD's skills and the user's own skills are untouched. The bundle ships no memories; a memory that proves general is promoted into a bundle rule by PR.
+  4. After the agent learns a new memory, a container recreate and a `--no-cache` rebuild keep it. Skills and rules are refreshed from the image on every start, so the image version wins, and an accidental edit to a synced file is undone by the next start.
   5. Container start still works with networking disabled, and the Phase 1 mount checks and layout still pass.
 
 **Plans**: TBD
@@ -117,7 +117,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. The bundle repo exists on GitHub, and this repo no longer carries its own copy of the bundle (one source of truth).
   2. Each sandbox has its own clone of the bundle repo in its sandbox folder (for example `<sandbox>/best-practices`, a plain subfolder of the one mount, so no compose change). Edits there survive container recreate and image rebuild.
-  3. From inside the sandbox, the user can edit a skill or memory in the clone, commit on a branch, push, and open a PR against the bundle repo using the sandbox's persisted gh login.
+  3. From inside the sandbox, the user can edit a skill or rule in the clone, commit on a branch, push, and open a PR against the bundle repo using the sandbox's persisted gh login.
   4. Creating a sandbox pulls the latest bundle with a best-effort `git pull --ff-only`. With no network the start still succeeds, using the clone as it is. Running `git pull` in the clone updates a running sandbox, through the same sync rules as Phase 1.2.
   5. No folder is shared read-write between sandboxes: a change made in one sandbox reaches another only after its PR is merged and the other sandbox pulls.
 
