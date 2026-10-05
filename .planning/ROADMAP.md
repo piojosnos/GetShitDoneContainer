@@ -126,10 +126,20 @@ Plans:
   3. The scripts still run on macOS bash 3.2 with BSD tools.
   4. `base/sbx-entrypoint` stops the start with `[sbx] ERROR` when a start hook exists but is not executable, instead of skipping it (review WR-04; accepted risk AR-01 in `01.2-SECURITY.md`), with a self-test case.
 
-**Plans:** 0 plans
+**Plans:** 6 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 01.3 to break down)
+**Wave 1**
+- [ ] 01.3-01-PLAN.md: Tracer: H-05 through the new reporting library, proven identical by prove.sh; lib.sh split into topic libraries
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 01.3-02-PLAN.md: Runner layout; H-00, H-02, H-03, H-12 converted; H-17 uses stop_check
+- [ ] 01.3-03-PLAN.md: H-01, H-04, H-06, H-13 and Coexistence converted
+- [ ] 01.3-04-PLAN.md: Restart chain H-08, H-16, H-11, H-09, H-10; shared restart_test_sandbox
+- [ ] 01.3-06-PLAN.md: Entrypoint stops on a non-executable start hook, with its self-test; SANDBOX.md and Dockerfile wording
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 01.3-05-PLAN.md: Manual helpers on lib-manual.sh; phase gate (lint clean, output identical); Mac run
 
 ### Phase 01.4: Test suite refactor (INSERTED)
 
