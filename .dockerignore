@@ -1,0 +1,6 @@
+# Both images build from the repo root; only these folders enter the build.
+*
+!base
+!claude
+!best-practices
+**/.DS_Store

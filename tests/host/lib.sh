@@ -248,10 +248,10 @@ build_images() {
   for imageName in base claude; do
     logFile="$RUN/logs/$logPrefix-$imageName.log"
     if [ "$cacheFlag" = "--no-cache" ]; then
-      docker build --no-cache -t "sbx-$imageName:local" "$REPO_DIR/$imageName" >"$logFile" 2>&1 </dev/null
+      docker build --no-cache -f "$REPO_DIR/$imageName/Dockerfile" -t "sbx-$imageName:local" "$REPO_DIR" >"$logFile" 2>&1 </dev/null
       buildStatus=$?
     else
-      docker build -t "sbx-$imageName:local" "$REPO_DIR/$imageName" >"$logFile" 2>&1 </dev/null
+      docker build -f "$REPO_DIR/$imageName/Dockerfile" -t "sbx-$imageName:local" "$REPO_DIR" >"$logFile" 2>&1 </dev/null
       buildStatus=$?
     fi
 
@@ -291,6 +291,7 @@ print_next_block() {
   printf '    bash %q\n' "${HOST_DIR:-}/manual/h07-login.sh"
   printf '    bash %q\n' "${HOST_DIR:-}/manual/h09-rebuild-resume.sh"
   printf '    bash %q\n' "${HOST_DIR:-}/manual/h13-doctor.sh"
+  printf '    bash %q\n' "${HOST_DIR:-}/manual/h19-bundle-behaviour.sh"
 
   if [ -n "${RUN:-}" ]; then
     printf '  Cleanup when you are done. The run folder holds the Claude login after the manual pass:\n'
@@ -298,4 +299,39 @@ print_next_block() {
   else
     printf '  No run folder was created, so there is nothing to clean up.\n'
   fi
+}
+
+# --------------------------------------------------------------------------------
+# Collects a check's problems, then prints its PASS or FAIL line and exits
+# --------------------------------------------------------------------------------
+
+# Every message add_problem collected so far, in the order it was added.
+problemList=()
+
+# add_problem MESSAGE: keeps MESSAGE for report_check to print as a FAIL detail.
+add_problem() {
+  problemList+=("$1")
+}
+
+# report_check ID FAIL_SUMMARY PASS_TEXT: FAIL with every problem and exit 1; else PASS and exit 0.
+# The count is tested first: bash 3.2 with set -u treats an empty array as unbound.
+report_check() {
+  local checkId=$1
+  local failSummary=$2
+  local passText=$3
+
+  if [ "${#problemList[@]}" -gt 0 ]; then
+    fail "$checkId" "$failSummary" "${problemList[@]}"
+    exit 1
+  fi
+
+  pass "$checkId" "$passText"
+  exit 0
+}
+
+# first_lines TEXT [COUNT]: the first COUNT lines of TEXT (default 3) on one line, each followed by a space.
+first_lines() {
+  local lineCount=${2:-3}
+
+  printf '%s\n' "$1" | head -n "$lineCount" | tr '\n' ' '
 }

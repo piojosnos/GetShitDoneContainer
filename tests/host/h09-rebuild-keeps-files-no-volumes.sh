@@ -2,6 +2,8 @@
 # H-09: files survive a rebuild of both images, no volumes appear, and the container has exactly
 # one bind mount of the run folder at /home/sandbox/workspace.
 # - The rebuild uses the cache. SBXTEST_NO_CACHE=1 (optional) rebuilds with --no-cache; slow.
+# - The memory sentinel under state/claude/projects proves a rebuild with restart leaves learned
+#   memories alone.
 # - The Claude login and claude --continue part needs a person: manual/h09-rebuild-resume.sh.
 # - The mount Source is compared by its last path component only, because Docker Desktop may
 #   show the folder under a different prefix.
@@ -15,6 +17,9 @@ require_test_sandbox H-09 || exit 1
 sentinelText="h09-$$-$(date +%s)"
 printf '%s\n' "$sentinelText" >"$RUN/hosttest/h09-sentinel.txt"
 printf '%s\n' "$sentinelText" >"$RUN/state/h09-sentinel.txt"
+memorySentinel=$RUN/state/claude/projects/-home-sandbox-workspace-hosttest/memory/h09-memory.md
+mkdir -p "$(dirname "$memorySentinel")"
+printf '%s\n' "$sentinelText" >"$memorySentinel"
 volumesBefore=$(docker volume ls -q </dev/null 2>&1)
 
 cacheFlag=""
@@ -36,7 +41,7 @@ if ! compose_up; then
   set -- "$@" "compose up failed after the rebuild; log: $RUN/logs/compose-up.log"
 fi
 
-for sentinelFile in "$RUN/hosttest/h09-sentinel.txt" "$RUN/state/h09-sentinel.txt"; do
+for sentinelFile in "$RUN/hosttest/h09-sentinel.txt" "$RUN/state/h09-sentinel.txt" "$memorySentinel"; do
   if [ "$(cat "$sentinelFile" 2>/dev/null)" != "$sentinelText" ]; then
     set -- "$@" "$sentinelFile is missing or changed after the rebuild"
   fi

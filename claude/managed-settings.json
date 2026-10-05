@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(//home/sandbox/workspace/state/claude/rules/**)",
+      "Edit(//home/sandbox/workspace/state/claude/.best-practices-skills)",
+      "Edit(//home/sandbox/workspace/state/claude/skills/merged/**)",
+      "Edit(//home/sandbox/workspace/state/claude/skills/pr-reply/**)"
+    ]
+  }
+}
