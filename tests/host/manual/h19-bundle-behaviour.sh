@@ -9,38 +9,12 @@
 # - Usage: bash tests/host/manual/h19-bundle-behaviour.sh   (exit 0 = every line is PASS)
 set -u
 
-if [ ! -t 0 ] || [ ! -t 1 ]; then
-  printf 'This helper needs a terminal. Run it directly, not through a pipe or a script.\n' >&2
-  exit 1
-fi
+. "$(dirname "$0")/lib-manual.sh"
+require_terminal
 
 . "$(dirname "$0")/../lib.sh"
 host_init
 require_test_sandbox H-19 || exit 1
-
-failCount=0
-
-# --------------------------------------------------------------------------------
-# Helpers
-# --------------------------------------------------------------------------------
-
-# ask_judgment QUESTION PASS_TEXT FAIL_TEXT: asks one y/N question and prints PASS or FAIL for H-19.
-ask_judgment() {
-  local answer
-
-  printf '%s [y/N] ' "$1"
-  read -r answer
-
-  case "$answer" in
-    y|Y)
-      pass H-19 "$2"
-      ;;
-    *)
-      fail H-19 "$3" "answer: ${answer:-<none>}"
-      failCount=$((failCount + 1))
-      ;;
-  esac
-}
 
 # --------------------------------------------------------------------------------
 # Puts the shell file Claude reads in step 3 into the test project
@@ -69,7 +43,7 @@ print_steps() {
 # Opens Claude in the test sandbox and waits until it exits
 # --------------------------------------------------------------------------------
 open_claude() {
-  docker exec -it -w /home/sandbox/workspace/hosttest "$CONTAINER" claude
+  run_claude
 
   printf '\n'
 }
@@ -78,44 +52,33 @@ open_claude() {
 # Checks the synced communication.md still equals the repo file
 # --------------------------------------------------------------------------------
 check_rule_copy() {
-  if cmp -s "$REPO_DIR/best-practices/rules/communication.md" "$RUN/state/claude/rules/communication.md"; then
-    pass H-19 "the copy of communication.md in the run folder still equals the repo file"
-  else
-    fail H-19 "the copy of communication.md differs from the repo file" "compare: $RUN/state/claude/rules/communication.md"
-    failCount=$((failCount + 1))
+  if ! cmp -s "$REPO_DIR/best-practices/rules/communication.md" "$RUN/state/claude/rules/communication.md"; then
+    add_problem "compare: $RUN/state/claude/rules/communication.md"
   fi
+
+  count_result H-19 "the copy of communication.md differs from the repo file" \
+    "the copy of communication.md in the run folder still equals the repo file"
 }
 
 # --------------------------------------------------------------------------------
 # Asks one question for each step you judge
 # --------------------------------------------------------------------------------
 ask_judgments() {
-  ask_judgment "Step 1: were pr-reply and merged listed?" \
+  ask_judgment H-19 "Step 1: were pr-reply and merged listed?" \
     "the skills pr-reply and merged appear in Claude" \
     "the skills pr-reply and merged were not both listed"
-  ask_judgment "Step 2: was the answer a brief pros and cons with one recommendation?" \
+  ask_judgment H-19 "Step 2: was the answer a brief pros and cons with one recommendation?" \
     "Claude followed the always-on communication rule" \
     "the answer did not follow the communication rule"
-  ask_judgment "Step 3: was shell.md absent at first and listed after the read?" \
+  ask_judgment H-19 "Step 3: was shell.md absent at first and listed after the read?" \
     "the path-scoped shell rule loaded only after a matching file was read" \
     "shell.md was listed too early or never listed"
-  ask_judgment "Step 4: did Claude refuse to edit the rule?" \
+  ask_judgment H-19 "Step 4: did Claude refuse to edit the rule?" \
     "Claude refused to edit the synced rule" \
     "Claude did not refuse to edit the synced rule"
-  ask_judgment "Step 5: did /status show managed settings as a source?" \
+  ask_judgment H-19 "Step 5: did /status show managed settings as a source?" \
     "the managed settings show up among the setting sources" \
     "the managed settings were not shown as a source"
-}
-
-# --------------------------------------------------------------------------------
-# Exits 1 when any line was FAIL, else 0
-# --------------------------------------------------------------------------------
-exit_with_result() {
-  if [ "$failCount" -gt 0 ]; then
-    exit 1
-  fi
-
-  exit 0
 }
 
 # --------------------------------------------------------------------------------
