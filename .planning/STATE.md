@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.3"
 current_phase_name: Shell script layout (INSERTED)
 status: executing
-stopped_at: Completed 01.3-01-PLAN.md
-last_updated: "2026-10-05T04:18:31.343Z"
+stopped_at: Completed 01.3-02-PLAN.md
+last_updated: "2026-10-05T04:27:38.332Z"
 last_activity: 2026-10-05
 last_activity_desc: Phase 01.3 execution started
-state_head: 4e55ab4f7723da8f867082c1ee2ab1424341dbc6
+state_head: 0054009ac8afdbbf14324610fa240ef573c04298
 progress:
   total_phases: 12
   completed_phases: 3
   total_plans: 20
-  completed_plans: 15
+  completed_plans: 16
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-05)
 ## Current Position
 
 Phase: 01.3 (Shell script layout (INSERTED)) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-10-05 — Phase 01.3 execution started
 
@@ -73,6 +73,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 01.2 P05 | 8 min | 2 tasks | 10 files |
 | Phase 01.2 P06 | 25 min | 2 tasks | 7 files |
 | Phase 01.3 P01 | 17 min | 2 tasks | 7 files |
+| Phase 01.3 P02 | 15 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -112,6 +113,8 @@ Recent decisions affecting current work:
 - [Phase 01.2]: Security: threats_open 0; non-executable start hook skip (WR-04) accepted as AR-01 and scheduled in Phase 1.3
 - [Phase 01.3]: Host test libraries stay flat files next to lib.sh; the frozen selftest copies only tests/host/*.sh and reaches make_run_dir, claude_pin, expected_arch through lib.sh
 - [Phase 01.3]: Code is moved verbatim during the layout phase; prove.sh (identical output against baseline 0a58e7d) is the gate for every later plan
+- [Phase 01.3]: 01.3-02: remove_leftover_test_container calls fatal itself on both failure paths so the run-all.sh Main block stays a flat list of calls
+- [Phase 01.3]: 01.3-02: H-02 starts baseCount at 0 so its eagerly expanded PASS text cannot abort with an unbound variable
 
 ### Pending Todos
 
@@ -146,6 +149,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-05T04:18:31.254Z
-Stopped at: Completed 01.3-01-PLAN.md
+Last session: 2026-10-05T04:27:38.242Z
+Stopped at: Completed 01.3-02-PLAN.md
 Resume file: None
