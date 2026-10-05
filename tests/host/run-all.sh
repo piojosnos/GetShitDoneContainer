@@ -14,9 +14,6 @@ host_init
 RUN=""
 unset SBXTEST_DIR
 
-trap 'exit 130' INT TERM
-trap print_next_block EXIT
-
 # Check lists, in run order. Each check names what it needs in its "# Depends on:" line.
 # - The Compose check is fatal: without Compose v2 nothing else can run.
 # - Checks that need nothing from the sandbox come first.
@@ -36,6 +33,10 @@ passedCount=0
 failedCount=0
 notRunCount=0
 failedList=""
+
+# --------------------------------------------------------------------------------
+# Runs the checks and counts the results
+# --------------------------------------------------------------------------------
 
 # drop_remaining SCRIPT: SCRIPT has been run or marked, so it is no longer waiting.
 drop_remaining() {
@@ -101,6 +102,10 @@ run_chain() {
   done
 }
 
+# --------------------------------------------------------------------------------
+# Ends the run: the summary, a setup failure, the Next block
+# --------------------------------------------------------------------------------
+
 # record_setup_failure TEXT: counts a failure that belongs to no check.
 record_setup_failure() {
   printf 'FAIL: SETUP %s\n' "$1"
@@ -145,7 +150,33 @@ print_next_block() {
   fi
 }
 
-# remove_leftover_test_container: 0 if none or taken down; 1 if the name is taken by something else or down failed.
+# --------------------------------------------------------------------------------
+# Prepares the run: traps, Docker, the run folder, a leftover test container
+# --------------------------------------------------------------------------------
+
+# install_traps: Ctrl-C exits 130; the Next block prints whenever the run ends.
+install_traps() {
+  trap 'exit 130' INT TERM
+  trap print_next_block EXIT
+}
+
+# check_docker_reachable: stops the run when the Docker daemon does not answer.
+check_docker_reachable() {
+  if ! docker info >/dev/null 2>&1 </dev/null; then
+    fatal "the Docker daemon is not reachable; start Docker Desktop and run again"
+  fi
+}
+
+# create_run_folder: makes the run folder and prints its path; stops the run when it cannot.
+create_run_folder() {
+  if ! make_run_dir; then
+    fatal "could not create the run folder"
+  fi
+
+  info "run folder: $RUN"
+}
+
+# remove_leftover_test_container: takes down an earlier test container; stops the run if the name is taken by something else or the take down fails.
 remove_leftover_test_container() {
   local label
 
@@ -156,46 +187,57 @@ remove_leftover_test_container() {
   label=$(docker container inspect --format '{{index .Config.Labels "sbx.name"}}' "$CONTAINER" 2>/dev/null </dev/null)
   if [ "$label" != "hosttest" ]; then
     printf 'A container named %s exists but is not labelled sbx.name=hosttest. It was left alone.\n' "$CONTAINER" >&2
-    return 1
+    fatal "an earlier sbx-hosttest container is in the way and was not removed (see the messages above)"
   fi
 
-  compose_down >"$RUN/logs/leftover-down.log" 2>&1
+  if ! compose_down >"$RUN/logs/leftover-down.log" 2>&1; then
+    fatal "an earlier sbx-hosttest container is in the way and was not removed (see the messages above)"
+  fi
+
+  return 0
 }
 
-if ! docker info >/dev/null 2>&1 </dev/null; then
-  fatal "the Docker daemon is not reachable; start Docker Desktop and run again"
-fi
+# --------------------------------------------------------------------------------
+# Runs the stages: Compose, the image build, the sandbox checks
+# --------------------------------------------------------------------------------
 
-if ! make_run_dir; then
-  fatal "could not create the run folder"
-fi
-info "run folder: $RUN"
+# run_compose_check: runs the Compose check; the run ends here when it fails.
+run_compose_check() {
+  if ! run_check "$fatalCheck"; then
+    finish "the Compose check failed"
+  fi
+}
 
+# build_all_images: builds both images; stops the run when the build fails.
+build_all_images() {
+  info "building the images (logs in $RUN/logs)"
+  if ! build_images build; then
+    fatal "the image build failed"
+  fi
+}
+
+# run_sandbox_checks: starts the test sandbox, then runs the checks on it and the chain; marks them not run when it does not start.
+run_sandbox_checks() {
+  if compose_up; then
+    run_list "$sandboxCheckList"
+    run_chain "$chainCheckList"
+  else
+    record_setup_failure "the test sandbox did not start (log: $RUN/logs/compose-up.log)"
+    mark_not_run "$sandboxCheckList $chainCheckList" "the test sandbox did not start"
+  fi
+}
+
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+install_traps
+check_docker_reachable
+create_run_folder
 snapshot_old_containers >"$RUN/logs/old-containers.before"
-
-if ! remove_leftover_test_container; then
-  fatal "an earlier sbx-hosttest container is in the way and was not removed (see the messages above)"
-fi
-
-if ! run_check "$fatalCheck"; then
-  finish "the Compose check failed"
-fi
-
-info "building the images (logs in $RUN/logs)"
-if ! build_images build; then
-  fatal "the image build failed"
-fi
-
+remove_leftover_test_container
+run_compose_check
+build_all_images
 run_list "$noSandboxCheckList"
-
-if compose_up; then
-  run_list "$sandboxCheckList"
-  run_chain "$chainCheckList"
-else
-  record_setup_failure "the test sandbox did not start (log: $RUN/logs/compose-up.log)"
-  mark_not_run "$sandboxCheckList $chainCheckList" "the test sandbox did not start"
-fi
-
+run_sandbox_checks
 run_list "$finalCheckList"
-
 finish "not reached"
