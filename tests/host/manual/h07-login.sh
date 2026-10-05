@@ -7,64 +7,83 @@
 # - Usage: bash tests/host/manual/h07-login.sh   (exit 0 = every line is PASS)
 set -u
 
-if [ ! -t 0 ] || [ ! -t 1 ]; then
-  printf 'This helper needs a terminal. Run it directly, not through a pipe or a script.\n' >&2
-  exit 1
-fi
+. "$(dirname "$0")/lib-manual.sh"
+require_terminal
 
 . "$(dirname "$0")/../lib.sh"
 host_init
 require_test_sandbox H-07 || exit 1
 
-printf 'Claude opens next, inside the test sandbox.\n'
-printf '  1. Log in with a claude.ai account.\n'
-printf '  2. Type /exit to come back here.\n\n'
-
-docker exec -it -w /home/sandbox/workspace/hosttest "$CONTAINER" claude
-
-printf '\n'
 stateDir="$RUN/state/claude"
-failCount=0
 
-set --
+# --------------------------------------------------------------------------------
+# Opens Claude in the test sandbox for the login
+# --------------------------------------------------------------------------------
+run_login() {
+  printf 'Claude opens next, inside the test sandbox.\n'
+  printf '  1. Log in with a claude.ai account.\n'
+  printf '  2. Type /exit to come back here.\n\n'
+  run_claude
+  printf '\n'
+}
 
-for stateFile in .claude.json .credentials.json; do
-  if [ ! -f "$stateDir/$stateFile" ]; then
-    set -- "$@" "missing on the Mac: $stateDir/$stateFile"
+# --------------------------------------------------------------------------------
+# Checks the login files reached the state folder on the Mac
+# --------------------------------------------------------------------------------
+check_login_files() {
+  local stateFile
+
+  for stateFile in .claude.json .credentials.json; do
+    if [ ! -f "$stateDir/$stateFile" ]; then
+      add_problem "missing on the Mac: $stateDir/$stateFile"
+    fi
+  done
+
+  if [ ! -d "$stateDir/projects" ]; then
+    add_problem "missing on the Mac: $stateDir/projects/"
   fi
-done
 
-if [ ! -d "$stateDir/projects" ]; then
-  set -- "$@" "missing on the Mac: $stateDir/projects/"
-fi
+  count_result H-07 "the login files are not in the state folder" \
+    ".claude.json, .credentials.json and projects/ are in $stateDir"
+}
 
-if [ "$#" -gt 0 ]; then
-  fail H-07 "the login files are not in the state folder" "$@"
-  failCount=$((failCount + 1))
-else
-  pass H-07 ".claude.json, .credentials.json and projects/ are in $stateDir"
-fi
+# --------------------------------------------------------------------------------
+# Checks claude auth status says logged in
+# --------------------------------------------------------------------------------
+check_auth_status() {
+  local authOutput
 
-authOutput=$(in_container claude auth status)
+  authOutput=$(in_container claude auth status)
 
-if printf '%s\n' "$authOutput" | grep -Eq '"loggedIn":[[:space:]]*true'; then
-  pass H-07 'claude auth status shows "loggedIn": true'
-else
-  fail H-07 "claude auth status does not show a login" "got: $(printf '%s\n' "$authOutput" | head -n 3 | tr '\n' ' ')"
-  failCount=$((failCount + 1))
-fi
+  if ! claude_logged_in "$authOutput"; then
+    add_problem "got: $(first_lines "$authOutput")"
+  fi
 
-homeCount=$(in_container sh -c 'ls -a "$HOME" | grep -c "^\.claude\.json$"')
+  count_result H-07 "claude auth status does not show a login" \
+    'claude auth status shows "loggedIn": true'
+}
 
-if [ "$homeCount" = "0" ]; then
-  pass H-07 "no ~/.claude.json in the container home"
-else
-  fail H-07 "a ~/.claude.json sits in the container home" "count of .claude.json in the home listing: $homeCount"
-  failCount=$((failCount + 1))
-fi
+# --------------------------------------------------------------------------------
+# Checks no .claude.json sits in the container home
+# --------------------------------------------------------------------------------
+check_no_home_json() {
+  local homeCount
 
-if [ "$failCount" -gt 0 ]; then
-  exit 1
-fi
+  homeCount=$(in_container sh -c 'ls -a "$HOME" | grep -c "^\.claude\.json$"')
 
-exit 0
+  if [ "$homeCount" != "0" ]; then
+    add_problem "count of .claude.json in the home listing: $homeCount"
+  fi
+
+  count_result H-07 "a ~/.claude.json sits in the container home" \
+    "no ~/.claude.json in the container home"
+}
+
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+run_login
+check_login_files
+check_auth_status
+check_no_home_json
+exit_with_result
