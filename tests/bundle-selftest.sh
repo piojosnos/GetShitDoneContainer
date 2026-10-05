@@ -10,8 +10,20 @@ set -u
 cd "$(dirname "$0")/.." || exit 1
 REPO=$(pwd -P)
 
-WORK=$(mktemp -d "${TMPDIR:-/tmp}/sbx-bundletest.XXXXXX") || exit 1
-WORK=$(cd "$WORK" && pwd -P)
+BUNDLE=$REPO/best-practices
+HOOK=$REPO/claude/start.d/10-best-practices
+FAILS=0
+
+# --------------------------------------------------------------------------------
+# Makes the work folder and removes it, and only it, at exit
+# --------------------------------------------------------------------------------
+make_work_folder() {
+  WORK=$(mktemp -d "${TMPDIR:-/tmp}/sbx-bundletest.XXXXXX") || exit 1
+  WORK=$(cd "$WORK" && pwd -P)
+
+  trap cleanup_work EXIT
+  trap 'exit 130' INT TERM
+}
 
 # cleanup_work: removes the work folder made above, and only that.
 cleanup_work() {
@@ -19,20 +31,17 @@ cleanup_work() {
     */sbx-bundletest.*) rm -rf "$WORK" ;;
   esac
 }
-trap cleanup_work EXIT
-trap 'exit 130' INT TERM
 
-BUNDLE=$REPO/best-practices
-HOOK=$REPO/claude/start.d/10-best-practices
-FAILS=0
-
-# --- helpers ---
+# --------------------------------------------------------------------------------
+# Helpers the cases share
+# --------------------------------------------------------------------------------
 
 # expect NAME COMMAND...: PASS when the command succeeds.
 expect() {
   local name=$1
 
   shift
+
   if "$@"; then
     echo "PASS: $name"
   else
@@ -95,308 +104,430 @@ make_bundle() {
 
   shift
   mkdir -p "$bundleRoot/rules"
+
   for ruleName in "$@"; do
     plant "$bundleRoot/rules/$ruleName" "rule $ruleName"
   done
 }
 
-# --- the real bundle ---
+# The cases below share the globals config and fixture: some cases reuse the folders the case
+# before them left behind.
 
-echo "--- first start from the repo bundle"
-config=$WORK/real-config
-mkdir -p "$config/projects/demo/memory"
-echo "learned" >"$config/projects/demo/memory/note.md"
-echo "mine" >"$config/CLAUDE.md"
-echo "{}" >"$config/settings.json"
-run_sync "$BUNDLE" "$config" "$WORK/out.real"
-expect "real: the hook exits 0" equals "$SYNC_RC" "0"
-expect "real: the hook is silent on success" equals "$(wc -c <"$WORK/out.real" | tr -d ' ')" "0"
-expect "real: rules/ equals the bundle rules" trees_equal "$BUNDLE/rules" "$config/rules"
-bundle_skill_names "$BUNDLE" >"$WORK/names.real"
-expect "real: the skill list equals the bundle skill names" files_equal "$WORK/names.real" "$config/.best-practices-skills"
-for skillName in $(bundle_skill_names "$BUNDLE"); do
-  expect "real: skill $skillName equals the bundle copy" trees_equal "$BUNDLE/skills/$skillName" "$config/skills/$skillName"
-done
-expect "real: memories are untouched" equals "$(cat "$config/projects/demo/memory/note.md")" "learned"
-expect "real: CLAUDE.md is untouched" equals "$(cat "$config/CLAUDE.md")" "mine"
-expect "real: settings.json is untouched" equals "$(cat "$config/settings.json")" "{}"
+# --------------------------------------------------------------------------------
+# Runs the hook from the repo bundle into a fresh config folder
+# --------------------------------------------------------------------------------
+case_real_first_start() {
+  local skillName
 
-echo "--- second run changes nothing"
-run_sync "$BUNDLE" "$config" "$WORK/out.real2"
-expect "real again: the hook exits 0" equals "$SYNC_RC" "0"
-expect "real again: rules/ still equals the bundle rules" trees_equal "$BUNDLE/rules" "$config/rules"
-expect "real again: the skill list is the same" files_equal "$WORK/names.real" "$config/.best-practices-skills"
+  echo "--- first start from the repo bundle"
+  config=$WORK/real-config
+  mkdir -p "$config/projects/demo/memory"
+  echo "learned" >"$config/projects/demo/memory/note.md"
+  echo "mine" >"$config/CLAUDE.md"
+  echo "{}" >"$config/settings.json"
+  run_sync "$BUNDLE" "$config" "$WORK/out.real"
+  expect "real: the hook exits 0" equals "$SYNC_RC" "0"
+  expect "real: the hook is silent on success" equals "$(wc -c <"$WORK/out.real" | tr -d ' ')" "0"
+  expect "real: rules/ equals the bundle rules" trees_equal "$BUNDLE/rules" "$config/rules"
+  bundle_skill_names "$BUNDLE" >"$WORK/names.real"
+  expect "real: the skill list equals the bundle skill names" files_equal "$WORK/names.real" "$config/.best-practices-skills"
 
-echo "--- a hand edit and a hand-placed rule are undone"
-echo "scribble" >>"$config/rules/communication.md"
-echo "stray" >"$config/rules/stray.md"
-run_sync "$BUNDLE" "$config" "$WORK/out.real3"
-expect "edits: rules/ equals the bundle rules again" trees_equal "$BUNDLE/rules" "$config/rules"
+  for skillName in $(bundle_skill_names "$BUNDLE"); do
+    expect "real: skill $skillName equals the bundle copy" trees_equal "$BUNDLE/skills/$skillName" "$config/skills/$skillName"
+  done
 
-# --- fixtures ---
+  expect "real: memories are untouched" equals "$(cat "$config/projects/demo/memory/note.md")" "learned"
+  expect "real: CLAUDE.md is untouched" equals "$(cat "$config/CLAUDE.md")" "mine"
+  expect "real: settings.json is untouched" equals "$(cat "$config/settings.json")" "{}"
+}
 
-echo "--- a bundle with no skills folder"
-fixture=$WORK/fixture-noskills
-mkdir -p "$fixture/rules"
-echo "rule" >"$fixture/rules/one.md"
-config=$WORK/config-noskills
-run_sync "$fixture" "$config" "$WORK/out.noskills"
-expect "no skills: the hook exits 0" equals "$SYNC_RC" "0"
-expect "no skills: skills/ exists and is empty" is_empty_dir "$config/skills"
-expect "no skills: the list file is empty" equals "$(wc -c <"$config/.best-practices-skills" | tr -d ' ')" "0"
-expect "no skills: the rule is copied" files_equal "$fixture/rules/one.md" "$config/rules/one.md"
+# --------------------------------------------------------------------------------
+# Runs the hook a second time into the same config folder
+# --------------------------------------------------------------------------------
+case_real_second_run() {
+  echo "--- second run changes nothing"
+  run_sync "$BUNDLE" "$config" "$WORK/out.real2"
+  expect "real again: the hook exits 0" equals "$SYNC_RC" "0"
+  expect "real again: rules/ still equals the bundle rules" trees_equal "$BUNDLE/rules" "$config/rules"
+  expect "real again: the skill list is the same" files_equal "$WORK/names.real" "$config/.best-practices-skills"
+}
 
-echo "--- a bundle with one skill"
-fixture=$WORK/fixture-demo
-mkdir -p "$fixture/rules" "$fixture/skills/demo"
-echo "rule" >"$fixture/rules/one.md"
-echo "skill" >"$fixture/skills/demo/SKILL.md"
-config=$WORK/config-demo
-mkdir -p "$config/skills/own"
-echo "mine" >"$config/skills/own/SKILL.md"
-run_sync "$fixture" "$config" "$WORK/out.demo"
-expect "demo: the hook exits 0" equals "$SYNC_RC" "0"
-expect "demo: skills/demo equals the fixture" trees_equal "$fixture/skills/demo" "$config/skills/demo"
-expect "demo: the list holds exactly demo" equals "$(cat "$config/.best-practices-skills")" "demo"
-expect "demo: an unlisted skill is untouched" equals "$(cat "$config/skills/own/SKILL.md")" "mine"
+# --------------------------------------------------------------------------------
+# Edits a synced rule and places a stray one, then runs the hook again
+# --------------------------------------------------------------------------------
+case_real_edits_undone() {
+  echo "--- a hand edit and a hand-placed rule are undone"
+  echo "scribble" >>"$config/rules/communication.md"
+  echo "stray" >"$config/rules/stray.md"
+  run_sync "$BUNDLE" "$config" "$WORK/out.real3"
+  expect "edits: rules/ equals the bundle rules again" trees_equal "$BUNDLE/rules" "$config/rules"
+}
 
-echo "--- a skill dropped from the bundle disappears, a clash is won by the bundle"
-echo "edited" >"$config/skills/demo/SKILL.md"
-rm -rf "$fixture/skills/demo"
-mkdir -p "$fixture/skills/other"
-echo "other" >"$fixture/skills/other/SKILL.md"
-run_sync "$fixture" "$config" "$WORK/out.drop"
-expect "drop: the old skill is gone" test ! -e "$config/skills/demo"
-expect "drop: the new skill is there" equals "$(cat "$config/skills/other/SKILL.md")" "other"
-expect "drop: the list holds exactly other" equals "$(cat "$config/.best-practices-skills")" "other"
-expect "drop: an unlisted skill is untouched" equals "$(cat "$config/skills/own/SKILL.md")" "mine"
-echo "clash" >"$config/skills/other/SKILL.md"
-run_sync "$fixture" "$config" "$WORK/out.clash"
-expect "clash: the bundle skill wins" equals "$(cat "$config/skills/other/SKILL.md")" "other"
+# --------------------------------------------------------------------------------
+# Syncs a bundle that has no skills folder
+# --------------------------------------------------------------------------------
+case_no_skills_folder() {
+  echo "--- a bundle with no skills folder"
+  fixture=$WORK/fixture-noskills
+  mkdir -p "$fixture/rules"
+  echo "rule" >"$fixture/rules/one.md"
+  config=$WORK/config-noskills
+  run_sync "$fixture" "$config" "$WORK/out.noskills"
+  expect "no skills: the hook exits 0" equals "$SYNC_RC" "0"
+  expect "no skills: skills/ exists and is empty" is_empty_dir "$config/skills"
+  expect "no skills: the list file is empty" equals "$(wc -c <"$config/.best-practices-skills" | tr -d ' ')" "0"
+  expect "no skills: the rule is copied" files_equal "$fixture/rules/one.md" "$config/rules/one.md"
+}
 
-echo "--- hostile list lines"
-config=$WORK/config-hostile
-mkdir -p "$config/projects/demo/memory" "$config/skills/.hidden" "$config/skills/a/b" "$config/skills/old-skill" "$config/skills/keep"
-echo "learned" >"$config/projects/demo/memory/note.md"
-echo "x" >"$config/skills/.hidden/file"
-echo "x" >"$config/skills/a/b/file"
-echo "x" >"$config/skills/old-skill/file"
-echo "x" >"$config/skills/keep/file"
-printf '%s\n' "../projects" ".hidden" "" "/etc" "a/b" "old-skill" >"$config/.best-practices-skills"
-run_sync "$fixture" "$config" "$WORK/out.hostile"
-expect "hostile: the hook exits 0" equals "$SYNC_RC" "0"
-expect "hostile: memories survive" equals "$(cat "$config/projects/demo/memory/note.md")" "learned"
-expect "hostile: a dot folder survives" test -f "$config/skills/.hidden/file"
-expect "hostile: a nested folder survives" test -f "$config/skills/a/b/file"
-expect "hostile: an unlisted skill survives" test -f "$config/skills/keep/file"
-expect "hostile: the legitimately listed skill is removed" test ! -e "$config/skills/old-skill"
+# --------------------------------------------------------------------------------
+# Syncs a bundle with one skill next to a user skill
+# --------------------------------------------------------------------------------
+case_one_skill() {
+  echo "--- a bundle with one skill"
+  fixture=$WORK/fixture-demo
+  mkdir -p "$fixture/rules" "$fixture/skills/demo"
+  echo "rule" >"$fixture/rules/one.md"
+  echo "skill" >"$fixture/skills/demo/SKILL.md"
+  config=$WORK/config-demo
+  mkdir -p "$config/skills/own"
+  echo "mine" >"$config/skills/own/SKILL.md"
+  run_sync "$fixture" "$config" "$WORK/out.demo"
+  expect "demo: the hook exits 0" equals "$SYNC_RC" "0"
+  expect "demo: skills/demo equals the fixture" trees_equal "$fixture/skills/demo" "$config/skills/demo"
+  expect "demo: the list holds exactly demo" equals "$(cat "$config/.best-practices-skills")" "demo"
+  expect "demo: an unlisted skill is untouched" equals "$(cat "$config/skills/own/SKILL.md")" "mine"
+}
 
-echo "--- a missing bundle"
-config=$WORK/config-missing
-mkdir -p "$config/rules"
-echo "keep" >"$config/rules/keep.md"
-run_sync "$WORK/no-such-bundle" "$config" "$WORK/out.missing"
-expect "missing: the hook exits non-zero" test "$SYNC_RC" -ne 0
-expect "missing: the output has an [sbx] ERROR line" has_text "$WORK/out.missing" "[sbx] ERROR"
-expect "missing: the existing rules are untouched" equals "$(cat "$config/rules/keep.md")" "keep"
+# --------------------------------------------------------------------------------
+# Drops a skill from the bundle, adds another, then clashes with it
+# --------------------------------------------------------------------------------
+case_drop_and_clash() {
+  echo "--- a skill dropped from the bundle disappears, a clash is won by the bundle"
+  echo "edited" >"$config/skills/demo/SKILL.md"
+  rm -rf "$fixture/skills/demo"
+  mkdir -p "$fixture/skills/other"
+  echo "other" >"$fixture/skills/other/SKILL.md"
+  run_sync "$fixture" "$config" "$WORK/out.drop"
+  expect "drop: the old skill is gone" test ! -e "$config/skills/demo"
+  expect "drop: the new skill is there" equals "$(cat "$config/skills/other/SKILL.md")" "other"
+  expect "drop: the list holds exactly other" equals "$(cat "$config/.best-practices-skills")" "other"
+  expect "drop: an unlisted skill is untouched" equals "$(cat "$config/skills/own/SKILL.md")" "mine"
+  echo "clash" >"$config/skills/other/SKILL.md"
+  run_sync "$fixture" "$config" "$WORK/out.clash"
+  expect "clash: the bundle skill wins" equals "$(cat "$config/skills/other/SKILL.md")" "other"
+}
 
-echo "--- no config folder"
-env -u CLAUDE_CONFIG_DIR SBX_BUNDLE_DIR="$BUNDLE" bash "$HOOK" >"$WORK/out.noconfig" 2>&1 </dev/null
-noConfigRc=$?
-expect "no config: the hook exits non-zero" test "$noConfigRc" -ne 0
-expect "no config: the output names CLAUDE_CONFIG_DIR" has_text "$WORK/out.noconfig" "[sbx] ERROR: CLAUDE_CONFIG_DIR is not set."
+# --------------------------------------------------------------------------------
+# Feeds the hook a list file with hostile lines
+# --------------------------------------------------------------------------------
+case_hostile_list_lines() {
+  echo "--- hostile list lines"
+  config=$WORK/config-hostile
+  mkdir -p "$config/projects/demo/memory" "$config/skills/.hidden" "$config/skills/a/b" "$config/skills/old-skill" "$config/skills/keep"
+  echo "learned" >"$config/projects/demo/memory/note.md"
+  echo "x" >"$config/skills/.hidden/file"
+  echo "x" >"$config/skills/a/b/file"
+  echo "x" >"$config/skills/old-skill/file"
+  echo "x" >"$config/skills/keep/file"
+  printf '%s\n' "../projects" ".hidden" "" "/etc" "a/b" "old-skill" >"$config/.best-practices-skills"
+  run_sync "$fixture" "$config" "$WORK/out.hostile"
+  expect "hostile: the hook exits 0" equals "$SYNC_RC" "0"
+  expect "hostile: memories survive" equals "$(cat "$config/projects/demo/memory/note.md")" "learned"
+  expect "hostile: a dot folder survives" test -f "$config/skills/.hidden/file"
+  expect "hostile: a nested folder survives" test -f "$config/skills/a/b/file"
+  expect "hostile: an unlisted skill survives" test -f "$config/skills/keep/file"
+  expect "hostile: the legitimately listed skill is removed" test ! -e "$config/skills/old-skill"
+}
 
-echo "--- hand edits and stray files in rules/ and in a bundle skill are undone"
-fixture=$WORK/fixture-refresh
-make_bundle "$fixture" one.md sub/nested.md
-make_skill "$fixture" demo
-config=$WORK/config-refresh
-run_sync "$fixture" "$config" "$WORK/out.refresh1"
-expect "refresh: a nested rule is mirrored" files_equal "$fixture/rules/sub/nested.md" "$config/rules/sub/nested.md"
-echo "scribble" >>"$config/rules/one.md"
-echo "scribble" >>"$config/skills/demo/SKILL.md"
-echo "scribble" >"$config/skills/demo/notes/extra.md"
-plant "$config/rules/stray.md" "stray"
-plant "$config/rules/sub/stray-nested.md" "stray"
-run_sync "$fixture" "$config" "$WORK/out.refresh2"
-expect "refresh: the hook exits 0" equals "$SYNC_RC" "0"
-expect "refresh: an edited rule is restored" files_equal "$fixture/rules/one.md" "$config/rules/one.md"
-expect "refresh: a file placed by hand in rules/ is gone" test ! -e "$config/rules/stray.md"
-expect "refresh: a file placed by hand in a rules subfolder is gone" test ! -e "$config/rules/sub/stray-nested.md"
-expect "refresh: rules/ equals the bundle rules" trees_equal "$fixture/rules" "$config/rules"
-expect "refresh: an edited bundle skill is restored" trees_equal "$fixture/skills/demo" "$config/skills/demo"
+# --------------------------------------------------------------------------------
+# Points the hook at a bundle that does not exist
+# --------------------------------------------------------------------------------
+case_missing_bundle() {
+  echo "--- a missing bundle"
+  config=$WORK/config-missing
+  mkdir -p "$config/rules"
+  echo "keep" >"$config/rules/keep.md"
+  run_sync "$WORK/no-such-bundle" "$config" "$WORK/out.missing"
+  expect "missing: the hook exits non-zero" test "$SYNC_RC" -ne 0
+  expect "missing: the output has an [sbx] ERROR line" has_text "$WORK/out.missing" "[sbx] ERROR"
+  expect "missing: the existing rules are untouched" equals "$(cat "$config/rules/keep.md")" "keep"
+}
 
-echo "--- a renamed rule leaves only the new name"
-fixtureV1=$WORK/fixture-rename-v1
-fixtureV2=$WORK/fixture-rename-v2
-make_bundle "$fixtureV1" old-name.md keep.md
-make_bundle "$fixtureV2" new-name.md keep.md
-config=$WORK/config-rename
-run_sync "$fixtureV1" "$config" "$WORK/out.rename1"
-expect "rename: the old name is there after the first start" test -f "$config/rules/old-name.md"
-run_sync "$fixtureV2" "$config" "$WORK/out.rename2"
-expect "rename: the hook exits 0" equals "$SYNC_RC" "0"
-expect "rename: the old name is gone" test ! -e "$config/rules/old-name.md"
-expect "rename: the new name is there" files_equal "$fixtureV2/rules/new-name.md" "$config/rules/new-name.md"
-expect "rename: rules/ equals the new bundle rules" trees_equal "$fixtureV2/rules" "$config/rules"
+# --------------------------------------------------------------------------------
+# Runs the hook with no CLAUDE_CONFIG_DIR
+# --------------------------------------------------------------------------------
+case_no_config_folder() {
+  local noConfigRc
 
-echo "--- a skill removed from the bundle is gone, the kept one stays listed"
-fixtureV1=$WORK/fixture-removal-v1
-fixtureV2=$WORK/fixture-removal-v2
-make_bundle "$fixtureV1" one.md
-make_skill "$fixtureV1" a-skill
-make_skill "$fixtureV1" b-skill
-make_bundle "$fixtureV2" one.md
-make_skill "$fixtureV2" a-skill
-config=$WORK/config-removal
-run_sync "$fixtureV1" "$config" "$WORK/out.removal1"
-expect "removal: both skills are there after the first start" test -d "$config/skills/b-skill"
-run_sync "$fixtureV2" "$config" "$WORK/out.removal2"
-expect "removal: the hook exits 0" equals "$SYNC_RC" "0"
-expect "removal: the removed skill is gone" test ! -e "$config/skills/b-skill"
-expect "removal: the kept skill equals the bundle" trees_equal "$fixtureV2/skills/a-skill" "$config/skills/a-skill"
-expect "removal: the list holds exactly a-skill" equals "$(cat "$config/.best-practices-skills")" "a-skill"
+  echo "--- no config folder"
+  env -u CLAUDE_CONFIG_DIR SBX_BUNDLE_DIR="$BUNDLE" bash "$HOOK" >"$WORK/out.noconfig" 2>&1 </dev/null
+  noConfigRc=$?
+  expect "no config: the hook exits non-zero" test "$noConfigRc" -ne 0
+  expect "no config: the output names CLAUDE_CONFIG_DIR" has_text "$WORK/out.noconfig" "[sbx] ERROR: CLAUDE_CONFIG_DIR is not set."
+}
 
-echo "--- user skills, GSD skills and user files are byte-identical after a run"
-fixture=$WORK/fixture-userfiles
-make_bundle "$fixture" one.md
-make_skill "$fixture" demo
-config=$WORK/config-userfiles
-saved=$WORK/saved-userfiles
-plant "$config/skills/my-own/SKILL.md" "my own skill"
-plant "$config/skills/my-own/notes/more.md" "more"
-plant "$config/skills/gsd-sample/SKILL.md" "gsd style skill"
-plant "$config/CLAUDE.md" "# my instructions"
-plant "$config/settings.json" '{"theme":"dark"}'
-plant "$config/.claude.json" '{"numStartups":3}'
-plant "$config/.credentials.json" '{"token":"secret"}'
-plant "$config/projects/p/memory/note.md" "learned note"
-plant "$config/projects/p/memory/MEMORY.md" "- [note](note.md)"
-cp -R "$config" "$saved"
-run_sync "$fixture" "$config" "$WORK/out.userfiles"
-expect "user files: the hook exits 0" equals "$SYNC_RC" "0"
-expect "user files: an unlisted user skill is byte-identical" trees_equal "$saved/skills/my-own" "$config/skills/my-own"
-expect "user files: a GSD-style skill is byte-identical" trees_equal "$saved/skills/gsd-sample" "$config/skills/gsd-sample"
-expect "user files: CLAUDE.md is byte-identical" files_equal "$saved/CLAUDE.md" "$config/CLAUDE.md"
-expect "user files: settings.json is byte-identical" files_equal "$saved/settings.json" "$config/settings.json"
-expect "user files: .claude.json is byte-identical" files_equal "$saved/.claude.json" "$config/.claude.json"
-expect "user files: .credentials.json is byte-identical" files_equal "$saved/.credentials.json" "$config/.credentials.json"
-expect "user files: a memory note is byte-identical" files_equal "$saved/projects/p/memory/note.md" "$config/projects/p/memory/note.md"
-expect "user files: MEMORY.md is byte-identical" files_equal "$saved/projects/p/memory/MEMORY.md" "$config/projects/p/memory/MEMORY.md"
-run_sync "$fixture" "$config" "$WORK/out.userfiles2"
-expect "user files: a second run keeps the memory note" files_equal "$saved/projects/p/memory/note.md" "$config/projects/p/memory/note.md"
-expect "user files: a second run keeps the user skill" trees_equal "$saved/skills/my-own" "$config/skills/my-own"
+# --------------------------------------------------------------------------------
+# Edits synced rules and a bundle skill and places stray files, then runs the hook again
+# --------------------------------------------------------------------------------
+case_refresh() {
+  echo "--- hand edits and stray files in rules/ and in a bundle skill are undone"
+  fixture=$WORK/fixture-refresh
+  make_bundle "$fixture" one.md sub/nested.md
+  make_skill "$fixture" demo
+  config=$WORK/config-refresh
+  run_sync "$fixture" "$config" "$WORK/out.refresh1"
+  expect "refresh: a nested rule is mirrored" files_equal "$fixture/rules/sub/nested.md" "$config/rules/sub/nested.md"
+  echo "scribble" >>"$config/rules/one.md"
+  echo "scribble" >>"$config/skills/demo/SKILL.md"
+  echo "scribble" >"$config/skills/demo/notes/extra.md"
+  plant "$config/rules/stray.md" "stray"
+  plant "$config/rules/sub/stray-nested.md" "stray"
+  run_sync "$fixture" "$config" "$WORK/out.refresh2"
+  expect "refresh: the hook exits 0" equals "$SYNC_RC" "0"
+  expect "refresh: an edited rule is restored" files_equal "$fixture/rules/one.md" "$config/rules/one.md"
+  expect "refresh: a file placed by hand in rules/ is gone" test ! -e "$config/rules/stray.md"
+  expect "refresh: a file placed by hand in a rules subfolder is gone" test ! -e "$config/rules/sub/stray-nested.md"
+  expect "refresh: rules/ equals the bundle rules" trees_equal "$fixture/rules" "$config/rules"
+  expect "refresh: an edited bundle skill is restored" trees_equal "$fixture/skills/demo" "$config/skills/demo"
+}
 
-echo "--- a user skill with a bundle skill's name is replaced and listed (no list file yet)"
-fixture=$WORK/fixture-clash
-make_bundle "$fixture" one.md
-make_skill "$fixture" demo
-config=$WORK/config-clash
-plant "$config/skills/demo/SKILL.md" "the user's own demo"
-plant "$config/skills/demo/private.md" "private"
-run_sync "$fixture" "$config" "$WORK/out.clash2"
-expect "clash: the hook exits 0 with no list file" equals "$SYNC_RC" "0"
-expect "clash: the bundle skill replaced the user skill" trees_equal "$fixture/skills/demo" "$config/skills/demo"
-expect "clash: nothing of the user skill is left" test ! -e "$config/skills/demo/private.md"
-expect "clash: the bundle skill is listed" equals "$(cat "$config/.best-practices-skills")" "demo"
+# --------------------------------------------------------------------------------
+# Renames a rule between two bundle versions
+# --------------------------------------------------------------------------------
+case_renamed_rule() {
+  local fixtureV1 fixtureV2
 
-echo "--- user skills that share a prefix with a bundle skill survive"
-config=$WORK/config-prefix
-plant "$config/skills/dem/SKILL.md" "dem skill"
-plant "$config/skills/demo-extra/SKILL.md" "demo-extra skill"
-cp -R "$config/skills" "$WORK/saved-prefix"
-run_sync "$fixture" "$config" "$WORK/out.prefix1"
-run_sync "$fixture" "$config" "$WORK/out.prefix2"
-expect "prefix: dem survives two runs" trees_equal "$WORK/saved-prefix/dem" "$config/skills/dem"
-expect "prefix: demo-extra survives two runs" trees_equal "$WORK/saved-prefix/demo-extra" "$config/skills/demo-extra"
-expect "prefix: the bundle skill demo is there" trees_equal "$fixture/skills/demo" "$config/skills/demo"
-echo "demo" >"$WORK/names.prefix"
-expect "prefix: the list holds exactly demo" files_equal "$WORK/names.prefix" "$config/.best-practices-skills"
-fixtureV2=$WORK/fixture-prefix-gone
-make_bundle "$fixtureV2" one.md
-mkdir -p "$fixtureV2/skills"
-run_sync "$fixtureV2" "$config" "$WORK/out.prefix3"
-expect "prefix: removing demo from the bundle keeps dem" trees_equal "$WORK/saved-prefix/dem" "$config/skills/dem"
-expect "prefix: removing demo from the bundle keeps demo-extra" trees_equal "$WORK/saved-prefix/demo-extra" "$config/skills/demo-extra"
-expect "prefix: removing demo from the bundle removes demo" test ! -e "$config/skills/demo"
+  echo "--- a renamed rule leaves only the new name"
+  fixtureV1=$WORK/fixture-rename-v1
+  fixtureV2=$WORK/fixture-rename-v2
+  make_bundle "$fixtureV1" old-name.md keep.md
+  make_bundle "$fixtureV2" new-name.md keep.md
+  config=$WORK/config-rename
+  run_sync "$fixtureV1" "$config" "$WORK/out.rename1"
+  expect "rename: the old name is there after the first start" test -f "$config/rules/old-name.md"
+  run_sync "$fixtureV2" "$config" "$WORK/out.rename2"
+  expect "rename: the hook exits 0" equals "$SYNC_RC" "0"
+  expect "rename: the old name is gone" test ! -e "$config/rules/old-name.md"
+  expect "rename: the new name is there" files_equal "$fixtureV2/rules/new-name.md" "$config/rules/new-name.md"
+  expect "rename: rules/ equals the new bundle rules" trees_equal "$fixtureV2/rules" "$config/rules"
+}
 
-echo "--- an empty skills folder in the bundle empties the list and removes the listed skills"
-fixture=$WORK/fixture-emptyskills
-make_bundle "$fixture" one.md
-make_skill "$fixture" demo
-config=$WORK/config-emptyskills
-plant "$config/skills/my-own/SKILL.md" "mine"
-run_sync "$fixture" "$config" "$WORK/out.empty1"
-expect "empty: demo is installed first" test -d "$config/skills/demo"
-rm -rf "$fixture/skills/demo"
-run_sync "$fixture" "$config" "$WORK/out.empty2"
-expect "empty: the hook exits 0" equals "$SYNC_RC" "0"
-expect "empty: demo is removed" test ! -e "$config/skills/demo"
-expect "empty: the list file is empty" equals "$(wc -c <"$config/.best-practices-skills" | tr -d ' ')" "0"
-expect "empty: a user skill is untouched" equals "$(cat "$config/skills/my-own/SKILL.md")" "mine"
+# --------------------------------------------------------------------------------
+# Removes one of two skills between two bundle versions
+# --------------------------------------------------------------------------------
+case_removed_skill() {
+  local fixtureV1 fixtureV2
 
-echo "--- empty and duplicate list lines are harmless"
-fixture=$WORK/fixture-duplicates
-make_bundle "$fixture" one.md
-make_skill "$fixture" demo
-config=$WORK/config-duplicates
-plant "$config/skills/demo/SKILL.md" "old demo"
-plant "$config/skills/my-own/SKILL.md" "mine"
-printf '%s\n' "demo" "" "demo" "" >"$config/.best-practices-skills"
-run_sync "$fixture" "$config" "$WORK/out.duplicates"
-expect "duplicates: the hook exits 0" equals "$SYNC_RC" "0"
-expect "duplicates: the skill equals the bundle" trees_equal "$fixture/skills/demo" "$config/skills/demo"
-expect "duplicates: the list holds demo once" equals "$(cat "$config/.best-practices-skills")" "demo"
-expect "duplicates: a user skill is untouched" equals "$(cat "$config/skills/my-own/SKILL.md")" "mine"
+  echo "--- a skill removed from the bundle is gone, the kept one stays listed"
+  fixtureV1=$WORK/fixture-removal-v1
+  fixtureV2=$WORK/fixture-removal-v2
+  make_bundle "$fixtureV1" one.md
+  make_skill "$fixtureV1" a-skill
+  make_skill "$fixtureV1" b-skill
+  make_bundle "$fixtureV2" one.md
+  make_skill "$fixtureV2" a-skill
+  config=$WORK/config-removal
+  run_sync "$fixtureV1" "$config" "$WORK/out.removal1"
+  expect "removal: both skills are there after the first start" test -d "$config/skills/b-skill"
+  run_sync "$fixtureV2" "$config" "$WORK/out.removal2"
+  expect "removal: the hook exits 0" equals "$SYNC_RC" "0"
+  expect "removal: the removed skill is gone" test ! -e "$config/skills/b-skill"
+  expect "removal: the kept skill equals the bundle" trees_equal "$fixtureV2/skills/a-skill" "$config/skills/a-skill"
+  expect "removal: the list holds exactly a-skill" equals "$(cat "$config/.best-practices-skills")" "a-skill"
+}
 
-echo "--- the list is in name order, whatever order the folders were made in"
-fixture=$WORK/fixture-order
-make_bundle "$fixture" one.md
-make_skill "$fixture" b-skill
-make_skill "$fixture" a-skill
-make_skill "$fixture" c-skill
-config=$WORK/config-order
-run_sync "$fixture" "$config" "$WORK/out.order"
-printf '%s\n' "a-skill" "b-skill" "c-skill" >"$WORK/names.order"
-expect "order: the list reads a-skill, b-skill, c-skill" files_equal "$WORK/names.order" "$config/.best-practices-skills"
+# --------------------------------------------------------------------------------
+# Checks user skills, GSD skills and user files byte for byte across two runs
+# --------------------------------------------------------------------------------
+case_user_files() {
+  local saved
 
-echo "--- an interrupted sync is fully repaired by the next run"
-fixture=$WORK/fixture-interrupted
-make_bundle "$fixture" one.md sub/nested.md
-make_skill "$fixture" demo
-config=$WORK/config-interrupted
-plant "$config/skills/demo/SKILL.md.part" "half a file"
-plant "$config/skills/my-own/SKILL.md" "mine"
-printf '%s\n' "demo" >"$config/.best-practices-skills"
-run_sync "$fixture" "$config" "$WORK/out.interrupted"
-expect "interrupted: the hook exits 0" equals "$SYNC_RC" "0"
-expect "interrupted: rules/ is back and equals the bundle" trees_equal "$fixture/rules" "$config/rules"
-expect "interrupted: the partly copied skill equals the bundle" trees_equal "$fixture/skills/demo" "$config/skills/demo"
-expect "interrupted: the partial file is gone" test ! -e "$config/skills/demo/SKILL.md.part"
-expect "interrupted: the list holds exactly demo" equals "$(cat "$config/.best-practices-skills")" "demo"
-expect "interrupted: a user skill is untouched" equals "$(cat "$config/skills/my-own/SKILL.md")" "mine"
+  echo "--- user skills, GSD skills and user files are byte-identical after a run"
+  fixture=$WORK/fixture-userfiles
+  make_bundle "$fixture" one.md
+  make_skill "$fixture" demo
+  config=$WORK/config-userfiles
+  saved=$WORK/saved-userfiles
+  plant "$config/skills/my-own/SKILL.md" "my own skill"
+  plant "$config/skills/my-own/notes/more.md" "more"
+  plant "$config/skills/gsd-sample/SKILL.md" "gsd style skill"
+  plant "$config/CLAUDE.md" "# my instructions"
+  plant "$config/settings.json" '{"theme":"dark"}'
+  plant "$config/.claude.json" '{"numStartups":3}'
+  plant "$config/.credentials.json" '{"token":"secret"}'
+  plant "$config/projects/p/memory/note.md" "learned note"
+  plant "$config/projects/p/memory/MEMORY.md" "- [note](note.md)"
+  cp -R "$config" "$saved"
+  run_sync "$fixture" "$config" "$WORK/out.userfiles"
+  expect "user files: the hook exits 0" equals "$SYNC_RC" "0"
+  expect "user files: an unlisted user skill is byte-identical" trees_equal "$saved/skills/my-own" "$config/skills/my-own"
+  expect "user files: a GSD-style skill is byte-identical" trees_equal "$saved/skills/gsd-sample" "$config/skills/gsd-sample"
+  expect "user files: CLAUDE.md is byte-identical" files_equal "$saved/CLAUDE.md" "$config/CLAUDE.md"
+  expect "user files: settings.json is byte-identical" files_equal "$saved/settings.json" "$config/settings.json"
+  expect "user files: .claude.json is byte-identical" files_equal "$saved/.claude.json" "$config/.claude.json"
+  expect "user files: .credentials.json is byte-identical" files_equal "$saved/.credentials.json" "$config/.credentials.json"
+  expect "user files: a memory note is byte-identical" files_equal "$saved/projects/p/memory/note.md" "$config/projects/p/memory/note.md"
+  expect "user files: MEMORY.md is byte-identical" files_equal "$saved/projects/p/memory/MEMORY.md" "$config/projects/p/memory/MEMORY.md"
+  run_sync "$fixture" "$config" "$WORK/out.userfiles2"
+  expect "user files: a second run keeps the memory note" files_equal "$saved/projects/p/memory/note.md" "$config/projects/p/memory/note.md"
+  expect "user files: a second run keeps the user skill" trees_equal "$saved/skills/my-own" "$config/skills/my-own"
+}
 
-echo "--- a config folder that cannot be written"
-config=$WORK/config-locked
-mkdir -p "$config"
-if [ "$(id -u)" = "0" ]; then
-  echo "SKIP: unwritable config folder (running as root)"
-else
-  chmod 555 "$config"
-  run_sync "$fixture" "$config" "$WORK/out.locked"
-  chmod 755 "$config"
-  expect "locked: the hook exits non-zero" test "$SYNC_RC" -ne 0
-  expect "locked: nothing was written" is_empty_dir "$config"
-fi
+# --------------------------------------------------------------------------------
+# Puts a user skill under a bundle skill's name before the first run
+# --------------------------------------------------------------------------------
+case_user_skill_clash() {
+  echo "--- a user skill with a bundle skill's name is replaced and listed (no list file yet)"
+  fixture=$WORK/fixture-clash
+  make_bundle "$fixture" one.md
+  make_skill "$fixture" demo
+  config=$WORK/config-clash
+  plant "$config/skills/demo/SKILL.md" "the user's own demo"
+  plant "$config/skills/demo/private.md" "private"
+  run_sync "$fixture" "$config" "$WORK/out.clash2"
+  expect "clash: the hook exits 0 with no list file" equals "$SYNC_RC" "0"
+  expect "clash: the bundle skill replaced the user skill" trees_equal "$fixture/skills/demo" "$config/skills/demo"
+  expect "clash: nothing of the user skill is left" test ! -e "$config/skills/demo/private.md"
+  expect "clash: the bundle skill is listed" equals "$(cat "$config/.best-practices-skills")" "demo"
+}
 
-# --- the real Claude at the pinned version ---
+# --------------------------------------------------------------------------------
+# Keeps user skills whose names share a prefix with a bundle skill
+# --------------------------------------------------------------------------------
+case_shared_prefix() {
+  local fixtureV2
 
-echo "--- Claude at the pin sees the synced bundle"
-pin=$(sed -n 's/^ARG CLAUDE_CODE_VERSION=//p' claude/Dockerfile)
-found=$(claude --version 2>/dev/null || echo "none")
-if [ "$found" != "$pin (Claude Code)" ]; then
-  echo "SKIP: Claude probe (claude $found is not the pinned $pin)"
-else
+  echo "--- user skills that share a prefix with a bundle skill survive"
+  config=$WORK/config-prefix
+  plant "$config/skills/dem/SKILL.md" "dem skill"
+  plant "$config/skills/demo-extra/SKILL.md" "demo-extra skill"
+  cp -R "$config/skills" "$WORK/saved-prefix"
+  run_sync "$fixture" "$config" "$WORK/out.prefix1"
+  run_sync "$fixture" "$config" "$WORK/out.prefix2"
+  expect "prefix: dem survives two runs" trees_equal "$WORK/saved-prefix/dem" "$config/skills/dem"
+  expect "prefix: demo-extra survives two runs" trees_equal "$WORK/saved-prefix/demo-extra" "$config/skills/demo-extra"
+  expect "prefix: the bundle skill demo is there" trees_equal "$fixture/skills/demo" "$config/skills/demo"
+  echo "demo" >"$WORK/names.prefix"
+  expect "prefix: the list holds exactly demo" files_equal "$WORK/names.prefix" "$config/.best-practices-skills"
+  fixtureV2=$WORK/fixture-prefix-gone
+  make_bundle "$fixtureV2" one.md
+  mkdir -p "$fixtureV2/skills"
+  run_sync "$fixtureV2" "$config" "$WORK/out.prefix3"
+  expect "prefix: removing demo from the bundle keeps dem" trees_equal "$WORK/saved-prefix/dem" "$config/skills/dem"
+  expect "prefix: removing demo from the bundle keeps demo-extra" trees_equal "$WORK/saved-prefix/demo-extra" "$config/skills/demo-extra"
+  expect "prefix: removing demo from the bundle removes demo" test ! -e "$config/skills/demo"
+}
+
+# --------------------------------------------------------------------------------
+# Empties the bundle's skills folder after a first run
+# --------------------------------------------------------------------------------
+case_empty_skills_folder() {
+  echo "--- an empty skills folder in the bundle empties the list and removes the listed skills"
+  fixture=$WORK/fixture-emptyskills
+  make_bundle "$fixture" one.md
+  make_skill "$fixture" demo
+  config=$WORK/config-emptyskills
+  plant "$config/skills/my-own/SKILL.md" "mine"
+  run_sync "$fixture" "$config" "$WORK/out.empty1"
+  expect "empty: demo is installed first" test -d "$config/skills/demo"
+  rm -rf "$fixture/skills/demo"
+  run_sync "$fixture" "$config" "$WORK/out.empty2"
+  expect "empty: the hook exits 0" equals "$SYNC_RC" "0"
+  expect "empty: demo is removed" test ! -e "$config/skills/demo"
+  expect "empty: the list file is empty" equals "$(wc -c <"$config/.best-practices-skills" | tr -d ' ')" "0"
+  expect "empty: a user skill is untouched" equals "$(cat "$config/skills/my-own/SKILL.md")" "mine"
+}
+
+# --------------------------------------------------------------------------------
+# Feeds the hook a list file with empty and repeated lines
+# --------------------------------------------------------------------------------
+case_duplicate_list_lines() {
+  echo "--- empty and duplicate list lines are harmless"
+  fixture=$WORK/fixture-duplicates
+  make_bundle "$fixture" one.md
+  make_skill "$fixture" demo
+  config=$WORK/config-duplicates
+  plant "$config/skills/demo/SKILL.md" "old demo"
+  plant "$config/skills/my-own/SKILL.md" "mine"
+  printf '%s\n' "demo" "" "demo" "" >"$config/.best-practices-skills"
+  run_sync "$fixture" "$config" "$WORK/out.duplicates"
+  expect "duplicates: the hook exits 0" equals "$SYNC_RC" "0"
+  expect "duplicates: the skill equals the bundle" trees_equal "$fixture/skills/demo" "$config/skills/demo"
+  expect "duplicates: the list holds demo once" equals "$(cat "$config/.best-practices-skills")" "demo"
+  expect "duplicates: a user skill is untouched" equals "$(cat "$config/skills/my-own/SKILL.md")" "mine"
+}
+
+# --------------------------------------------------------------------------------
+# Makes skill folders out of name order and checks the list order
+# --------------------------------------------------------------------------------
+case_list_order() {
+  echo "--- the list is in name order, whatever order the folders were made in"
+  fixture=$WORK/fixture-order
+  make_bundle "$fixture" one.md
+  make_skill "$fixture" b-skill
+  make_skill "$fixture" a-skill
+  make_skill "$fixture" c-skill
+  config=$WORK/config-order
+  run_sync "$fixture" "$config" "$WORK/out.order"
+  printf '%s\n' "a-skill" "b-skill" "c-skill" >"$WORK/names.order"
+  expect "order: the list reads a-skill, b-skill, c-skill" files_equal "$WORK/names.order" "$config/.best-practices-skills"
+}
+
+# --------------------------------------------------------------------------------
+# Leaves a half-copied skill and no rules/, then runs the hook
+# --------------------------------------------------------------------------------
+case_interrupted_sync() {
+  echo "--- an interrupted sync is fully repaired by the next run"
+  fixture=$WORK/fixture-interrupted
+  make_bundle "$fixture" one.md sub/nested.md
+  make_skill "$fixture" demo
+  config=$WORK/config-interrupted
+  plant "$config/skills/demo/SKILL.md.part" "half a file"
+  plant "$config/skills/my-own/SKILL.md" "mine"
+  printf '%s\n' "demo" >"$config/.best-practices-skills"
+  run_sync "$fixture" "$config" "$WORK/out.interrupted"
+  expect "interrupted: the hook exits 0" equals "$SYNC_RC" "0"
+  expect "interrupted: rules/ is back and equals the bundle" trees_equal "$fixture/rules" "$config/rules"
+  expect "interrupted: the partly copied skill equals the bundle" trees_equal "$fixture/skills/demo" "$config/skills/demo"
+  expect "interrupted: the partial file is gone" test ! -e "$config/skills/demo/SKILL.md.part"
+  expect "interrupted: the list holds exactly demo" equals "$(cat "$config/.best-practices-skills")" "demo"
+  expect "interrupted: a user skill is untouched" equals "$(cat "$config/skills/my-own/SKILL.md")" "mine"
+}
+
+# --------------------------------------------------------------------------------
+# Runs the hook into a config folder that cannot be written; skipped as root
+# --------------------------------------------------------------------------------
+case_locked_config() {
+  echo "--- a config folder that cannot be written"
+  config=$WORK/config-locked
+  mkdir -p "$config"
+
+  if [ "$(id -u)" = "0" ]; then
+    echo "SKIP: unwritable config folder (running as root)"
+  else
+    chmod 555 "$config"
+    run_sync "$fixture" "$config" "$WORK/out.locked"
+    chmod 755 "$config"
+    expect "locked: the hook exits non-zero" test "$SYNC_RC" -ne 0
+    expect "locked: nothing was written" is_empty_dir "$config"
+  fi
+}
+
+# --------------------------------------------------------------------------------
+# Asks the real Claude at the pinned version for /context after a sync; skipped off the pin
+# --------------------------------------------------------------------------------
+case_claude_sees_bundle() {
+  local pin found probeConfig ruleFile relative skillName
+
+  echo "--- Claude at the pin sees the synced bundle"
+  pin=$(sed -n 's/^ARG CLAUDE_CODE_VERSION=//p' claude/Dockerfile)
+  found=$(claude --version 2>/dev/null || echo "none")
+
+  if [ "$found" != "$pin (Claude Code)" ]; then
+    echo "SKIP: Claude probe (claude $found is not the pinned $pin)"
+    return
+  fi
+
   probeConfig=$WORK/probe-config
   mkdir -p "$WORK/probe-project"
   run_sync "$BUNDLE" "$probeConfig" "$WORK/out.probe-sync"
@@ -408,6 +539,7 @@ else
 
   while IFS= read -r ruleFile; do
     relative=${ruleFile#"$BUNDLE/rules/"}
+
     if [ "$(head -n 1 "$ruleFile")" = "---" ]; then
       expect "claude: path-scoped rule $relative is not loaded at start" lacks_text "$WORK/out.context" "rules/$relative"
     else
@@ -420,9 +552,11 @@ EOF_RULES
   for skillName in $(bundle_skill_names "$BUNDLE"); do
     expect "claude: skill $skillName is listed with source User" has_text "$WORK/out.context" "| $skillName | User |"
   done
-fi
+}
 
-# --- the real Claude at the pinned version, driven by a fake Anthropic API ---
+# --------------------------------------------------------------------------------
+# Helpers for the fake API cases: the real Claude at the pin, driven by a fake Anthropic API
+# --------------------------------------------------------------------------------
 
 # first_always_on_rule: prints the repo path of the first rule, in name order, that has no paths frontmatter.
 first_always_on_rule() {
@@ -472,12 +606,10 @@ log_has_step() { grep -Fxq "step=$2 always=$3 scoped=$4" "$1"; }
 # log_has_scoped_after_start LOG: true if some step above 0 has scoped=yes.
 log_has_scoped_after_start() { grep -Eq '^step=[1-9][0-9]* always=[a-z]+ scoped=yes$' "$1"; }
 
-pin=$(sed -n 's/^ARG CLAUDE_CODE_VERSION=//p' claude/Dockerfile)
-found=$(claude --version 2>/dev/null || echo "none")
-if [ "$found" != "$pin (Claude Code)" ] || ! command -v node >/dev/null 2>&1; then
-  echo "SKIP: fake API: a path-scoped rule loads on demand (claude $found is not the pinned $pin, or node is missing)"
-  echo "SKIP: fake API: deny rules hold under bypassPermissions (claude $found is not the pinned $pin, or node is missing)"
-else
+# --------------------------------------------------------------------------------
+# Syncs the repo bundle for the fake API cases and picks the rules and skill they use
+# --------------------------------------------------------------------------------
+prepare_fake_api() {
   H18_CONFIG=$WORK/h18-config
   H18_PROJECT=$WORK/h18-project
   run_sync "$BUNDLE" "$H18_CONFIG" "$WORK/out.h18-sync"
@@ -488,13 +620,25 @@ else
   firstSkill=$(bundle_skill_names "$BUNDLE" | head -n 1)
   plant "$H18_PROJECT/h18/deep/probe.sh" 'echo probe'
   plant "$H18_PROJECT/h18/control.txt" "h18 control before"
+}
 
+# --------------------------------------------------------------------------------
+# Has Claude read a .sh file and checks the path-scoped rule loads only then
+# --------------------------------------------------------------------------------
+case_fake_api_scope() {
   echo "--- fake API: a path-scoped rule loads on demand"
   printf '[{"name":"Read","input":{"file_path":"%s"}}]\n' "$H18_PROJECT/h18/deep/probe.sh" >"$WORK/h18-scope.json"
   run_fake_claude scope 8791 "$WORK/h18-scope.json"
   expect "fake api: the always-on rule is in the first request" log_has_step "$FAKE_LOG" 0 yes no
   expect "fake api: the path-scoped rule is not in the first request" lacks_text "$FAKE_LOG" "step=0 always=yes scoped=yes"
   expect "fake api: the path-scoped rule appears after the .sh file is read" log_has_scoped_after_start "$FAKE_LOG"
+}
+
+# --------------------------------------------------------------------------------
+# Has Claude edit a project file and the synced bundle under the managed deny rules
+# --------------------------------------------------------------------------------
+case_fake_api_deny() {
+  local deleteMark syncedRule
 
   echo "--- fake API: deny rules hold under bypassPermissions"
   deleteMark=$(printf '\001')
@@ -508,11 +652,65 @@ else
   expect "fake api: the synced rule is unchanged" files_equal "$alwaysRule" "$syncedRule"
   expect "fake api: no file was planted in rules/" test ! -e "$H18_CONFIG/rules/h18-planted.md"
   expect "fake api: no file was planted in a bundle skill" test ! -e "$H18_CONFIG/skills/$firstSkill/h18-planted.md"
-fi
+}
 
-if [ "$FAILS" -eq 0 ]; then
-  echo "All cases pass."
-  exit 0
-fi
-echo "$FAILS case(s) failed."
-exit 1
+# --------------------------------------------------------------------------------
+# Runs the fake API cases when Claude is at the pin and node is there; else prints SKIP lines
+# --------------------------------------------------------------------------------
+run_fake_api_cases() {
+  local pin found
+
+  pin=$(sed -n 's/^ARG CLAUDE_CODE_VERSION=//p' claude/Dockerfile)
+  found=$(claude --version 2>/dev/null || echo "none")
+
+  if [ "$found" != "$pin (Claude Code)" ] || ! command -v node >/dev/null 2>&1; then
+    echo "SKIP: fake API: a path-scoped rule loads on demand (claude $found is not the pinned $pin, or node is missing)"
+    echo "SKIP: fake API: deny rules hold under bypassPermissions (claude $found is not the pinned $pin, or node is missing)"
+    return
+  fi
+
+  prepare_fake_api
+  case_fake_api_scope
+  case_fake_api_deny
+}
+
+# --------------------------------------------------------------------------------
+# Prints the summary and exits 0 only when every case passed
+# --------------------------------------------------------------------------------
+report_and_exit() {
+  if [ "$FAILS" -eq 0 ]; then
+    echo "All cases pass."
+    exit 0
+  fi
+
+  echo "$FAILS case(s) failed."
+  exit 1
+}
+
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+make_work_folder
+case_real_first_start
+case_real_second_run
+case_real_edits_undone
+case_no_skills_folder
+case_one_skill
+case_drop_and_clash
+case_hostile_list_lines
+case_missing_bundle
+case_no_config_folder
+case_refresh
+case_renamed_rule
+case_removed_skill
+case_user_files
+case_user_skill_clash
+case_shared_prefix
+case_empty_skills_folder
+case_duplicate_list_lines
+case_list_order
+case_interrupted_sync
+case_locked_config
+case_claude_sees_bundle
+run_fake_api_cases
+report_and_exit

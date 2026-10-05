@@ -17,6 +17,10 @@ bundleDir=$REPO_DIR/best-practices
 syncedDir=$RUN/state/claude
 containerRoot=/home/sandbox/workspace
 
+# --------------------------------------------------------------------------------
+# Helpers
+# --------------------------------------------------------------------------------
+
 # first_heading FILE: prints the first "# " heading line of FILE without the "# ".
 first_heading() {
   grep -m 1 '^# ' "$1" | sed 's/^# //'
@@ -38,75 +42,106 @@ kill \$serverPid"
   run_timeout 120 docker exec "$CONTAINER" env H18_SCRIPT="$containerRoot/logs/$scriptFile" H18_LOG="$containerRoot/logs/h18-$scenarioName.log" H18_MARK_ALWAYS="$markAlways" H18_MARK_SCOPED="$markScoped" sh -c "$runnerScript" </dev/null >"$RUN/logs/h18-$scenarioName-run.log" 2>&1
 }
 
-alwaysRel=""
-ruleRelList=$(cd "$bundleDir/rules" && find . -type f ! -name .DS_Store | sed 's|^\./||' | sort)
-for ruleRel in $ruleRelList; do
-  if [ "$(sed -n 1p "$bundleDir/rules/$ruleRel")" != "---" ]; then
-    alwaysRel=$ruleRel
-    break
+# --------------------------------------------------------------------------------
+# Picks the always-on rule and the skill to probe, and each rule's marker heading
+# --------------------------------------------------------------------------------
+pick_samples() {
+  local ruleRelList ruleRel skillDir
+
+  alwaysRel=""
+  ruleRelList=$(cd "$bundleDir/rules" && find . -type f ! -name .DS_Store | sed 's|^\./||' | sort)
+
+  for ruleRel in $ruleRelList; do
+    if [ "$(sed -n 1p "$bundleDir/rules/$ruleRel")" != "---" ]; then
+      alwaysRel=$ruleRel
+      break
+    fi
+  done
+
+  firstSkill=""
+
+  for skillDir in "$bundleDir"/skills/*/; do
+    if [ -d "$skillDir" ]; then
+      firstSkill=$(basename "$skillDir")
+      break
+    fi
+  done
+
+  markAlways=$(first_heading "$bundleDir/rules/$alwaysRel")
+  markScoped=$(first_heading "$bundleDir/rules/shell.md")
+}
+
+# --------------------------------------------------------------------------------
+# Puts the fake API, the probe files and the two tool call scripts in the run folder
+# --------------------------------------------------------------------------------
+prepare_files() {
+  local projectRoot configRoot
+
+  cp "$HOST_DIR/support/fake-claude-api.js" "$RUN/logs/fake-claude-api.js"
+  mkdir -p "$RUN/hosttest/h18/deep"
+  printf 'echo "h18 probe"\n' >"$RUN/hosttest/h18/deep/probe.sh"
+  printf 'h18 control before\n' >"$RUN/hosttest/h18/control.txt"
+
+  projectRoot=$containerRoot/hosttest
+  configRoot=$containerRoot/state/claude
+
+  printf '[{"name":"Read","input":{"file_path":"%s/h18/deep/probe.sh"}}]\n' "$projectRoot" >"$RUN/logs/h18-scope.json"
+  printf '[{"name":"Read","input":{"file_path":"%s/h18/control.txt"}},{"name":"Edit","input":{"file_path":"%s/h18/control.txt","old_string":"before","new_string":"after"}},{"name":"Read","input":{"file_path":"%s/rules/%s"}},{"name":"Edit","input":{"file_path":"%s/rules/%s","old_string":"%s","new_string":"scribble"}},{"name":"Write","input":{"file_path":"%s/rules/h18-planted.md","content":"planted"}},{"name":"Write","input":{"file_path":"%s/skills/%s/h18-planted.md","content":"planted"}}]\n' \
+    "$projectRoot" "$projectRoot" "$configRoot" "$alwaysRel" "$configRoot" "$alwaysRel" "$markAlways" "$configRoot" "$configRoot" "$firstSkill" >"$RUN/logs/h18-deny.json"
+}
+
+# --------------------------------------------------------------------------------
+# Checks the scope log and the deny results, then prints PASS or FAIL and exits
+# --------------------------------------------------------------------------------
+check_and_report() {
+  local scopeLog controlText
+
+  set --
+
+  scopeLog=$RUN/logs/h18-scope.log
+
+  if ! grep -Fq 'step=0 always=yes' "$scopeLog"; then
+    set -- "$@" "the always-on rule is not in Claude's first request, or Claude never reached the fake API; log: $(tr '\n' ' ' <"$scopeLog") run output: $(head -c 300 "$RUN/logs/h18-scope-run.log" | tr '\n' ' ')"
   fi
-done
 
-firstSkill=""
-for skillDir in "$bundleDir"/skills/*/; do
-  if [ -d "$skillDir" ]; then
-    firstSkill=$(basename "$skillDir")
-    break
+  if grep -Eq '^step=0 .* scoped=yes$' "$scopeLog"; then
+    set -- "$@" "the path-scoped rule loaded before any matching file was touched (shell.md is in the first request)"
+  elif ! grep -Eq '^step=[1-9][0-9]* .* scoped=yes$' "$scopeLog"; then
+    set -- "$@" "the path-scoped rule never loaded after Claude read h18/deep/probe.sh; log: $(tr '\n' ' ' <"$scopeLog")"
   fi
-done
 
-markAlways=$(first_heading "$bundleDir/rules/$alwaysRel")
-markScoped=$(first_heading "$bundleDir/rules/shell.md")
+  controlText=$(cat "$RUN/hosttest/h18/control.txt" 2>/dev/null)
 
-cp "$HOST_DIR/support/fake-claude-api.js" "$RUN/logs/fake-claude-api.js"
-mkdir -p "$RUN/hosttest/h18/deep"
-printf 'echo "h18 probe"\n' >"$RUN/hosttest/h18/deep/probe.sh"
-printf 'h18 control before\n' >"$RUN/hosttest/h18/control.txt"
+  if [ "$controlText" != "h18 control after" ]; then
+    set -- "$@" "the edit tool never ran, so the deny result proves nothing: h18/control.txt says '$controlText'; run output: $(head -c 300 "$RUN/logs/h18-deny-run.log" | tr '\n' ' ')"
+  else
+    if ! cmp -s "$bundleDir/rules/$alwaysRel" "$syncedDir/rules/$alwaysRel"; then
+      set -- "$@" "the synced rule state/claude/rules/$alwaysRel was changed by an edit that should have been refused"
+    fi
 
-projectRoot=$containerRoot/hosttest
-configRoot=$containerRoot/state/claude
+    if [ -e "$syncedDir/rules/h18-planted.md" ]; then
+      set -- "$@" "a file was planted in state/claude/rules/h18-planted.md; the write should have been refused"
+    fi
 
-printf '[{"name":"Read","input":{"file_path":"%s/h18/deep/probe.sh"}}]\n' "$projectRoot" >"$RUN/logs/h18-scope.json"
-printf '[{"name":"Read","input":{"file_path":"%s/h18/control.txt"}},{"name":"Edit","input":{"file_path":"%s/h18/control.txt","old_string":"before","new_string":"after"}},{"name":"Read","input":{"file_path":"%s/rules/%s"}},{"name":"Edit","input":{"file_path":"%s/rules/%s","old_string":"%s","new_string":"scribble"}},{"name":"Write","input":{"file_path":"%s/rules/h18-planted.md","content":"planted"}},{"name":"Write","input":{"file_path":"%s/skills/%s/h18-planted.md","content":"planted"}}]\n' \
-  "$projectRoot" "$projectRoot" "$configRoot" "$alwaysRel" "$configRoot" "$alwaysRel" "$markAlways" "$configRoot" "$configRoot" "$firstSkill" >"$RUN/logs/h18-deny.json"
+    if [ -e "$syncedDir/skills/$firstSkill/h18-planted.md" ]; then
+      set -- "$@" "a file was planted in state/claude/skills/$firstSkill/h18-planted.md; the write should have been refused"
+    fi
+  fi
 
+  if [ "$#" -gt 0 ]; then
+    fail H-18 "path-scoped loading or the managed deny is wrong in the real image" "$@"
+    exit 1
+  fi
+
+  pass H-18 "shell.md loaded only after a .sh read; edits and writes to synced files were refused under bypassPermissions; the project edit went through"
+  exit 0
+}
+
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+pick_samples
+prepare_files
 run_scenario scope h18-scope.json
 run_scenario deny h18-deny.json
-
-set --
-
-scopeLog=$RUN/logs/h18-scope.log
-if ! grep -Fq 'step=0 always=yes' "$scopeLog"; then
-  set -- "$@" "the always-on rule is not in Claude's first request, or Claude never reached the fake API; log: $(tr '\n' ' ' <"$scopeLog") run output: $(head -c 300 "$RUN/logs/h18-scope-run.log" | tr '\n' ' ')"
-fi
-
-if grep -Eq '^step=0 .* scoped=yes$' "$scopeLog"; then
-  set -- "$@" "the path-scoped rule loaded before any matching file was touched (shell.md is in the first request)"
-elif ! grep -Eq '^step=[1-9][0-9]* .* scoped=yes$' "$scopeLog"; then
-  set -- "$@" "the path-scoped rule never loaded after Claude read h18/deep/probe.sh; log: $(tr '\n' ' ' <"$scopeLog")"
-fi
-
-controlText=$(cat "$RUN/hosttest/h18/control.txt" 2>/dev/null)
-if [ "$controlText" != "h18 control after" ]; then
-  set -- "$@" "the edit tool never ran, so the deny result proves nothing: h18/control.txt says '$controlText'; run output: $(head -c 300 "$RUN/logs/h18-deny-run.log" | tr '\n' ' ')"
-else
-  if ! cmp -s "$bundleDir/rules/$alwaysRel" "$syncedDir/rules/$alwaysRel"; then
-    set -- "$@" "the synced rule state/claude/rules/$alwaysRel was changed by an edit that should have been refused"
-  fi
-
-  if [ -e "$syncedDir/rules/h18-planted.md" ]; then
-    set -- "$@" "a file was planted in state/claude/rules/h18-planted.md; the write should have been refused"
-  fi
-
-  if [ -e "$syncedDir/skills/$firstSkill/h18-planted.md" ]; then
-    set -- "$@" "a file was planted in state/claude/skills/$firstSkill/h18-planted.md; the write should have been refused"
-  fi
-fi
-
-if [ "$#" -gt 0 ]; then
-  fail H-18 "path-scoped loading or the managed deny is wrong in the real image" "$@"
-  exit 1
-fi
-
-pass H-18 "shell.md loaded only after a .sh read; edits and writes to synced files were refused under bypassPermissions; the project edit went through"
-exit 0
+check_and_report
