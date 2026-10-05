@@ -153,6 +153,8 @@ Edit protection:
 
 Memories are not shipped. They belong to each project. A memory that proves general becomes a bundle rule by PR.
 
+Moving an existing project into a sandbox: its old memories and `CLAUDE.md` may repeat bundle rules. Paste the prompt in [`prompts/consolidate-memories.md`](prompts/consolidate-memories.md) into Claude once; it sorts them and removes duplicates only after you approve.
+
 ## Safety checks
 
 At start, the container refuses to run unless:
