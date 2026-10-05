@@ -11,35 +11,56 @@ set -u
 host_init
 
 baselineFile=""
-if [ -n "$RUN" ] && [ -f "$RUN/logs/old-containers.before" ]; then
-  baselineFile="$RUN/logs/old-containers.before"
-fi
-
-set --
 compared="git only; no baseline"
 
-if [ -n "$baselineFile" ]; then
+# --------------------------------------------------------------------------------
+# Finds the old container list run-all.sh took at the start of the run
+# --------------------------------------------------------------------------------
+find_baseline() {
+  if [ -n "$RUN" ] && [ -f "$RUN/logs/old-containers.before" ]; then
+    baselineFile="$RUN/logs/old-containers.before"
+  fi
+}
+
+# --------------------------------------------------------------------------------
+# Compares the old container list now with the one from the start of the run
+# --------------------------------------------------------------------------------
+check_old_containers_unchanged() {
+  local afterFile
+
+  if [ -z "$baselineFile" ]; then
+    return
+  fi
+
   afterFile="$RUN/logs/old-containers.after"
   snapshot_old_containers >"$afterFile"
   compared="container snapshot and git"
 
   if ! cmp -s "$baselineFile" "$afterFile"; then
-    set -- "$@" "the old containers changed during the run" \
-      "before: $(tr '\n' ';' <"$baselineFile")" \
-      "after:  $(tr '\n' ';' <"$afterFile")" \
-      "if you started or stopped a cc_ container during the run, re-run"
+    add_problem "the old containers changed during the run"
+    add_problem "before: $(tr '\n' ';' <"$baselineFile")"
+    add_problem "after:  $(tr '\n' ';' <"$afterFile")"
+    add_problem "if you started or stopped a cc_ container during the run, re-run"
   fi
-fi
+}
 
-gitOutput=$(git -C "$REPO_DIR" status --porcelain --untracked-files=all -- ClaudeCode OpenCode 2>&1)
-if [ -n "$gitOutput" ]; then
-  set -- "$@" "git status shows changes under ClaudeCode/ or OpenCode/: $(printf '%s\n' "$gitOutput" | tr '\n' ';')"
-fi
+# --------------------------------------------------------------------------------
+# Checks git shows no change under ClaudeCode/ or OpenCode/
+# --------------------------------------------------------------------------------
+check_old_folders_clean() {
+  local gitOutput
 
-if [ "$#" -gt 0 ]; then
-  fail Coexistence "the old layout was disturbed" "$@"
-  exit 1
-fi
+  gitOutput=$(git -C "$REPO_DIR" status --porcelain --untracked-files=all -- ClaudeCode OpenCode 2>&1)
+  if [ -n "$gitOutput" ]; then
+    add_problem "git status shows changes under ClaudeCode/ or OpenCode/: $(join_lines "$gitOutput" ';')"
+  fi
+}
 
-pass Coexistence "old containers and old folders untouched ($compared)"
-exit 0
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+find_baseline
+check_old_containers_unchanged
+check_old_folders_clean
+report_check Coexistence "the old layout was disturbed" \
+  "old containers and old folders untouched ($compared)"
