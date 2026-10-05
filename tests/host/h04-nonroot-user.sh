@@ -7,12 +7,14 @@ set -u
 host_init
 require_test_sandbox H-04 || exit 1
 
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
 output=$(in_container id)
 
-if [[ "$output" == "uid=1000(sandbox) gid=1000(sandbox)"* ]]; then
-  pass H-04 "container user is uid=1000(sandbox)"
-  exit 0
+if [[ "$output" != "uid=1000(sandbox) gid=1000(sandbox)"* ]]; then
+  add_problem "got: $output"
 fi
 
-fail H-04 "expected uid=1000(sandbox) gid=1000(sandbox)" "got: $output"
-exit 1
+report_check H-04 "expected uid=1000(sandbox) gid=1000(sandbox)" \
+  "container user is uid=1000(sandbox)"

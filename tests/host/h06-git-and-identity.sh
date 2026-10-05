@@ -11,41 +11,67 @@ set -u
 host_init
 require_test_sandbox H-06 || exit 1
 
-GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 git init -q "$RUN/hosttest"
-initStatus=$?
+# --------------------------------------------------------------------------------
+# Makes the project folder a git repository from the host, ignoring your own git configuration
+# --------------------------------------------------------------------------------
+init_host_repo() {
+  GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 git init -q "$RUN/hosttest"
+  initStatus=$?
 
-statusOutput=$(in_container git status)
-statusCode=$?
-safeOutput=$(in_container git config --system --get-all safe.directory)
-identityOutput=$(in_container git config --global user.name T)
-identityCode=$?
+  if [ "$initStatus" -ne 0 ]; then
+    add_problem "git init of $RUN/hosttest on the host failed"
+  fi
+}
 
-set --
+# --------------------------------------------------------------------------------
+# Runs git in the container: status, the system safe.directory value, and setting the identity
+# --------------------------------------------------------------------------------
+read_git_state() {
+  statusOutput=$(in_container git status)
+  statusCode=$?
+  safeOutput=$(in_container git config --system --get-all safe.directory)
+  identityOutput=$(in_container git config --global user.name T)
+  identityCode=$?
+}
 
-if [ "$initStatus" -ne 0 ]; then
-  set -- "$@" "git init of $RUN/hosttest on the host failed"
-fi
+# --------------------------------------------------------------------------------
+# Checks git status ran in the container without an ownership error
+# --------------------------------------------------------------------------------
+check_git_status() {
+  if [ "$statusCode" -ne 0 ] || [[ "$statusOutput" == *"dubious ownership"* ]]; then
+    add_problem "git status in the container exited $statusCode: $(first_lines "$statusOutput" 2)"
+  fi
+}
 
-if [ "$statusCode" -ne 0 ] || [[ "$statusOutput" == *"dubious ownership"* ]]; then
-  set -- "$@" "git status in the container exited $statusCode: $(printf '%s\n' "$statusOutput" | head -n 2 | tr '\n' ' ')"
-fi
+# --------------------------------------------------------------------------------
+# Checks the system safe.directory value is *
+# --------------------------------------------------------------------------------
+check_safe_directory() {
+  if ! printf '%s\n' "$safeOutput" | grep -Fxq '*'; then
+    add_problem "the system safe.directory value must be *; got: $(join_lines "$safeOutput")"
+  fi
+}
 
-if ! printf '%s\n' "$safeOutput" | grep -Fxq '*'; then
-  set -- "$@" "the system safe.directory value must be *; got: $(printf '%s\n' "$safeOutput" | tr '\n' ' ')"
-fi
+# --------------------------------------------------------------------------------
+# Checks the identity set in the container reached the mounted state folder
+# --------------------------------------------------------------------------------
+check_identity_stored() {
+  if [ "$identityCode" -ne 0 ]; then
+    add_problem "git config --global user.name T failed in the container: $identityOutput"
+  fi
 
-if [ "$identityCode" -ne 0 ]; then
-  set -- "$@" "git config --global user.name T failed in the container: $identityOutput"
-fi
+  if ! grep -Fq "name = T" "$RUN/state/git/config" 2>/dev/null; then
+    add_problem "$RUN/state/git/config does not contain 'name = T'"
+  fi
+}
 
-if ! grep -Fq "name = T" "$RUN/state/git/config" 2>/dev/null; then
-  set -- "$@" "$RUN/state/git/config does not contain 'name = T'"
-fi
-
-if [ "$#" -gt 0 ]; then
-  fail H-06 "git or the stored identity is wrong" "$@"
-  exit 1
-fi
-
-pass H-06 "git status is clean of ownership errors, safe.directory is *, the identity is in state/git/config"
-exit 0
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+init_host_repo
+read_git_state
+check_git_status
+check_safe_directory
+check_identity_stored
+report_check H-06 "git or the stored identity is wrong" \
+  "git status is clean of ownership errors, safe.directory is *, the identity is in state/git/config"
