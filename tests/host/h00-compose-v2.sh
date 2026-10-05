@@ -6,32 +6,43 @@ set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 
-composeVersion=$(docker compose version --short </dev/null 2>&1)
-composeStatus=$?
+# --------------------------------------------------------------------------------
+# Reads the Compose and Docker versions and prints them as info
+# --------------------------------------------------------------------------------
+read_versions() {
+  composeVersion=$(docker compose version --short </dev/null 2>&1)
+  composeStatus=$?
 
-if [ "$composeStatus" -ne 0 ]; then
-  fail H-00 "docker compose version failed" "got: $composeVersion"
-  exit 1
-fi
+  if [ "$composeStatus" -ne 0 ]; then
+    stop_check H-00 "docker compose version failed" "got: $composeVersion"
+  fi
 
-composeVersion=${composeVersion#v}
-majorVersion=${composeVersion%%.*}
-dockerPlatform=$(docker version --format '{{.Server.Platform.Name}}' </dev/null 2>/dev/null || true)
+  composeVersion=${composeVersion#v}
+  majorVersion=${composeVersion%%.*}
+  dockerPlatform=$(docker version --format '{{.Server.Platform.Name}}' </dev/null 2>/dev/null || true)
 
-info "Compose version $composeVersion"
-info "Docker: ${dockerPlatform:-unknown}"
+  info "Compose version $composeVersion"
+  info "Docker: ${dockerPlatform:-unknown}"
+}
 
-case "$majorVersion" in
-  ''|*[!0-9]*)
-    fail H-00 "could not read a Compose major version" "got: $composeVersion"
-    exit 1
-    ;;
-esac
+# --------------------------------------------------------------------------------
+# Checks the major version is a number and at least 2
+# --------------------------------------------------------------------------------
+check_major_version() {
+  case "$majorVersion" in
+    ''|*[!0-9]*)
+      stop_check H-00 "could not read a Compose major version" "got: $composeVersion"
+      ;;
+  esac
 
-if [ "$majorVersion" -ge 2 ]; then
-  pass H-00 "Compose $composeVersion is v2 or newer"
-  exit 0
-fi
+  if [ "$majorVersion" -lt 2 ]; then
+    add_problem "install Docker Desktop, which ships Compose v2"
+  fi
+}
 
-fail H-00 "Compose $composeVersion is older than v2" "install Docker Desktop, which ships Compose v2"
-exit 1
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+read_versions
+check_major_version
+report_check H-00 "Compose $composeVersion is older than v2" "Compose $composeVersion is v2 or newer"

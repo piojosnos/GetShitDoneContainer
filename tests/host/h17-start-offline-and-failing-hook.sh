@@ -17,8 +17,7 @@ host_init
 # --------------------------------------------------------------------------------
 require_run_folder() {
   if [ -z "${RUN:-}" ]; then
-    fail H-17 "no run folder" "run: bash tests/host/run-all.sh first"
-    exit 1
+    stop_check H-17 "no run folder" "run: bash tests/host/run-all.sh first"
   fi
 }
 
