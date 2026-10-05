@@ -280,3 +280,13 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 4. Jump-In and Sandbox Housekeeping | 0/TBD | Not started | - |
 | 5. Migration, Docs, and Old-Layout Retirement | 0/TBD | Not started | - |
 | 6. Automated checks (CI) | 0/TBD | Not started | - |
+
+## Backlog
+
+### Phase 999.1: Follow-up: Phase 01.3 deferred UAT follow-up: Test 4 (BACKLOG)
+
+**Goal:** Resolve the UAT checkpoint deferred during Phase 01.3 verification
+**Source phase:** 01.3
+**Deferred at:** 2026-10-05 during /gsd-verify-work 01.3 session completion
+**Follow-ups:**
+- [ ] Test 4: The rest of manual tests are a pain to run; we either automate them (not worth it for now), find another way to test them, or test much less frequently (deferred 2026-10-05). The manual helpers h09, h13 and h19 were not run in Phase 01.3; Phase 1.4 runs the whole test suite anyway, and should settle when each manual helper must run.
