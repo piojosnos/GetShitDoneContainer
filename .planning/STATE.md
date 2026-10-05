@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.3"
 current_phase_name: Shell script layout (INSERTED)
 status: executing
-stopped_at: Completed 01.3-04-PLAN.md
-last_updated: "2026-10-05T04:42:12.475Z"
+stopped_at: Completed 01.3-06-PLAN.md
+last_updated: "2026-10-05T04:46:47.982Z"
 last_activity: 2026-10-05
 last_activity_desc: Phase 01.3 execution started
-state_head: 66752bf6cd20683156129021a34a59642072b6db
+state_head: 2da8c5eefcaecd8de64bf26c2fa1aff517c08233
 progress:
   total_phases: 12
   completed_phases: 3
   total_plans: 20
-  completed_plans: 18
+  completed_plans: 19
   percent: 25
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-05)
 ## Current Position
 
 Phase: 01.3 (Shell script layout (INSERTED)) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-10-05 — Phase 01.3 execution started
 
@@ -76,6 +76,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 01.3 P02 | 15 min | 2 tasks | 6 files |
 | Phase 01.3 P03 | 8 min | 2 tasks | 5 files |
 | Phase 01.3 P04 | 15 min | 2 tasks | 6 files |
+| Phase 01.3 P06 | 13 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -119,6 +120,7 @@ Recent decisions affecting current work:
 - [Phase 01.3]: 01.3-02: H-02 starts baseCount at 0 so its eagerly expanded PASS text cannot abort with an unbound variable
 - [Phase 01.3]: H-04 stays one block with no functions (single assertion); file-based tr sites in Coexistence and grep -Fl in H-01 kept as written
 - [Phase 01.3]: restart_test_sandbox lives in lib-sandbox.sh because H-08 and H-16 carried identical code and messages; H-09 and H-11 sentinel loops stay local
+- [Phase 01.3]: 01.3-06: the entrypoint stops at the first non-executable start hook (after earlier hooks ran), behind a BASH_SOURCE source guard; no env override of hookDir
 
 ### Pending Todos
 
@@ -153,6 +155,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-05T04:42:12.373Z
-Stopped at: Completed 01.3-04-PLAN.md
+Last session: 2026-10-05T04:46:47.892Z
+Stopped at: Completed 01.3-06-PLAN.md
 Resume file: None
