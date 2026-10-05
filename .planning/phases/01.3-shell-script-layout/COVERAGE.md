@@ -1,0 +1,1 @@
+No external API integration: the phase reorganizes shell scripts and makes the entrypoint refuse bad start hooks; the only API is the existing local fake of the Anthropic API used as a test double by H-18 and the bundle selftest.
