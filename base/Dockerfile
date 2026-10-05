@@ -73,7 +73,9 @@ COPY base/sbx-entrypoint /usr/local/bin/sbx-entrypoint
 RUN chmod 755 /usr/local/bin/sbx-entrypoint
 
 # --- Start hooks ---
-# - The entrypoint runs every file here at container start, in name order. A file that is not executable stops the start.
+# - The entrypoint runs the entries here at container start, in name order.
+#   Folders and dotfiles are skipped. A file that is not executable, or an entry that is
+#   not a regular file (a link that points nowhere, a fifo), stops the start.
 # - Root-owned and outside the mount.
 # - Agent images add their scripts here.
 RUN mkdir -p /etc/sbx/start.d
