@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
-current_phase: "01.3"
-current_phase_name: Shell script layout (INSERTED)
-status: verifying
-stopped_at: Completed 01.3-05-PLAN.md
-last_updated: "2026-10-05T05:56:51.139Z"
+current_phase: "01.4"
+current_phase_name: Test suite refactor
+status: planning
+stopped_at: Phase 01.3 complete, ready to plan Phase 01.4
+last_updated: "2026-10-05T22:03:11.392Z"
 last_activity: 2026-10-05
-last_activity_desc: Phase 01.3 execution started
-state_head: 6664206c5f00cf543f88a8350e9cf934914a50bc
+last_activity_desc: Phase 01.3 complete, transitioned to Phase 01.4
+state_head: 010e206a3aabb13ee5df0425f57b7118a2e25c3c
 progress:
   total_phases: 12
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 20
   completed_plans: 20
-  percent: 25
+  percent: 33
 ---
 
 # Project State
@@ -23,21 +23,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-05)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 01.3 — Shell script layout (INSERTED)
+**Current focus:** Phase 01.4: Test suite refactor (INSERTED)
 
 ## Current Position
 
-Phase: 01.3 (Shell script layout (INSERTED)) — EXECUTING
-Plan: 6 of 6
-Status: Phase complete — ready for verification
-Last activity: 2026-10-05 - Completed quick task 261005-7zj: Start hooks: refuse non-regular entries and check bad hooks in H-17
+Phase: 01.4 — Test suite refactor
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-05 — Phase 01.3 complete, transitioned to Phase 01.4
 
-Progress: [███░░░░░░░] 25%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
+- Total plans completed: 20
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -48,6 +48,7 @@ Progress: [███░░░░░░░] 25%
 | 01.1 | 4 | - | - |
 | 1 | 4 | - | - |
 | 01.2 | 6 | - | - |
+| 01.3 | 6 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -136,7 +137,8 @@ None yet.
 - [Phase 1]: Re-review left 7 findings open (WR-01: the missing-project-folder check in base/sbx-entrypoint cannot fire because compose working_dir creates the folder; WR-02: base/Dockerfile comment overclaims create_host_path; WR-03: Claude Code has no integrity hash). See 01-REVIEW-DISPOSITION.md
 - [Phase 1]: SC3 says rebuild with `--no-cache`; the Mac run did not record it. One run of `bash tests/host/manual/h09-rebuild-resume.sh --no-cache` would confirm
 - [Phase 1.1]: Code review left 14 findings open (CR-01: run_timeout does not stop a docker call behind a shell function; WR-01..08 robustness). See 01.1-REVIEW-DISPOSITION.md
-- [Phase 1.2]: Code review left 13 findings open (WR-01..03 are bugs in the ported pr-reply and merged skills; WR-04 is in Phase 1.3; WR-05 deny negative control fits Phase 1.4). See 01.2-REVIEW-DISPOSITION.md
+- [Phase 1.2]: Code review left 13 findings open (WR-01..03 are bugs in the ported pr-reply and merged skills; WR-04 was fixed in Phase 1.3; WR-05 deny negative control fits Phase 1.4). See 01.2-REVIEW-DISPOSITION.md
+- [Phase 1.3]: Code review left 4 findings open (WR-02: run_timeout does not stop a shell function it wraps, same as the Phase 1.1 CR-01 and planned for Phase 1.5; IN-01..03 style and self-test coverage). See 01.3-REVIEW-DISPOSITION.md
 
 ### Quick Tasks Completed
 
@@ -164,5 +166,5 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-10-05T04:56:01.095Z
-Stopped at: Completed 01.3-05-PLAN.md
+Stopped at: Phase 01.3 complete, ready to plan Phase 01.4
 Resume file: None

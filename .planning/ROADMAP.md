@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Two-Mount Claude Sandbox** - A Claude sandbox that runs on the Mac with code and state in separate host folders, a visible image home, and a login that survives rebuilds (completed 2026-10-04)
 - [x] **Phase 1.1: Automated host tests** (INSERTED) - One unattended command on the Mac runs every automatable host check (H-00 to H-13) with a PASS/FAIL line each; login, resume and doctor are a short manual pass with helper scripts (completed 2026-10-04)
 - [x] **Phase 1.2: Best-practices bundle baked into the image (stopgap)** (INSERTED) - New sandboxes start with the user's skills, standing rules, and shared memories installed, taken from files in this repo (completed 2026-10-05)
-- [ ] **Phase 1.3: Shell script layout** (INSERTED) - Every shell script gets section banners, functions and an entry point, with no change in behaviour
+- [x] **Phase 1.3: Shell script layout** (INSERTED) - Every shell script gets section banners, functions and an entry point, with no change in behaviour (completed 2026-10-05)
 - [ ] **Phase 1.4: Test suite refactor** (INSERTED) - The test suite gets a real Docker instead of a large fake one, is simplified and split into logical units
 - [ ] **Phase 1.5: Host test fixes** (INSERTED) - The known bugs in the host tests and entrypoint from earlier reviews are fixed, each proven against a real Docker
 - [ ] **Phase 2: Pinned Toolchain, GSD, and ccusage** - Every tool is baked in at a version pinned in `versions.env`, the image's GSD wins over persisted state, and `ccusage` reports real usage
@@ -126,7 +126,7 @@ Plans:
   3. The scripts still run on macOS bash 3.2 with BSD tools.
   4. `base/sbx-entrypoint` stops the start with `[sbx] ERROR` when a start hook exists but is not executable, instead of skipping it (review WR-04; accepted risk AR-01 in `01.2-SECURITY.md`), with a self-test case.
 
-**Plans:** 6/6 plans executed
+**Plans:** 6/6 plans complete
 
 Plans:
 **Wave 1**
@@ -271,7 +271,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 1. Two-Mount Claude Sandbox | 4/4 | Complete    | 2026-10-04 |
 | 1.1. Automated host tests | 4/4 | Complete    | 2026-10-04 |
 | 1.2. Best-practices bundle baked into the image (stopgap) | 6/6 | Complete    | 2026-10-05 |
-| 1.3. Shell script layout | 6/6 | In Progress|  |
+| 1.3. Shell script layout | 6/6 | Complete    | 2026-10-05 |
 | 1.4. Test suite refactor | 0/TBD | Not started | - |
 | 1.5. Host test fixes | 0/TBD | Not started | - |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
