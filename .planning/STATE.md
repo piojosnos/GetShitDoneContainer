@@ -4,10 +4,10 @@ current_phase: "01.3"
 current_phase_name: Shell script layout (INSERTED)
 status: verifying
 stopped_at: Completed 01.3-05-PLAN.md
-last_updated: "2026-10-05T04:56:01.193Z"
+last_updated: "2026-10-05T05:56:51.139Z"
 last_activity: 2026-10-05
 last_activity_desc: Phase 01.3 execution started
-state_head: b123d4fb187cbc5b26845a302a1838d238bb16b8
+state_head: 6664206c5f00cf543f88a8350e9cf934914a50bc
 progress:
   total_phases: 12
   completed_phases: 3
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-10-05)
 Phase: 01.3 (Shell script layout (INSERTED)) — EXECUTING
 Plan: 6 of 6
 Status: Phase complete — ready for verification
-Last activity: 2026-10-05 — Phase 01.3 execution started
+Last activity: 2026-10-05 - Completed quick task 261005-7zj: Start hooks: refuse non-regular entries and check bad hooks in H-17
 
 Progress: [███░░░░░░░] 25%
 
@@ -137,6 +137,12 @@ None yet.
 - [Phase 1]: SC3 says rebuild with `--no-cache`; the Mac run did not record it. One run of `bash tests/host/manual/h09-rebuild-resume.sh --no-cache` would confirm
 - [Phase 1.1]: Code review left 14 findings open (CR-01: run_timeout does not stop a docker call behind a shell function; WR-01..08 robustness). See 01.1-REVIEW-DISPOSITION.md
 - [Phase 1.2]: Code review left 13 findings open (WR-01..03 are bugs in the ported pr-reply and merged skills; WR-04 is in Phase 1.3; WR-05 deny negative control fits Phase 1.4). See 01.2-REVIEW-DISPOSITION.md
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 261005-7zj | Start hooks: refuse non-regular entries and check bad hooks in H-17 | 2026-10-05 | 6664206 | [261005-7zj-start-hooks-refuse-non-regular-entries-a](./quick/261005-7zj-start-hooks-refuse-non-regular-entries-a/) |
 
 ### Roadmap Evolution
 
