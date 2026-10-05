@@ -123,6 +123,7 @@ Plans:
   1. Every shell script outside the old layout and outside the three big test scripts (`base/sbx-entrypoint`, `tests/host/lib.sh`, `tests/host/run-all.sh`, the older host checks H-00 to H-13 and the manual helpers) has the banners, functions and entry point the rule describes, and uses the shared helpers in `tests/host/lib.sh` where they fit. `tests/host-selftest.sh`, `tests/bundle-selftest.sh` and `tests/guard.sh` are left to Phase 1.4, so they are reworked once.
   2. Output, exit codes and behaviour are unchanged: `tests/guard.sh`, `tests/host-selftest.sh` and `tests/bundle-selftest.sh` pass with identical output, and `tests/host/run-all.sh` passes on the Mac.
   3. The scripts still run on macOS bash 3.2 with BSD tools.
+  4. `base/sbx-entrypoint` stops the start with `[sbx] ERROR` when a start hook exists but is not executable, instead of skipping it (review WR-04; accepted risk AR-01 in `01.2-SECURITY.md`), with a self-test case.
 
 **Plans:** 0 plans
 
