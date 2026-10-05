@@ -19,42 +19,69 @@ badDir="$RUN/does-not-exist"
 composeVersion=$(docker compose version --short </dev/null 2>/dev/null)
 restartNote=""
 
-if ! compose_down >"$RUN/logs/h10-down.log" 2>&1; then
-  fail H-10 "compose down failed before the test; log: $RUN/logs/h10-down.log"
-  exit 1
-fi
+# --------------------------------------------------------------------------------
+# Takes the test sandbox down before the test; stops if that fails
+# --------------------------------------------------------------------------------
+stop_sandbox_first() {
+  if ! compose_down >"$RUN/logs/h10-down.log" 2>&1; then
+    stop_check H-10 "compose down failed before the test; log: $RUN/logs/h10-down.log"
+  fi
+}
 
-upOutput=$(run_timeout 120 env SBX_NAME=hosttest SBX_DIR="$badDir" docker compose -f "$REPO_DIR/compose.yml" up -d --wait </dev/null 2>&1)
-upStatus=$?
-pathExists=0
-if [ -e "$badDir" ]; then
-  pathExists=1
-fi
+# --------------------------------------------------------------------------------
+# Tries to start a sandbox on the missing folder and notes whether Docker created it
+# --------------------------------------------------------------------------------
+try_start_on_missing_folder() {
+  upOutput=$(run_timeout 120 env SBX_NAME=hosttest SBX_DIR="$badDir" docker compose -f "$REPO_DIR/compose.yml" up -d --wait </dev/null 2>&1)
+  upStatus=$?
+  pathExists=0
 
-compose_down >"$RUN/logs/h10-down-after.log" 2>&1
-if ! compose_up; then
-  restartNote=" The real test sandbox did not start again (log: $RUN/logs/compose-up.log)."
-fi
+  if [ -e "$badDir" ]; then
+    pathExists=1
+  fi
+}
 
-lastLines=$(printf '%s\n' "$upOutput" | tail -n 3 | tr '\n' ' ')
+# --------------------------------------------------------------------------------
+# Starts the real test sandbox again, whatever happened
+# --------------------------------------------------------------------------------
+restart_real_sandbox() {
+  compose_down >"$RUN/logs/h10-down-after.log" 2>&1
 
-if [ "$upStatus" -eq 0 ]; then
-  fail H-10 "the sandbox started on a missing folder (rc=0). Compose $composeVersion.$restartNote" \
-    "the path was $badDir; last output: $lastLines"
-  exit 1
-fi
+  if ! compose_up; then
+    restartNote=" The real test sandbox did not start again (log: $RUN/logs/compose-up.log)."
+  fi
+}
 
-if [ "$pathExists" -eq 1 ]; then
-  fail H-10 "Docker created $badDir (create_host_path ignored); the entrypoint still refused (rc=$upStatus). Compose $composeVersion.$restartNote" \
-    "last output: $lastLines" \
-    "the printed cleanup removes the run folder, and the path with it"
-  exit 1
-fi
+# --------------------------------------------------------------------------------
+# Reports one of the three outcomes; see the header
+# --------------------------------------------------------------------------------
+report_outcome() {
+  local lastLines
 
-if [ -n "$restartNote" ]; then
-  fail H-10 "refused as expected (rc=$upStatus), but the real sandbox did not come back.$restartNote"
-  exit 1
-fi
+  lastLines=$(printf '%s\n' "$upOutput" | tail -n 3 | tr '\n' ' ')
 
-pass H-10 "a missing folder is refused (rc=$upStatus) and not created. Compose $composeVersion"
-exit 0
+  if [ "$upStatus" -eq 0 ]; then
+    stop_check H-10 "the sandbox started on a missing folder (rc=0). Compose $composeVersion.$restartNote" \
+      "the path was $badDir; last output: $lastLines"
+  fi
+
+  if [ "$pathExists" -eq 1 ]; then
+    stop_check H-10 "Docker created $badDir (create_host_path ignored); the entrypoint still refused (rc=$upStatus). Compose $composeVersion.$restartNote" \
+      "last output: $lastLines" \
+      "the printed cleanup removes the run folder, and the path with it"
+  fi
+
+  if [ -n "$restartNote" ]; then
+    stop_check H-10 "refused as expected (rc=$upStatus), but the real sandbox did not come back.$restartNote"
+  fi
+
+  pass_check H-10 "a missing folder is refused (rc=$upStatus) and not created. Compose $composeVersion"
+}
+
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+stop_sandbox_first
+try_start_on_missing_folder
+restart_real_sandbox
+report_outcome

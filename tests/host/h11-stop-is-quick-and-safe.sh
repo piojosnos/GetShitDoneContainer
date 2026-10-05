@@ -10,43 +10,72 @@ host_init
 require_test_sandbox H-11 || exit 1
 
 sentinelText="h11-$$-$(date +%s)"
-printf '%s\n' "$sentinelText" >"$RUN/hosttest/h11-sentinel.txt"
-printf '%s\n' "$sentinelText" >"$RUN/state/h11-sentinel.txt"
 
-startSeconds=$(date +%s)
-compose_down >"$RUN/logs/h11-down.log" 2>&1
-downStatus=$?
-endSeconds=$(date +%s)
-elapsedSeconds=$((endSeconds - startSeconds))
+# --------------------------------------------------------------------------------
+# Writes the two sentinel files
+# --------------------------------------------------------------------------------
+plant_sentinels() {
+  printf '%s\n' "$sentinelText" >"$RUN/hosttest/h11-sentinel.txt"
+  printf '%s\n' "$sentinelText" >"$RUN/state/h11-sentinel.txt"
+}
 
-set --
+# --------------------------------------------------------------------------------
+# Takes the sandbox down and times it
+# --------------------------------------------------------------------------------
+stop_sandbox() {
+  startSeconds=$(date +%s)
+  compose_down >"$RUN/logs/h11-down.log" 2>&1
+  downStatus=$?
+  endSeconds=$(date +%s)
+  elapsedSeconds=$((endSeconds - startSeconds))
+}
 
-if [ "$downStatus" -ne 0 ]; then
-  set -- "$@" "compose down failed (exit $downStatus); log: $RUN/logs/h11-down.log"
-fi
-
-if [ "$elapsedSeconds" -ge 10 ]; then
-  set -- "$@" "compose down took $elapsedSeconds s; 10 s or more means the stop fell through to a kill"
-fi
-
-if docker container inspect "$CONTAINER" >/dev/null 2>&1 </dev/null; then
-  set -- "$@" "$CONTAINER still exists after compose down"
-fi
-
-for sentinelFile in "$RUN/hosttest/h11-sentinel.txt" "$RUN/state/h11-sentinel.txt"; do
-  if [ "$(cat "$sentinelFile" 2>/dev/null)" != "$sentinelText" ]; then
-    set -- "$@" "$sentinelFile is missing or changed after the stop"
+# --------------------------------------------------------------------------------
+# Checks the down succeeded, took under 10 s and left no container
+# --------------------------------------------------------------------------------
+check_stop_was_clean() {
+  if [ "$downStatus" -ne 0 ]; then
+    add_problem "compose down failed (exit $downStatus); log: $RUN/logs/h11-down.log"
   fi
-done
 
-if ! compose_up; then
-  set -- "$@" "compose up failed after the stop; log: $RUN/logs/compose-up.log"
-fi
+  if [ "$elapsedSeconds" -ge 10 ]; then
+    add_problem "compose down took $elapsedSeconds s; 10 s or more means the stop fell through to a kill"
+  fi
 
-if [ "$#" -gt 0 ]; then
-  fail H-11 "stopping is not quick and safe" "$@"
-  exit 1
-fi
+  if docker container inspect "$CONTAINER" >/dev/null 2>&1 </dev/null; then
+    add_problem "$CONTAINER still exists after compose down"
+  fi
+}
 
-pass H-11 "compose down took $elapsedSeconds s, the container is gone, the folders are intact"
-exit 0
+# --------------------------------------------------------------------------------
+# Checks the two sentinel files still hold their text
+# --------------------------------------------------------------------------------
+check_sentinels_intact() {
+  local sentinelFile
+
+  for sentinelFile in "$RUN/hosttest/h11-sentinel.txt" "$RUN/state/h11-sentinel.txt"; do
+    if [ "$(cat "$sentinelFile" 2>/dev/null)" != "$sentinelText" ]; then
+      add_problem "$sentinelFile is missing or changed after the stop"
+    fi
+  done
+}
+
+# --------------------------------------------------------------------------------
+# Starts the sandbox again
+# --------------------------------------------------------------------------------
+start_sandbox_again() {
+  if ! compose_up; then
+    add_problem "compose up failed after the stop; log: $RUN/logs/compose-up.log"
+  fi
+}
+
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+plant_sentinels
+stop_sandbox
+check_stop_was_clean
+check_sentinels_intact
+start_sandbox_again
+report_check H-11 "stopping is not quick and safe" \
+  "compose down took $elapsedSeconds s, the container is gone, the folders are intact"
