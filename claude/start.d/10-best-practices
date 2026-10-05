@@ -12,24 +12,41 @@ set -eu
 
 bundleDir=${SBX_BUNDLE_DIR:-/opt/sbx/best-practices}
 configDir=${CLAUDE_CONFIG_DIR:-}
-
-if [ -z "$configDir" ]; then
-  echo "[sbx] ERROR: CLAUDE_CONFIG_DIR is not set." >&2
-  exit 1
-fi
-
 skillList=$configDir/.best-practices-skills
 
-if [ ! -d "$bundleDir/rules" ]; then
-  echo "[sbx] ERROR: the best-practices bundle is missing: $bundleDir/rules" >&2
-  exit 1
-fi
+# --------------------------------------------------------------------------------
+# Stops the start when the config folder or the bundle is missing
+# --------------------------------------------------------------------------------
+check_inputs() {
+  if [ -z "$configDir" ]; then
+    echo "[sbx] ERROR: CLAUDE_CONFIG_DIR is not set." >&2
+    exit 1
+  fi
 
-mkdir -p "$configDir/skills"
-rm -rf "$configDir/rules"
-cp -R "$bundleDir/rules" "$configDir/rules"
+  if [ ! -d "$bundleDir/rules" ]; then
+    echo "[sbx] ERROR: the best-practices bundle is missing: $bundleDir/rules" >&2
+    exit 1
+  fi
+}
 
-if [ -f "$skillList" ]; then
+# --------------------------------------------------------------------------------
+# Replaces rules/ with the image's rules
+# --------------------------------------------------------------------------------
+sync_rules() {
+  rm -rf "$configDir/rules"
+  cp -R "$bundleDir/rules" "$configDir/rules"
+}
+
+# --------------------------------------------------------------------------------
+# Removes the skills the last sync listed, so a skill dropped from the bundle goes away
+# --------------------------------------------------------------------------------
+remove_listed_skills() {
+  local oldName
+
+  if [ ! -f "$skillList" ]; then
+    return
+  fi
+
   while IFS= read -r oldName; do
     case "$oldName" in
       ""|*/*|.*) continue ;;
@@ -37,18 +54,34 @@ if [ -f "$skillList" ]; then
 
     rm -rf "$configDir/skills/$oldName"
   done <"$skillList"
-fi
+}
 
-: >"$skillList"
+# --------------------------------------------------------------------------------
+# Copies the bundle's skills and lists their names for the next sync
+# --------------------------------------------------------------------------------
+copy_bundle_skills() {
+  local skillDir skillName
 
-for skillDir in "$bundleDir"/skills/*/; do
-  if [ ! -d "$skillDir" ]; then
-    continue
-  fi
+  : >"$skillList"
 
-  skillDir=${skillDir%/}
-  skillName=$(basename "$skillDir")
-  echo "$skillName" >>"$skillList"
-  rm -rf "$configDir/skills/$skillName"
-  cp -R "$skillDir" "$configDir/skills/$skillName"
-done
+  for skillDir in "$bundleDir"/skills/*/; do
+    if [ ! -d "$skillDir" ]; then
+      continue
+    fi
+
+    skillDir=${skillDir%/}
+    skillName=$(basename "$skillDir")
+    echo "$skillName" >>"$skillList"
+    rm -rf "$configDir/skills/$skillName"
+    cp -R "$skillDir" "$configDir/skills/$skillName"
+  done
+}
+
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+check_inputs
+mkdir -p "$configDir/skills"
+sync_rules
+remove_listed_skills
+copy_bundle_skills
