@@ -1,43 +1,43 @@
 ---
 gsd_state_version: "1.0"
-current_phase: "01.2"
-current_phase_name: Best-practices bundle baked into the image (stopgap)
-status: verifying
-stopped_at: Completed 01.2-06-PLAN.md
-last_updated: "2026-10-04T08:01:41.264Z"
-last_activity: 2026-10-04
-last_activity_desc: Phase 01.2 execution started
-state_head: a467f6115e04a4f1e377706c436ecb9f2d7b298a
+current_phase: "01.3"
+current_phase_name: Shell script layout
+status: planning
+stopped_at: Phase 01.2 complete, ready to plan Phase 01.3
+last_updated: "2026-10-05T02:39:34.413Z"
+last_activity: 2026-10-05
+last_activity_desc: Phase 01.2 complete, transitioned to Phase 01.3
+state_head: f87b1fadcbd493ea6757724eba94fec39cf6bfaf
 progress:
-  total_phases: 9
-  completed_phases: 2
+  total_phases: 11
+  completed_phases: 3
   total_plans: 14
   completed_plans: 14
-  percent: 22
+  percent: 27
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-04)
+See: .planning/PROJECT.md (updated 2026-10-05)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 01.2 — Best-practices bundle baked into the image (stopgap)
+**Current focus:** Phase 01.3: Shell script layout
 
 ## Current Position
 
-Phase: 01.2 (Best-practices bundle baked into the image (stopgap)) — EXECUTING
-Plan: 6 of 6
-Status: Phase complete — ready for verification
-Last activity: 2026-10-04 — Phase 01.2 execution started
+Phase: 01.3 — Shell script layout
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-05 — Phase 01.2 complete, transitioned to Phase 01.3
 
-Progress: [██░░░░░░░░] 22%
+Progress: [███░░░░░░░] 27%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 14
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -47,6 +47,7 @@ Progress: [██░░░░░░░░] 22%
 |-------|-------|-------|----------|
 | 01.1 | 4 | - | - |
 | 1 | 4 | - | - |
+| 01.2 | 6 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -105,6 +106,9 @@ Recent decisions affecting current work:
 - [Phase 01.2]: Managed settings hold exactly four Edit deny entries (rules, skill list, each bundle skill); guard rule managed_settings_cover_bundle keeps them in step with the bundle
 - [Phase 01.2]: H-14 reads owners and modes with find -printf inside the container, so the host portability rule on stat -c needs no exception
 - [Phase 01.2]: H-18 runs in the sandbox stage and is droppable; the fake API protocol from research needed no change at the pinned Claude
+- [Phase 01.2]: PR #9 review: rules made project-neutral; java.md split into java.md (*.java) and freemarker.md (*.ftl), no pom.xml glob; project-specific path/URL rule left to its own project; migration prompt in prompts/consolidate-memories.md
+- [Phase 01.2]: Script layout rule (80-column section banners, functions, Main / Entry Point) and shared-library rule added to shell.md; new scripts follow it, the rest is Phases 1.3 and 1.4
+- [Phase 01.2]: Security: threats_open 0; non-executable start hook skip (WR-04) accepted as AR-01 and scheduled in Phase 1.3
 
 ### Pending Todos
 
@@ -118,6 +122,7 @@ None yet.
 - [Phase 1]: Re-review left 7 findings open (WR-01: the missing-project-folder check in base/sbx-entrypoint cannot fire because compose working_dir creates the folder; WR-02: base/Dockerfile comment overclaims create_host_path; WR-03: Claude Code has no integrity hash). See 01-REVIEW-DISPOSITION.md
 - [Phase 1]: SC3 says rebuild with `--no-cache`; the Mac run did not record it. One run of `bash tests/host/manual/h09-rebuild-resume.sh --no-cache` would confirm
 - [Phase 1.1]: Code review left 14 findings open (CR-01: run_timeout does not stop a docker call behind a shell function; WR-01..08 robustness). See 01.1-REVIEW-DISPOSITION.md
+- [Phase 1.2]: Code review left 13 findings open (WR-01..03 are bugs in the ported pr-reply and merged skills; WR-04 is in Phase 1.3; WR-05 deny negative control fits Phase 1.4). See 01.2-REVIEW-DISPOSITION.md
 
 ### Roadmap Evolution
 
@@ -137,6 +142,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-04T08:01:41.196Z
-Stopped at: Completed 01.2-06-PLAN.md
+Last session: 2026-10-05T02:30:00Z
+Stopped at: Phase 01.2 complete, ready to plan Phase 01.3
 Resume file: None
