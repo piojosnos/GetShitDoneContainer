@@ -125,6 +125,7 @@ None yet.
 - Phase 02.1 inserted after Phase 2: Best-practices from git, editable from any sandbox
 - Phase 6 added: Automated checks (CI): run tests/guard.sh on every PR push, from the PR #1 review
 - Phase 01.3 inserted after Phase 1.2: Shell script layout (banners, functions, entry point in every script), from the PR #9 review
+- Phase 01.4 inserted after Phase 1.3: Test suite refactor (real Docker instead of the fake, simplify, split into units), from the PR #9 review; Phase 1.3 narrowed to the non-test scripts
 
 ## Deferred Items
 
