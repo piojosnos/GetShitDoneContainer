@@ -16,6 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1.1: Automated host tests** (INSERTED) - One unattended command on the Mac runs every automatable host check (H-00 to H-13) with a PASS/FAIL line each; login, resume and doctor are a short manual pass with helper scripts (completed 2026-10-04)
 - [ ] **Phase 1.2: Best-practices bundle baked into the image (stopgap)** (INSERTED) - New sandboxes start with the user's skills, standing rules, and shared memories installed, taken from files in this repo
 - [ ] **Phase 1.3: Shell script layout** (INSERTED) - Every shell script gets section banners, functions and an entry point, with no change in behaviour
+- [ ] **Phase 1.4: Test suite refactor** (INSERTED) - The test suite gets a real Docker instead of a large fake one, is simplified and split into logical units
 - [ ] **Phase 2: Pinned Toolchain, GSD, and ccusage** - Every tool is baked in at a version pinned in `versions.env`, the image's GSD wins over persisted state, and `ccusage` reports real usage
 - [ ] **Phase 2.1: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs
 - [ ] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login
@@ -119,14 +120,30 @@ Plans:
 **Depends on**: Phase 1.2 (it adds the layout rule to `best-practices/rules/shell.md` and converts the scripts that phase added)
 **Requirements**: TBD
 **Success Criteria** (what must be TRUE):
-  1. Every shell script outside the old layout (`base/sbx-entrypoint`, `tests/guard.sh`, `tests/host-selftest.sh`, `tests/host/lib.sh`, `tests/host/run-all.sh`, the older host checks and manual helpers) has the banners, functions and entry point the rule describes.
-  2. Output, exit codes and behaviour are unchanged: `tests/guard.sh`, `tests/host-selftest.sh` and `tests/bundle-selftest.sh` pass with the same PASS counts, and `tests/host/run-all.sh` passes on the Mac.
+  1. Every shell script outside the old layout and outside the three big test scripts (`base/sbx-entrypoint`, `tests/host/lib.sh`, `tests/host/run-all.sh`, the older host checks H-00 to H-13 and the manual helpers) has the banners, functions and entry point the rule describes, and uses the shared helpers in `tests/host/lib.sh` where they fit. `tests/host-selftest.sh`, `tests/bundle-selftest.sh` and `tests/guard.sh` are left to Phase 1.4, so they are reworked once.
+  2. Output, exit codes and behaviour are unchanged: `tests/guard.sh`, `tests/host-selftest.sh` and `tests/bundle-selftest.sh` pass with identical output, and `tests/host/run-all.sh` passes on the Mac.
   3. The scripts still run on macOS bash 3.2 with BSD tools.
 
 **Plans:** 0 plans
 
 Plans:
 - [ ] TBD (run /gsd-plan-phase 01.3 to break down)
+
+### Phase 01.4: Test suite refactor (INSERTED)
+
+**Goal**: The test suite is small enough to read and change. The root cause of its size is fixed: most of `tests/host-selftest.sh` is a fake docker that exists only because the dev sandbox has no real Docker. The suite is simplified and split into logical units, and the three big test scripts get the script layout rule. From the PR #9 review.
+**Depends on**: Phase 1.3 (shared helpers and layout in the rest of the scripts)
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. A decision on where the host checks run against a real Docker, recorded with its trade-offs. Candidates: a GitHub Actions runner (real Docker on Linux, ties in with Phase 6), or another isolated Docker the dev sandbox can reach. Giving the dev sandbox the host Docker socket is out: it is root on the Mac and defeats the isolation this project exists for.
+  2. With real Docker covering the host checks, the fake docker shrinks to what still needs it, or goes away. Whatever remains lives in its own file under `tests/host/support/`, not in a heredoc.
+  3. `tests/host-selftest.sh`, `tests/bundle-selftest.sh` and `tests/guard.sh` are split into logical units (one file per check group, a shared helpers library, a short runner), follow the script layout rule, and reuse `tests/host/lib.sh` and `tests/host/lib-bundle.sh` where they fit.
+  4. Every check that runs today still runs and still catches what it catches today (the deliberately broken cases still fail), and `tests/host/run-all.sh` passes on the Mac.
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 01.4 to break down)
 
 ### Phase 2: Pinned Toolchain, GSD, and ccusage
 
@@ -228,6 +245,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 1.1. Automated host tests | 4/4 | Complete    | 2026-10-04 |
 | 1.2. Best-practices bundle baked into the image (stopgap) | 6/6 | In Progress|  |
 | 1.3. Shell script layout | 0/TBD | Not started | - |
+| 1.4. Test suite refactor | 0/TBD | Not started | - |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
