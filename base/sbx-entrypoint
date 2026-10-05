@@ -12,47 +12,91 @@ set -eu
 # - Creates the state subfolders that are missing. Installs nothing.
 # - SBX_STATE_DIRS: extra state subfolders, set by the agent image (Claude adds
 #   "claude"), so this base script never needs to know which agent is on top.
-# - Then it runs the start hooks in /etc/sbx/start.d (agent images add theirs there),
-#   and the first failure stops the start.
+# - Then it runs the start hooks in /etc/sbx/start.d (agent images add theirs there).
+#   A hook that fails, or a file in that folder that is not executable, stops the start.
+# - The start steps run only when the file is executed, so a test can source it
+#   and call the functions.
 
 ws=/home/sandbox/workspace
 state=$ws/state
+hookDir=/etc/sbx/start.d
+
+# --------------------------------------------------------------------------------
+# Helpers
+# --------------------------------------------------------------------------------
 
 # Field 5 of /proc/self/mountinfo is the mount point; no util-linux "mountpoint" needed.
 is_mount() { awk -v p="$1" '$5==p { f=1 } END { exit !f }' /proc/self/mountinfo; }
 
+# die MESSAGE: prints the error and how to start the sandbox, then stops the start.
 die() {
   echo "[sbx] ERROR: $1" >&2
   echo "[sbx]        Start the sandbox with 'docker compose up' (see SANDBOX.md)." >&2
   exit 1
 }
 
-is_mount "$ws" || die "$ws is not a bind mount; its data would be lost on recreate."
-[ -w "$ws" ] || die "$ws is not writable by $(id -un)."
-[ -n "${SBX_NAME:-}" ] || die "SBX_NAME is not set."
+# --------------------------------------------------------------------------------
+# Stops the start unless the workspace is a writable mount and SBX_NAME is set
+# --------------------------------------------------------------------------------
+check_workspace_mount() {
+  is_mount "$ws" || die "$ws is not a bind mount; its data would be lost on recreate."
+  [ -w "$ws" ] || die "$ws is not writable by $(id -un)."
+  [ -n "${SBX_NAME:-}" ] || die "SBX_NAME is not set."
+}
 
-[ -d "$ws/$SBX_NAME" ] || die "$ws/$SBX_NAME (the project folder) is missing."
-[ -d "$state" ] || die "$state is missing."
+# --------------------------------------------------------------------------------
+# Stops the start unless the project and state folders exist
+# --------------------------------------------------------------------------------
+check_project_and_state_folders() {
+  [ -d "$ws/$SBX_NAME" ] || die "$ws/$SBX_NAME (the project folder) is missing."
+  [ -d "$state" ] || die "$state is missing."
+}
 
-# ${SBX_STATE_DIRS:-} is unquoted on purpose: one word per folder name.
-for d in shell gh git ${SBX_STATE_DIRS:-}; do
-  mkdir -p "$state/$d"
-done
+# --------------------------------------------------------------------------------
+# Creates the state subfolders that are missing
+# --------------------------------------------------------------------------------
+create_state_dirs() {
+  local stateFolder
 
-# Every executable in /etc/sbx/start.d runs in name order, after the checks above and before
-# the command. The first failure stops the start. Names sort as text, so hooks use two-digit
-# prefixes (10-, 20-).
-hookDir=/etc/sbx/start.d
+  # ${SBX_STATE_DIRS:-} is unquoted on purpose: one word per folder name.
+  for stateFolder in shell gh git ${SBX_STATE_DIRS:-}; do
+    mkdir -p "$state/$stateFolder"
+  done
+}
 
-for hook in "$hookDir"/*; do
-  if [ ! -f "$hook" ] || [ ! -x "$hook" ]; then
-    continue
-  fi
+# --------------------------------------------------------------------------------
+# Runs every start hook in name order; a hook that fails or is not executable stops the start
+# --------------------------------------------------------------------------------
+# The hooks run after the checks above and before the command. Names sort as text, so hooks
+# use two-digit prefixes (10-, 20-).
+run_start_hooks() {
+  local hook
 
-  if ! "$hook"; then
-    echo "[sbx] ERROR: start hook $hook failed; the container was not started." >&2
-    exit 1
-  fi
-done
+  for hook in "$hookDir"/*; do
+    if [ ! -f "$hook" ]; then
+      continue
+    fi
 
-exec "$@"
+    if [ ! -x "$hook" ]; then
+      echo "[sbx] ERROR: start hook $hook is not executable; the container was not started." >&2
+      exit 1
+    fi
+
+    if ! "$hook"; then
+      echo "[sbx] ERROR: start hook $hook failed; the container was not started." >&2
+      exit 1
+    fi
+  done
+}
+
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+# The steps run only when the file is executed; a test sources it to call the functions above.
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  check_workspace_mount
+  check_project_and_state_folders
+  create_state_dirs
+  run_start_hooks
+  exec "$@"
+fi
