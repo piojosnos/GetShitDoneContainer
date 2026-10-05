@@ -14,42 +14,55 @@ require_test_sandbox H-08 || exit 1
 marker="marker-$$-$(date +%s)"
 historyFile="$RUN/state/shell/bash_history"
 
-( ( printf 'echo %s\n' "$marker"; sleep 25 ) | docker exec -i "$CONTAINER" bash -i ) >/dev/null 2>&1 &
+# --------------------------------------------------------------------------------
+# Opens a shell in the background that echoes the marker and stays open
+# --------------------------------------------------------------------------------
+start_background_shell() {
+  ( ( printf 'echo %s\n' "$marker"; sleep 25 ) | docker exec -i "$CONTAINER" bash -i ) >/dev/null 2>&1 &
+}
 
-seen=0
-for i in 1 2 3 4 5 6 7 8 9 10; do
-  if grep -Fq "$marker" "$historyFile" 2>/dev/null; then
-    seen=1
-    break
+# --------------------------------------------------------------------------------
+# Waits up to 10 s for the marker to reach the history file on the host; stops if it never does
+# --------------------------------------------------------------------------------
+wait_for_marker() {
+  local seen i
+
+  seen=0
+  for i in 1 2 3 4 5 6 7 8 9 10; do
+    if grep -Fq "$marker" "$historyFile" 2>/dev/null; then
+      seen=1
+      break
+    fi
+    sleep 1
+  done
+
+  if [ "$seen" -eq 0 ]; then
+    stop_check H-08 "the marker did not reach the history file before the recreate" \
+      "looked for $marker in $historyFile for 10 s while the first shell was open"
   fi
-  sleep 1
-done
+}
 
-if [ "$seen" -eq 0 ]; then
-  fail H-08 "the marker did not reach the history file before the recreate" \
-    "looked for $marker in $historyFile for 10 s while the first shell was open"
-  exit 1
-fi
+# --------------------------------------------------------------------------------
+# Checks a fresh shell shows the marker after the recreate
+# --------------------------------------------------------------------------------
+check_fresh_shell_history() {
+  local freshOutput markerCount
 
-if ! compose_down >"$RUN/logs/h08-down.log" 2>&1; then
-  fail H-08 "compose down failed" "log: $RUN/logs/h08-down.log"
-  exit 1
-fi
+  freshOutput=$(printf 'history\nexit\n' | docker exec -i "$CONTAINER" bash -i 2>/dev/null)
+  markerCount=$(printf '%s\n' "$freshOutput" | grep -Fc "$marker")
 
-if ! compose_up; then
-  fail H-08 "compose up failed after the down" "log: $RUN/logs/compose-up.log"
-  exit 1
-fi
+  if [ "$markerCount" -lt 1 ]; then
+    add_problem "the history file on the host has it: $(grep -Fc "$marker" "$historyFile" 2>/dev/null)"
+    add_problem "history output started with: $(first_lines "$freshOutput")"
+  fi
+}
 
-freshOutput=$(printf 'history\nexit\n' | docker exec -i "$CONTAINER" bash -i 2>/dev/null)
-markerCount=$(printf '%s\n' "$freshOutput" | grep -Fc "$marker")
-
-if [ "$markerCount" -lt 1 ]; then
-  fail H-08 "the marker is not in a fresh shell's history after the recreate" \
-    "the history file on the host has it: $(grep -Fc "$marker" "$historyFile" 2>/dev/null)" \
-    "history output started with: $(printf '%s\n' "$freshOutput" | head -n 3 | tr '\n' ' ')"
-  exit 1
-fi
-
-pass H-08 "history was written while the shell was open and a fresh shell shows it after the recreate"
-exit 0
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+start_background_shell
+wait_for_marker
+restart_test_sandbox H-08 h08-down.log
+check_fresh_shell_history
+report_check H-08 "the marker is not in a fresh shell's history after the recreate" \
+  "history was written while the shell was open and a fresh shell shows it after the recreate"

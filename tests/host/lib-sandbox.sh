@@ -85,6 +85,22 @@ compose_down() {
   compose_cmd down
 }
 
+# restart_test_sandbox ID LOG_NAME: compose down, then up; on a failure prints FAIL for ID and exits 1.
+restart_test_sandbox() {
+  local checkId=$1
+  local logFile
+
+  logFile="$RUN/logs/$2"
+
+  if ! compose_down >"$logFile" 2>&1; then
+    stop_check "$checkId" "compose down failed" "log: $logFile"
+  fi
+
+  if ! compose_up; then
+    stop_check "$checkId" "compose up failed after the down" "log: $RUN/logs/compose-up.log"
+  fi
+}
+
 # --------------------------------------------------------------------------------
 # Makes sure a call is aimed at the test sandbox
 # --------------------------------------------------------------------------------

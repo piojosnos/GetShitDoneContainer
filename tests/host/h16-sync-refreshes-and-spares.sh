@@ -37,8 +37,7 @@ pick_samples() {
   done
 
   if [ -z "$firstSkill" ] || [ -z "$firstRule" ]; then
-    fail H-16 "the repo bundle has no always-on rule or no skill to edit" "looked in $bundleDir"
-    exit 1
+    stop_check H-16 "the repo bundle has no always-on rule or no skill to edit" "looked in $bundleDir"
   fi
 }
 
@@ -58,21 +57,6 @@ plant_files() {
   printf '# %s\n' "$sentinelText" >"$syncedDir/CLAUDE.md"
   printf 'h16 hand edit\n' >>"$syncedDir/rules/$firstRule"
   printf 'h16 hand edit\n' >>"$syncedDir/skills/$firstSkill/SKILL.md"
-}
-
-# --------------------------------------------------------------------------------
-# Restarts the test sandbox with a compose down and up; stops if either fails
-# --------------------------------------------------------------------------------
-restart_sandbox() {
-  if ! compose_down >"$RUN/logs/h16-down.log" 2>&1; then
-    fail H-16 "compose down failed" "log: $RUN/logs/h16-down.log"
-    exit 1
-  fi
-
-  if ! compose_up; then
-    fail H-16 "compose up failed after the down" "log: $RUN/logs/compose-up.log"
-    exit 1
-  fi
 }
 
 # --------------------------------------------------------------------------------
@@ -107,7 +91,7 @@ check_user_files_spared() {
 # --------------------------------------------------------------------------------
 pick_samples
 plant_files
-restart_sandbox
+restart_test_sandbox H-16 h16-down.log
 check_stale_files_gone
 check_bundle_skill_list "$syncedDir"
 check_user_files_spared
