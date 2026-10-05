@@ -27,6 +27,8 @@ Language-agnostic conventions for new application code.
 
 ## Blank lines around control flow
 
+Applies to every language. In brace languages it looks like the bullets below; in shell the same goes for `if ... fi`, `for ... done` and `while ... done`.
+
 - Blank line before every `for` / `while` / `if` / `do`, and after its closing brace, so control-flow boundaries are scannable.
 - Exceptions (cuddle, no blank line): `} else if {` / `} else {` chains stay attached to the prior brace (treat the whole chain as one construct; blank line only after the final outer brace); stacked closing braces `} } }` stay together, with the blank line after the outermost one.
 
@@ -42,6 +44,11 @@ Language-agnostic conventions for new application code.
 
 - Do not add doc-comments (Javadoc, docstrings) unless asked or unless they were already there. Names carry the meaning; review threads document the non-obvious. Pre-existing doc-comments stay.
 
+## Codegen and types over hand-written plumbing
+
+- Lean on the language or framework's standard codegen or idiom instead of re-implementing boilerplate by hand; keep it consistent across the codebase.
+- Wrap domain values that have their own equality, ordering or parsing rules in a type; do not pass them around as bare strings.
+
 ## No duplicated utility code
 
 - Extract to a helper at three or more duplicates. Two hand-rolled copies is tolerable; the third should consolidate.
@@ -53,14 +60,14 @@ When two things can be implemented the same way, implement them the same way, as
 
 - Prefer the symmetric design when offering options.
 - Flag honest asymmetries explicitly and justify them by a genuine difference between the two things (a bounded card needs a layout wrapper that an unbounded page does not). Do not force symmetry onto things that only look similar.
-- Align names with what they represent: context-prefixed class names should match their token context (for example `card-*` classes with `--card-*` tokens), so a name strongly reflects its target.
+- Align names with what they represent: if `UserService` has `findById`, the sibling `OrderService` gets `findById`, not `getOrder`, so a name strongly reflects its target.
 - When symmetry fixes keep surfacing inconsistent names, propose a wider naming audit.
 
 ## First-party tooling
 
 Use the project's own scripts and tools for a task the project already solves; never reach for an ad-hoc substitute.
 
-- If the project ships a script that serves its generated output, use it, not a generic static server. Generate fixtures with the project's own generator.
+- If the project ships a build, test or run script, use it, not a bare `mvn`, `npm` or `pytest` call. Generate fixtures with the project's own generator.
 - Before substituting an external tool, search for a project one (script folders, tool modules, module READMEs). Fall back only when the search genuinely comes up empty, and say so.
 
-Why: first-party tools encode project-specific behavior (for example serving each site at the base path it was generated for, or wiping a stale work dir) that a generic tool silently gets wrong.
+Why: first-party tools encode project-specific behavior (for example the flags, environment variables or paths a project's test script sets) that a generic tool silently gets wrong.
