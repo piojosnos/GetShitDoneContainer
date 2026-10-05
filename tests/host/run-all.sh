@@ -128,6 +128,40 @@ fatal() {
   finish "setup failed"
 }
 
+# print_next_block: prints the manual pass commands and the cleanup command. Only prints.
+print_next_block() {
+  printf '\nNext\n'
+  printf '  Manual pass (needs a terminal), in this order:\n'
+  printf '    bash %q\n' "${HOST_DIR:-}/manual/h07-login.sh"
+  printf '    bash %q\n' "${HOST_DIR:-}/manual/h09-rebuild-resume.sh"
+  printf '    bash %q\n' "${HOST_DIR:-}/manual/h13-doctor.sh"
+  printf '    bash %q\n' "${HOST_DIR:-}/manual/h19-bundle-behaviour.sh"
+
+  if [ -n "${RUN:-}" ]; then
+    printf '  Cleanup when you are done. The run folder holds the Claude login after the manual pass:\n'
+    printf '    cd %q && SBX_NAME=hosttest SBX_DIR=%q docker compose down && rm -rf %q\n' "${REPO_DIR:-}" "$RUN" "$RUN"
+  else
+    printf '  No run folder was created, so there is nothing to clean up.\n'
+  fi
+}
+
+# remove_leftover_test_container: 0 if none or taken down; 1 if the name is taken by something else or down failed.
+remove_leftover_test_container() {
+  local label
+
+  if ! docker container inspect "$CONTAINER" >/dev/null 2>&1 </dev/null; then
+    return 0
+  fi
+
+  label=$(docker container inspect --format '{{index .Config.Labels "sbx.name"}}' "$CONTAINER" 2>/dev/null </dev/null)
+  if [ "$label" != "hosttest" ]; then
+    printf 'A container named %s exists but is not labelled sbx.name=hosttest. It was left alone.\n' "$CONTAINER" >&2
+    return 1
+  fi
+
+  compose_down >"$RUN/logs/leftover-down.log" 2>&1
+}
+
 if ! docker info >/dev/null 2>&1 </dev/null; then
   fatal "the Docker daemon is not reachable; start Docker Desktop and run again"
 fi
