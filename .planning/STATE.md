@@ -3,17 +3,17 @@ gsd_state_version: "1.0"
 current_phase: "01.3"
 current_phase_name: Shell script layout
 status: planning
-stopped_at: Phase 01.2 complete, ready to plan Phase 01.3
-last_updated: "2026-10-05T02:39:34.413Z"
+stopped_at: Phase 01.3 context gathered
+last_updated: "2026-10-05T02:54:41.416Z"
 last_activity: 2026-10-05
 last_activity_desc: Phase 01.2 complete, transitioned to Phase 01.3
-state_head: f87b1fadcbd493ea6757724eba94fec39cf6bfaf
+state_head: d3c5c908c6ec500ccdbc3f827e35ff349ee5e659
 progress:
-  total_phases: 11
+  total_phases: 12
   completed_phases: 3
   total_plans: 14
   completed_plans: 14
-  percent: 27
+  percent: 25
 ---
 
 # Project State
@@ -32,7 +32,7 @@ Plan: Not started
 Status: Ready to plan
 Last activity: 2026-10-05 — Phase 01.2 complete, transitioned to Phase 01.3
 
-Progress: [███░░░░░░░] 27%
+Progress: [███░░░░░░░] 25%
 
 ## Performance Metrics
 
@@ -131,6 +131,7 @@ None yet.
 - Phase 6 added: Automated checks (CI): run tests/guard.sh on every PR push, from the PR #1 review
 - Phase 01.3 inserted after Phase 1.2: Shell script layout (banners, functions, entry point in every script), from the PR #9 review
 - Phase 01.4 inserted after Phase 1.3: Test suite refactor (real Docker instead of the fake, simplify, split into units), from the PR #9 review; Phase 1.3 narrowed to the non-test scripts
+- Phase 01.5 inserted after Phase 1.4: Host test fixes (open Phase 1 and 1.1 review findings, proven with real Docker), from the Phase 1.3 discussion
 
 ## Deferred Items
 
@@ -142,6 +143,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-05T02:30:00Z
-Stopped at: Phase 01.2 complete, ready to plan Phase 01.3
-Resume file: None
+Last session: 2026-10-05T02:54:41.281Z
+Stopped at: Phase 01.3 context gathered
+Resume file: .planning/phases/01.3-shell-script-layout/01.3-CONTEXT.md

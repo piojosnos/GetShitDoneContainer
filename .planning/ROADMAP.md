@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1.2: Best-practices bundle baked into the image (stopgap)** (INSERTED) - New sandboxes start with the user's skills, standing rules, and shared memories installed, taken from files in this repo (completed 2026-10-05)
 - [ ] **Phase 1.3: Shell script layout** (INSERTED) - Every shell script gets section banners, functions and an entry point, with no change in behaviour
 - [ ] **Phase 1.4: Test suite refactor** (INSERTED) - The test suite gets a real Docker instead of a large fake one, is simplified and split into logical units
+- [ ] **Phase 1.5: Host test fixes** (INSERTED) - The known bugs in the host tests and entrypoint from earlier reviews are fixed, each proven against a real Docker
 - [ ] **Phase 2: Pinned Toolchain, GSD, and ccusage** - Every tool is baked in at a version pinned in `versions.env`, the image's GSD wins over persisted state, and `ccusage` reports real usage
 - [ ] **Phase 2.1: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs
 - [ ] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login
@@ -146,6 +147,21 @@ Plans:
 Plans:
 - [ ] TBD (run /gsd-plan-phase 01.4 to break down)
 
+### Phase 01.5: Host test fixes (INSERTED)
+
+**Goal**: The known bugs in the host tests and the entrypoint, found by the Phase 1 and Phase 1.1 code reviews, are fixed and each fix is proven against a real Docker. Kept out of Phase 1.3 so that identical output stays the proof of a safe restructure, and placed after Phase 1.4 so a real Docker can prove the fixes. From the Phase 1.3 discussion.
+**Depends on**: Phase 1.4 (a real Docker for the host checks)
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. Every open finding in `01-REVIEW-DISPOSITION.md` and `01.1-REVIEW-DISPOSITION.md` is fixed or explicitly closed with a reason. This includes `run_timeout` not stopping a shell function (01.1 CR-01), the flaky H-09 volume compare (01.1 WR-02), Coexistence false FAIL and false PASS (01.1 WR-05), H-13 treating any exec failure as success (01.1 WR-08), and the entrypoint's dead "project folder missing" check (01 WR-01).
+  2. Each fix has a test that fails before the fix and passes after it, run against a real Docker where the bug needs one.
+  3. `tests/host/run-all.sh` passes on the Mac.
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 01.5 to break down)
+
 ### Phase 2: Pinned Toolchain, GSD, and ccusage
 
 **Goal**: The sandbox has the full development toolchain plus Claude Code, GSD, and ccusage baked into the image at versions pinned in one `versions.env`. Rebuilding with changed pins delivers the new versions into the sandbox while login and history persist.
@@ -247,6 +263,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 1.2. Best-practices bundle baked into the image (stopgap) | 6/6 | Complete    | 2026-10-05 |
 | 1.3. Shell script layout | 0/TBD | Not started | - |
 | 1.4. Test suite refactor | 0/TBD | Not started | - |
+| 1.5. Host test fixes | 0/TBD | Not started | - |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
