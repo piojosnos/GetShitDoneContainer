@@ -1,18 +1,18 @@
 ---
 gsd_state_version: "1.0"
 current_phase: "01.3"
-current_phase_name: Shell script layout
+current_phase_name: Shell script layout (INSERTED)
 status: executing
-stopped_at: Phase 01.3 context gathered
-last_updated: "2026-10-05T04:02:02.281Z"
+stopped_at: Completed 01.3-01-PLAN.md
+last_updated: "2026-10-05T04:18:31.343Z"
 last_activity: 2026-10-05
-last_activity_desc: Phase 01.2 complete, transitioned to Phase 01.3
-state_head: 27ff473cb1423451329df4557646469ab2554d3c
+last_activity_desc: Phase 01.3 execution started
+state_head: 4e55ab4f7723da8f867082c1ee2ab1424341dbc6
 progress:
   total_phases: 12
   completed_phases: 3
   total_plans: 20
-  completed_plans: 14
+  completed_plans: 15
   percent: 25
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-05)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 01.3: Shell script layout
+**Current focus:** Phase 01.3 — Shell script layout (INSERTED)
 
 ## Current Position
 
-Phase: 01.3 (Shell script layout) — READY TO EXECUTE
-Plan: Not started
+Phase: 01.3 (Shell script layout (INSERTED)) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-10-05 — Phase 01.2 complete, transitioned to Phase 01.3
+Last activity: 2026-10-05 — Phase 01.3 execution started
 
 Progress: [███░░░░░░░] 25%
 
@@ -72,6 +72,7 @@ Progress: [███░░░░░░░] 25%
 | Phase 01.2 P04 | 6 min | 2 tasks | 5 files |
 | Phase 01.2 P05 | 8 min | 2 tasks | 10 files |
 | Phase 01.2 P06 | 25 min | 2 tasks | 7 files |
+| Phase 01.3 P01 | 17 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,8 @@ Recent decisions affecting current work:
 - [Phase 01.2]: PR #9 review: rules made project-neutral; java.md split into java.md (*.java) and freemarker.md (*.ftl), no pom.xml glob; project-specific path/URL rule left to its own project; migration prompt in prompts/consolidate-memories.md
 - [Phase 01.2]: Script layout rule (80-column section banners, functions, Main / Entry Point) and shared-library rule added to shell.md; new scripts follow it, the rest is Phases 1.3 and 1.4
 - [Phase 01.2]: Security: threats_open 0; non-executable start hook skip (WR-04) accepted as AR-01 and scheduled in Phase 1.3
+- [Phase 01.3]: Host test libraries stay flat files next to lib.sh; the frozen selftest copies only tests/host/*.sh and reaches make_run_dir, claude_pin, expected_arch through lib.sh
+- [Phase 01.3]: Code is moved verbatim during the layout phase; prove.sh (identical output against baseline 0a58e7d) is the gate for every later plan
 
 ### Pending Todos
 
@@ -143,6 +146,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-05T02:54:41.281Z
-Stopped at: Phase 01.3 context gathered
-Resume file: .planning/phases/01.3-shell-script-layout/01.3-CONTEXT.md
+Last session: 2026-10-05T04:18:31.254Z
+Stopped at: Completed 01.3-01-PLAN.md
+Resume file: None
