@@ -8,31 +8,55 @@ set -u
 host_init
 require_test_sandbox H-05 || exit 1
 
-listing=$(in_container sh -c 'touch x.txt; ls -a /home/sandbox')
-owners=$(in_container stat -c '%U %n' /home/sandbox/.local /home/sandbox/.local/state)
+# --------------------------------------------------------------------------------
+# Creates a file in the container and reads the home listing and the owners
+# --------------------------------------------------------------------------------
+read_container_home() {
+  listing=$(in_container sh -c 'touch x.txt; ls -a /home/sandbox')
+  owners=$(in_container stat -c '%U %n' /home/sandbox/.local /home/sandbox/.local/state)
+}
 
-set --
-
-if [ ! -f "$RUN/hosttest/x.txt" ]; then
-  set -- "$@" "x.txt created in the container did not appear in $RUN/hosttest"
-fi
-
-for wanted in .bashrc .local; do
-  if ! printf '%s\n' "$listing" | grep -Fxq "$wanted"; then
-    set -- "$@" "ls -a /home/sandbox does not list $wanted"
+# --------------------------------------------------------------------------------
+# Checks the file made in the container reached the project folder on the host
+# --------------------------------------------------------------------------------
+check_file_reached_host() {
+  if [ ! -f "$RUN/hosttest/x.txt" ]; then
+    add_problem "x.txt created in the container did not appear in $RUN/hosttest"
   fi
-done
+}
 
-for ownedPath in /home/sandbox/.local /home/sandbox/.local/state; do
-  if ! printf '%s\n' "$owners" | grep -Fxq "sandbox $ownedPath"; then
-    set -- "$@" "owner of $ownedPath is not sandbox; stat said: $(printf '%s\n' "$owners" | tr '\n' ' ')"
-  fi
-done
+# --------------------------------------------------------------------------------
+# Checks the home entries the image provides are listed
+# --------------------------------------------------------------------------------
+check_home_entries() {
+  local wanted
 
-if [ "$#" -gt 0 ]; then
-  fail H-05 "the workspace or home layout is wrong" "$@"
-  exit 1
-fi
+  for wanted in .bashrc .local; do
+    if ! printf '%s\n' "$listing" | grep -Fxq "$wanted"; then
+      add_problem "ls -a /home/sandbox does not list $wanted"
+    fi
+  done
+}
 
-pass H-05 "x.txt reached the host, .bashrc and .local exist, owners are sandbox"
-exit 0
+# --------------------------------------------------------------------------------
+# Checks the sandbox user owns ~/.local and ~/.local/state
+# --------------------------------------------------------------------------------
+check_home_owners() {
+  local ownedPath
+
+  for ownedPath in /home/sandbox/.local /home/sandbox/.local/state; do
+    if ! printf '%s\n' "$owners" | grep -Fxq "sandbox $ownedPath"; then
+      add_problem "owner of $ownedPath is not sandbox; stat said: $(join_lines "$owners")"
+    fi
+  done
+}
+
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+read_container_home
+check_file_reached_host
+check_home_entries
+check_home_owners
+report_check H-05 "the workspace or home layout is wrong" \
+  "x.txt reached the host, .bashrc and .local exist, owners are sandbox"

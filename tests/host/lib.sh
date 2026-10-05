@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
-# Shared helpers for the host tests: setup, the test sandbox safety checks, PASS/FAIL printing.
+# Shared helpers for the host tests: setup and the test sandbox safety checks.
 # - Sourced by run-all.sh and by every check; never run directly.
+# - Loads lib-report.sh (PASS and FAIL lines, collecting a check's result) from this folder.
 # - Sets no shell options and does not cd, so the caller keeps control of both.
 # - Every Docker call is aimed at the throwaway sandbox: project hosttest, container
 #   sbx-hosttest. The caller's SBX_NAME, SBX_DIR and COMPOSE_* values are never used.
 # - Deletes nothing. The cleanup is only printed (print_next_block).
 # - Host side code is stock bash 3.2 with BSD tools (macOS); GNU tools only inside docker exec.
+
+# The topic libraries live next to this file.
+. "$(dirname "${BASH_SOURCE[0]}")/lib-report.sh"
 
 # host_init: sets REPO_DIR, HOST_DIR, SBX_NAME, CONTAINER and RUN; scrubs the environment.
 host_init() {
@@ -89,29 +93,6 @@ make_run_dir() {
   export SBXTEST_DIR
 
   return 0
-}
-
-# pass ID TEXT: prints one PASS line.
-pass() {
-  printf 'PASS: %s %s\n' "$1" "$2"
-}
-
-# fail ID TEXT [DETAIL...]: prints one FAIL line, then each detail indented.
-fail() {
-  local checkId=$1
-  local text=$2
-
-  printf 'FAIL: %s %s\n' "$checkId" "$text"
-  shift 2
-  while [ "$#" -gt 0 ]; do
-    printf '      %s\n' "$1"
-    shift
-  done
-}
-
-# info TEXT: prints one INFO line.
-info() {
-  printf 'INFO: %s\n' "$1"
 }
 
 # in_container CMD...: runs CMD in the test container; stdin closed, stderr merged, never a tty.
@@ -299,39 +280,4 @@ print_next_block() {
   else
     printf '  No run folder was created, so there is nothing to clean up.\n'
   fi
-}
-
-# --------------------------------------------------------------------------------
-# Collects a check's problems, then prints its PASS or FAIL line and exits
-# --------------------------------------------------------------------------------
-
-# Every message add_problem collected so far, in the order it was added.
-problemList=()
-
-# add_problem MESSAGE: keeps MESSAGE for report_check to print as a FAIL detail.
-add_problem() {
-  problemList+=("$1")
-}
-
-# report_check ID FAIL_SUMMARY PASS_TEXT: FAIL with every problem and exit 1; else PASS and exit 0.
-# The count is tested first: bash 3.2 with set -u treats an empty array as unbound.
-report_check() {
-  local checkId=$1
-  local failSummary=$2
-  local passText=$3
-
-  if [ "${#problemList[@]}" -gt 0 ]; then
-    fail "$checkId" "$failSummary" "${problemList[@]}"
-    exit 1
-  fi
-
-  pass "$checkId" "$passText"
-  exit 0
-}
-
-# first_lines TEXT [COUNT]: the first COUNT lines of TEXT (default 3) on one line, each followed by a space.
-first_lines() {
-  local lineCount=${2:-3}
-
-  printf '%s\n' "$1" | head -n "$lineCount" | tr '\n' ' '
 }
