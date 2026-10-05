@@ -13,7 +13,9 @@ set -eu
 # - SBX_STATE_DIRS: extra state subfolders, set by the agent image (Claude adds
 #   "claude"), so this base script never needs to know which agent is on top.
 # - Then it runs the start hooks in /etc/sbx/start.d (agent images add theirs there).
-#   A hook that fails, or a file in that folder that is not executable, stops the start.
+#   Folders are skipped and the glob never matches dotfiles; anything else must be an
+#   executable regular file. A link that points nowhere, a fifo or a socket stops the
+#   start, as do a file that is not executable and a hook that fails.
 # - The start steps run only when the file is executed, so a test can source it
 #   and call the functions.
 
@@ -65,16 +67,27 @@ create_state_dirs() {
 }
 
 # --------------------------------------------------------------------------------
-# Runs every start hook in name order; a hook that fails or is not executable stops the start
+# Runs every start hook in name order; any entry that is not an executable file stops the start
 # --------------------------------------------------------------------------------
 # The hooks run after the checks above and before the command. Names sort as text, so hooks
-# use two-digit prefixes (10-, 20-).
+# use two-digit prefixes (10-, 20-). Folders are skipped; every other entry must be an
+# executable regular file, so a dangling link, a fifo or a socket is refused, not skipped.
 run_start_hooks() {
   local hook
 
   for hook in "$hookDir"/*; do
-    if [ ! -f "$hook" ]; then
+    # Only the unmatched glob of an empty folder is neither present nor a link.
+    if [ ! -e "$hook" ] && [ ! -L "$hook" ]; then
       continue
+    fi
+
+    if [ -d "$hook" ]; then
+      continue
+    fi
+
+    if [ ! -f "$hook" ]; then
+      echo "[sbx] ERROR: start hook $hook is not a regular file; the container was not started." >&2
+      exit 1
     fi
 
     if [ ! -x "$hook" ]; then
