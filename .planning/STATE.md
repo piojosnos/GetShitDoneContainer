@@ -124,6 +124,7 @@ None yet.
 - Phase 01.1 inserted after Phase 1: Best-practices bundle baked into the image (stopgap) (URGENT)
 - Phase 02.1 inserted after Phase 2: Best-practices from git, editable from any sandbox
 - Phase 6 added: Automated checks (CI): run tests/guard.sh on every PR push, from the PR #1 review
+- Phase 01.3 inserted after Phase 1.2: Shell script layout (banners, functions, entry point in every script), from the PR #9 review
 
 ## Deferred Items
 

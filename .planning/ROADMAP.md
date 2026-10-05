@@ -15,6 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Two-Mount Claude Sandbox** - A Claude sandbox that runs on the Mac with code and state in separate host folders, a visible image home, and a login that survives rebuilds (completed 2026-10-04)
 - [x] **Phase 1.1: Automated host tests** (INSERTED) - One unattended command on the Mac runs every automatable host check (H-00 to H-13) with a PASS/FAIL line each; login, resume and doctor are a short manual pass with helper scripts (completed 2026-10-04)
 - [ ] **Phase 1.2: Best-practices bundle baked into the image (stopgap)** (INSERTED) - New sandboxes start with the user's skills, standing rules, and shared memories installed, taken from files in this repo
+- [ ] **Phase 1.3: Shell script layout** (INSERTED) - Every shell script gets section banners, functions and an entry point, with no change in behaviour
 - [ ] **Phase 2: Pinned Toolchain, GSD, and ccusage** - Every tool is baked in at a version pinned in `versions.env`, the image's GSD wins over persisted state, and `ccusage` reports real usage
 - [ ] **Phase 2.1: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs
 - [ ] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login
@@ -111,6 +112,21 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [x] 01.2-06-PLAN.md: H-18 fake-API proof of on-demand language rules and the deny under bypass (last, droppable)
+
+### Phase 01.3: Shell script layout (INSERTED)
+
+**Goal**: Every shell script in the repo follows the bundle's script layout rule: an 80-column banner before each logical section, longer sections moved into functions, and a `Main / Entry Point` banner over a short list of calls at the end. Behaviour does not change. From the PR #9 review.
+**Depends on**: Phase 1.2 (it adds the layout rule to `best-practices/rules/shell.md` and converts the scripts that phase added)
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. Every shell script outside the old layout (`base/sbx-entrypoint`, `tests/guard.sh`, `tests/host-selftest.sh`, `tests/host/lib.sh`, `tests/host/run-all.sh`, the older host checks and manual helpers) has the banners, functions and entry point the rule describes.
+  2. Output, exit codes and behaviour are unchanged: `tests/guard.sh`, `tests/host-selftest.sh` and `tests/bundle-selftest.sh` pass with the same PASS counts, and `tests/host/run-all.sh` passes on the Mac.
+  3. The scripts still run on macOS bash 3.2 with BSD tools.
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 01.3 to break down)
 
 ### Phase 2: Pinned Toolchain, GSD, and ccusage
 
@@ -211,6 +227,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 1. Two-Mount Claude Sandbox | 4/4 | Complete    | 2026-10-04 |
 | 1.1. Automated host tests | 4/4 | Complete    | 2026-10-04 |
 | 1.2. Best-practices bundle baked into the image (stopgap) | 6/6 | In Progress|  |
+| 1.3. Shell script layout | 0/TBD | Not started | - |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
