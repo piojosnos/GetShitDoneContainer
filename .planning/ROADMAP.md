@@ -126,7 +126,7 @@ Plans:
   3. The scripts still run on macOS bash 3.2 with BSD tools.
   4. `base/sbx-entrypoint` stops the start with `[sbx] ERROR` when a start hook exists but is not executable, instead of skipping it (review WR-04; accepted risk AR-01 in `01.2-SECURITY.md`), with a self-test case.
 
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans executed
 
 Plans:
 **Wave 1**
@@ -139,7 +139,7 @@ Plans:
 - [x] 01.3-06-PLAN.md: Entrypoint stops on a non-executable start hook, with its self-test; SANDBOX.md and Dockerfile wording
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 01.3-05-PLAN.md: Manual helpers on lib-manual.sh; phase gate (lint clean, output identical); Mac run
+- [x] 01.3-05-PLAN.md: Manual helpers on lib-manual.sh; phase gate (lint clean, output identical); Mac run
 
 ### Phase 01.4: Test suite refactor (INSERTED)
 
@@ -271,7 +271,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 1. Two-Mount Claude Sandbox | 4/4 | Complete    | 2026-10-04 |
 | 1.1. Automated host tests | 4/4 | Complete    | 2026-10-04 |
 | 1.2. Best-practices bundle baked into the image (stopgap) | 6/6 | Complete    | 2026-10-05 |
-| 1.3. Shell script layout | 5/6 | In Progress|  |
+| 1.3. Shell script layout | 6/6 | In Progress|  |
 | 1.4. Test suite refactor | 0/TBD | Not started | - |
 | 1.5. Host test fixes | 0/TBD | Not started | - |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
