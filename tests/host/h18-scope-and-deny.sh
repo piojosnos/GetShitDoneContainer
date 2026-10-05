@@ -91,50 +91,48 @@ prepare_files() {
 }
 
 # --------------------------------------------------------------------------------
-# Checks the scope log and the deny results, then prints PASS or FAIL and exits
+# Checks the always-on rule loaded at once and the path-scoped rule only after the .sh read
 # --------------------------------------------------------------------------------
-check_and_report() {
-  local scopeLog controlText
-
-  set --
+check_scope_loading() {
+  local scopeLog
 
   scopeLog=$RUN/logs/h18-scope.log
 
   if ! grep -Fq 'step=0 always=yes' "$scopeLog"; then
-    set -- "$@" "the always-on rule is not in Claude's first request, or Claude never reached the fake API; log: $(tr '\n' ' ' <"$scopeLog") run output: $(head -c 300 "$RUN/logs/h18-scope-run.log" | tr '\n' ' ')"
+    add_problem "the always-on rule is not in Claude's first request, or Claude never reached the fake API; log: $(tr '\n' ' ' <"$scopeLog") run output: $(head -c 300 "$RUN/logs/h18-scope-run.log" | tr '\n' ' ')"
   fi
 
   if grep -Eq '^step=0 .* scoped=yes$' "$scopeLog"; then
-    set -- "$@" "the path-scoped rule loaded before any matching file was touched (shell.md is in the first request)"
+    add_problem "the path-scoped rule loaded before any matching file was touched (shell.md is in the first request)"
   elif ! grep -Eq '^step=[1-9][0-9]* .* scoped=yes$' "$scopeLog"; then
-    set -- "$@" "the path-scoped rule never loaded after Claude read h18/deep/probe.sh; log: $(tr '\n' ' ' <"$scopeLog")"
+    add_problem "the path-scoped rule never loaded after Claude read h18/deep/probe.sh; log: $(tr '\n' ' ' <"$scopeLog")"
   fi
+}
+
+# --------------------------------------------------------------------------------
+# Checks the managed deny refused edits and writes to synced files; counts only if the project edit went through
+# --------------------------------------------------------------------------------
+check_deny_held() {
+  local controlText
 
   controlText=$(cat "$RUN/hosttest/h18/control.txt" 2>/dev/null)
 
   if [ "$controlText" != "h18 control after" ]; then
-    set -- "$@" "the edit tool never ran, so the deny result proves nothing: h18/control.txt says '$controlText'; run output: $(head -c 300 "$RUN/logs/h18-deny-run.log" | tr '\n' ' ')"
-  else
-    if ! cmp -s "$bundleDir/rules/$alwaysRel" "$syncedDir/rules/$alwaysRel"; then
-      set -- "$@" "the synced rule state/claude/rules/$alwaysRel was changed by an edit that should have been refused"
-    fi
-
-    if [ -e "$syncedDir/rules/h18-planted.md" ]; then
-      set -- "$@" "a file was planted in state/claude/rules/h18-planted.md; the write should have been refused"
-    fi
-
-    if [ -e "$syncedDir/skills/$firstSkill/h18-planted.md" ]; then
-      set -- "$@" "a file was planted in state/claude/skills/$firstSkill/h18-planted.md; the write should have been refused"
-    fi
+    add_problem "the edit tool never ran, so the deny result proves nothing: h18/control.txt says '$controlText'; run output: $(head -c 300 "$RUN/logs/h18-deny-run.log" | tr '\n' ' ')"
+    return
   fi
 
-  if [ "$#" -gt 0 ]; then
-    fail H-18 "path-scoped loading or the managed deny is wrong in the real image" "$@"
-    exit 1
+  if ! cmp -s "$bundleDir/rules/$alwaysRel" "$syncedDir/rules/$alwaysRel"; then
+    add_problem "the synced rule state/claude/rules/$alwaysRel was changed by an edit that should have been refused"
   fi
 
-  pass H-18 "shell.md loaded only after a .sh read; edits and writes to synced files were refused under bypassPermissions; the project edit went through"
-  exit 0
+  if [ -e "$syncedDir/rules/h18-planted.md" ]; then
+    add_problem "a file was planted in state/claude/rules/h18-planted.md; the write should have been refused"
+  fi
+
+  if [ -e "$syncedDir/skills/$firstSkill/h18-planted.md" ]; then
+    add_problem "a file was planted in state/claude/skills/$firstSkill/h18-planted.md; the write should have been refused"
+  fi
 }
 
 # --------------------------------------------------------------------------------
@@ -144,4 +142,7 @@ pick_samples
 prepare_files
 run_scenario scope h18-scope.json
 run_scenario deny h18-deny.json
-check_and_report
+check_scope_loading
+check_deny_held
+report_check H-18 "path-scoped loading or the managed deny is wrong in the real image" \
+  "shell.md loaded only after a .sh read; edits and writes to synced files were refused under bypassPermissions; the project edit went through"

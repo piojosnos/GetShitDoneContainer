@@ -9,6 +9,7 @@
 # Needs: images built; the run folder (not the running sandbox)
 set -u
 . "$(dirname "$0")/lib.sh"
+. "$(dirname "$0")/lib-bundle.sh"
 host_init
 
 # --------------------------------------------------------------------------------
@@ -35,46 +36,33 @@ run_containers() {
 }
 
 # --------------------------------------------------------------------------------
-# Checks both starts, then prints PASS or FAIL and exits
+# Checks the offline start exited 0 and ran its command
 # --------------------------------------------------------------------------------
-check_and_report() {
-  local rulesDiff
-
-  set --
-
+check_offline_start() {
   if [ "$offlineStatus" -ne 0 ]; then
-    set -- "$@" "the offline start exited $offlineStatus; got: $(printf '%s\n' "$offlineOutput" | head -n 3 | tr '\n' ' ')"
+    add_problem "the offline start exited $offlineStatus; got: $(first_lines "$offlineOutput")"
   fi
 
   if [[ "$offlineOutput" != *"h17-command-ran"* ]]; then
-    set -- "$@" "the offline start did not run its command; got: $(printf '%s\n' "$offlineOutput" | head -n 3 | tr '\n' ' ')"
+    add_problem "the offline start did not run its command; got: $(first_lines "$offlineOutput")"
   fi
+}
 
-  rulesDiff=$(diff -r -x .DS_Store "$REPO_DIR/best-practices/rules" "$RUN/h17/state/claude/rules" 2>&1)
-
-  if [ "$?" -ne 0 ]; then
-    set -- "$@" "the offline start did not sync the rules: $(printf '%s\n' "$rulesDiff" | head -n 3 | tr '\n' ' ')"
-  fi
-
+# --------------------------------------------------------------------------------
+# Checks the failing start hook stopped the start with an error and never ran the command
+# --------------------------------------------------------------------------------
+check_failing_hook() {
   if [ "$brokenStatus" -eq 0 ]; then
-    set -- "$@" "a failing start hook must exit non-zero; the container exited 0"
+    add_problem "a failing start hook must exit non-zero; the container exited 0"
   fi
 
   if [[ "$brokenOutput" != *"[sbx] ERROR: start hook"* ]]; then
-    set -- "$@" "a failing start hook must print '[sbx] ERROR: start hook'; got: $(printf '%s\n' "$brokenOutput" | head -n 3 | tr '\n' ' ')"
+    add_problem "a failing start hook must print '[sbx] ERROR: start hook'; got: $(first_lines "$brokenOutput")"
   fi
 
   if [[ "$brokenOutput" == *"h17-command-ran"* ]]; then
-    set -- "$@" "the command ran although the start hook failed"
+    add_problem "the command ran although the start hook failed"
   fi
-
-  if [ "$#" -gt 0 ]; then
-    fail H-17 "the offline start or the failing-hook stop is wrong" "$@"
-    exit 1
-  fi
-
-  pass H-17 "starts and syncs with --network none; a failing start hook stops the start with [sbx] ERROR"
-  exit 0
 }
 
 # --------------------------------------------------------------------------------
@@ -82,4 +70,8 @@ check_and_report() {
 # --------------------------------------------------------------------------------
 require_run_folder
 run_containers
-check_and_report
+check_offline_start
+check_bundle_rules_synced "$RUN/h17/state/claude" "the offline start did not sync the rules"
+check_failing_hook
+report_check H-17 "the offline start or the failing-hook stop is wrong" \
+  "starts and syncs with --network none; a failing start hook stops the start with [sbx] ERROR"

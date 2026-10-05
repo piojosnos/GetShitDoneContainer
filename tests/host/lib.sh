@@ -300,3 +300,38 @@ print_next_block() {
     printf '  No run folder was created, so there is nothing to clean up.\n'
   fi
 }
+
+# --------------------------------------------------------------------------------
+# Collects a check's problems, then prints its PASS or FAIL line and exits
+# --------------------------------------------------------------------------------
+
+# Every message add_problem collected so far, in the order it was added.
+problemList=()
+
+# add_problem MESSAGE: keeps MESSAGE for report_check to print as a FAIL detail.
+add_problem() {
+  problemList+=("$1")
+}
+
+# report_check ID FAIL_SUMMARY PASS_TEXT: FAIL with every problem and exit 1; else PASS and exit 0.
+# The count is tested first: bash 3.2 with set -u treats an empty array as unbound.
+report_check() {
+  local checkId=$1
+  local failSummary=$2
+  local passText=$3
+
+  if [ "${#problemList[@]}" -gt 0 ]; then
+    fail "$checkId" "$failSummary" "${problemList[@]}"
+    exit 1
+  fi
+
+  pass "$checkId" "$passText"
+  exit 0
+}
+
+# first_lines TEXT [COUNT]: the first COUNT lines of TEXT (default 3) on one line, each followed by a space.
+first_lines() {
+  local lineCount=${2:-3}
+
+  printf '%s\n' "$1" | head -n "$lineCount" | tr '\n' ' '
+}

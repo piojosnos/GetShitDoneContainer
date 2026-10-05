@@ -15,20 +15,18 @@ require_test_sandbox H-14 || exit 1
 copyDir=$RUN/logs/h14-bundle-$$-$(date +%s)
 
 # --------------------------------------------------------------------------------
-# Copies the bundle out of the image and compares it with the repo; sets copyProblem
+# Copies the bundle out of the image and compares it with the repo
 # --------------------------------------------------------------------------------
 copy_bundle_out() {
   local diffOutput
 
-  copyProblem=""
-
   if ! docker cp "$CONTAINER:/opt/sbx/best-practices" "$copyDir" </dev/null >/dev/null 2>&1; then
-    copyProblem="docker cp could not copy /opt/sbx/best-practices out of $CONTAINER"
+    add_problem "docker cp could not copy /opt/sbx/best-practices out of $CONTAINER"
   else
     diffOutput=$(diff -r -x .DS_Store "$REPO_DIR/best-practices" "$copyDir" 2>&1)
 
     if [ "$?" -ne 0 ]; then
-      copyProblem="the bundle in the image differs from best-practices/ in the repo: $(printf '%s\n' "$diffOutput" | head -n 3 | tr '\n' ' ')"
+      add_problem "the bundle in the image differs from best-practices/ in the repo: $(first_lines "$diffOutput")"
     fi
   fi
 }
@@ -57,16 +55,10 @@ PROBE
 }
 
 # --------------------------------------------------------------------------------
-# Collects every problem found above, then prints PASS or FAIL and exits
+# Checks the owner and mode of the bundle, the hook folder, the hook and the managed settings
 # --------------------------------------------------------------------------------
-check_and_report() {
-  local expected expectedPath expectedMode ownerLine writableLines mountLines
-
-  set --
-
-  if [ -n "$copyProblem" ]; then
-    set -- "$@" "$copyProblem"
-  fi
+check_owners_and_modes() {
+  local expected expectedPath expectedMode ownerLine
 
   for expected in "/opt/sbx/best-practices 755" "/etc/sbx/start.d 755" "/etc/sbx/start.d/10-best-practices 755" "/etc/claude-code/managed-settings.json 644"; do
     expectedPath=${expected% *}
@@ -74,33 +66,44 @@ check_and_report() {
     ownerLine=$(printf '%s\n' "$probeOutput" | grep -F "OWNER $expectedPath ")
 
     if [ "$ownerLine" != "OWNER $expectedPath root:root $expectedMode" ]; then
-      set -- "$@" "$expectedPath is '${ownerLine#OWNER $expectedPath }' (owner:group mode); expected 'root:root $expectedMode'"
+      add_problem "$expectedPath is '${ownerLine#OWNER $expectedPath }' (owner:group mode); expected 'root:root $expectedMode'"
     fi
   done
+}
+
+# --------------------------------------------------------------------------------
+# Checks the sandbox user can write nothing under those folders
+# --------------------------------------------------------------------------------
+check_nothing_writable() {
+  local writableLines
 
   writableLines=$(printf '%s\n' "$probeOutput" | grep '^WRITABLE ')
 
   if [ -n "$writableLines" ]; then
-    set -- "$@" "the sandbox user can write: $(printf '%s\n' "$writableLines" | sed 's/^WRITABLE //' | head -n 3 | tr '\n' ' ')"
+    add_problem "the sandbox user can write: $(first_lines "$(printf '%s\n' "$writableLines" | sed 's/^WRITABLE //')")"
   fi
+}
+
+# --------------------------------------------------------------------------------
+# Checks no mount sits under those folders
+# --------------------------------------------------------------------------------
+check_no_mounts() {
+  local mountLines
 
   mountLines=$(printf '%s\n' "$probeOutput" | grep '^MOUNT ')
 
   if [ -n "$mountLines" ]; then
-    set -- "$@" "a mount sits under the bundle, hook or managed settings folders: $(printf '%s\n' "$mountLines" | sed 's/^MOUNT //' | head -n 3 | tr '\n' ' ')"
+    add_problem "a mount sits under the bundle, hook or managed settings folders: $(first_lines "$(printf '%s\n' "$mountLines" | sed 's/^MOUNT //')")"
   fi
+}
 
+# --------------------------------------------------------------------------------
+# Checks the managed settings parse as JSON
+# --------------------------------------------------------------------------------
+check_managed_settings_parse() {
   if ! printf '%s\n' "$probeOutput" | grep -Fxq 'JSON ok'; then
-    set -- "$@" "the managed settings in /etc/claude-code do not parse as JSON"
+    add_problem "the managed settings in /etc/claude-code do not parse as JSON"
   fi
-
-  if [ "$#" -gt 0 ]; then
-    fail H-14 "the bundle, the hook or the managed settings in the image are wrong" "$@"
-    exit 1
-  fi
-
-  pass H-14 "the bundle in the image equals the repo; bundle, hook and managed settings are root-owned, read-only to sandbox and outside every mount"
-  exit 0
 }
 
 # --------------------------------------------------------------------------------
@@ -108,4 +111,9 @@ check_and_report() {
 # --------------------------------------------------------------------------------
 copy_bundle_out
 probe_container
-check_and_report
+check_owners_and_modes
+check_nothing_writable
+check_no_mounts
+check_managed_settings_parse
+report_check H-14 "the bundle, the hook or the managed settings in the image are wrong" \
+  "the bundle in the image equals the repo; bundle, hook and managed settings are root-owned, read-only to sandbox and outside every mount"

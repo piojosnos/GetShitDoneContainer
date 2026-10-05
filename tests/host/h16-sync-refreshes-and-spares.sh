@@ -10,6 +10,7 @@
 # Needs: test sandbox running; stops and restarts it
 set -u
 . "$(dirname "$0")/lib.sh"
+. "$(dirname "$0")/lib-bundle.sh"
 host_init
 require_test_sandbox H-16 || exit 1
 
@@ -22,18 +23,9 @@ sentinelText="h16-$$-$(date +%s)"
 # Picks the first bundle skill and the first always-on rule to edit; stops if there is none
 # --------------------------------------------------------------------------------
 pick_samples() {
-  local skillDir ruleFileList ruleFile
+  local ruleFileList ruleFile
 
-  bundleSkillList=""
-
-  for skillDir in "$bundleDir"/skills/*/; do
-    if [ -d "$skillDir" ]; then
-      bundleSkillList="$bundleSkillList$(basename "$skillDir")
-"
-    fi
-  done
-
-  firstSkill=$(printf '%s' "$bundleSkillList" | sed -n 1p)
+  firstSkill=$(bundle_skill_names | sed -n 1p)
 
   firstRule=""
   ruleFileList=$(cd "$bundleDir/rules" && find . -maxdepth 1 -type f -name '*.md' | sed 's|^\./||' | sort)
@@ -84,61 +76,30 @@ restart_sandbox() {
 }
 
 # --------------------------------------------------------------------------------
-# Checks the bundle was refreshed and the user files spared, then prints PASS or FAIL and exits
+# Checks the stale rule and the old bundle skill are gone
 # --------------------------------------------------------------------------------
-check_and_report() {
-  local expectedList actualList userFile rulesDiff skillDir skillName skillDiff
-
-  set --
-
+check_stale_files_gone() {
   if [ -e "$syncedDir/rules/h16-stale.md" ]; then
-    set -- "$@" "state/claude/rules/h16-stale.md is still there after the restart"
+    add_problem "state/claude/rules/h16-stale.md is still there after the restart"
   fi
 
   if [ -e "$syncedDir/skills/h16-old-bundle-skill" ]; then
-    set -- "$@" "state/claude/skills/h16-old-bundle-skill is still there after the restart"
+    add_problem "state/claude/skills/h16-old-bundle-skill is still there after the restart"
   fi
+}
 
-  expectedList=$(printf '%s' "$bundleSkillList")
-  actualList=$(cat "$syncedDir/.best-practices-skills" 2>/dev/null)
-
-  if [ "$actualList" != "$expectedList" ]; then
-    set -- "$@" "state/claude/.best-practices-skills lists '$(printf '%s' "$actualList" | tr '\n' ' ')'; the bundle has '$(printf '%s' "$expectedList" | tr '\n' ' ')'"
-  fi
+# --------------------------------------------------------------------------------
+# Checks every planted user file still holds its sentinel
+# --------------------------------------------------------------------------------
+check_user_files_spared() {
+  local userFile
 
   for userFile in "$syncedDir/skills/h16-user-skill/SKILL.md" "$syncedDir/skills/gsd-h16-sample/SKILL.md" \
     "$memoryDir/h16-memory.md" "$syncedDir/CLAUDE.md"; do
     if ! grep -Fq "$sentinelText" "$userFile" 2>/dev/null; then
-      set -- "$@" "${userFile#"$RUN"/} is missing or changed after the restart"
+      add_problem "${userFile#"$RUN"/} is missing or changed after the restart"
     fi
   done
-
-  rulesDiff=$(diff -r -x .DS_Store "$bundleDir/rules" "$syncedDir/rules" 2>&1)
-
-  if [ "$?" -ne 0 ]; then
-    set -- "$@" "state/claude/rules differs from best-practices/rules: $(printf '%s\n' "$rulesDiff" | head -n 3 | tr '\n' ' ')"
-  fi
-
-  for skillDir in "$bundleDir"/skills/*/; do
-    if [ ! -d "$skillDir" ]; then
-      continue
-    fi
-
-    skillName=$(basename "$skillDir")
-    skillDiff=$(diff -r -x .DS_Store "$skillDir" "$syncedDir/skills/$skillName" 2>&1)
-
-    if [ "$?" -ne 0 ]; then
-      set -- "$@" "state/claude/skills/$skillName differs from best-practices/skills/$skillName: $(printf '%s\n' "$skillDiff" | head -n 3 | tr '\n' ' ')"
-    fi
-  done
-
-  if [ "$#" -gt 0 ]; then
-    fail H-16 "the restart did not refresh the bundle or did not spare the user's files" "$@"
-    exit 1
-  fi
-
-  pass H-16 "a restart removed the stale rule and skill, restored edited copies, and kept user skills, GSD skills, memories and CLAUDE.md"
-  exit 0
 }
 
 # --------------------------------------------------------------------------------
@@ -147,4 +108,10 @@ check_and_report() {
 pick_samples
 plant_files
 restart_sandbox
-check_and_report
+check_stale_files_gone
+check_bundle_skill_list "$syncedDir"
+check_user_files_spared
+check_bundle_rules_synced "$syncedDir"
+check_bundle_skills_synced "$syncedDir"
+report_check H-16 "the restart did not refresh the bundle or did not spare the user's files" \
+  "a restart removed the stale rule and skill, restored edited copies, and kept user skills, GSD skills, memories and CLAUDE.md"
