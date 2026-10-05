@@ -170,6 +170,42 @@ case_symlink_not_executable() {
 }
 
 # --------------------------------------------------------------------------------
+# Case: a link that points nowhere stops the start before a later hook
+# --------------------------------------------------------------------------------
+case_dangling_link_stops() {
+  local hooks=$WORK/dangling/hooks marker=$WORK/dangling/later-ran
+
+  echo '--- a link that points nowhere stops the start'
+  mkdir -p "$hooks"
+  ln -s "$WORK/dangling/missing" "$hooks/10-dangling"
+  write_hook "$hooks/20-later" "$marker" 0 755
+
+  run_hooks "$hooks" "$WORK/dangling/out"
+
+  expect "dangling link: the hooks step exits 1" equals "$HOOKS_RC" 1
+  expect "dangling link: the error names the link" has_text "$WORK/dangling/out" "[sbx] ERROR: start hook $hooks/10-dangling is not a regular file; the container was not started."
+  expect "dangling link: the later hook never ran" test ! -e "$marker"
+}
+
+# --------------------------------------------------------------------------------
+# Case: a fifo stops the start before a later hook, without hanging
+# --------------------------------------------------------------------------------
+case_fifo_stops() {
+  local hooks=$WORK/fifo/hooks marker=$WORK/fifo/later-ran
+
+  echo '--- a fifo stops the start'
+  mkdir -p "$hooks"
+  mkfifo "$hooks/10-fifo"
+  write_hook "$hooks/20-later" "$marker" 0 755
+
+  run_hooks "$hooks" "$WORK/fifo/out"
+
+  expect "fifo: the hooks step exits 1" equals "$HOOKS_RC" 1
+  expect "fifo: the error names the fifo" has_text "$WORK/fifo/out" "[sbx] ERROR: start hook $hooks/10-fifo is not a regular file; the container was not started."
+  expect "fifo: the later hook never ran" test ! -e "$marker"
+}
+
+# --------------------------------------------------------------------------------
 # Case: sourcing the script runs no start step
 # --------------------------------------------------------------------------------
 case_sourcing_runs_nothing() {
@@ -225,6 +261,8 @@ case_failing_hook_stops
 case_folder_and_dotfile_skipped
 case_empty_folder
 case_symlink_not_executable
+case_dangling_link_stops
+case_fifo_stops
 case_sourcing_runs_nothing
 case_direct_run_checks
 report_and_exit
