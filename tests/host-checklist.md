@@ -92,7 +92,7 @@ bash tests/host/manual/h19-bundle-behaviour.sh
 - **H-15 fails after a Claude Code pin change:** the format of `/context` may have changed. Compare with what `manual/h19-bundle-behaviour.sh` shows before suspecting the bundle.
 - **H-15 and a login:** H-15 runs Claude without a login, so `state/claude/.claude.json` exists before `h07-login.sh` runs. The login proof in `h07-login.sh` is `.credentials.json` and `claude auth status`.
 - **H-18 fails after a Claude Code pin change:** H-18 follows the wire format of the pinned Claude through a small fake API.
-  - Run `bash tests/bundle-selftest.sh` in the dev sandbox first. If it fails too, the fake API needs updating, not the image.
+  - Run `bash tests/selftest/bundle/run-all.sh` in the dev sandbox first. If it fails too, the fake API needs updating, not the image.
   - If only H-18 fails, `manual/h19-bundle-behaviour.sh` still covers both behaviours by hand.
   - To drop H-18, delete its script, its entry in `run-all.sh` and its cases in `host-selftest.sh`. No other check depends on it.
 - **After the managed settings landed:** run `manual/h13-doctor.sh` once to see that `claude doctor` still reports updates disabled.

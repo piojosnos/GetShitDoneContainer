@@ -248,7 +248,7 @@ host_tests_have_no_planning_ids() {
 # best-practices/ is exempt: its rules quote such references as examples of what not to write, and
 # the merged skill reads a GSD roadmap.
 sandbox_code_has_no_planning_ids() {
-  nowhere_matches "$PLANNING_ID_REGEX|\bBP-0[0-9]\b" $SANDBOX_FILES claude/start.d/* claude/managed-settings.json .dockerignore SANDBOX.md tests/host-checklist.md tests/bundle-selftest.sh
+  nowhere_matches "$PLANNING_ID_REGEX|\bBP-0[0-9]\b" $SANDBOX_FILES claude/start.d/* claude/managed-settings.json .dockerignore SANDBOX.md tests/host-checklist.md tests/selftest/bundle/*.sh
 }
 
 # Only the test sandbox is named: container sbx-hosttest, images sbx-base and sbx-claude. The old
