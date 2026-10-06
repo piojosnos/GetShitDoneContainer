@@ -1,0 +1,1 @@
+No external API integration: the phase restructures the test suites into folders and moves the fake docker into its own file; the only "API" in scope is the existing local fake of the Anthropic API (tests/host/support/fake-claude-api.js), a test double that stays unchanged apart from its header comment.

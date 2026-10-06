@@ -152,10 +152,32 @@ Plans:
   3. `tests/host-selftest.sh`, `tests/bundle-selftest.sh` and `tests/guard.sh` are split into logical units (one file per check group, a shared helpers library, a short runner), follow the script layout rule, and reuse `tests/host/lib.sh` and `tests/host/lib-bundle.sh` where they fit.
   4. Every check that runs today still runs and still catches what it catches today (the deliberately broken cases still fail), and `tests/host/run-all.sh` passes on the Mac.
 
-**Plans:** 0 plans
+**Plans:** 8 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 01.4 to break down)
+**Wave 1**
+- [ ] 01.4-01-PLAN.md: Tracer: proof harness, shared self-test library, entrypoint suite as a folder (byte-identical)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 01.4-02-PLAN.md: Bundle self-test as a folder of seven groups; H-18 and fake API headers point at it
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 01.4-03-PLAN.md: Slim fake docker in its own file (proven equivalent), host self-test folder, first eight checks
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 01.4-04-PLAN.md: Host self-test: restart chain, library units, H-06, H-14, H-15
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 01.4-05-PLAN.md: New end-of-run text with its cases, last host groups, old script removed, mutation proof
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 01.4-06-PLAN.md: Guard as a folder of seven rule groups; moved path lists proven by planted violations
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 01.4-07-PLAN.md: Checklist and SANDBOX.md wording; roadmap and requirements text (separate planning branch)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 01.4-08-PLAN.md: Final gate, then the Mac run of tests/host/run-all.sh (checkpoint)
 
 ### Phase 01.5: Host test fixes (INSERTED)
 
