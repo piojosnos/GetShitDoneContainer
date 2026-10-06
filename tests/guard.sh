@@ -12,7 +12,7 @@ cd "$(dirname "$0")/.." || exit 1
 BASE=base/Dockerfile
 CLAUDE=claude/Dockerfile
 COMPOSE=compose.yml
-ENTRY=base/sbx-entrypoint
+ENTRY="base/sbx-entrypoint base/sbx-start-lib.sh"
 DOCKERFILES="$BASE $CLAUDE"
 SANDBOX_FILES="$BASE $CLAUDE $COMPOSE $ENTRY"
 

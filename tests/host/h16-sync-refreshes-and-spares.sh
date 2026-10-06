@@ -12,7 +12,6 @@ set -u
 . "$(dirname "$0")/lib.sh"
 . "$(dirname "$0")/lib-bundle.sh"
 host_init
-require_test_sandbox H-16 || exit 1
 
 bundleDir=$REPO_DIR/best-practices
 syncedDir=$RUN/state/claude
@@ -20,7 +19,7 @@ memoryDir=$syncedDir/projects/-home-sandbox-workspace-hosttest/memory
 sentinelText="h16-$$-$(date +%s)"
 
 # --------------------------------------------------------------------------------
-# Picks the first bundle skill and the first always-on rule to edit; stops if there is none
+# Picks the first bundle skill and the first always-on rule to edit; FAIL and return 1 if there is none
 # --------------------------------------------------------------------------------
 pick_samples() {
   local ruleFileList ruleFile
@@ -38,7 +37,7 @@ pick_samples() {
 
   if [ -z "$firstSkill" ] || [ -z "$firstRule" ]; then
     fail H-16 "the repo bundle has no always-on rule or no skill to edit" "looked in $bundleDir"
-    exit 1
+    return 1
   fi
 }
 
@@ -58,21 +57,6 @@ plant_files() {
   printf '# %s\n' "$sentinelText" >"$syncedDir/CLAUDE.md"
   printf 'h16 hand edit\n' >>"$syncedDir/rules/$firstRule"
   printf 'h16 hand edit\n' >>"$syncedDir/skills/$firstSkill/SKILL.md"
-}
-
-# --------------------------------------------------------------------------------
-# Restarts the test sandbox with a compose down and up; stops if either fails
-# --------------------------------------------------------------------------------
-restart_sandbox() {
-  if ! compose_down >"$RUN/logs/h16-down.log" 2>&1; then
-    fail H-16 "compose down failed" "log: $RUN/logs/h16-down.log"
-    exit 1
-  fi
-
-  if ! compose_up; then
-    fail H-16 "compose up failed after the down" "log: $RUN/logs/compose-up.log"
-    exit 1
-  fi
 }
 
 # --------------------------------------------------------------------------------
@@ -105,9 +89,11 @@ check_user_files_spared() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
-pick_samples
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-16 || exit 1
+pick_samples || exit 1
 plant_files
-restart_sandbox
+restart_test_sandbox H-16 h16-down.log || exit 1
 check_stale_files_gone
 check_bundle_skill_list "$syncedDir"
 check_user_files_spared

@@ -11,22 +11,21 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
-require_test_sandbox H-18 || exit 1
 
 bundleDir=$REPO_DIR/best-practices
 syncedDir=$RUN/state/claude
 containerRoot=/home/sandbox/workspace
 
 # --------------------------------------------------------------------------------
-# Helpers
-# --------------------------------------------------------------------------------
-
 # first_heading FILE: prints the first "# " heading line of FILE without the "# ".
+# --------------------------------------------------------------------------------
 first_heading() {
   grep -m 1 '^# ' "$1" | sed 's/^# //'
 }
 
+# --------------------------------------------------------------------------------
 # run_scenario NAME SCRIPTFILE: runs Claude against the fake API inside the test container.
+# --------------------------------------------------------------------------------
 run_scenario() {
   local scenarioName=$1
   local scriptFile=$2
@@ -138,6 +137,8 @@ check_deny_held() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-18 || exit 1
 pick_samples
 prepare_files
 run_scenario scope h18-scope.json

@@ -53,7 +53,7 @@ What each check proves:
 | H-14 | The image holds the bundle, equal to the repo; owners, modes and no mount are right; the managed settings parse | `h14-bundle-in-image.sh` | automatic |
 | H-15 | Rules and skills are synced and equal to the repo; Claude lists the always-on rules and the skills, not the path-scoped rules | `h15-bundle-synced-and-visible.sh` | automatic |
 | H-16 | A restart refreshes the bundle and keeps user skills, GSD skills, memories and `CLAUDE.md` | `h16-sync-refreshes-and-spares.sh` | automatic |
-| H-17 | A start works with networking off; a failing start hook stops the start | `h17-start-offline-and-failing-hook.sh` | automatic |
+| H-17 | A start works with networking off; a failing hook, a hook file that is not executable and a dangling hook link each stop the start | `h17-start-offline-and-failing-hook.sh` | automatic |
 | H-18 | In the real image, a path-scoped rule loads only after Claude reads a matching file, and the managed deny refuses edits to synced files under `bypassPermissions`; no login or network needed | `h18-scope-and-deny.sh` | automatic |
 | H-19 | Skills in Claude, a rule followed, a language rule on demand, a refused edit, the managed settings source | `manual/h19-bundle-behaviour.sh` | manual only |
 | Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |

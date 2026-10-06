@@ -10,7 +10,6 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
-require_test_sandbox H-14 || exit 1
 
 copyDir=$RUN/logs/h14-bundle-$$-$(date +%s)
 
@@ -109,6 +108,8 @@ check_managed_settings_parse() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-14 || exit 1
 copy_bundle_out
 probe_container
 check_owners_and_modes

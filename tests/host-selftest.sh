@@ -44,8 +44,11 @@ cat >"$WORK/bin/docker" <<'SHIM'
 # user can write in the bundle), FAKE_BUNDLE_MOUNT (a mount sits under /opt/sbx), FAKE_MANAGED_BAD
 # (the managed settings do not parse), FAKE_SCOPE_EAGER (the fake H-18 scope run shows the path-scoped
 # rule in the first request), FAKE_DENY_BROKEN (the fake H-18 deny run changes the first always-on
-# rule and plants a file), FAKE_H18_TOOLS_OFF (the fake H-18 deny run never edits the project file).
+# rule and plants a file), FAKE_H18_TOOLS_OFF (the fake H-18 deny run never edits the project file),
+# FAKE_HOOK_DIR_IGNORED (a run with its own folder over /etc/sbx/start.d skips the hook step).
 # Compose up and a run with --network none execute the real start hook, as the real entrypoint does.
+# A run that mounts its own folder over /etc/sbx/start.d runs the real entrypoint hook step on that
+# folder instead of the bundle sync.
 # State lives in FAKE_STATE; every call is logged to FAKE_LOG.
 printf 'ENV SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
   "${SBX_NAME-unset}" "${SBX_DIR-unset}" "${COMPOSE_PROJECT_NAME-unset}" "$*" >>"$FAKE_LOG"
@@ -242,17 +245,34 @@ case "${1:-}" in
           exit 1
         fi
         mountSource=""
+        hookSource=""
         lastArg=""
         for runArg in "$@"; do
           case "$runArg" in
             type=bind,source=*)
-              mountSource=${runArg#type=bind,source=}
-              mountSource=${mountSource%%,target=*}
+              mountTarget=${runArg#*,target=}
+              mountTarget=${mountTarget%,readonly}
+              mountPath=${runArg#type=bind,source=}
+              mountPath=${mountPath%%,target=*}
+              if [ "$mountTarget" = /etc/sbx/start.d ]; then
+                hookSource=$mountPath
+              else
+                mountSource=$mountPath
+              fi
               ;;
           esac
           lastArg=$runArg
         done
-        if [ "$hookBroken" = 0 ]; then
+        if [ -n "$hookSource" ]; then
+          if [ "${FAKE_HOOK_DIR_IGNORED:-0}" != 1 ]; then
+            hookOutput=$( ( . "$FAKE_REPO/base/sbx-start-lib.sh"; hookDir=$hookSource; run_start_hooks ) 2>&1 </dev/null )
+            hookStatus=$?
+            if [ "$hookStatus" -ne 0 ]; then
+              printf '%s\n' "${hookOutput//"$hookSource"//etc/sbx/start.d}" >&2
+              exit 1
+            fi
+          fi
+        elif [ "$hookBroken" = 0 ]; then
           mkdir -p "$mountSource/state/claude"
           if ! SBX_BUNDLE_DIR="$FAKE_REPO/best-practices" CLAUDE_CONFIG_DIR="$mountSource/state/claude" \
             bash "$FAKE_REPO/claude/start.d/10-best-practices"; then
@@ -980,7 +1000,14 @@ expect "H-17: prints PASS: H-17" has_text "$WORK/out.h17" "PASS: H-17"
 expect "H-17: the offline start synced the rules into its own folder"   diff -r -q "$REPO/best-practices/rules" "$FIXTURE/h17/state/claude/rules"
 expect "H-17: the test sandbox state was not touched" test ! -e "$FIXTURE/state/claude"
 sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.h17"
-expect "H-17: both containers run with --rm, no network, no capabilities, no new privileges"   equals "$(grep -c '^run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true ' "$WORK/args.h17")" "2"
+expect "H-17: all four containers run with --rm, no network, no capabilities, no new privileges"   equals "$(grep -c '^run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true ' "$WORK/args.h17")" "4"
+expect "H-17: all four containers mount the run folder as the workspace"   equals "$(grep -F -c "type=bind,source=$FIXTURE/h17,target=/home/sandbox/workspace" "$WORK/args.h17")" "4"
+expect "H-17: two containers mount their own hook folder read-only over the image hooks"   equals "$(grep -F -c ",target=/etc/sbx/start.d,readonly" "$WORK/args.h17")" "2"
+expect "H-17: the hook folders sit under the run folder"   equals "$(grep -F -c "source=$FIXTURE/h17/hooks-" "$WORK/args.h17")" "2"
+expect "H-17: the not-executable hook is a file without the execute bit" test -f "$FIXTURE/h17/hooks-not-executable/10-not-executable"
+expect "H-17: the not-executable hook has no execute bit" test ! -x "$FIXTURE/h17/hooks-not-executable/10-not-executable"
+expect "H-17: the dangling hook is a link" test -L "$FIXTURE/h17/hooks-dangling/10-dangling"
+expect "H-17: the dangling hook link points nowhere" test ! -e "$FIXTURE/h17/hooks-dangling/10-dangling"
 expect "H-17: only the failing container gets a broken config folder"   equals "$(grep -c 'CLAUDE_CONFIG_DIR=/proc/no-such-dir' "$WORK/args.h17")" "1"
 run_standalone "$WORK/out.h17.offline" h17-start-offline-and-failing-hook.sh FAKE_OFFLINE_FAIL=1
 expect "H-17: an offline start that fails fails the check" equals "$CHECK_RC" "1"
@@ -988,6 +1015,10 @@ expect "H-17: the offline start is named" has_text "$WORK/out.h17.offline" "offl
 run_standalone "$WORK/out.h17.ignored" h17-start-offline-and-failing-hook.sh FAKE_HOOK_IGNORED=1
 expect "H-17: a failing hook that does not stop the start fails the check" equals "$CHECK_RC" "1"
 expect "H-17: the command that ran is reported" has_text "$WORK/out.h17.ignored" "command ran"
+run_standalone "$WORK/out.h17.hookdir" h17-start-offline-and-failing-hook.sh FAKE_HOOK_DIR_IGNORED=1
+expect "H-17: hook folders that do not stop the start fail the check" equals "$CHECK_RC" "1"
+expect "H-17: the not-executable hook is named" has_text "$WORK/out.h17.hookdir" "is not executable"
+expect "H-17: the dangling hook is named" has_text "$WORK/out.h17.hookdir" "is not a regular file"
 reset_state
 FIXTURE=""
 run_standalone "$WORK/out.h17.none" h17-start-offline-and-failing-hook.sh

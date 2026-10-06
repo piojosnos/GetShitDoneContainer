@@ -10,7 +10,6 @@ set -u
 . "$(dirname "$0")/lib.sh"
 . "$(dirname "$0")/lib-bundle.sh"
 host_init
-require_test_sandbox H-15 || exit 1
 
 bundleDir=$REPO_DIR/best-practices
 syncedDir=$RUN/state/claude
@@ -47,6 +46,8 @@ check_claude_view() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-15 || exit 1
 check_bundle_rules_synced "$syncedDir"
 check_bundle_skills_synced "$syncedDir"
 check_bundle_skill_list "$syncedDir"

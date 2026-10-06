@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# The container start steps, as functions: the mount and folder checks, the state folders and
+# the start hooks.
+# - A library: it defines variables and functions and runs nothing. base/sbx-entrypoint
+#   sources it from its own folder and runs the steps; the self-tests source it to call them.
+# - Sets no shell options; the entrypoint sets set -eu before sourcing it.
+# - Every step prints its [sbx] ERROR line and returns 1 on a failure; the entrypoint decides to stop.
+
+ws=/home/sandbox/workspace
+state=$ws/state
+hookDir=/etc/sbx/start.d
+
+# --------------------------------------------------------------------------------
+# is_mount PATH: true when PATH is a mount point.
+# --------------------------------------------------------------------------------
+# Field 5 of /proc/self/mountinfo is the mount point; no util-linux "mountpoint" needed.
+is_mount() { awk -v p="$1" '$5==p { f=1 } END { exit !f }' /proc/self/mountinfo; }
+
+# --------------------------------------------------------------------------------
+# start_error MESSAGE: prints the error and how to start the sandbox.
+# --------------------------------------------------------------------------------
+start_error() {
+  echo "[sbx] ERROR: $1" >&2
+  echo "[sbx]        Start the sandbox with 'docker compose up' (see SANDBOX.md)." >&2
+}
+
+# --------------------------------------------------------------------------------
+# Checks the workspace is a writable mount and SBX_NAME is set; prints the error and returns 1 if not
+# --------------------------------------------------------------------------------
+check_workspace_mount() {
+  is_mount "$ws" || { start_error "$ws is not a bind mount; its data would be lost on recreate."; return 1; }
+  [ -w "$ws" ] || { start_error "$ws is not writable by $(id -un)."; return 1; }
+  [ -n "${SBX_NAME:-}" ] || { start_error "SBX_NAME is not set."; return 1; }
+}
+
+# --------------------------------------------------------------------------------
+# Checks the project and state folders exist; prints the error and returns 1 if not
+# --------------------------------------------------------------------------------
+check_project_and_state_folders() {
+  [ -d "$ws/$SBX_NAME" ] || { start_error "$ws/$SBX_NAME (the project folder) is missing."; return 1; }
+  [ -d "$state" ] || { start_error "$state is missing."; return 1; }
+}
+
+# --------------------------------------------------------------------------------
+# Creates the state subfolders that are missing; returns 1 if one cannot be made
+# --------------------------------------------------------------------------------
+create_state_dirs() {
+  local stateFolder
+
+  # ${SBX_STATE_DIRS:-} is unquoted on purpose: one word per folder name.
+  for stateFolder in shell gh git ${SBX_STATE_DIRS:-}; do
+    mkdir -p "$state/$stateFolder" || return 1
+  done
+}
+
+# --------------------------------------------------------------------------------
+# Runs every start hook in name order; any entry that is not an executable file prints an error and returns 1
+# --------------------------------------------------------------------------------
+# The hooks run after the checks above and before the command. Names sort as text, so hooks
+# use two-digit prefixes (10-, 20-). Folders are skipped; every other entry must be an
+# executable regular file, so a dangling link, a fifo or a socket is refused, not skipped.
+run_start_hooks() {
+  local hook
+
+  for hook in "$hookDir"/*; do
+    # Only the unmatched glob of an empty folder is neither present nor a link.
+    if [ ! -e "$hook" ] && [ ! -L "$hook" ]; then
+      continue
+    fi
+
+    if [ -d "$hook" ]; then
+      continue
+    fi
+
+    if [ ! -f "$hook" ]; then
+      echo "[sbx] ERROR: start hook $hook is not a regular file; the container was not started." >&2
+      return 1
+    fi
+
+    if [ ! -x "$hook" ]; then
+      echo "[sbx] ERROR: start hook $hook is not executable; the container was not started." >&2
+      return 1
+    fi
+
+    if ! "$hook"; then
+      echo "[sbx] ERROR: start hook $hook failed; the container was not started." >&2
+      return 1
+    fi
+  done
+}

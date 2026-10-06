@@ -165,6 +165,7 @@ At start, the container refuses to run unless:
 After the checks, the start runs the image's start hooks (the bundle sync is one):
 
 - A failing hook stops the start, so a sandbox never runs with a half-synced bundle.
+- Any other entry in the hook folder stops the start too. A hook file that is not executable gives `[sbx] ERROR: start hook <path> is not executable`. Anything that is not a regular file (a link that points nowhere, a fifo, a socket) gives `[sbx] ERROR: start hook <path> is not a regular file`. A hook is never skipped silently; only folders and names that start with a dot are ignored.
 
 ### Image-only smoke tests
 
@@ -206,7 +207,7 @@ It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
 | `[sbx] ERROR: ... (the project folder) is missing` | Create it: `mkdir -p "$SBX_DIR/$SBX_NAME"`. Or `SBX_DIR` / `SBX_NAME` is mistyped. |
 | `claude --resume` shows nothing | Sessions are keyed by directory; start it from the same directory as before. |
 | A plain `docker run` is refused | Intended. Bypass the entrypoint, as in "Image-only smoke tests". |
-| The container stops right after `up` | Run `docker logs sbx-<name>`. The `[sbx] ERROR: start hook ... failed` line and the hook's own error above it say what broke. |
+| The container stops right after `up` | Run `docker logs sbx-<name>`. The `[sbx] ERROR: start hook ... failed` line and the hook's own error above it say what broke. If the line says `is not executable`, the image lost the hook's execute bit; rebuild the image. If it says `is not a regular file`, a hook link in the image points nowhere (or something that is not a file sits in the hook folder); rebuild the image. |
 | Claude refuses to edit a file under `~/.claude/rules` or a bundle skill | Intended. Edit `best-practices/` in this repo (see "Best-practices bundle"). |
 | A sandbox migrated from the old layout loads the same rules twice | Remove the `@AGENTS.md` and `@code-conventions.md` imports from `state/claude/CLAUDE.md`. |
 | Host check H-10 showed Docker creating the missing folder | Planned follow-up: an `env_file` sentinel file at the root of `SBX_DIR`, which makes Compose fail when the folder is missing. It changes the folder layout, so it waits for your approval. |

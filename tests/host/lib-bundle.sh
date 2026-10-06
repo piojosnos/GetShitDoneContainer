@@ -5,7 +5,9 @@
 # - Reads REPO_DIR, set by host_init. Deletes nothing.
 # - Host side code is stock bash 3.2 with BSD tools (macOS).
 
+# --------------------------------------------------------------------------------
 # bundle_skill_names: the bundle's skill names, one per line.
+# --------------------------------------------------------------------------------
 bundle_skill_names() {
   local skillDir
 
@@ -16,7 +18,9 @@ bundle_skill_names() {
   done
 }
 
+# --------------------------------------------------------------------------------
 # check_bundle_rules_synced CONFIG_DIR [PROBLEM_TEXT]: CONFIG_DIR/rules must equal best-practices/rules.
+# --------------------------------------------------------------------------------
 # PROBLEM_TEXT starts the message; the first lines of the diff follow it.
 check_bundle_rules_synced() {
   local configDir=$1
@@ -30,7 +34,9 @@ check_bundle_rules_synced() {
   fi
 }
 
+# --------------------------------------------------------------------------------
 # check_bundle_skills_synced CONFIG_DIR: each bundle skill folder must equal its copy in CONFIG_DIR/skills.
+# --------------------------------------------------------------------------------
 check_bundle_skills_synced() {
   local configDir=$1
   local skillDir skillName skillDiff
@@ -49,7 +55,9 @@ check_bundle_skills_synced() {
   done
 }
 
+# --------------------------------------------------------------------------------
 # check_bundle_skill_list CONFIG_DIR: CONFIG_DIR/.best-practices-skills must list exactly the bundle's skills.
+# --------------------------------------------------------------------------------
 check_bundle_skill_list() {
   local configDir=$1
   local expectedList actualList
