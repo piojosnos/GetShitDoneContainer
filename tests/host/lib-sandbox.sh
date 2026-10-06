@@ -66,7 +66,7 @@ compose_up() {
 
   if [ "$exitCode" -ne 0 ]; then
     printf 'compose up failed (exit %s); last lines of %s:\n' "$exitCode" "$logFile"
-    tail -n 20 "$logFile" | sed 's/^/    /'
+    print_log_tail "$logFile"
     printf 'If the log says the mount was denied, the run folder is not under a folder shared with Docker Desktop (Settings, Resources, File sharing).\n'
   fi
 

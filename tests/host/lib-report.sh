@@ -81,6 +81,13 @@ report_check() {
 }
 
 # --------------------------------------------------------------------------------
+# print_log_tail FILE: prints the last 20 lines of FILE, each indented by four spaces.
+# --------------------------------------------------------------------------------
+print_log_tail() {
+  tail -n 20 "$1" | sed 's/^/    /'
+}
+
+# --------------------------------------------------------------------------------
 # first_lines TEXT [COUNT]: the first COUNT lines of TEXT (default 3) on one line, each followed by a space.
 # --------------------------------------------------------------------------------
 first_lines() {

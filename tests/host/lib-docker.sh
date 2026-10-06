@@ -25,7 +25,7 @@ build_images() {
 
     if [ "$buildStatus" -ne 0 ]; then
       printf 'Build of sbx-%s:local failed. Log: %s\n' "$imageName" "$logFile"
-      tail -n 20 "$logFile" | sed 's/^/    /'
+      print_log_tail "$logFile"
       return 1
     fi
   done
