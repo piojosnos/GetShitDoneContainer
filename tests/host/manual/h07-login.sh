@@ -51,14 +51,7 @@ check_login_files() {
 # Checks claude auth status says logged in
 # --------------------------------------------------------------------------------
 check_auth_status() {
-  local authOutput
-
-  authOutput=$(in_container claude auth status)
-
-  if ! claude_logged_in "$authOutput"; then
-    add_problem "got: $(first_lines "$authOutput")"
-  fi
-
+  add_login_problem
   count_result H-07 "claude auth status does not show a login" \
     'claude auth status shows "loggedIn": true'
 }

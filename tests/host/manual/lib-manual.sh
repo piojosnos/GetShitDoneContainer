@@ -27,10 +27,25 @@ run_claude() {
 }
 
 # --------------------------------------------------------------------------------
-# claude_logged_in TEXT: succeeds when TEXT, the output of claude auth status, shows "loggedIn": true.
+# add_login_problem [HINT]: runs claude auth status in the test sandbox; when it does not show
+# "loggedIn": true, adds its first lines (and HINT) as problems and returns 1.
 # --------------------------------------------------------------------------------
-claude_logged_in() {
-  printf '%s\n' "$1" | grep -Eq '"loggedIn":[[:space:]]*true'
+add_login_problem() {
+  local authOutput
+
+  authOutput=$(in_container claude auth status)
+
+  if printf '%s\n' "$authOutput" | grep -Eq '"loggedIn":[[:space:]]*true'; then
+    return 0
+  fi
+
+  add_problem "got: $(first_lines "$authOutput")"
+
+  if [ "$#" -gt 0 ]; then
+    add_problem "$1"
+  fi
+
+  return 1
 }
 
 # --------------------------------------------------------------------------------

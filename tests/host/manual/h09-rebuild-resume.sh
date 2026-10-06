@@ -77,20 +77,12 @@ recreate_sandbox() {
 }
 
 # --------------------------------------------------------------------------------
-# Checks claude auth status still says logged in; stops if not
+# Checks claude auth status still says logged in; FAIL and return 1 if not
 # --------------------------------------------------------------------------------
 check_still_logged_in() {
-  local authOutput
-
-  authOutput=$(in_container claude auth status)
-
-  if ! claude_logged_in "$authOutput"; then
-    add_problem "got: $(first_lines "$authOutput")"
-    add_problem "if you have not logged in yet, run bash tests/host/manual/h07-login.sh first"
-  fi
-
+  add_login_problem "if you have not logged in yet, run bash tests/host/manual/h07-login.sh first"
   report_result H-09 "claude auth status does not show a login after the rebuild" \
-    'claude auth status still shows "loggedIn": true after the rebuild' || exit 1
+    'claude auth status still shows "loggedIn": true after the rebuild'
 }
 
 # --------------------------------------------------------------------------------
@@ -114,6 +106,6 @@ parse_arguments "$#" "${1:-}"
 require_test_sandbox H-09 || exit 1
 rebuild_images || exit 1
 recreate_sandbox || exit 1
-check_still_logged_in
+check_still_logged_in || exit 1
 resume_session
 exit_with_result
