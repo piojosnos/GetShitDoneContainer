@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # H-19 (attended): the bundle's skills, rules and edit protection, as Claude shows them.
-# - Needs a terminal. Run it after bash tests/host/run-all.sh and bash tests/host/manual/h07-login.sh,
-#   against the same test sandbox (sbx-hosttest). It finds the run folder from the container's mount.
+# - Needs a terminal, the test sandbox (sbx-hosttest) that bash tests/host/run-all.sh leaves running,
+#   and a Claude login (bash tests/host/manual/h07-login.sh makes one). It finds the run folder from
+#   the container's mount.
 # - Claude opens and you follow six numbered steps. Whether a skill is listed, a rule is followed, a
 #   language rule loads on demand and the managed settings show up are for you to judge.
 # - Automatic: after Claude exits, the copy of communication.md in the run folder must still equal

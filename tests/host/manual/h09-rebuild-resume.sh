@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # H-09 (attended): rebuild the images, recreate the test sandbox, and confirm the login and the
 # earlier Claude session survive.
-# - Needs a terminal. Run it after bash tests/host/manual/h07-login.sh, against the same test
-#   sandbox (sbx-hosttest). It finds the run folder from the container's mount.
+# - Needs a terminal and a Claude login in the test sandbox (sbx-hosttest); bash
+#   tests/host/manual/h07-login.sh makes one. It finds the run folder from the container's mount.
 # - Steps: rebuild sbx-base:local and sbx-claude:local (the real tags), take the sandbox down,
 #   bring it up, check claude auth status is still logged in, open claude --continue, then ask you
 #   whether the earlier session resumed. Nothing is deleted; the folders and the images stay.
