@@ -1,18 +1,18 @@
 ---
 gsd_state_version: "1.0"
 current_phase: "01.4"
-current_phase_name: test-suite-refactor
+current_phase_name: Test suite refactor (INSERTED)
 status: executing
-stopped_at: Phase 1.4 context gathered
-last_updated: "2026-10-06T18:02:26.915Z"
-last_activity: 2026-10-05
-last_activity_desc: Phase 01.3 complete, transitioned to Phase 01.4
-state_head: e8e72a248a42ce1c5aa22c673108849e174f3754
+stopped_at: Completed 01.4-01-PLAN.md
+last_updated: "2026-10-06T19:04:11.549Z"
+last_activity: 2026-10-06
+last_activity_desc: Phase 01.4 execution started
+state_head: 13bfd0f442b41976e969f0959eb544ca81487c21
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 28
-  completed_plans: 20
+  completed_plans: 21
   percent: 33
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-05)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 01.4: Test suite refactor (INSERTED)
+**Current focus:** Phase 01.4 — Test suite refactor (INSERTED)
 
 ## Current Position
 
-Phase: 01.4 (test-suite-refactor) — READY TO EXECUTE
-Plan: Not started
+Phase: 01.4 (Test suite refactor (INSERTED)) — EXECUTING
+Plan: 2 of 8
 Status: Ready to execute
-Last activity: 2026-10-05 — Phase 01.3 complete, transitioned to Phase 01.4
+Last activity: 2026-10-06 — Phase 01.4 execution started
 
 Progress: [███░░░░░░░] 33%
 
@@ -79,6 +79,7 @@ Progress: [███░░░░░░░] 33%
 | Phase 01.3 P04 | 15 min | 2 tasks | 6 files |
 | Phase 01.3 P06 | 13 min | 2 tasks | 4 files |
 | Phase 01.3 P05 | 12 min | 2 tasks | 5 files |
+| Phase 01.4 P01 | 5 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -124,6 +125,7 @@ Recent decisions affecting current work:
 - [Phase 01.3]: restart_test_sandbox lives in lib-sandbox.sh because H-08 and H-16 carried identical code and messages; H-09 and H-11 sentinel loops stay local
 - [Phase 01.3]: 01.3-06: the entrypoint stops at the first non-executable start hook (after earlier hooks ran), behind a BASH_SOURCE source guard; no env override of hookDir
 - [Phase 01.3]: 01.3-05: lib-manual.sh lives in tests/host/manual/ (the guard forbids read and tty flags in tests/host/*.sh); the attended helpers start with lib-manual.sh, require_terminal, then lib.sh and host_init
+- [Phase 01.4]: 01.4-01: entrypoint suite output is byte-identical to the old script; prove.sh uses exact mode for entrypoint and sorted case lines for guard, bundle and host; make_work_folder resolves the physical path only after the traps are installed
 
 ### Pending Todos
 
@@ -165,6 +167,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-06T04:26:15.475Z
-Stopped at: Phase 1.4 context gathered
-Resume file: .planning/phases/01.4-test-suite-refactor/01.4-CONTEXT.md
+Last session: 2026-10-06T19:04:11.442Z
+Stopped at: Completed 01.4-01-PLAN.md
+Resume file: None
