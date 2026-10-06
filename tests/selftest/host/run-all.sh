@@ -14,7 +14,7 @@ set -u
 # --------------------------------------------------------------------------------
 # Group programs, in run order
 # --------------------------------------------------------------------------------
-groupList="h00-compose-v2.sh h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh"
+groupList="h00-compose-v2.sh h02-claude-on-base.sh h03-variable-interpolation.sh h04-nonroot-user.sh h12-plain-run-refused-pin-installed.sh h01-native-arch.sh h05-workspace-and-home.sh h13-env-and-no-self-update.sh"
 
 # --------------------------------------------------------------------------------
 # Main / Entry Point

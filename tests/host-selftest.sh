@@ -726,68 +726,6 @@ expect "runner: a failed up exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a failed up prints FAIL: SETUP" has_text "$WORK/out.up" "FAIL: SETUP"
 expect "runner: a failed up marks the sandbox checks not run" has_text "$WORK/out.up" "NOT RUN: h04-nonroot-user.sh"
 
-echo "--- H-04 on its own"
-reset_state
-FIXTURE=""
-run_standalone "$WORK/out.h04.none" h04-nonroot-user.sh
-expect "H-04: no test sandbox fails" equals "$CHECK_RC" "1"
-expect "H-04: no test sandbox says to run run-all.sh" has_text "$WORK/out.h04.none" "run-all.sh"
-make_fixture_run
-run_standalone "$WORK/out.h04.ok" h04-nonroot-user.sh
-expect "H-04: the test sandbox passes" equals "$CHECK_RC" "0"
-run_standalone "$WORK/out.h04.foreign" h04-nonroot-user.sh FAKE_LABEL=other
-expect "H-04: a container with another label is refused" equals "$CHECK_RC" "1"
-
-echo "--- H-01 on its own"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h01" h01-native-arch.sh
-expect "H-01: matching image and container architectures pass" equals "$CHECK_RC" "0"
-expect "H-01: prints PASS: H-01" has_text "$WORK/out.h01" "PASS: H-01"
-run_standalone "$WORK/out.h01.amd" h01-native-arch.sh FAKE_CLAUDE_ARCH=amd64
-expect "H-01: an amd64 image on an aarch64 daemon fails" equals "$CHECK_RC" "1"
-expect "H-01: the wrong image is named" has_text "$WORK/out.h01.amd" "sbx-claude:local"
-run_standalone "$WORK/out.h01.uname" h01-native-arch.sh FAKE_UNAME=x86_64
-expect "H-01: a container uname that differs from the daemon fails" equals "$CHECK_RC" "1"
-run_standalone "$WORK/out.h01.unknown" h01-native-arch.sh FAKE_ARCH=riscv64
-expect "H-01: an unknown daemon architecture fails" equals "$CHECK_RC" "1"
-printf 'WARNING: requested image platform does not match the detected host platform\n' >"$FIXTURE/logs/build-base.log"
-run_standalone "$WORK/out.h01.warn" h01-native-arch.sh
-expect "H-01: a platform mismatch warning in a build log fails" equals "$CHECK_RC" "1"
-expect "H-01: the warning log is named" has_text "$WORK/out.h01.warn" "build-base.log"
-
-echo "--- H-05 on its own"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h05" h05-workspace-and-home.sh
-expect "H-05: x.txt on the host, .bashrc and .local listed, sandbox owners pass" equals "$CHECK_RC" "0"
-expect "H-05: prints PASS: H-05" has_text "$WORK/out.h05" "PASS: H-05"
-expect "H-05: x.txt exists in the run folder" test -f "$FIXTURE/hosttest/x.txt"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h05.notouch" h05-workspace-and-home.sh FAKE_NO_TOUCH=1
-expect "H-05: a file that never reaches the host fails" equals "$CHECK_RC" "1"
-expect "H-05: the missing file is named" has_text "$WORK/out.h05.notouch" "x.txt"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h05.root" h05-workspace-and-home.sh FAKE_STAT_OWNER=root
-expect "H-05: a root owner fails" equals "$CHECK_RC" "1"
-expect "H-05: the root owner is shown" has_text "$WORK/out.h05.root" "root /home/sandbox/.local"
-
-echo "--- H-13 on its own"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h13" h13-env-and-no-self-update.sh
-expect "H-13: five variables, updates disabled and no share folder pass" equals "$CHECK_RC" "0"
-expect "H-13: prints PASS: H-13" has_text "$WORK/out.h13" "PASS: H-13"
-run_standalone "$WORK/out.h13.env" h13-env-and-no-self-update.sh FAKE_ENV_MISSING=HISTFILE
-expect "H-13: a missing variable fails" equals "$CHECK_RC" "1"
-expect "H-13: the missing variable is named" has_text "$WORK/out.h13.env" "HISTFILE"
-run_standalone "$WORK/out.h13.update" h13-env-and-no-self-update.sh FAKE_UPDATE_ON=1
-expect "H-13: an update that runs fails" equals "$CHECK_RC" "1"
-run_standalone "$WORK/out.h13.share" h13-env-and-no-self-update.sh FAKE_SHARE_EXISTS=1
-expect "H-13: an existing share folder fails" equals "$CHECK_RC" "1"
-
 echo "--- H-06 on its own"
 reset_state
 make_fixture_run
