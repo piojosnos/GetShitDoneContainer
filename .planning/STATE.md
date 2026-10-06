@@ -23,7 +23,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-06)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 01.5 - Host test fixes
+**Current focus:** Phase 01.5: Host test fixes
 
 ## Current Position
 
