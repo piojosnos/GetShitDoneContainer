@@ -12,7 +12,7 @@ set -u
 # --------------------------------------------------------------------------------
 # Group programs, in run order
 # --------------------------------------------------------------------------------
-groupList="supply-chain.sh planning-ids.sh"
+groupList="supply-chain.sh start.sh isolation.sh host-tests.sh planning-ids.sh"
 failCount=0
 
 # --------------------------------------------------------------------------------
