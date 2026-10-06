@@ -4,8 +4,8 @@
 # - Builds sbx-base:local and sbx-claude:local (the real tags). Images are never removed.
 # - Creates a throwaway sandbox named sbx-hosttest in a fresh temp folder. Real sandboxes
 #   are never touched, whatever SBX_NAME, SBX_DIR or COMPOSE_* hold in your terminal.
-# - Deletes nothing. At the end, pass or fail, it prints the manual pass commands and the
-#   cleanup command for you to run.
+# - Deletes nothing. At the end, pass or fail, it prints the cleanup command for you to run
+#   and where the diagnostic helpers are.
 # - SBXTEST_NO_CACHE=1 (optional) makes the rebuild check rebuild without the cache; slow.
 # - Usage, from anywhere: bash tests/host/run-all.sh   (exit 0 = every check passed)
 set -u
@@ -144,22 +144,19 @@ fatal() {
 }
 
 # --------------------------------------------------------------------------------
-# print_next_block: prints the manual pass commands and the cleanup command. Only prints.
+# print_next_block: prints the cleanup command and where the diagnostic helpers are. Only prints.
 # --------------------------------------------------------------------------------
 print_next_block() {
   printf '\nNext\n'
-  printf '  Manual pass (needs a terminal), in this order:\n'
-  printf '    bash %q\n' "${HOST_DIR:-}/manual/h07-login.sh"
-  printf '    bash %q\n' "${HOST_DIR:-}/manual/h09-rebuild-resume.sh"
-  printf '    bash %q\n' "${HOST_DIR:-}/manual/h13-doctor.sh"
-  printf '    bash %q\n' "${HOST_DIR:-}/manual/h19-bundle-behaviour.sh"
 
   if [ -n "${RUN:-}" ]; then
-    printf '  Cleanup when you are done. The run folder holds the Claude login after the manual pass:\n'
+    printf '  Cleanup when you are done. The run folder holds a Claude login if a helper logged in:\n'
     printf '    cd %q && SBX_NAME=hosttest SBX_DIR=%q docker compose down && rm -rf %q\n' "${REPO_DIR:-}" "$RUN" "$RUN"
   else
     printf '  No run folder was created, so there is nothing to clean up.\n'
   fi
+
+  printf '  If something looks wrong, see tests/host/manual/\n'
 }
 
 # --------------------------------------------------------------------------------

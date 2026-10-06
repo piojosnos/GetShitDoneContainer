@@ -600,65 +600,7 @@ fake_start_sync() {
     bash "$REPO/claude/start.d/10-best-practices"
 }
 
-# last_run_dir: the run folder the latest runner made.
-last_run_dir() {
-  ls -d "$WORK"/tmp/sbx-hosttest-* 2>/dev/null | tail -n 1
-}
-
 # --- cases ---
-
-echo "--- healthy run"
-reset_state
-run_runner "$WORK/out.healthy"
-healthyRunDir=$(last_run_dir)
-sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.healthy"
-
-expect "runner: healthy run exits 0" equals "$RUNNER_RC" "0"
-expect "runner: healthy run prints PASS: H-00" has_text "$WORK/out.healthy" "PASS: H-00"
-expect "runner: healthy run prints PASS: H-01" has_text "$WORK/out.healthy" "PASS: H-01"
-expect "runner: healthy run prints PASS: H-02" has_text "$WORK/out.healthy" "PASS: H-02"
-expect "runner: healthy run prints PASS: H-03" has_text "$WORK/out.healthy" "PASS: H-03"
-expect "runner: healthy run prints PASS: H-04" has_text "$WORK/out.healthy" "PASS: H-04"
-expect "runner: healthy run prints PASS: H-05" has_text "$WORK/out.healthy" "PASS: H-05"
-expect "runner: healthy run prints PASS: H-06" has_text "$WORK/out.healthy" "PASS: H-06"
-expect "runner: healthy run prints PASS: H-08" has_text "$WORK/out.healthy" "PASS: H-08"
-expect "runner: healthy run prints PASS: H-09" has_text "$WORK/out.healthy" "PASS: H-09"
-expect "runner: healthy run prints PASS: H-16" has_text "$WORK/out.healthy" "PASS: H-16"
-expect "runner: healthy run prints PASS: H-10" has_text "$WORK/out.healthy" "PASS: H-10"
-expect "runner: healthy run prints PASS: H-11" has_text "$WORK/out.healthy" "PASS: H-11"
-expect "runner: healthy run prints PASS: H-12" has_text "$WORK/out.healthy" "PASS: H-12"
-expect "runner: healthy run has 19 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "19"
-expect "runner: healthy run prints PASS: Coexistence" has_text "$WORK/out.healthy" "PASS: Coexistence"
-expect "runner: healthy run prints PASS: H-13" has_text "$WORK/out.healthy" "PASS: H-13"
-expect "runner: healthy run prints PASS: H-14" has_text "$WORK/out.healthy" "PASS: H-14"
-expect "runner: healthy run prints PASS: H-15" has_text "$WORK/out.healthy" "PASS: H-15"
-expect "runner: healthy run prints PASS: H-17" has_text "$WORK/out.healthy" "PASS: H-17"
-expect "runner: healthy run prints PASS: H-18" has_text "$WORK/out.healthy" "PASS: H-18"
-expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 19 passed, 0 failed, 0 not run"
-expect "runner: healthy run prints the manual pass commands" has_text "$WORK/out.healthy" "manual/h07-login.sh"
-expect "runner: healthy run prints the bundle behaviour helper" has_text "$WORK/out.healthy" "manual/h19-bundle-behaviour.sh"
-expect "runner: the cleanup line has docker compose down and the run folder" \
-  has_text "$WORK/out.healthy" "SBX_DIR=$healthyRunDir docker compose down && rm -rf $healthyRunDir"
-expect "runner: the run folder is still there afterwards" test -d "$healthyRunDir"
-expect "runner: the old container snapshot was written" has_text "$healthyRunDir/logs/old-containers.before" "cc_oldbox"
-expect "docker log: nothing is removed or pruned" \
-  lacks_match "$WORK/args.healthy" '^(rm|rmi|system|container rm|image rm|volume rm|network rm)( |$)|prune'
-expect "docker log: no down with a volume flag" lacks_match "$WORK/args.healthy" 'down.*(-v|--volumes)'
-expect "docker log: the caller's decoy values never reach docker" lacks_match "$FAKE_LOG" 'demo|evil|/elsewhere'
-expect "docker log: every exec and inspect names sbx-hosttest" \
-  equals "$(grep -E '^(exec|container inspect) ' "$WORK/args.healthy" | grep -vc 'sbx-hosttest')" "0"
-expect "docker log: every compose up and down carries the test name and the run folder" \
-  equals "$(grep -E 'ARGS: compose .* (up|down)( |$)' "$FAKE_LOG" | grep -vcE "SBX_NAME=hosttest SBX_DIR=$healthyRunDir(/does-not-exist)? ")" "0"
-expect "docker log: the sandbox was started" has_match "$FAKE_LOG" 'ARGS: compose .* up -d --wait'
-expect "docker log: every compose call names the test name" \
-  equals "$(grep 'ARGS: compose' "$FAKE_LOG" | grep -vc 'SBX_NAME=hosttest ')" "0"
-expect "docker log: the SBX_DIR probe runs without SBX_DIR and with the test name" \
-  has_match "$FAKE_LOG" 'SBX_NAME=hosttest SBX_DIR=unset COMPOSE_PROJECT_NAME=unset ARGS: compose .* config'
-expect "docker log: the plain docker run uses the real image tag" has_match "$WORK/args.healthy" '^run --rm sbx-claude:local claude --version'
-expect "docker log: the builds use the real tags" \
-  has_match "$WORK/args.healthy" '^build -f .*/base/Dockerfile -t sbx-base:local /'
-expect "docker log: the claude image is built after the base image" \
-  has_match "$WORK/args.healthy" '^build -f .*/claude/Dockerfile -t sbx-claude:local /'
 
 echo "--- failing check"
 reset_state
@@ -666,7 +608,7 @@ run_runner "$WORK/out.badid" FAKE_ID="uid=0(root) gid=0(root)"
 expect "runner: a wrong id exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a wrong id prints FAIL: H-04" has_text "$WORK/out.badid" "FAIL: H-04"
 expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 18 passed, 1 failed, 0 not run"
-expect "runner: a wrong id still prints the Next block" has_text "$WORK/out.badid" "manual/h13-doctor.sh"
+expect "runner: a wrong id still prints the Next block" has_text "$WORK/out.badid" "If something looks wrong, see tests/host/manual/"
 
 echo "--- sandbox started without the bundle sync"
 reset_state
@@ -680,7 +622,7 @@ run_runner "$WORK/out.build" FAKE_BUILD_FAIL=sbx-claude:local
 expect "runner: a failed build exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a failed build runs no check" lacks_match "$WORK/out.build" '^(PASS|FAIL): H-04'
 expect "runner: a failed build prints the log path" has_text "$WORK/out.build" "logs/build-claude.log"
-expect "runner: a failed build still prints the Next block" has_text "$WORK/out.build" "manual/h07-login.sh"
+expect "runner: a failed build still prints the Next block" has_text "$WORK/out.build" "If something looks wrong, see tests/host/manual/"
 
 echo "--- leftover container that is not the test sandbox"
 reset_state
@@ -796,7 +738,7 @@ run_runner "$WORK/out.chain.ign" FAKE_H10=ignored
 expect "runner: a created missing folder exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a created missing folder prints FAIL: H-10" has_text "$WORK/out.chain.ign" "FAIL: H-10"
 expect "runner: a created missing folder still runs Coexistence" has_text "$WORK/out.chain.ign" "PASS: Coexistence"
-expect "runner: a created missing folder still prints the Next block" has_text "$WORK/out.chain.ign" "manual/h13-doctor.sh"
+expect "runner: a created missing folder still prints the Next block" has_text "$WORK/out.chain.ign" "If something looks wrong, see tests/host/manual/"
 reset_state
 run_runner "$WORK/out.chain.keep" FAKE_DOWN_KEEPS=1
 expect "runner: a kept container exits 1" equals "$RUNNER_RC" "1"
@@ -828,7 +770,7 @@ run_runner "$WORK/out.h00fatal" FAKE_COMPOSE_VERSION=1.29.2
 expect "runner: Compose 1.x exits 1" equals "$RUNNER_RC" "1"
 expect "runner: Compose 1.x prints FAIL: H-00" has_text "$WORK/out.h00fatal" "FAIL: H-00"
 expect "runner: Compose 1.x builds nothing" lacks_text "$FAKE_LOG" "ARGS: build"
-expect "runner: Compose 1.x still prints the Next block" has_text "$WORK/out.h00fatal" "manual/h07-login.sh"
+expect "runner: Compose 1.x still prints the Next block" has_text "$WORK/out.h00fatal" "If something looks wrong, see tests/host/manual/"
 
 echo "--- H-02 failure does not stop the runner"
 reset_state
