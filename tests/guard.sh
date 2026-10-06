@@ -9,19 +9,7 @@
 set -u
 cd "$(dirname "$0")/.." || exit 1
 
-BASE=base/Dockerfile
-CLAUDE=claude/Dockerfile
-COMPOSE=compose.yml
-ENTRY="base/sbx-entrypoint base/sbx-start-lib.sh"
-DOCKERFILES="$BASE $CLAUDE"
-SANDBOX_FILES="$BASE $CLAUDE $COMPOSE $ENTRY"
-
-# The Mac host tests: every script, and the ones that must run unattended.
-HOST_FILES="tests/host/*.sh tests/host/manual/*.sh"
-HOST_UNATTENDED_FILES="tests/host/*.sh"
-
-# Internal planning references: decision IDs, test-plan IDs, phase numbers, planning documents.
-PLANNING_ID_REGEX='\bD-[0-9]{2}\b|\bHT-0[0-9]\b|Phase [0-9]|CONTEXT\.md|\.planning'
+. tests/guard/lib.sh
 
 # Used by old_layout_untouched: the old ClaudeCode/ layout as it is on main.
 # Remove both when the old layout is retired.
@@ -31,19 +19,6 @@ OLD_LAYOUT_COMMIT=304f80d1a0705d9ab668ef2ed4acd9fcf65060ac
 BUNDLE_HEADER='<!-- Source: best-practices/ in the GetShitDoneContainer repo. Each sandbox gets a fresh copy of this file at every container start, so edits to a copy are lost; change the source, then rebuild the image and restart. -->'
 
 # --- helpers ---
-
-# nowhere_matches REGEX FILE...: true if no line matches; prints the offending lines.
-nowhere_matches() {
-  local regex=$1; shift
-  local hits
-  hits=$(grep -En -- "$regex" "$@" 2>/dev/null)
-  [ -z "$hits" ] && return 0
-  echo "$hits" | sed 's/^/    /'
-  return 1
-}
-
-# has_line FILE LINE: true if FILE has a line exactly equal to LINE.
-has_line() { grep -Fxq -- "$2" "$1"; }
 
 # host_code_lines FILE...: every non-comment line of the files, as FILE:LINE:TEXT.
 host_code_lines() {
@@ -74,11 +49,6 @@ no_host_code_matches() {
 # bundle_files: every file under best-practices/, one per line (macOS Finder noise skipped).
 bundle_files() { find best-practices -type f ! -name .DS_Store | sort; }
 
-# frontmatter_of FILE: the lines between the opening and closing "---", when line 1 is "---".
-frontmatter_of() {
-  awk 'NR == 1 && $0 != "---" { exit } NR > 1 && $0 == "---" { exit } NR > 1 { print }' "$1"
-}
-
 # bundle_dash_hits FILE: lines of a Markdown file that use a dash as punctuation, as FILE:LINE: TEXT.
 # Skipped first: fenced blocks. Then removed from each line: inline code spans, comment delimiters,
 # one leading list bullet. A line that is only "---" (a frontmatter fence) counts as empty.
@@ -100,32 +70,9 @@ bundle_dash_hits() {
 
 # --- rules ---
 
-# GSD must come only from @opengsd/gsd-core: the old package was compromised.
-no_compromised_gsd_package() {
-  nowhere_matches 'get-shit-done-cc|gsd-build' $SANDBOX_FILES SANDBOX.md tests/host-checklist.md tests/host/*.sh
-}
-
 # The agent must not reach the Docker daemon or become root.
 no_docker_socket_or_sudo() {
   nowhere_matches 'docker\.sock' $COMPOSE && nowhere_matches '\bsudo\b' $DOCKERFILES
-}
-
-# Nothing is installed by piping a download into a shell (unverified code).
-no_pipe_to_shell_installers() {
-  nowhere_matches '(curl|wget)[^|]*\|[[:space:]]*(sudo[[:space:]]+)?(ba)?sh([[:space:]]|$)' $DOCKERFILES
-}
-
-# No floating versions: what is in the image changes only when a pin changes.
-no_floating_latest_versions() {
-  nowhere_matches ':latest|@latest' $SANDBOX_FILES
-}
-
-# Every tool version is an exact pin.
-versions_are_pinned() {
-  has_line $BASE 'FROM ubuntu:24.04' \
-    && grep -Eq '^ARG NODE_VERSION=[0-9]+\.[0-9]+\.[0-9]+$' $BASE \
-    && grep -Eq '^ARG GH_VERSION=[0-9]+\.[0-9]+\.[0-9]+$' $BASE \
-    && grep -Eq '^ARG CLAUDE_CODE_VERSION=[0-9]+\.[0-9]+\.[0-9]+$' $CLAUDE
 }
 
 # Nothing is installed when the container starts: the image is the only source of tools. This
@@ -237,18 +184,6 @@ host_checks_declare_dependencies() {
   done
 
   return "$ok"
-}
-
-# Internal planning IDs mean nothing to a reader of the scripts: keep them out.
-host_tests_have_no_planning_ids() {
-  nowhere_matches "$PLANNING_ID_REGEX" $HOST_FILES tests/host/support/* tests/selftest/host/*.sh tests/selftest/host/support/*
-}
-
-# The same holds for the sandbox code and docs: readers do not have the planning docs.
-# best-practices/ is exempt: its rules quote such references as examples of what not to write, and
-# the merged skill reads a GSD roadmap.
-sandbox_code_has_no_planning_ids() {
-  nowhere_matches "$PLANNING_ID_REGEX|\bBP-0[0-9]\b" $SANDBOX_FILES claude/start.d/* claude/managed-settings.json .dockerignore SANDBOX.md tests/host-checklist.md tests/selftest/bundle/*.sh
 }
 
 # Only the test sandbox is named: container sbx-hosttest, images sbx-base and sbx-claude. The old
@@ -532,11 +467,7 @@ managed_settings_cover_bundle() {
 
 FAILS=0
 for rule in \
-  no_compromised_gsd_package \
   no_docker_socket_or_sudo \
-  no_pipe_to_shell_installers \
-  no_floating_latest_versions \
-  versions_are_pinned \
   no_installs_at_container_start \
   start_hooks_have_two_digit_names \
   exactly_one_mount_and_not_over_home \
@@ -546,8 +477,6 @@ for rule in \
   host_tests_never_delete \
   host_tests_are_unattended \
   host_checks_declare_dependencies \
-  host_tests_have_no_planning_ids \
-  sandbox_code_has_no_planning_ids \
   host_tests_only_name_the_test_sandbox \
   bundle_is_plain_files_only \
   bundle_files_have_generated_header \
