@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Shared bundle checks for the host tests: does a synced config folder equal best-practices/?
-# - Sourced after lib.sh by the checks that need it; never run directly. Defines functions only.
+# - Sourced after lib.sh by the checks that need it and by the bundle self-test's lib.sh; never run directly.
+#   Defines functions only.
 # - Each check takes the synced config folder (a state/claude) and reports through add_problem.
-# - Reads REPO_DIR, set by host_init. Deletes nothing.
+# - Reads REPO_DIR, which host_init sets (the self-test sets it to the repo root itself). Deletes nothing.
 # - Host side code is stock bash 3.2 with BSD tools (macOS).
 
 # --------------------------------------------------------------------------------
