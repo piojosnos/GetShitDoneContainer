@@ -20,10 +20,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-05)
+See: .planning/PROJECT.md (updated 2026-10-06)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 01.4 — Test suite refactor (INSERTED)
+**Current focus:** Phase 01.5 - Host test fixes
 
 ## Current Position
 
@@ -32,7 +32,7 @@ Plan: Not started
 Status: Ready to plan
 Last activity: 2026-10-06 — Phase 01.4 complete, transitioned to Phase 01.5
 
-Progress: [████░░░░░░] 42%
+Progress: [████████████████████] 28/28 plans (100%)
 
 ## Performance Metrics
 
@@ -160,6 +160,8 @@ None yet.
 - [Phase 1.1]: Code review left 14 findings open (CR-01: run_timeout does not stop a docker call behind a shell function; WR-01..08 robustness). See 01.1-REVIEW-DISPOSITION.md
 - [Phase 1.2]: Code review left 13 findings open (WR-01..03 are bugs in the ported pr-reply and merged skills; WR-04 was fixed in Phase 1.3; WR-05 deny negative control fits Phase 1.4). See 01.2-REVIEW-DISPOSITION.md
 - [Phase 1.3]: Code review left 4 findings open (WR-02: run_timeout does not stop a shell function it wraps, same as the Phase 1.1 CR-01 and planned for Phase 1.5; IN-01..03 style and self-test coverage). See 01.3-REVIEW-DISPOSITION.md
+- [Phase 1.4]: Code review left 11 findings open (see 01.4-REVIEW-DISPOSITION.md). Follow-ups for Phase 1.5 or a quick task: WR-01 a group program missing from a run-all list never runs; WR-02 and WR-06 `nowhere_matches` and the `lacks_*` helpers fail open when a file is missing or unreadable; WR-05 SANDBOX.md overclaims what a passing `run-all.sh` proves
+- [Phase 1.4]: Open note: the user's Mac `git status` listed 10 files as modified in the code worktree while the sandbox shows it clean; cause pending
 
 ### Quick Tasks Completed
 
@@ -186,6 +188,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-06T20:41:10.442Z
+Last session: 2026-10-06
 Stopped at: Phase 01.4 complete, ready to plan Phase 01.5
 Resume file: None

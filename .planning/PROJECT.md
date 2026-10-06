@@ -24,6 +24,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 - ✓ The host mount no longer covers `/home/sandbox`: one sandbox folder is mounted at `/home/sandbox/workspace`, so the image's `.bashrc` and `.local` stay visible — Phase 1
 - ✓ Agent state (Claude login, `~/.claude.json`, settings, session history, shell history) lives in `<sandbox>/state` on the host and survives recreate and rebuild — Phase 1
 - ✓ Every new sandbox starts with the best-practices bundle (standing rules, path-scoped language rules, `/pr-reply` and `/merged`), synced from the image at each start; the image version wins and user skills, memories and `CLAUDE.md` are never touched — Phase 1.2
+- ✓ The test suite is small enough to read and change: guard, host, bundle and entrypoint self-tests are each a folder with a `run-all.sh`, and the fake docker is its own file used only for failure paths (Phase 1.4)
 
 ### Active
 
@@ -97,6 +98,9 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 | Ship the best-practices bundle as plain files in this repo, baked into the image and synced into the Claude config by a start hook | Stopgap until the bundle gets its own repo (Phase 2.1); every change is a reviewed diff, and a rebuild plus restart delivers it | Good: 19 of 19 host checks and the attended h19 pass on the Mac (Phase 1.2) |
 | Guard the synced bundle with managed Edit deny rules, documented as not a security boundary | Stops Claude from rewriting the instructions every later session loads; a script can still write until the next start recopies | Good: deny proven in the real image (H-18) and with a negative control at the pinned Claude |
 | A start hook entry that is not an executable regular file stops the container start (folders and dot names are skipped) | A skipped hook means the agent starts with a stale bundle; failing closed makes the fault visible at once | Good: H-17 proves a non-executable hook and a dangling hook link stop the start in the real image (Phase 1.3) |
+| Real Docker runs only on the Mac; `tests/host/run-all.sh` passing there is the gate, and the manual helpers are diagnostic tools, not an ordered pass | Docker cannot run in the dev sandbox, and Actions, dind, a VM and the host socket were each rejected | Good: 19 passed, 0 failed, 0 not run on the Mac at `a821736` (Phase 1.4) |
+| Split each suite into a folder with a short `run-all.sh`, shared libraries and one file per check group | A suite of single 1000-line scripts was too big to read; the largest group file is now 182 lines and `prove.sh` shows case-for-case equality with the old scripts | Good: 23 guard, 25 entrypoint, 111 bundle and 295 host self-test cases identical to the baseline (Phase 1.4) |
+| The fake docker lives in its own file (`tests/selftest/host/support/fake-docker`) and covers failure paths only | The Mac run covers the success paths, so the fake can stay slim and its knobs sit in one header table | Good: the file answers like the old heredoc across 1922 transcript lines (Phase 1.4) |
 
 ## Evolution
 
@@ -116,4 +120,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-05 after Phase 1.3*
+*Last updated: 2026-10-06 after Phase 1.4*
