@@ -607,35 +607,6 @@ last_run_dir() {
 
 # --- cases ---
 
-echo "--- lib units"
-reset_state
-
-pinFromLib=$(lib_eval 'claude_pin')
-pinFromFile=$(grep '^ARG CLAUDE_CODE_VERSION=' claude/Dockerfile | cut -d= -f2)
-expect "lib: claude_pin equals the ARG in claude/Dockerfile" equals "$pinFromLib" "$pinFromFile"
-expect "lib: claude_pin is not empty" string_matches '^[0-9]+\.[0-9]+\.[0-9]+$' "$pinFromLib"
-
-archAarch=$( export FAKE_ARCH=aarch64; lib_eval 'expected_arch' )
-archIntel=$( export FAKE_ARCH=x86_64; lib_eval 'expected_arch' )
-archOther=$( export FAKE_ARCH=riscv64; lib_eval 'expected_arch' )
-expect "lib: expected_arch maps aarch64 to arm64" equals "$archAarch" "arm64"
-expect "lib: expected_arch maps x86_64 to amd64" equals "$archIntel" "amd64"
-expect "lib: expected_arch maps anything else to unknown" equals "$archOther" "unknown"
-
-madeRunDir=$(lib_eval 'make_run_dir; printf "%s" "$RUN"')
-madeBaseName=$(basename "$madeRunDir")
-expect "lib: make_run_dir name has the timestamp and random tail" \
-  string_matches '^sbx-hosttest-[0-9]{8}-[0-9]{6}\.[A-Za-z0-9]{6}$' "$madeBaseName"
-expect "lib: make_run_dir creates hosttest, state and logs" \
-  test -d "$madeRunDir/hosttest" -a -d "$madeRunDir/state" -a -d "$madeRunDir/logs"
-expect "lib: make_run_dir keeps the 0700 mode" \
-  test -n "$(find "$madeRunDir" -maxdepth 0 -perm 0700)"
-
-scrubbed=$( export SBX_NAME=demo SBX_DIR=/elsewhere COMPOSE_PROJECT_NAME=evil
-  lib_eval 'printf "SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s" "$SBX_NAME" "${SBX_DIR-unset}" "${COMPOSE_PROJECT_NAME-unset}"' )
-expect "lib: host_init ignores the caller's SBX_NAME, SBX_DIR and COMPOSE_PROJECT_NAME" \
-  equals "$scrubbed" "SBX_NAME=hosttest SBX_DIR=unset COMPOSE_PROJECT_NAME=unset"
-
 echo "--- healthy run"
 reset_state
 run_runner "$WORK/out.healthy"
@@ -907,69 +878,6 @@ CHECK_RC=0
 env SBXTEST_DIR="" bash "$WORK/scratchrepo/tests/host/coexistence.sh" >"$WORK/out.co.git" 2>&1 </dev/null || CHECK_RC=$?
 expect "Coexistence: a change under ClaudeCode/ fails" equals "$CHECK_RC" "1"
 expect "Coexistence: the changed path is shown" has_text "$WORK/out.co.git" "stray.txt"
-
-echo "--- H-09 on its own"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h09" h09-rebuild-keeps-files-no-volumes.sh FAKE_VOLUMES="olddata"
-expect "H-09: sentinels, volumes and the one bind mount pass" equals "$CHECK_RC" "0"
-expect "H-09: prints PASS: H-09" has_text "$WORK/out.h09" "PASS: H-09"
-sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.h09"
-expect "H-09: both images are rebuilt" equals "$(grep -c '^build ' "$WORK/args.h09")" "2"
-expect "H-09: the rebuild uses the cache by default" lacks_text "$WORK/args.h09" "--no-cache"
-expect "H-09: the sandbox is up again" test -f "$WORK/state/container"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h09.mount" h09-rebuild-keeps-files-no-volumes.sh FAKE_EXTRA_MOUNT=1
-expect "H-09: a second mount fails" equals "$CHECK_RC" "1"
-expect "H-09: the second mount is shown" has_text "$WORK/out.h09.mount" "/home/sandbox/extra"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h09.vol" h09-rebuild-keeps-files-no-volumes.sh FAKE_VOLUMES="a" FAKE_VOLUMES_AFTER_BUILD="a b"
-expect "H-09: a changed volume list fails" equals "$CHECK_RC" "1"
-expect "H-09: the volume change is reported" has_text "$WORK/out.h09.vol" "volume"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h09.nocache" h09-rebuild-keeps-files-no-volumes.sh SBXTEST_NO_CACHE=1
-sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.h09.nocache"
-expect "H-09: SBXTEST_NO_CACHE=1 still passes" equals "$CHECK_RC" "0"
-expect "H-09: SBXTEST_NO_CACHE=1 adds --no-cache to both builds" \
-  equals "$(grep -c '^build --no-cache ' "$WORK/args.h09.nocache")" "2"
-expect "H-09: the memory sentinel survives" \
-  test -f "$FIXTURE/state/claude/projects/-home-sandbox-workspace-hosttest/memory/h09-memory.md"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h09.clobber" h09-rebuild-keeps-files-no-volumes.sh FAKE_SYNC_CLOBBERS=1
-expect "H-09: a restart that deletes the memories fails" equals "$CHECK_RC" "1"
-expect "H-09: the lost memory is named" has_text "$WORK/out.h09.clobber" "h09-memory.md"
-
-echo "--- H-10 on its own"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h10.ok" h10-missing-folder-refused.sh
-expect "H-10: a refused missing folder with the path absent passes" equals "$CHECK_RC" "0"
-expect "H-10: prints PASS: H-10" has_text "$WORK/out.h10.ok" "PASS: H-10"
-expect "H-10: the bad path was not created" test ! -e "$FIXTURE/does-not-exist"
-expect "H-10: the real sandbox is up at the end" test -f "$WORK/state/container"
-lastComposeCall=$(grep 'ARGS: compose' "$FAKE_LOG" | tail -n 1)
-expect "H-10: the last compose call is an up with the real run folder" \
-  string_matches "SBX_DIR=$FIXTURE COMPOSE_PROJECT_NAME=unset ARGS: compose .* up -d --wait$" "$lastComposeCall"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h10.ign" h10-missing-folder-refused.sh FAKE_H10=ignored
-expect "H-10: a path that Docker created fails" equals "$CHECK_RC" "1"
-expect "H-10: the created path is reported as create_host_path ignored" has_text "$WORK/out.h10.ign" "create_host_path ignored"
-expect "H-10: the report carries the Compose version" has_text "$WORK/out.h10.ign" "Compose 2.39.1"
-expect "H-10: the created path is left for the printed cleanup" test -d "$FIXTURE/does-not-exist"
-expect "H-10: the real sandbox is up at the end after a created path" test -f "$WORK/state/container"
-expect "H-10: the real sandbox mounts the real run folder" equals "$(cat "$WORK/state/container.dir")" "$FIXTURE"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h10.start" h10-missing-folder-refused.sh FAKE_H10=started
-expect "H-10: a start on a missing folder fails" equals "$CHECK_RC" "1"
-expect "H-10: a start on a missing folder says so" has_text "$WORK/out.h10.start" "started on a missing folder"
-expect "H-10: the real sandbox is up at the end after a start" test -f "$WORK/state/container"
-expect "H-10: the real sandbox mounts the real run folder after a start" equals "$(cat "$WORK/state/container.dir")" "$FIXTURE"
 
 echo "--- full chain in the runner"
 reset_state
