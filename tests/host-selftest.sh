@@ -726,35 +726,6 @@ expect "runner: a failed up exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a failed up prints FAIL: SETUP" has_text "$WORK/out.up" "FAIL: SETUP"
 expect "runner: a failed up marks the sandbox checks not run" has_text "$WORK/out.up" "NOT RUN: h04-nonroot-user.sh"
 
-echo "--- H-02 on its own"
-run_standalone "$WORK/out.h02" h02-claude-on-base.sh
-expect "H-02: base layers under the Claude layers pass" equals "$CHECK_RC" "0"
-expect "H-02: prints PASS: H-02" has_text "$WORK/out.h02" "PASS: H-02"
-run_standalone "$WORK/out.h02.bad" h02-claude-on-base.sh FAKE_CLAUDE_LAYERS="sha256:b1 sha256:x9 sha256:c1"
-expect "H-02: a differing layer fails" equals "$CHECK_RC" "1"
-expect "H-02: a differing layer prints FAIL: H-02" has_text "$WORK/out.h02.bad" "FAIL: H-02"
-expect "H-02: a differing layer shows both layers" \
-  has_text "$WORK/out.h02.bad" "sha256:b2"
-expect "H-02: a differing layer shows the Claude side too" \
-  has_text "$WORK/out.h02.bad" "sha256:x9"
-
-echo "--- H-03 on its own"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h03" h03-variable-interpolation.sh
-expect "H-03: both halves right pass" equals "$CHECK_RC" "0"
-expect "H-03: prints PASS: H-03" has_text "$WORK/out.h03" "PASS: H-03"
-FIXTURE=""
-reset_state
-run_standalone "$WORK/out.h03.norun" h03-variable-interpolation.sh
-expect "H-03: passes without a running sandbox" equals "$CHECK_RC" "0"
-run_standalone "$WORK/out.h03.name" h03-variable-interpolation.sh FAKE_CONFIG_NAME=sbx-other
-expect "H-03: a wrong project name fails" equals "$CHECK_RC" "1"
-expect "H-03: a wrong project name names that half" has_text "$WORK/out.h03.name" "name: sbx-hosttest"
-run_standalone "$WORK/out.h03.lax" h03-variable-interpolation.sh FAKE_CONFIG_LAX=1
-expect "H-03: a config that works without SBX_DIR fails" equals "$CHECK_RC" "1"
-expect "H-03: a config that works without SBX_DIR names that half" has_text "$WORK/out.h03.lax" "SBX_DIR is required"
-
 echo "--- H-04 on its own"
 reset_state
 FIXTURE=""
@@ -766,18 +737,6 @@ run_standalone "$WORK/out.h04.ok" h04-nonroot-user.sh
 expect "H-04: the test sandbox passes" equals "$CHECK_RC" "0"
 run_standalone "$WORK/out.h04.foreign" h04-nonroot-user.sh FAKE_LABEL=other
 expect "H-04: a container with another label is refused" equals "$CHECK_RC" "1"
-
-echo "--- H-12 on its own"
-reset_state
-FIXTURE=""
-run_standalone "$WORK/out.h12" h12-plain-run-refused-pin-installed.sh
-expect "H-12: refused plain run and the pinned version pass" equals "$CHECK_RC" "0"
-expect "H-12: prints PASS: H-12" has_text "$WORK/out.h12" "PASS: H-12"
-run_standalone "$WORK/out.h12.pin" h12-plain-run-refused-pin-installed.sh FAKE_CLAUDE_VERSION=0.0.1
-expect "H-12: a different installed version fails" equals "$CHECK_RC" "1"
-expect "H-12: a different installed version prints FAIL: H-12" has_text "$WORK/out.h12.pin" "FAIL: H-12"
-run_standalone "$WORK/out.h12.plain" h12-plain-run-refused-pin-installed.sh FAKE_PLAIN_OK=1
-expect "H-12: a plain run that starts fails" equals "$CHECK_RC" "1"
 
 echo "--- H-01 on its own"
 reset_state
