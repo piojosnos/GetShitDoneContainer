@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.4"
 current_phase_name: Test suite refactor (INSERTED)
 status: executing
-stopped_at: Completed 01.4-06-PLAN.md
-last_updated: "2026-10-06T19:56:00.035Z"
+stopped_at: Completed 01.4-07-PLAN.md
+last_updated: "2026-10-06T19:59:06.322Z"
 last_activity: 2026-10-06
 last_activity_desc: Phase 01.4 execution started
-state_head: adf1cfe47d540a0c08193436605b4de11cb13710
+state_head: 18db0746054b0f4f3994f6ace5aeb93388d40fa4
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 28
-  completed_plans: 26
+  completed_plans: 27
   percent: 33
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-05)
 ## Current Position
 
 Phase: 01.4 (Test suite refactor (INSERTED)) — EXECUTING
-Plan: 7 of 8
+Plan: 8 of 8
 Status: Ready to execute
 Last activity: 2026-10-06 — Phase 01.4 execution started
 
@@ -85,6 +85,7 @@ Progress: [███░░░░░░░] 33%
 | Phase 01.4 P04 | 5 min | 3 tasks | 11 files |
 | Phase 01.4 P05 | 10 min | 3 tasks | 11 files |
 | Phase 01.4 P06 | 15 min | 3 tasks | 12 files |
+| Phase 01.4 P07 | 12 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -139,6 +140,8 @@ Recent decisions affecting current work:
 - [Phase 01.4]: The planning-id guard rule scans tests/selftest/host/ instead of the removed tests/host-selftest.sh (plan 05); plan 06 keeps the new folder in that path list
 - [Phase 01.4]: Guard split: the old guard sourced tests/guard/lib.sh until it was removed, so every rule function and constant was defined exactly once at each step and rules.sh could prove bodies byte for byte against the baseline
 - [Phase 01.4]: Guard path lists: no_compromised_gsd_package and host_tests_have_no_planning_ids scan tests/selftest/*.sh, tests/selftest/*/*.sh and tests/selftest/*/support/*; 14 planted violations prove every location is still scanned
+- [Phase 01.4]: The host checks run against real Docker on the Mac; run-all.sh passing is the gate and the manual helpers are diagnostic tools
+- [Phase 01.4]: Backlog 999.1 closed by the diagnostic-helper decision; retiring the slim fake docker is backlog 999.2
 
 ### Pending Todos
 
@@ -180,6 +183,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-06T19:55:59.920Z
-Stopped at: Completed 01.4-06-PLAN.md
+Last session: 2026-10-06T19:59:06.211Z
+Stopped at: Completed 01.4-07-PLAN.md
 Resume file: None
