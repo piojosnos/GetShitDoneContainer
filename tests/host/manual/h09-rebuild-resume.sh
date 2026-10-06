@@ -56,23 +56,11 @@ rebuild_images() {
 }
 
 # --------------------------------------------------------------------------------
-# Takes the test sandbox down and up again; FAIL and return 1 if either fails
+# Takes the test sandbox down and up again on the new images; FAIL and return 1 if that fails
 # --------------------------------------------------------------------------------
 recreate_sandbox() {
-  info "taking the test sandbox down"
-
-  if ! compose_down >"$RUN/logs/manual-down.log" 2>&1; then
-    fail H-09 "compose down failed" "log: $RUN/logs/manual-down.log"
-    return 1
-  fi
-
-  info "starting the test sandbox"
-
-  if ! compose_up; then
-    fail H-09 "compose up failed after the rebuild" "log: $RUN/logs/compose-up.log"
-    return 1
-  fi
-
+  info "taking the test sandbox down and starting it again"
+  restart_test_sandbox H-09 manual-down.log || return 1
   require_test_sandbox H-09 || return 1
 }
 
