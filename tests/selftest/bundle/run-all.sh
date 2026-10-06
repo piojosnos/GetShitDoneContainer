@@ -12,7 +12,7 @@ set -u
 # --------------------------------------------------------------------------------
 # Group programs, in run order
 # --------------------------------------------------------------------------------
-groupList="real-bundle.sh"
+groupList="real-bundle.sh skill-lists.sh failures.sh refresh.sh user-files.sh"
 
 # --------------------------------------------------------------------------------
 # Main / Entry Point
