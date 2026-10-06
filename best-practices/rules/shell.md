@@ -26,6 +26,9 @@ Committed shell scripts run on the user's macOS (BSD tools, bash 3.2). Agents au
   ```
 
 - Once a section does more than a few lines, move it into a function under its banner, and keep the top level a short list of calls.
+- Give every function its own banner, in libraries and runners too, so every file has the same shape.
 - End with a `Main / Entry Point` banner over that list of calls, so a reader sees the whole flow in one place.
+- A function that hits a failure the rest cannot recover from reports it and returns non-zero. The caller decides whether to stop: `step || exit 1`.
+- Read arguments first in the Main block, the same way in every script. A script without options refuses any argument; a script with options reads them in one function with a `while`, `case` and `shift` loop. A usage error prints one `Usage:` line to stderr, and the caller exits 2.
 - Put a helper in a shared library only when two or more scripts really use it. A helper only one script uses stays in that script.
 - When a library grows large, split it into libraries by topic, for example `lib.sh` for general helpers and `lib-bundle.sh` for bundle checks.
