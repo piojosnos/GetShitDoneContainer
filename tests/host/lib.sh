@@ -13,7 +13,9 @@
 . "$(dirname "${BASH_SOURCE[0]}")/lib-sandbox.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/lib-docker.sh"
 
+# --------------------------------------------------------------------------------
 # host_init: sets REPO_DIR, HOST_DIR, SBX_NAME, CONTAINER and RUN; scrubs the environment.
+# --------------------------------------------------------------------------------
 host_init() {
   local libDir
 
@@ -29,7 +31,9 @@ host_init() {
   resolve_run_dir
 }
 
+# --------------------------------------------------------------------------------
 # run_dir_name_ok PATH: true if the last path component starts with sbx-hosttest-.
+# --------------------------------------------------------------------------------
 run_dir_name_ok() {
   local folderName
 
@@ -41,7 +45,9 @@ run_dir_name_ok() {
   return 1
 }
 
+# --------------------------------------------------------------------------------
 # resolve_run_dir: sets RUN from SBXTEST_DIR, else from the test container's mount; else empty.
+# --------------------------------------------------------------------------------
 resolve_run_dir() {
   local mountSource
 
@@ -74,7 +80,9 @@ resolve_run_dir() {
   return 0
 }
 
+# --------------------------------------------------------------------------------
 # make_run_dir: creates a fresh run folder (hosttest, state, logs inside); sets RUN, exports SBXTEST_DIR.
+# --------------------------------------------------------------------------------
 make_run_dir() {
   local baseDir created
 

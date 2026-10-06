@@ -6,15 +6,15 @@
 # - Host side code is stock bash 3.2 with BSD tools (macOS).
 
 # --------------------------------------------------------------------------------
-# Runs commands in the test container or through compose
-# --------------------------------------------------------------------------------
-
 # in_container CMD...: runs CMD in the test container; stdin closed, stderr merged, never a tty.
+# --------------------------------------------------------------------------------
 in_container() {
   docker exec "$CONTAINER" "$@" </dev/null 2>&1
 }
 
+# --------------------------------------------------------------------------------
 # compose_cmd ARGS...: runs docker compose against compose.yml for the test sandbox only.
+# --------------------------------------------------------------------------------
 compose_cmd() {
   if [ -z "${RUN:-}" ]; then
     printf 'No run folder, so no compose command is run.\n' >&2
@@ -24,7 +24,9 @@ compose_cmd() {
   SBX_NAME=hosttest SBX_DIR="$RUN" docker compose -f "$REPO_DIR/compose.yml" "$@" </dev/null
 }
 
+# --------------------------------------------------------------------------------
 # run_timeout SECONDS CMD...: runs CMD; kills it after SECONDS; returns 143 on timeout.
+# --------------------------------------------------------------------------------
 run_timeout() {
   local seconds=$1
   local commandPid watcherPid exitCode
@@ -53,10 +55,8 @@ run_timeout() {
 }
 
 # --------------------------------------------------------------------------------
-# Starts and stops the test sandbox
-# --------------------------------------------------------------------------------
-
 # compose_up: starts the test sandbox and waits; log in the run folder; returns the exit code.
+# --------------------------------------------------------------------------------
 compose_up() {
   local logFile exitCode
 
@@ -73,7 +73,9 @@ compose_up() {
   return "$exitCode"
 }
 
+# --------------------------------------------------------------------------------
 # compose_down: takes the test sandbox down (never removes volumes); refuses if sbx-hosttest is not the test sandbox.
+# --------------------------------------------------------------------------------
 compose_down() {
   if docker container inspect "$CONTAINER" >/dev/null 2>&1 </dev/null; then
     if ! assert_test_sandbox; then
@@ -85,7 +87,9 @@ compose_down() {
   compose_cmd down
 }
 
+# --------------------------------------------------------------------------------
 # restart_test_sandbox ID LOG_NAME: compose down, then up; on a failure prints FAIL for ID and exits 1.
+# --------------------------------------------------------------------------------
 restart_test_sandbox() {
   local checkId=$1
   local logFile
@@ -102,10 +106,8 @@ restart_test_sandbox() {
 }
 
 # --------------------------------------------------------------------------------
-# Makes sure a call is aimed at the test sandbox
-# --------------------------------------------------------------------------------
-
 # assert_test_sandbox: true only if sbx-hosttest exists, is labelled sbx.name=hosttest and mounts a sbx-hosttest-* folder.
+# --------------------------------------------------------------------------------
 assert_test_sandbox() {
   local label mountSource
 
@@ -124,7 +126,9 @@ assert_test_sandbox() {
   return 1
 }
 
+# --------------------------------------------------------------------------------
 # require_test_sandbox ID: true when the test sandbox is running; else prints a FAIL line for ID, returns 1.
+# --------------------------------------------------------------------------------
 require_test_sandbox() {
   local checkId=$1
   local running

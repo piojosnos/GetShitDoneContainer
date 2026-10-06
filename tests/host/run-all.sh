@@ -14,7 +14,9 @@ host_init
 RUN=""
 unset SBXTEST_DIR
 
+# --------------------------------------------------------------------------------
 # Check lists, in run order. Each check names what it needs in its "# Depends on:" line.
+# --------------------------------------------------------------------------------
 # - The Compose check is fatal: without Compose v2 nothing else can run.
 # - Checks that need nothing from the sandbox come first.
 # - Then the checks on the running sandbox; a failure does not stop the others.
@@ -35,10 +37,8 @@ notRunCount=0
 failedList=""
 
 # --------------------------------------------------------------------------------
-# Runs the checks and counts the results
-# --------------------------------------------------------------------------------
-
 # drop_remaining SCRIPT: SCRIPT has been run or marked, so it is no longer waiting.
+# --------------------------------------------------------------------------------
 drop_remaining() {
   local script item
   local keptList=""
@@ -52,7 +52,9 @@ drop_remaining() {
   remainingList=$keptList
 }
 
+# --------------------------------------------------------------------------------
 # run_check SCRIPT: runs one check as a child process and counts it by exit status.
+# --------------------------------------------------------------------------------
 run_check() {
   local script=$1
 
@@ -68,7 +70,9 @@ run_check() {
   return 1
 }
 
+# --------------------------------------------------------------------------------
 # run_list SCRIPT...: runs every check, even after a failure.
+# --------------------------------------------------------------------------------
 run_list() {
   local script
 
@@ -77,7 +81,9 @@ run_list() {
   done
 }
 
+# --------------------------------------------------------------------------------
 # mark_not_run SCRIPT... REASON: prints and counts the checks that did not run.
+# --------------------------------------------------------------------------------
 mark_not_run() {
   local script
 
@@ -88,7 +94,9 @@ mark_not_run() {
   done
 }
 
+# --------------------------------------------------------------------------------
 # run_chain SCRIPT...: runs the checks in order; after the first failure the rest are not run.
+# --------------------------------------------------------------------------------
 run_chain() {
   local script
   local stopped=0
@@ -103,17 +111,17 @@ run_chain() {
 }
 
 # --------------------------------------------------------------------------------
-# Ends the run: the summary, a setup failure, the Next block
-# --------------------------------------------------------------------------------
-
 # record_setup_failure TEXT: counts a failure that belongs to no check.
+# --------------------------------------------------------------------------------
 record_setup_failure() {
   printf 'FAIL: SETUP %s\n' "$1"
   failedCount=$((failedCount + 1))
   failedList="$failedList SETUP"
 }
 
+# --------------------------------------------------------------------------------
 # finish REASON: marks what is left as not run, prints the summary, exits 0 or 1.
+# --------------------------------------------------------------------------------
 finish() {
   mark_not_run "$remainingList" "$1"
   printf '\nSummary: %s passed, %s failed, %s not run\n' "$passedCount" "$failedCount" "$notRunCount"
@@ -127,13 +135,17 @@ finish() {
   exit 1
 }
 
+# --------------------------------------------------------------------------------
 # fatal TEXT: a setup step failed, so nothing else can run.
+# --------------------------------------------------------------------------------
 fatal() {
   record_setup_failure "$1"
   finish "setup failed"
 }
 
+# --------------------------------------------------------------------------------
 # print_next_block: prints the manual pass commands and the cleanup command. Only prints.
+# --------------------------------------------------------------------------------
 print_next_block() {
   printf '\nNext\n'
   printf '  Manual pass (needs a terminal), in this order:\n'
@@ -151,23 +163,25 @@ print_next_block() {
 }
 
 # --------------------------------------------------------------------------------
-# Prepares the run: traps, Docker, the run folder, a leftover test container
-# --------------------------------------------------------------------------------
-
 # install_traps: Ctrl-C exits 130; the Next block prints whenever the run ends.
+# --------------------------------------------------------------------------------
 install_traps() {
   trap 'exit 130' INT TERM
   trap print_next_block EXIT
 }
 
+# --------------------------------------------------------------------------------
 # check_docker_reachable: stops the run when the Docker daemon does not answer.
+# --------------------------------------------------------------------------------
 check_docker_reachable() {
   if ! docker info >/dev/null 2>&1 </dev/null; then
     fatal "the Docker daemon is not reachable; start Docker Desktop and run again"
   fi
 }
 
+# --------------------------------------------------------------------------------
 # create_run_folder: makes the run folder and prints its path; stops the run when it cannot.
+# --------------------------------------------------------------------------------
 create_run_folder() {
   if ! make_run_dir; then
     fatal "could not create the run folder"
@@ -176,7 +190,9 @@ create_run_folder() {
   info "run folder: $RUN"
 }
 
+# --------------------------------------------------------------------------------
 # remove_leftover_test_container: takes down an earlier test container; stops the run if the name is taken by something else or the take down fails.
+# --------------------------------------------------------------------------------
 remove_leftover_test_container() {
   local label
 
@@ -198,17 +214,17 @@ remove_leftover_test_container() {
 }
 
 # --------------------------------------------------------------------------------
-# Runs the stages: Compose, the image build, the sandbox checks
-# --------------------------------------------------------------------------------
-
 # run_compose_check: runs the Compose check; the run ends here when it fails.
+# --------------------------------------------------------------------------------
 run_compose_check() {
   if ! run_check "$fatalCheck"; then
     finish "the Compose check failed"
   fi
 }
 
+# --------------------------------------------------------------------------------
 # build_all_images: builds both images; stops the run when the build fails.
+# --------------------------------------------------------------------------------
 build_all_images() {
   info "building the images (logs in $RUN/logs)"
   if ! build_images build; then
@@ -216,7 +232,9 @@ build_all_images() {
   fi
 }
 
+# --------------------------------------------------------------------------------
 # run_sandbox_checks: starts the test sandbox, then runs the checks on it and the chain; marks them not run when it does not start.
+# --------------------------------------------------------------------------------
 run_sandbox_checks() {
   if compose_up; then
     run_list "$sandboxCheckList"

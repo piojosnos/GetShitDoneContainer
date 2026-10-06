@@ -24,13 +24,14 @@ state=$ws/state
 hookDir=/etc/sbx/start.d
 
 # --------------------------------------------------------------------------------
-# Helpers
+# is_mount PATH: true when PATH is a mount point.
 # --------------------------------------------------------------------------------
-
 # Field 5 of /proc/self/mountinfo is the mount point; no util-linux "mountpoint" needed.
 is_mount() { awk -v p="$1" '$5==p { f=1 } END { exit !f }' /proc/self/mountinfo; }
 
+# --------------------------------------------------------------------------------
 # die MESSAGE: prints the error and how to start the sandbox, then stops the start.
+# --------------------------------------------------------------------------------
 die() {
   echo "[sbx] ERROR: $1" >&2
   echo "[sbx]        Start the sandbox with 'docker compose up' (see SANDBOX.md)." >&2

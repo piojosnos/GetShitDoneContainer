@@ -18,15 +18,15 @@ syncedDir=$RUN/state/claude
 containerRoot=/home/sandbox/workspace
 
 # --------------------------------------------------------------------------------
-# Helpers
-# --------------------------------------------------------------------------------
-
 # first_heading FILE: prints the first "# " heading line of FILE without the "# ".
+# --------------------------------------------------------------------------------
 first_heading() {
   grep -m 1 '^# ' "$1" | sed 's/^# //'
 }
 
+# --------------------------------------------------------------------------------
 # run_scenario NAME SCRIPTFILE: runs Claude against the fake API inside the test container.
+# --------------------------------------------------------------------------------
 run_scenario() {
   local scenarioName=$1
   local scriptFile=$2

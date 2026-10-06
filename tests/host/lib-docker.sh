@@ -5,7 +5,9 @@
 # - claude_pin and expected_arch stay shared because the self-test of the host tests calls them through lib.sh.
 # - Host side code is stock bash 3.2 with BSD tools (macOS).
 
+# --------------------------------------------------------------------------------
 # build_images LOG_PREFIX [--no-cache]: builds sbx-base:local, then sbx-claude:local; logs in the run folder.
+# --------------------------------------------------------------------------------
 build_images() {
   local logPrefix=$1
   local cacheFlag=${2:-}
@@ -31,7 +33,9 @@ build_images() {
   return 0
 }
 
+# --------------------------------------------------------------------------------
 # expected_arch: the image architecture the daemon should produce (arm64, amd64 or unknown).
+# --------------------------------------------------------------------------------
 expected_arch() {
   case "$(docker info --format '{{.Architecture}}' </dev/null)" in
     aarch64) printf 'arm64\n' ;;
@@ -40,12 +44,16 @@ expected_arch() {
   esac
 }
 
+# --------------------------------------------------------------------------------
 # claude_pin: the pinned Claude Code version, read from claude/Dockerfile.
+# --------------------------------------------------------------------------------
 claude_pin() {
   sed -n 's/^ARG CLAUDE_CODE_VERSION=//p' "$REPO_DIR/claude/Dockerfile"
 }
 
+# --------------------------------------------------------------------------------
 # snapshot_old_containers: one sorted line per old-layout container: ID, name, state.
+# --------------------------------------------------------------------------------
 snapshot_old_containers() {
   docker ps -a --format '{{.ID}} {{.Names}} {{.State}}' </dev/null 2>/dev/null | grep -E '^[0-9a-f]+ cc_' | sort
 }
