@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.4"
 current_phase_name: Test suite refactor (INSERTED)
 status: executing
-stopped_at: Completed 01.4-02-PLAN.md
-last_updated: "2026-10-06T19:11:56.346Z"
+stopped_at: Completed 01.4-03-PLAN.md
+last_updated: "2026-10-06T19:26:30.959Z"
 last_activity: 2026-10-06
 last_activity_desc: Phase 01.4 execution started
-state_head: 83f6e167725a9c70eac631c988f1ac17b92b5dd3
+state_head: 1d2bbceb1b1156e6624f801f8ad7227d11e70904
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 28
-  completed_plans: 22
+  completed_plans: 23
   percent: 33
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-05)
 ## Current Position
 
 Phase: 01.4 (Test suite refactor (INSERTED)) — EXECUTING
-Plan: 3 of 8
+Plan: 4 of 8
 Status: Ready to execute
 Last activity: 2026-10-06 — Phase 01.4 execution started
 
@@ -81,6 +81,7 @@ Progress: [███░░░░░░░] 33%
 | Phase 01.3 P05 | 12 min | 2 tasks | 5 files |
 | Phase 01.4 P01 | 5 min | 2 tasks | 10 files |
 | Phase 01.4 P02 | 7 min | 3 tasks | 15 files |
+| Phase 01.4 P03 | 13 min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -128,6 +129,8 @@ Recent decisions affecting current work:
 - [Phase 01.3]: 01.3-05: lib-manual.sh lives in tests/host/manual/ (the guard forbids read and tty flags in tests/host/*.sh); the attended helpers start with lib-manual.sh, require_terminal, then lib.sh and host_init
 - [Phase 01.4]: 01.4-01: entrypoint suite output is byte-identical to the old script; prove.sh uses exact mode for entrypoint and sorted case lines for guard, bundle and host; make_work_folder resolves the physical path only after the traps are installed
 - [Phase 01.4]: Bundle self-test cases moved byte for byte; helpers got banners; guard file list and host checklist name tests/selftest/bundle
+- [Phase 01.4]: The fake docker is its own file with every retained knob in one header table; only the three knobs no case sets are dropped, so no self-test case is dropped
+- [Phase 01.4]: fake-transcript.sh builds both fake transcripts under fresh state folders instead of removing old ones, so its only removal is the sbx-fake14 case branch
 
 ### Pending Todos
 
@@ -169,6 +172,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-06T19:11:56.240Z
-Stopped at: Completed 01.4-02-PLAN.md
+Last session: 2026-10-06T19:26:30.847Z
+Stopped at: Completed 01.4-03-PLAN.md
 Resume file: None
