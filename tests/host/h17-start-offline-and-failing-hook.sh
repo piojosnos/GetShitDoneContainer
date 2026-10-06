@@ -107,6 +107,7 @@ check_bad_hook_stop() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
 require_run_folder || exit 1
 make_hook_folders
 run_containers

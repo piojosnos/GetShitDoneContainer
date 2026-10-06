@@ -6,7 +6,6 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
-require_test_sandbox H-13 || exit 1
 
 # --------------------------------------------------------------------------------
 # Reads the container environment, the claude update reply and whether ~/.local/share/claude exists
@@ -52,6 +51,8 @@ check_no_share_folder() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-13 || exit 1
 read_environment
 check_variables_set
 check_updates_disabled

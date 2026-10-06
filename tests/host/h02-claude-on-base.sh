@@ -64,6 +64,7 @@ check_single_from_line() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
 read_layers
 check_layer_prefix
 check_single_from_line

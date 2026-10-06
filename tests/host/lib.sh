@@ -32,6 +32,26 @@ host_init() {
 }
 
 # --------------------------------------------------------------------------------
+# print_usage [OPTIONS]: prints "Usage: bash SCRIPT OPTIONS" to stderr, SCRIPT as it was run.
+# --------------------------------------------------------------------------------
+print_usage() {
+  printf 'Usage: bash %s%s\n' "$0" "${1:+ $1}" >&2
+}
+
+# --------------------------------------------------------------------------------
+# require_no_arguments ARG...: for a script that takes no arguments; prints the usage and returns 1 when any is given.
+# --------------------------------------------------------------------------------
+# The caller stops with || exit 2, the exit code of a usage error.
+require_no_arguments() {
+  if [ "$#" -gt 0 ]; then
+    print_usage
+    return 1
+  fi
+
+  return 0
+}
+
+# --------------------------------------------------------------------------------
 # run_dir_name_ok PATH: true if the last path component starts with sbx-hosttest-.
 # --------------------------------------------------------------------------------
 run_dir_name_ok() {

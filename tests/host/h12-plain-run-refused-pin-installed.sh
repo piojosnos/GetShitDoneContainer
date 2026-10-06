@@ -38,6 +38,7 @@ check_pin_installed() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
 run_containers
 check_plain_run_refused
 check_pin_installed

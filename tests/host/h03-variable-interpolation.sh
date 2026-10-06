@@ -42,6 +42,7 @@ check_missing_dir_refused() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
 read_configs
 check_project_name
 check_missing_dir_refused

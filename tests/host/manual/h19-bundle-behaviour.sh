@@ -14,7 +14,6 @@ require_terminal
 
 . "$(dirname "$0")/../lib.sh"
 host_init
-require_test_sandbox H-19 || exit 1
 
 # --------------------------------------------------------------------------------
 # Puts the shell file Claude reads in step 3 into the test project
@@ -84,6 +83,8 @@ ask_judgments() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-19 || exit 1
 make_probe_file
 print_steps
 open_claude

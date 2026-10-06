@@ -12,7 +12,6 @@ set -u
 . "$(dirname "$0")/lib.sh"
 . "$(dirname "$0")/lib-bundle.sh"
 host_init
-require_test_sandbox H-16 || exit 1
 
 bundleDir=$REPO_DIR/best-practices
 syncedDir=$RUN/state/claude
@@ -90,6 +89,8 @@ check_user_files_spared() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-16 || exit 1
 pick_samples || exit 1
 plant_files
 restart_test_sandbox H-16 h16-down.log || exit 1

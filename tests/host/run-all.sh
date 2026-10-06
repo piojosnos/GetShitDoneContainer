@@ -248,6 +248,7 @@ run_sandbox_checks() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
 install_traps
 check_docker_reachable
 create_run_folder

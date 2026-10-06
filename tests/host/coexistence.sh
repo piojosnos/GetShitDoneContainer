@@ -59,6 +59,7 @@ check_old_folders_clean() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
 find_baseline
 check_old_containers_unchanged
 check_old_folders_clean

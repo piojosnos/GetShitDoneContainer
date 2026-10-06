@@ -6,7 +6,6 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
-require_test_sandbox H-05 || exit 1
 
 # --------------------------------------------------------------------------------
 # Creates a file in the container and reads the home listing and the owners
@@ -54,6 +53,8 @@ check_home_owners() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-05 || exit 1
 read_container_home
 check_file_reached_host
 check_home_entries

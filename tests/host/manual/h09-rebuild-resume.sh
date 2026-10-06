@@ -19,28 +19,28 @@ host_init
 noCacheFlag=""
 
 # --------------------------------------------------------------------------------
-# Reads the optional --no-cache argument; prints the usage and exits 2 on anything else
+# Reads the arguments; --no-cache is the only one; prints the usage and returns 1 on anything else
 # --------------------------------------------------------------------------------
 parse_arguments() {
-  case "$1" in
-    0) ;;
-    1)
-      if [ "$2" = "--no-cache" ]; then
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --no-cache)
         noCacheFlag="--no-cache"
-      else
-        printf 'Usage: bash tests/host/manual/h09-rebuild-resume.sh [--no-cache]\n' >&2
-        exit 2
-      fi
-      ;;
-    *)
-      printf 'Usage: bash tests/host/manual/h09-rebuild-resume.sh [--no-cache]\n' >&2
-      exit 2
-      ;;
-  esac
+        ;;
+      *)
+        print_usage "[--no-cache]"
+        return 1
+        ;;
+    esac
+
+    shift
+  done
 
   if [ "${SBXTEST_NO_CACHE:-}" = "1" ]; then
     noCacheFlag="--no-cache"
   fi
+
+  return 0
 }
 
 # --------------------------------------------------------------------------------
@@ -90,7 +90,7 @@ resume_session() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
-parse_arguments "$#" "${1:-}"
+parse_arguments "$@" || exit 2
 require_test_sandbox H-09 || exit 1
 rebuild_images || exit 1
 recreate_sandbox || exit 1

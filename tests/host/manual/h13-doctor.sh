@@ -12,11 +12,12 @@ require_terminal
 
 . "$(dirname "$0")/../lib.sh"
 host_init
-require_test_sandbox H-13 || exit 1
 
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-13 || exit 1
 printf 'claude doctor runs next, inside the test sandbox.\n'
 printf '  Look for: auto-updates shown as disabled.\n'
 printf '  If it waits for a key, press Enter or Esc to come back here.\n\n'

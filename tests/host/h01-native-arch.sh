@@ -5,7 +5,6 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
-require_test_sandbox H-01 || exit 1
 
 # --------------------------------------------------------------------------------
 # Reads the expected and the reported architecture; FAIL and return 1 if the daemon reports one this check does not know
@@ -62,6 +61,8 @@ check_no_platform_warnings() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-01 || exit 1
 require_known_architecture || exit 1
 check_image_architectures
 check_container_architecture

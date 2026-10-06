@@ -11,7 +11,6 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
-require_test_sandbox H-18 || exit 1
 
 bundleDir=$REPO_DIR/best-practices
 syncedDir=$RUN/state/claude
@@ -138,6 +137,8 @@ check_deny_held() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-18 || exit 1
 pick_samples
 prepare_files
 run_scenario scope h18-scope.json

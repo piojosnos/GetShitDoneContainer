@@ -5,11 +5,12 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
-require_test_sandbox H-04 || exit 1
 
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-04 || exit 1
 output=$(in_container id)
 
 if [[ "$output" != "uid=1000(sandbox) gid=1000(sandbox)"* ]]; then

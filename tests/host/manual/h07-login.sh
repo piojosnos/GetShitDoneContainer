@@ -12,7 +12,6 @@ require_terminal
 
 . "$(dirname "$0")/../lib.sh"
 host_init
-require_test_sandbox H-07 || exit 1
 
 stateDir="$RUN/state/claude"
 
@@ -75,6 +74,8 @@ check_no_home_json() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-07 || exit 1
 run_login
 check_login_files
 check_auth_status

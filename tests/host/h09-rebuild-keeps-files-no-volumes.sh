@@ -12,7 +12,6 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
-require_test_sandbox H-09 || exit 1
 
 sentinelText="h09-$$-$(date +%s)"
 memorySentinel=$RUN/state/claude/projects/-home-sandbox-workspace-hosttest/memory/h09-memory.md
@@ -111,6 +110,8 @@ check_one_bind_mount() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-09 || exit 1
 plant_sentinels
 rebuild_and_restart
 check_sentinels_survived

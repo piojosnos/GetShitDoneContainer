@@ -13,7 +13,6 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
-require_test_sandbox H-10 || exit 1
 
 badDir="$RUN/does-not-exist"
 composeVersion=$(docker compose version --short </dev/null 2>/dev/null)
@@ -85,6 +84,8 @@ report_outcome() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-10 || exit 1
 stop_sandbox_first || exit 1
 try_start_on_missing_folder
 restart_real_sandbox

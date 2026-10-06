@@ -9,7 +9,6 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
-require_test_sandbox H-08 || exit 1
 
 marker="marker-$$-$(date +%s)"
 historyFile="$RUN/state/shell/bash_history"
@@ -61,6 +60,8 @@ check_fresh_shell_history() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-08 || exit 1
 start_background_shell
 wait_for_marker || exit 1
 restart_test_sandbox H-08 h08-down.log || exit 1

@@ -7,7 +7,6 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
-require_test_sandbox H-11 || exit 1
 
 sentinelText="h11-$$-$(date +%s)"
 
@@ -72,6 +71,8 @@ start_sandbox_again() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-11 || exit 1
 plant_sentinels
 stop_sandbox
 check_stop_was_clean

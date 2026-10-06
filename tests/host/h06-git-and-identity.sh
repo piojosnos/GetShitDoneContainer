@@ -9,7 +9,6 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
-require_test_sandbox H-06 || exit 1
 
 # --------------------------------------------------------------------------------
 # Makes the project folder a git repository from the host, ignoring your own git configuration
@@ -68,6 +67,8 @@ check_identity_stored() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
+require_test_sandbox H-06 || exit 1
 init_host_repo
 read_git_state
 check_git_status

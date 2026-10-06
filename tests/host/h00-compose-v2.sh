@@ -45,6 +45,7 @@ check_major_version() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
+require_no_arguments "$@" || exit 2
 read_versions || exit 1
 check_major_version || exit 1
 report_check H-00 "Compose $composeVersion is older than v2" "Compose $composeVersion is v2 or newer"
