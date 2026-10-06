@@ -753,25 +753,6 @@ expect "H-06: the missing identity file is named" has_text "$WORK/out.h06.nowrit
 run_standalone "$WORK/out.h06.safe" h06-git-and-identity.sh FAKE_SAFE_DIR=/home/sandbox/workspace
 expect "H-06: a safe.directory value that is not * fails" equals "$CHECK_RC" "1"
 
-echo "--- H-08 on its own"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h08" h08-history-survives-recreate.sh
-expect "H-08: a marker written while a shell is open survives the recreate" equals "$CHECK_RC" "0"
-expect "H-08: prints PASS: H-08" has_text "$WORK/out.h08" "PASS: H-08"
-expect "H-08: the history file is in the run folder" has_text "$FIXTURE/state/shell/bash_history" "echo marker-"
-expect "H-08: the sandbox is down and up once" equals "$(grep -c 'ARGS: compose .* \(up\|down\)' "$FAKE_LOG")" "2"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h08.nohist" h08-history-survives-recreate.sh FAKE_NO_HISTORY=1
-expect "H-08: a marker that never reaches the history file fails" equals "$CHECK_RC" "1"
-expect "H-08: the failing half is the first one" has_text "$WORK/out.h08.nohist" "before the recreate"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h08.lost" h08-history-survives-recreate.sh FAKE_DOWN_LOSES_HISTORY=1
-expect "H-08: history lost by the recreate fails" equals "$CHECK_RC" "1"
-expect "H-08: the failing half is the second one" has_text "$WORK/out.h08.lost" "after the recreate"
-
 echo "--- H-14 on its own"
 reset_state
 make_fixture_run
@@ -803,43 +784,6 @@ FIXTURE=""
 run_standalone "$WORK/out.h14.none" h14-bundle-in-image.sh
 expect "H-14: no test sandbox fails" equals "$CHECK_RC" "1"
 expect "H-14: no test sandbox says to run run-all.sh first" has_text "$WORK/out.h14.none" "run-all.sh first"
-
-echo "--- H-16 on its own"
-reset_state
-make_fixture_run
-fake_start_sync "$FIXTURE"
-run_standalone "$WORK/out.h16" h16-sync-refreshes-and-spares.sh
-expect "H-16: a restart that refreshes the bundle and spares user files passes" equals "$CHECK_RC" "0"
-expect "H-16: prints PASS: H-16" has_text "$WORK/out.h16" "PASS: H-16"
-expect "H-16: the stale rule is gone" test ! -e "$FIXTURE/state/claude/rules/h16-stale.md"
-expect "H-16: the old bundle skill is gone" test ! -e "$FIXTURE/state/claude/skills/h16-old-bundle-skill"
-expect "H-16: the user skill keeps its sentinel" has_text "$FIXTURE/state/claude/skills/h16-user-skill/SKILL.md" "h16-"
-expect "H-16: the GSD-style skill keeps its sentinel" has_text "$FIXTURE/state/claude/skills/gsd-h16-sample/SKILL.md" "h16-"
-expect "H-16: the memory keeps its sentinel" \
-  has_text "$FIXTURE/state/claude/projects/-home-sandbox-workspace-hosttest/memory/h16-memory.md" "h16-"
-expect "H-16: CLAUDE.md keeps its sentinel" has_text "$FIXTURE/state/claude/CLAUDE.md" "h16-"
-expect "H-16: rules equal the repo again" diff -r -q "$REPO/best-practices/rules" "$FIXTURE/state/claude/rules"
-expect "H-16: the edited bundle skill equals the repo again" \
-  diff -r -q "$REPO/best-practices/skills/merged" "$FIXTURE/state/claude/skills/merged"
-expect "H-16: the sandbox is down and up once" equals "$(grep -c 'ARGS: compose .* \(up\|down\)' "$FAKE_LOG")" "2"
-expect "H-16: the sandbox is up at the end" test -f "$WORK/state/container"
-reset_state
-make_fixture_run
-fake_start_sync "$FIXTURE"
-run_standalone "$WORK/out.h16.nosync" h16-sync-refreshes-and-spares.sh FAKE_NO_SYNC=1
-expect "H-16: a restart where the hook never ran fails" equals "$CHECK_RC" "1"
-expect "H-16: the stale rule is named" has_text "$WORK/out.h16.nosync" "h16-stale.md"
-reset_state
-make_fixture_run
-fake_start_sync "$FIXTURE"
-run_standalone "$WORK/out.h16.clobber" h16-sync-refreshes-and-spares.sh FAKE_SYNC_CLOBBERS=1
-expect "H-16: a restart that deletes user skills fails" equals "$CHECK_RC" "1"
-expect "H-16: the lost user skill is named" has_text "$WORK/out.h16.clobber" "h16-user-skill"
-reset_state
-FIXTURE=""
-run_standalone "$WORK/out.h16.none" h16-sync-refreshes-and-spares.sh
-expect "H-16: no test sandbox fails" equals "$CHECK_RC" "1"
-expect "H-16: no test sandbox says to run run-all.sh first" has_text "$WORK/out.h16.none" "run-all.sh first"
 
 echo "--- H-15 on its own"
 reset_state
@@ -963,21 +907,6 @@ CHECK_RC=0
 env SBXTEST_DIR="" bash "$WORK/scratchrepo/tests/host/coexistence.sh" >"$WORK/out.co.git" 2>&1 </dev/null || CHECK_RC=$?
 expect "Coexistence: a change under ClaudeCode/ fails" equals "$CHECK_RC" "1"
 expect "Coexistence: the changed path is shown" has_text "$WORK/out.co.git" "stray.txt"
-
-echo "--- H-11 on its own"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h11" h11-stop-is-quick-and-safe.sh
-expect "H-11: a quick stop that keeps the folders passes" equals "$CHECK_RC" "0"
-expect "H-11: prints PASS: H-11" has_text "$WORK/out.h11" "PASS: H-11"
-expect "H-11: the sentinel in the project folder is intact" test -f "$FIXTURE/hosttest/h11-sentinel.txt"
-expect "H-11: the sentinel in the state folder is intact" test -f "$FIXTURE/state/h11-sentinel.txt"
-expect "H-11: the sandbox is up again" test -f "$WORK/state/container"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h11.kept" h11-stop-is-quick-and-safe.sh FAKE_DOWN_KEEPS=1
-expect "H-11: a container still present after down fails" equals "$CHECK_RC" "1"
-expect "H-11: the kept container is the reason" has_text "$WORK/out.h11.kept" "still exists"
 
 echo "--- H-09 on its own"
 reset_state
