@@ -67,10 +67,13 @@ ENV HISTFILE=/home/sandbox/workspace/state/shell/bash_history \
     LANG=C.UTF-8
 
 # --- Entrypoint ---
-# - Copied while still root: owned by root, mode 755.
+# - Copied while still root: owned by root. The entrypoint is mode 755; its library,
+#   which it sources from the same folder, is mode 644.
 # - At start it checks the mount, then runs the command. See the script itself.
 COPY base/sbx-entrypoint /usr/local/bin/sbx-entrypoint
-RUN chmod 755 /usr/local/bin/sbx-entrypoint
+COPY base/sbx-start-lib.sh /usr/local/bin/sbx-start-lib.sh
+RUN chmod 755 /usr/local/bin/sbx-entrypoint \
+    && chmod 644 /usr/local/bin/sbx-start-lib.sh
 
 # --- Start hooks ---
 # - The entrypoint runs the entries here at container start, in name order.

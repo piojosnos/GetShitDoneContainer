@@ -16,101 +16,15 @@ set -eu
 #   Folders are skipped and the glob never matches dotfiles; anything else must be an
 #   executable regular file. A link that points nowhere, a fifo or a socket stops the
 #   start, as do a file that is not executable and a hook that fails.
-# - The start steps run only when the file is executed, so a test can source it
-#   and call the functions.
+# - The steps live in sbx-start-lib.sh, next to this file; this file only runs them.
 
-ws=/home/sandbox/workspace
-state=$ws/state
-hookDir=/etc/sbx/start.d
-
-# --------------------------------------------------------------------------------
-# is_mount PATH: true when PATH is a mount point.
-# --------------------------------------------------------------------------------
-# Field 5 of /proc/self/mountinfo is the mount point; no util-linux "mountpoint" needed.
-is_mount() { awk -v p="$1" '$5==p { f=1 } END { exit !f }' /proc/self/mountinfo; }
-
-# --------------------------------------------------------------------------------
-# die MESSAGE: prints the error and how to start the sandbox, then stops the start.
-# --------------------------------------------------------------------------------
-die() {
-  echo "[sbx] ERROR: $1" >&2
-  echo "[sbx]        Start the sandbox with 'docker compose up' (see SANDBOX.md)." >&2
-  exit 1
-}
-
-# --------------------------------------------------------------------------------
-# Stops the start unless the workspace is a writable mount and SBX_NAME is set
-# --------------------------------------------------------------------------------
-check_workspace_mount() {
-  is_mount "$ws" || die "$ws is not a bind mount; its data would be lost on recreate."
-  [ -w "$ws" ] || die "$ws is not writable by $(id -un)."
-  [ -n "${SBX_NAME:-}" ] || die "SBX_NAME is not set."
-}
-
-# --------------------------------------------------------------------------------
-# Stops the start unless the project and state folders exist
-# --------------------------------------------------------------------------------
-check_project_and_state_folders() {
-  [ -d "$ws/$SBX_NAME" ] || die "$ws/$SBX_NAME (the project folder) is missing."
-  [ -d "$state" ] || die "$state is missing."
-}
-
-# --------------------------------------------------------------------------------
-# Creates the state subfolders that are missing
-# --------------------------------------------------------------------------------
-create_state_dirs() {
-  local stateFolder
-
-  # ${SBX_STATE_DIRS:-} is unquoted on purpose: one word per folder name.
-  for stateFolder in shell gh git ${SBX_STATE_DIRS:-}; do
-    mkdir -p "$state/$stateFolder"
-  done
-}
-
-# --------------------------------------------------------------------------------
-# Runs every start hook in name order; any entry that is not an executable file stops the start
-# --------------------------------------------------------------------------------
-# The hooks run after the checks above and before the command. Names sort as text, so hooks
-# use two-digit prefixes (10-, 20-). Folders are skipped; every other entry must be an
-# executable regular file, so a dangling link, a fifo or a socket is refused, not skipped.
-run_start_hooks() {
-  local hook
-
-  for hook in "$hookDir"/*; do
-    # Only the unmatched glob of an empty folder is neither present nor a link.
-    if [ ! -e "$hook" ] && [ ! -L "$hook" ]; then
-      continue
-    fi
-
-    if [ -d "$hook" ]; then
-      continue
-    fi
-
-    if [ ! -f "$hook" ]; then
-      echo "[sbx] ERROR: start hook $hook is not a regular file; the container was not started." >&2
-      exit 1
-    fi
-
-    if [ ! -x "$hook" ]; then
-      echo "[sbx] ERROR: start hook $hook is not executable; the container was not started." >&2
-      exit 1
-    fi
-
-    if ! "$hook"; then
-      echo "[sbx] ERROR: start hook $hook failed; the container was not started." >&2
-      exit 1
-    fi
-  done
-}
+. "$(dirname "$0")/sbx-start-lib.sh"
 
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
-# The steps run only when the file is executed; a test sources it to call the functions above.
-if [ "${BASH_SOURCE[0]}" = "$0" ]; then
-  check_workspace_mount
-  check_project_and_state_folders
-  create_state_dirs
-  run_start_hooks
-  exec "$@"
-fi
+check_workspace_mount || exit 1
+check_project_and_state_folders || exit 1
+create_state_dirs || exit 1
+run_start_hooks || exit 1
+exec "$@"

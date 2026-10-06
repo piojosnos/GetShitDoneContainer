@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Self-test for base/sbx-entrypoint: runs its start hooks step on Linux against fixture hook folders.
-# - Sources the script in a subshell, so no mount and no Docker are needed.
-# - Also checks that the script runs its start checks when executed and none when sourced.
+# Self-test for the container start: runs the start hooks step on Linux against fixture hook folders.
+# - Sources base/sbx-start-lib.sh in a subshell, so no mount and no Docker are needed.
+# - Also checks that the library runs nothing when sourced and that base/sbx-entrypoint runs the start checks.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
 # - Usage, from anywhere: bash tests/entrypoint-selftest.sh   (exit 0 = every case passes)
 set -u
@@ -9,6 +9,7 @@ cd "$(dirname "$0")/.." || exit 1
 REPO=$(pwd -P)
 
 ENTRY=$REPO/base/sbx-entrypoint
+START_LIB=$REPO/base/sbx-start-lib.sh
 FAILS=0
 
 # --------------------------------------------------------------------------------
@@ -56,9 +57,9 @@ has_text() { grep -Fq -- "$2" "$1"; }
 # lacks_text FILE TEXT: true if FILE does not contain TEXT.
 lacks_text() { ! grep -Fq -- "$2" "$1"; }
 
-# run_hooks DIR OUTFILE: sources the entrypoint in a subshell, points it at DIR and runs the hooks; sets HOOKS_RC.
+# run_hooks DIR OUTFILE: sources the start library in a subshell, points it at DIR and runs the hooks; sets HOOKS_RC.
 run_hooks() {
-  ( . "$ENTRY"; hookDir=$1; run_start_hooks ) >"$2" 2>&1 </dev/null
+  ( . "$START_LIB"; hookDir=$1; run_start_hooks ) >"$2" 2>&1 </dev/null
   HOOKS_RC=$?
 }
 
@@ -206,18 +207,18 @@ case_fifo_stops() {
 }
 
 # --------------------------------------------------------------------------------
-# Case: sourcing the script runs no start step
+# Case: sourcing the start library runs no start step
 # --------------------------------------------------------------------------------
 case_sourcing_runs_nothing() {
   local sourceRc
 
-  echo '--- sourcing the script runs no start step'
+  echo '--- sourcing the start library runs no start step'
   mkdir -p "$WORK/sourced"
 
-  ( . "$ENTRY" ) >"$WORK/sourced/out" 2>&1 </dev/null
+  ( . "$START_LIB" ) >"$WORK/sourced/out" 2>&1 </dev/null
   sourceRc=$?
 
-  expect "sourced: the script exits 0" equals "$sourceRc" 0
+  expect "sourced: the library exits 0" equals "$sourceRc" 0
   expect "sourced: nothing is printed" test ! -s "$WORK/sourced/out"
 }
 

@@ -265,7 +265,7 @@ case "${1:-}" in
         done
         if [ -n "$hookSource" ]; then
           if [ "${FAKE_HOOK_DIR_IGNORED:-0}" != 1 ]; then
-            hookOutput=$( ( . "$FAKE_REPO/base/sbx-entrypoint"; hookDir=$hookSource; run_start_hooks ) 2>&1 </dev/null )
+            hookOutput=$( ( . "$FAKE_REPO/base/sbx-start-lib.sh"; hookDir=$hookSource; run_start_hooks ) 2>&1 </dev/null )
             hookStatus=$?
             if [ "$hookStatus" -ne 0 ]; then
               printf '%s\n' "${hookOutput//"$hookSource"//etc/sbx/start.d}" >&2
