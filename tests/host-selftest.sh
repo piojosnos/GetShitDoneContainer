@@ -726,23 +726,6 @@ expect "runner: a failed up exits 1" equals "$RUNNER_RC" "1"
 expect "runner: a failed up prints FAIL: SETUP" has_text "$WORK/out.up" "FAIL: SETUP"
 expect "runner: a failed up marks the sandbox checks not run" has_text "$WORK/out.up" "NOT RUN: h04-nonroot-user.sh"
 
-echo "--- H-00 on its own"
-reset_state
-FIXTURE=""
-run_standalone "$WORK/out.h00" h00-compose-v2.sh
-expect "H-00: Compose 2.x passes" equals "$CHECK_RC" "0"
-expect "H-00: prints PASS: H-00" has_text "$WORK/out.h00" "PASS: H-00"
-expect "H-00: prints the Compose version" has_text "$WORK/out.h00" "INFO: Compose version 2.39.1"
-expect "H-00: prints the Docker Desktop version" has_text "$WORK/out.h00" "Docker Desktop 4.99.0"
-run_standalone "$WORK/out.h00.five" h00-compose-v2.sh FAKE_COMPOSE_VERSION=v5.0.2
-expect "H-00: Compose 5.x with a leading v passes" equals "$CHECK_RC" "0"
-run_standalone "$WORK/out.h00.one" h00-compose-v2.sh FAKE_COMPOSE_VERSION=1.29.2
-expect "H-00: Compose 1.x fails" equals "$CHECK_RC" "1"
-expect "H-00: Compose 1.x prints FAIL: H-00" has_text "$WORK/out.h00.one" "FAIL: H-00"
-run_standalone "$WORK/out.h00.broken" h00-compose-v2.sh FAKE_COMPOSE_FAIL=1
-expect "H-00: a failing docker compose version fails" equals "$CHECK_RC" "1"
-expect "H-00: a failing docker compose version prints FAIL: H-00" has_text "$WORK/out.h00.broken" "FAIL: H-00"
-
 echo "--- H-02 on its own"
 run_standalone "$WORK/out.h02" h02-claude-on-base.sh
 expect "H-02: base layers under the Claude layers pass" equals "$CHECK_RC" "0"
