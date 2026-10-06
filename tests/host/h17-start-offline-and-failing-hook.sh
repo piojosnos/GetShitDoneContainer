@@ -43,10 +43,12 @@ make_hook_folders() {
 }
 
 # --------------------------------------------------------------------------------
-# Runs one container whose own hook folder replaces /etc/sbx/start.d; its status is docker's
+# Runs one container with the compose restrictions, the h17 workspace and DOCKER_ARGS; its status is docker's
 # --------------------------------------------------------------------------------
-run_with_hook_folder() {
-  run_timeout 60 docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true -e SBX_NAME=hosttest --mount "type=bind,source=$RUN/h17,target=/home/sandbox/workspace" --mount "type=bind,source=$1,target=/etc/sbx/start.d,readonly" sbx-claude:local sh -c 'echo h17-command-ran' </dev/null 2>&1
+run_restricted_container() {
+  run_timeout 60 docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true \
+    -e SBX_NAME=hosttest --mount "type=bind,source=$RUN/h17,target=/home/sandbox/workspace" \
+    "$@" sbx-claude:local sh -c 'echo h17-command-ran' </dev/null 2>&1
 }
 
 # --------------------------------------------------------------------------------
@@ -55,16 +57,18 @@ run_with_hook_folder() {
 run_containers() {
   mkdir -p "$RUN/h17/hosttest" "$RUN/h17/state"
 
-  offlineOutput=$(run_timeout 60 docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true -e SBX_NAME=hosttest --mount "type=bind,source=$RUN/h17,target=/home/sandbox/workspace" sbx-claude:local sh -c 'echo h17-command-ran' </dev/null 2>&1)
+  offlineOutput=$(run_restricted_container)
   offlineStatus=$?
 
-  brokenOutput=$(run_timeout 60 docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true -e SBX_NAME=hosttest -e CLAUDE_CONFIG_DIR=/proc/no-such-dir --mount "type=bind,source=$RUN/h17,target=/home/sandbox/workspace" sbx-claude:local sh -c 'echo h17-command-ran' </dev/null 2>&1)
+  brokenOutput=$(run_restricted_container -e CLAUDE_CONFIG_DIR=/proc/no-such-dir)
   brokenStatus=$?
 
-  notExecutableOutput=$(run_with_hook_folder "$RUN/h17/hooks-not-executable")
+  notExecutableOutput=$(run_restricted_container \
+    --mount "type=bind,source=$RUN/h17/hooks-not-executable,target=/etc/sbx/start.d,readonly")
   notExecutableStatus=$?
 
-  danglingOutput=$(run_with_hook_folder "$RUN/h17/hooks-dangling")
+  danglingOutput=$(run_restricted_container \
+    --mount "type=bind,source=$RUN/h17/hooks-dangling,target=/etc/sbx/start.d,readonly")
   danglingStatus=$?
 }
 
@@ -82,24 +86,7 @@ check_offline_start() {
 }
 
 # --------------------------------------------------------------------------------
-# Checks the failing start hook stopped the start with an error and never ran the command
-# --------------------------------------------------------------------------------
-check_failing_hook() {
-  if [ "$brokenStatus" -eq 0 ]; then
-    add_problem "a failing start hook must exit non-zero; the container exited 0"
-  fi
-
-  if [[ "$brokenOutput" != *"[sbx] ERROR: start hook"* ]]; then
-    add_problem "a failing start hook must print '[sbx] ERROR: start hook'; got: $(first_lines "$brokenOutput")"
-  fi
-
-  if [[ "$brokenOutput" == *"h17-command-ran"* ]]; then
-    add_problem "the command ran although the start hook failed"
-  fi
-}
-
-# --------------------------------------------------------------------------------
-# Checks a bad hook folder stopped the start with the expected error and never ran the command
+# Checks a failing or bad start hook stopped the start with the expected error and never ran the command
 # --------------------------------------------------------------------------------
 check_bad_hook_stop() {
   local label=$1 status=$2 output=$3 expectedLine=$4
@@ -113,7 +100,7 @@ check_bad_hook_stop() {
   fi
 
   if [[ "$output" == *"h17-command-ran"* ]]; then
-    add_problem "the command ran although $label"
+    add_problem "the command ran despite $label"
   fi
 }
 
@@ -125,7 +112,7 @@ make_hook_folders
 run_containers
 check_offline_start
 check_bundle_rules_synced "$RUN/h17/state/claude" "the offline start did not sync the rules"
-check_failing_hook
+check_bad_hook_stop "a failing start hook" "$brokenStatus" "$brokenOutput" "[sbx] ERROR: start hook"
 check_bad_hook_stop "the hook file that is not executable" "$notExecutableStatus" "$notExecutableOutput" \
   "[sbx] ERROR: start hook /etc/sbx/start.d/10-not-executable is not executable; the container was not started."
 check_bad_hook_stop "the dangling hook link" "$danglingStatus" "$danglingOutput" \
