@@ -1,0 +1,2 @@
+# Self-test cases removed on purpose, one per line: case name<TAB>knob<TAB>reason.
+# Empty: only the three dead knobs left the fake docker, and no case set them.
