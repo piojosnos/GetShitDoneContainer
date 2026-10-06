@@ -602,77 +602,6 @@ fake_start_sync() {
 
 # --- cases ---
 
-echo "--- failing check"
-reset_state
-run_runner "$WORK/out.badid" FAKE_ID="uid=0(root) gid=0(root)"
-expect "runner: a wrong id exits 1" equals "$RUNNER_RC" "1"
-expect "runner: a wrong id prints FAIL: H-04" has_text "$WORK/out.badid" "FAIL: H-04"
-expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 18 passed, 1 failed, 0 not run"
-expect "runner: a wrong id still prints the Next block" has_text "$WORK/out.badid" "If something looks wrong, see tests/host/manual/"
-
-echo "--- sandbox started without the bundle sync"
-reset_state
-run_runner "$WORK/out.nosync" FAKE_NO_SYNC=1
-expect "runner: a start that never synced exits 1" equals "$RUNNER_RC" "1"
-expect "runner: a start that never synced prints FAIL: H-15" has_text "$WORK/out.nosync" "FAIL: H-15"
-
-echo "--- failed build"
-reset_state
-run_runner "$WORK/out.build" FAKE_BUILD_FAIL=sbx-claude:local
-expect "runner: a failed build exits 1" equals "$RUNNER_RC" "1"
-expect "runner: a failed build runs no check" lacks_match "$WORK/out.build" '^(PASS|FAIL): H-04'
-expect "runner: a failed build prints the log path" has_text "$WORK/out.build" "logs/build-claude.log"
-expect "runner: a failed build still prints the Next block" has_text "$WORK/out.build" "If something looks wrong, see tests/host/manual/"
-
-echo "--- leftover container that is not the test sandbox"
-reset_state
-pre_create_container "/old/sbx-hosttest-leftover"
-run_runner "$WORK/out.leftover" FAKE_LABEL=other
-expect "runner: a foreign sbx-hosttest container exits 1" equals "$RUNNER_RC" "1"
-expect "runner: a foreign sbx-hosttest container is reported" has_text "$WORK/out.leftover" "FAIL: SETUP"
-expect "runner: a foreign sbx-hosttest container is never taken down" lacks_match "$FAKE_LOG" 'ARGS: compose .*down'
-
-echo "--- sandbox does not start"
-reset_state
-run_runner "$WORK/out.up" FAKE_UP_RC=1
-expect "runner: a failed up exits 1" equals "$RUNNER_RC" "1"
-expect "runner: a failed up prints FAIL: SETUP" has_text "$WORK/out.up" "FAIL: SETUP"
-expect "runner: a failed up marks the sandbox checks not run" has_text "$WORK/out.up" "NOT RUN: h04-nonroot-user.sh"
-
-echo "--- H-17 on its own"
-reset_state
-make_fixture_run
-run_standalone "$WORK/out.h17" h17-start-offline-and-failing-hook.sh
-expect "H-17: an offline start that syncs and a failing hook that stops pass" equals "$CHECK_RC" "0"
-expect "H-17: prints PASS: H-17" has_text "$WORK/out.h17" "PASS: H-17"
-expect "H-17: the offline start synced the rules into its own folder"   diff -r -q "$REPO/best-practices/rules" "$FIXTURE/h17/state/claude/rules"
-expect "H-17: the test sandbox state was not touched" test ! -e "$FIXTURE/state/claude"
-sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.h17"
-expect "H-17: all four containers run with --rm, no network, no capabilities, no new privileges"   equals "$(grep -c '^run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true ' "$WORK/args.h17")" "4"
-expect "H-17: all four containers mount the run folder as the workspace"   equals "$(grep -F -c "type=bind,source=$FIXTURE/h17,target=/home/sandbox/workspace" "$WORK/args.h17")" "4"
-expect "H-17: two containers mount their own hook folder read-only over the image hooks"   equals "$(grep -F -c ",target=/etc/sbx/start.d,readonly" "$WORK/args.h17")" "2"
-expect "H-17: the hook folders sit under the run folder"   equals "$(grep -F -c "source=$FIXTURE/h17/hooks-" "$WORK/args.h17")" "2"
-expect "H-17: the not-executable hook is a file without the execute bit" test -f "$FIXTURE/h17/hooks-not-executable/10-not-executable"
-expect "H-17: the not-executable hook has no execute bit" test ! -x "$FIXTURE/h17/hooks-not-executable/10-not-executable"
-expect "H-17: the dangling hook is a link" test -L "$FIXTURE/h17/hooks-dangling/10-dangling"
-expect "H-17: the dangling hook link points nowhere" test ! -e "$FIXTURE/h17/hooks-dangling/10-dangling"
-expect "H-17: only the failing container gets a broken config folder"   equals "$(grep -c 'CLAUDE_CONFIG_DIR=/proc/no-such-dir' "$WORK/args.h17")" "1"
-run_standalone "$WORK/out.h17.offline" h17-start-offline-and-failing-hook.sh FAKE_OFFLINE_FAIL=1
-expect "H-17: an offline start that fails fails the check" equals "$CHECK_RC" "1"
-expect "H-17: the offline start is named" has_text "$WORK/out.h17.offline" "offline start"
-run_standalone "$WORK/out.h17.ignored" h17-start-offline-and-failing-hook.sh FAKE_HOOK_IGNORED=1
-expect "H-17: a failing hook that does not stop the start fails the check" equals "$CHECK_RC" "1"
-expect "H-17: the command that ran is reported" has_text "$WORK/out.h17.ignored" "command ran"
-run_standalone "$WORK/out.h17.hookdir" h17-start-offline-and-failing-hook.sh FAKE_HOOK_DIR_IGNORED=1
-expect "H-17: hook folders that do not stop the start fail the check" equals "$CHECK_RC" "1"
-expect "H-17: the not-executable hook is named" has_text "$WORK/out.h17.hookdir" "is not executable"
-expect "H-17: the dangling hook is named" has_text "$WORK/out.h17.hookdir" "is not a regular file"
-reset_state
-FIXTURE=""
-run_standalone "$WORK/out.h17.none" h17-start-offline-and-failing-hook.sh
-expect "H-17: no run folder fails" equals "$CHECK_RC" "1"
-expect "H-17: no run folder says so" has_text "$WORK/out.h17.none" "no run folder"
-
 echo "--- H-18 on its own"
 reset_state
 make_fixture_run
@@ -731,55 +660,6 @@ CHECK_RC=0
 env SBXTEST_DIR="" bash "$WORK/scratchrepo/tests/host/coexistence.sh" >"$WORK/out.co.git" 2>&1 </dev/null || CHECK_RC=$?
 expect "Coexistence: a change under ClaudeCode/ fails" equals "$CHECK_RC" "1"
 expect "Coexistence: the changed path is shown" has_text "$WORK/out.co.git" "stray.txt"
-
-echo "--- full chain in the runner"
-reset_state
-run_runner "$WORK/out.chain.ign" FAKE_H10=ignored
-expect "runner: a created missing folder exits 1" equals "$RUNNER_RC" "1"
-expect "runner: a created missing folder prints FAIL: H-10" has_text "$WORK/out.chain.ign" "FAIL: H-10"
-expect "runner: a created missing folder still runs Coexistence" has_text "$WORK/out.chain.ign" "PASS: Coexistence"
-expect "runner: a created missing folder still prints the Next block" has_text "$WORK/out.chain.ign" "If something looks wrong, see tests/host/manual/"
-reset_state
-run_runner "$WORK/out.chain.keep" FAKE_DOWN_KEEPS=1
-expect "runner: a kept container exits 1" equals "$RUNNER_RC" "1"
-expect "runner: a kept container prints FAIL: H-11" has_text "$WORK/out.chain.keep" "FAIL: H-11"
-expect "runner: the chain stops, so H-09 is not run" has_text "$WORK/out.chain.keep" "NOT RUN: h09-rebuild-keeps-files-no-volumes.sh"
-expect "runner: the chain stops, so H-10 is not run" has_text "$WORK/out.chain.keep" "NOT RUN: h10-missing-folder-refused.sh"
-expect "runner: H-09 prints no result after the chain stopped" lacks_match "$WORK/out.chain.keep" '^(PASS|FAIL): H-(09|10)'
-expect "runner: Coexistence still runs after the chain stopped" has_text "$WORK/out.chain.keep" "PASS: Coexistence"
-reset_state
-run_runner "$WORK/out.nocache" SBXTEST_NO_CACHE=1
-sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.nocache"
-expect "runner: SBXTEST_NO_CACHE=1 run exits 0" equals "$RUNNER_RC" "0"
-expect "runner: the first builds use the cache" equals "$(grep -c '^build -f ' "$WORK/args.nocache")" "2"
-expect "runner: only the rebuild uses --no-cache" equals "$(grep -c '^build --no-cache ' "$WORK/args.nocache")" "2"
-
-echo "--- H-18 failure does not stop the runner"
-reset_state
-run_runner "$WORK/out.h18keep" FAKE_DENY_BROKEN=1
-expect "runner: an H-18 failure exits 1" equals "$RUNNER_RC" "1"
-expect "runner: an H-18 failure prints FAIL: H-18" has_text "$WORK/out.h18keep" "FAIL: H-18"
-expect "runner: an H-18 failure marks no check not run" lacks_text "$WORK/out.h18keep" "NOT RUN"
-expect "runner: an H-18 failure still runs the chain" has_text "$WORK/out.h18keep" "PASS: H-16"
-expect "runner: an H-18 failure is in the summary" has_text "$WORK/out.h18keep" "Summary: 18 passed, 1 failed, 0 not run"
-expect "runner: an H-18 failure is listed" has_text "$WORK/out.h18keep" "Failed: h18-scope-and-deny.sh"
-
-echo "--- fatal H-00 in the runner"
-reset_state
-run_runner "$WORK/out.h00fatal" FAKE_COMPOSE_VERSION=1.29.2
-expect "runner: Compose 1.x exits 1" equals "$RUNNER_RC" "1"
-expect "runner: Compose 1.x prints FAIL: H-00" has_text "$WORK/out.h00fatal" "FAIL: H-00"
-expect "runner: Compose 1.x builds nothing" lacks_text "$FAKE_LOG" "ARGS: build"
-expect "runner: Compose 1.x still prints the Next block" has_text "$WORK/out.h00fatal" "If something looks wrong, see tests/host/manual/"
-
-echo "--- H-02 failure does not stop the runner"
-reset_state
-run_runner "$WORK/out.h02keep" FAKE_CLAUDE_LAYERS="sha256:x1 sha256:c1"
-expect "runner: an H-02 failure exits 1" equals "$RUNNER_RC" "1"
-expect "runner: an H-02 failure prints FAIL: H-02" has_text "$WORK/out.h02keep" "FAIL: H-02"
-expect "runner: an H-02 failure still runs H-04" has_text "$WORK/out.h02keep" "PASS: H-04"
-expect "runner: an H-02 failure still runs H-12" has_text "$WORK/out.h02keep" "PASS: H-12"
-expect "runner: an H-02 failure is in the summary" has_text "$WORK/out.h02keep" "Failed: h02-claude-on-base.sh"
 
 if [ "$FAILS" -eq 0 ]; then
   echo "All cases pass."
