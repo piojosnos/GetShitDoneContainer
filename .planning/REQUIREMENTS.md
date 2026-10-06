@@ -39,7 +39,7 @@ Automated checks that run on the Mac, where Docker runs.
 
 - [x] **HT-01**: One script per host check (H-00 to H-13, plus Coexistence) under `tests/host/`, each printing a `PASS`/`FAIL` line with its check ID and exiting 0 or 1
 - [x] **HT-02**: `tests/host/run-all.sh` runs every automatable check unattended with no required environment variables: it builds the images, creates a throwaway sandbox, prints a summary, and exits non-zero on any failure. It never deletes files; it prints the cleanup command instead
-- [x] **HT-03**: Steps that need a human (Claude login, resume after rebuild, `claude doctor`) are a manual pass in `tests/host-checklist.md`, each run through a helper script that checks what it can automatically
+- [x] **HT-03**: Steps that need a human (Claude login, resume after a rebuild, `claude doctor`, the bundle behaviour) have helper scripts in `tests/host/manual/`, described in `tests/host-checklist.md`; each checks what it can automatically; they are diagnostic tools run when something looks wrong, not a required pass
 - [x] **HT-04**: The scripts run with macOS stock bash 3.2 and Docker Desktop, and never touch real sandboxes, the user's git identity, or old-layout containers
 - [x] **HT-05**: All host checks pass on the Mac, which closes Phase 1's deferred host verification
 
@@ -68,7 +68,7 @@ Generic `sbx-*` scripts: short, plain bash, and runnable with macOS's stock bash
 
 ### Automation
 
-- [ ] **CI-01**: GitHub runs `tests/guard.sh` on every push to a PR and shows the result as a PR check. Nothing runs on the Mac or in a sandbox container
+- [ ] **CI-01**: GitHub runs `bash tests/guard/run-all.sh` on every push to a PR and shows the result as a PR check. Nothing runs on the Mac or in a sandbox container
 
 ### Documentation
 
@@ -167,4 +167,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-09-30*
-*Last updated: 2026-10-03 after inserting Phase 1.1, automated host tests (HT-01..HT-05); bundle phase renumbered to 1.2*
+*Last updated: 2026-10-06 after Phase 1.4 (guard command, diagnostic helpers)*
