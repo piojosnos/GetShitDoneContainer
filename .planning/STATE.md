@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.4"
 current_phase_name: Test suite refactor (INSERTED)
 status: executing
-stopped_at: Completed 01.4-04-PLAN.md
-last_updated: "2026-10-06T19:33:30.325Z"
+stopped_at: Completed 01.4-05-PLAN.md
+last_updated: "2026-10-06T19:45:27.701Z"
 last_activity: 2026-10-06
 last_activity_desc: Phase 01.4 execution started
-state_head: 241437f9ec63a75bf9532d21f08c10797e6a6284
+state_head: a44642e155a5fea5f2ee6567806d38a0be827579
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 28
-  completed_plans: 24
+  completed_plans: 25
   percent: 33
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-05)
 ## Current Position
 
 Phase: 01.4 (Test suite refactor (INSERTED)) — EXECUTING
-Plan: 5 of 8
+Plan: 6 of 8
 Status: Ready to execute
 Last activity: 2026-10-06 — Phase 01.4 execution started
 
@@ -83,6 +83,7 @@ Progress: [███░░░░░░░] 33%
 | Phase 01.4 P02 | 7 min | 3 tasks | 15 files |
 | Phase 01.4 P03 | 13 min | 3 tasks | 13 files |
 | Phase 01.4 P04 | 5 min | 3 tasks | 11 files |
+| Phase 01.4 P05 | 10 min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -133,6 +134,8 @@ Recent decisions affecting current work:
 - [Phase 01.4]: The fake docker is its own file with every retained knob in one header table; only the three knobs no case sets are dropped, so no self-test case is dropped
 - [Phase 01.4]: fake-transcript.sh builds both fake transcripts under fresh state folders instead of removing old ones, so its only removal is the sbx-fake14 case branch
 - [Phase 01.4]: Plan 04 moves host sections by locating each by its echo header (baseline line numbers shifted after plan 03) and rewrites groupList in final relative order each task
+- [Phase 01.4]: The Mac runner's end-of-run text names the cleanup command and tests/host/manual/; the helpers are no longer listed as an ordered pass (plan 05)
+- [Phase 01.4]: The planning-id guard rule scans tests/selftest/host/ instead of the removed tests/host-selftest.sh (plan 05); plan 06 keeps the new folder in that path list
 
 ### Pending Todos
 
@@ -174,6 +177,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-06T19:33:30.215Z
-Stopped at: Completed 01.4-04-PLAN.md
+Last session: 2026-10-06T19:45:27.590Z
+Stopped at: Completed 01.4-05-PLAN.md
 Resume file: None
