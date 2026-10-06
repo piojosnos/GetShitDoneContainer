@@ -152,7 +152,7 @@ Plans:
   3. `tests/host-selftest.sh`, `tests/bundle-selftest.sh` and `tests/guard.sh` are split into logical units (one file per check group, a shared helpers library, a short runner), follow the script layout rule, and reuse `tests/host/lib.sh` and `tests/host/lib-bundle.sh` where they fit.
   4. Every check that runs today still runs and still catches what it catches today (the deliberately broken cases still fail), and `tests/host/run-all.sh` passes on the Mac.
 
-**Plans:** 5/8 plans executed
+**Plans:** 6/8 plans executed
 
 Plans:
 **Wave 1**
@@ -171,7 +171,7 @@ Plans:
 - [x] 01.4-05-PLAN.md: New end-of-run text with its cases, last host groups, old script removed, mutation proof
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 01.4-06-PLAN.md: Guard as a folder of seven rule groups; moved path lists proven by planted violations
+- [x] 01.4-06-PLAN.md: Guard as a folder of seven rule groups; moved path lists proven by planted violations
 
 **Wave 7** *(blocked on Wave 6 completion)*
 - [ ] 01.4-07-PLAN.md: Checklist and SANDBOX.md wording; roadmap and requirements text (separate planning branch)
@@ -294,7 +294,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 1.1. Automated host tests | 4/4 | Complete    | 2026-10-04 |
 | 1.2. Best-practices bundle baked into the image (stopgap) | 6/6 | Complete    | 2026-10-05 |
 | 1.3. Shell script layout | 6/6 | Complete    | 2026-10-05 |
-| 1.4. Test suite refactor | 5/8 | In Progress|  |
+| 1.4. Test suite refactor | 6/8 | In Progress|  |
 | 1.5. Host test fixes | 0/TBD | Not started | - |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
