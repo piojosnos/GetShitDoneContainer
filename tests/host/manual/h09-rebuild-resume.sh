@@ -44,33 +44,36 @@ parse_arguments() {
 }
 
 # --------------------------------------------------------------------------------
-# Rebuilds both images; stops if the build fails
+# Rebuilds both images; FAIL and return 1 if the build fails
 # --------------------------------------------------------------------------------
 rebuild_images() {
   info "rebuilding sbx-base:local and sbx-claude:local (logs in $RUN/logs)"
 
   if ! build_images manual-rebuild "$noCacheFlag"; then
-    stop_check H-09 "the image rebuild failed"
+    fail H-09 "the image rebuild failed"
+    return 1
   fi
 }
 
 # --------------------------------------------------------------------------------
-# Takes the test sandbox down and up again; stops if either fails
+# Takes the test sandbox down and up again; FAIL and return 1 if either fails
 # --------------------------------------------------------------------------------
 recreate_sandbox() {
   info "taking the test sandbox down"
 
   if ! compose_down >"$RUN/logs/manual-down.log" 2>&1; then
-    stop_check H-09 "compose down failed" "log: $RUN/logs/manual-down.log"
+    fail H-09 "compose down failed" "log: $RUN/logs/manual-down.log"
+    return 1
   fi
 
   info "starting the test sandbox"
 
   if ! compose_up; then
-    stop_check H-09 "compose up failed after the rebuild" "log: $RUN/logs/compose-up.log"
+    fail H-09 "compose up failed after the rebuild" "log: $RUN/logs/compose-up.log"
+    return 1
   fi
 
-  require_test_sandbox H-09 || exit 1
+  require_test_sandbox H-09 || return 1
 }
 
 # --------------------------------------------------------------------------------
@@ -109,8 +112,8 @@ resume_session() {
 # --------------------------------------------------------------------------------
 parse_arguments "$#" "${1:-}"
 require_test_sandbox H-09 || exit 1
-rebuild_images
-recreate_sandbox
+rebuild_images || exit 1
+recreate_sandbox || exit 1
 check_still_logged_in
 resume_session
 exit_with_result

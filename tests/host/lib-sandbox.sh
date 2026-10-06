@@ -88,7 +88,7 @@ compose_down() {
 }
 
 # --------------------------------------------------------------------------------
-# restart_test_sandbox ID LOG_NAME: compose down, then up; on a failure prints FAIL for ID and exits 1.
+# restart_test_sandbox ID LOG_NAME: compose down, then up; on a failure prints FAIL for ID and returns 1.
 # --------------------------------------------------------------------------------
 restart_test_sandbox() {
   local checkId=$1
@@ -97,11 +97,13 @@ restart_test_sandbox() {
   logFile="$RUN/logs/$2"
 
   if ! compose_down >"$logFile" 2>&1; then
-    stop_check "$checkId" "compose down failed" "log: $logFile"
+    fail "$checkId" "compose down failed" "log: $logFile"
+    return 1
   fi
 
   if ! compose_up; then
-    stop_check "$checkId" "compose up failed after the down" "log: $RUN/logs/compose-up.log"
+    fail "$checkId" "compose up failed after the down" "log: $RUN/logs/compose-up.log"
+    return 1
   fi
 }
 

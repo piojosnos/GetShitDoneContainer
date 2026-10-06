@@ -20,11 +20,12 @@ composeVersion=$(docker compose version --short </dev/null 2>/dev/null)
 restartNote=""
 
 # --------------------------------------------------------------------------------
-# Takes the test sandbox down before the test; stops if that fails
+# Takes the test sandbox down before the test; FAIL and return 1 if that fails
 # --------------------------------------------------------------------------------
 stop_sandbox_first() {
   if ! compose_down >"$RUN/logs/h10-down.log" 2>&1; then
-    stop_check H-10 "compose down failed before the test; log: $RUN/logs/h10-down.log"
+    fail H-10 "compose down failed before the test; log: $RUN/logs/h10-down.log"
+    return 1
   fi
 }
 
@@ -61,27 +62,30 @@ report_outcome() {
   lastLines=$(printf '%s\n' "$upOutput" | tail -n 3 | tr '\n' ' ')
 
   if [ "$upStatus" -eq 0 ]; then
-    stop_check H-10 "the sandbox started on a missing folder (rc=0). Compose $composeVersion.$restartNote" \
+    fail H-10 "the sandbox started on a missing folder (rc=0). Compose $composeVersion.$restartNote" \
       "the path was $badDir; last output: $lastLines"
+    return 1
   fi
 
   if [ "$pathExists" -eq 1 ]; then
-    stop_check H-10 "Docker created $badDir (create_host_path ignored); the entrypoint still refused (rc=$upStatus). Compose $composeVersion.$restartNote" \
+    fail H-10 "Docker created $badDir (create_host_path ignored); the entrypoint still refused (rc=$upStatus). Compose $composeVersion.$restartNote" \
       "last output: $lastLines" \
       "the printed cleanup removes the run folder, and the path with it"
+    return 1
   fi
 
   if [ -n "$restartNote" ]; then
-    stop_check H-10 "refused as expected (rc=$upStatus), but the real sandbox did not come back.$restartNote"
+    fail H-10 "refused as expected (rc=$upStatus), but the real sandbox did not come back.$restartNote"
+    return 1
   fi
 
-  pass_check H-10 "a missing folder is refused (rc=$upStatus) and not created. Compose $composeVersion"
+  pass H-10 "a missing folder is refused (rc=$upStatus) and not created. Compose $composeVersion"
 }
 
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
-stop_sandbox_first
+stop_sandbox_first || exit 1
 try_start_on_missing_folder
 restart_real_sandbox
-report_outcome
+report_outcome || exit 1

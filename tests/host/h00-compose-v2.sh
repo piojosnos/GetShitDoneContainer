@@ -7,14 +7,15 @@ set -u
 host_init
 
 # --------------------------------------------------------------------------------
-# Reads the Compose and Docker versions and prints them as info
+# Reads the Compose and Docker versions and prints them as info; FAIL and return 1 if Compose does not answer
 # --------------------------------------------------------------------------------
 read_versions() {
   composeVersion=$(docker compose version --short </dev/null 2>&1)
   composeStatus=$?
 
   if [ "$composeStatus" -ne 0 ]; then
-    stop_check H-00 "docker compose version failed" "got: $composeVersion"
+    fail H-00 "docker compose version failed" "got: $composeVersion"
+    return 1
   fi
 
   composeVersion=${composeVersion#v}
@@ -26,12 +27,13 @@ read_versions() {
 }
 
 # --------------------------------------------------------------------------------
-# Checks the major version is a number and at least 2
+# Checks the major version is at least 2; FAIL and return 1 if it is not a number
 # --------------------------------------------------------------------------------
 check_major_version() {
   case "$majorVersion" in
     ''|*[!0-9]*)
-      stop_check H-00 "could not read a Compose major version" "got: $composeVersion"
+      fail H-00 "could not read a Compose major version" "got: $composeVersion"
+      return 1
       ;;
   esac
 
@@ -43,6 +45,6 @@ check_major_version() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
-read_versions
-check_major_version
+read_versions || exit 1
+check_major_version || exit 1
 report_check H-00 "Compose $composeVersion is older than v2" "Compose $composeVersion is v2 or newer"

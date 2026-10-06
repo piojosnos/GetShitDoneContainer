@@ -18,11 +18,12 @@ set -u
 host_init
 
 # --------------------------------------------------------------------------------
-# Stops the check when there is no run folder
+# FAIL and return 1 when there is no run folder
 # --------------------------------------------------------------------------------
 require_run_folder() {
   if [ -z "${RUN:-}" ]; then
-    stop_check H-17 "no run folder" "run: bash tests/host/run-all.sh first"
+    fail H-17 "no run folder" "run: bash tests/host/run-all.sh first"
+    return 1
   fi
 }
 
@@ -119,7 +120,7 @@ check_bad_hook_stop() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
-require_run_folder
+require_run_folder || exit 1
 make_hook_folders
 run_containers
 check_offline_start

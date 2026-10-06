@@ -8,14 +8,15 @@ host_init
 require_test_sandbox H-01 || exit 1
 
 # --------------------------------------------------------------------------------
-# Reads the expected and the reported architecture; stops if the daemon reports one this check does not know
+# Reads the expected and the reported architecture; FAIL and return 1 if the daemon reports one this check does not know
 # --------------------------------------------------------------------------------
 require_known_architecture() {
   expected=$(expected_arch)
   rawArch=$(docker info --format '{{.Architecture}}' </dev/null 2>&1)
 
   if [ "$expected" = "unknown" ]; then
-    stop_check H-01 "the daemon reports an architecture this check does not know" "docker info says: $rawArch"
+    fail H-01 "the daemon reports an architecture this check does not know" "docker info says: $rawArch"
+    return 1
   fi
 }
 
@@ -61,7 +62,7 @@ check_no_platform_warnings() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
-require_known_architecture
+require_known_architecture || exit 1
 check_image_architectures
 check_container_architecture
 check_no_platform_warnings

@@ -2,7 +2,8 @@
 # Reporting for the host tests: PASS, FAIL and INFO lines, and how a check collects and reports its result.
 # - Loaded by lib.sh; never run directly. Defines functions and one list only.
 # - A check calls add_problem for each failed assertion and ends with report_check.
-# - stop_check ends a check early with FAIL when the rest would mean nothing; pass_check ends it early with PASS.
+# - A step that makes the rest of the check meaningless prints its FAIL line with fail and returns 1;
+#   the caller decides whether to stop, usually with || exit 1 in the Main block.
 # - report_result is for a helper that prints several result lines.
 # - Host side code is stock bash 3.2 with BSD tools (macOS).
 
@@ -77,22 +78,6 @@ report_check() {
   fi
 
   exit 1
-}
-
-# --------------------------------------------------------------------------------
-# stop_check ID SUMMARY [DETAIL...]: prints one FAIL line with its details and exits 1.
-# --------------------------------------------------------------------------------
-stop_check() {
-  fail "$@"
-  exit 1
-}
-
-# --------------------------------------------------------------------------------
-# pass_check ID TEXT: prints one PASS line and exits 0.
-# --------------------------------------------------------------------------------
-pass_check() {
-  pass "$1" "$2"
-  exit 0
 }
 
 # --------------------------------------------------------------------------------

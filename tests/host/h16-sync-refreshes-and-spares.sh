@@ -20,7 +20,7 @@ memoryDir=$syncedDir/projects/-home-sandbox-workspace-hosttest/memory
 sentinelText="h16-$$-$(date +%s)"
 
 # --------------------------------------------------------------------------------
-# Picks the first bundle skill and the first always-on rule to edit; stops if there is none
+# Picks the first bundle skill and the first always-on rule to edit; FAIL and return 1 if there is none
 # --------------------------------------------------------------------------------
 pick_samples() {
   local ruleFileList ruleFile
@@ -37,7 +37,8 @@ pick_samples() {
   done
 
   if [ -z "$firstSkill" ] || [ -z "$firstRule" ]; then
-    stop_check H-16 "the repo bundle has no always-on rule or no skill to edit" "looked in $bundleDir"
+    fail H-16 "the repo bundle has no always-on rule or no skill to edit" "looked in $bundleDir"
+    return 1
   fi
 }
 
@@ -89,9 +90,9 @@ check_user_files_spared() {
 # --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
-pick_samples
+pick_samples || exit 1
 plant_files
-restart_test_sandbox H-16 h16-down.log
+restart_test_sandbox H-16 h16-down.log || exit 1
 check_stale_files_gone
 check_bundle_skill_list "$syncedDir"
 check_user_files_spared

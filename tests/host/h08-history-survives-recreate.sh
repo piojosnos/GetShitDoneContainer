@@ -22,7 +22,7 @@ start_background_shell() {
 }
 
 # --------------------------------------------------------------------------------
-# Waits up to 10 s for the marker to reach the history file on the host; stops if it never does
+# Waits up to 10 s for the marker to reach the history file on the host; FAIL and return 1 if it never does
 # --------------------------------------------------------------------------------
 wait_for_marker() {
   local seen i
@@ -37,8 +37,9 @@ wait_for_marker() {
   done
 
   if [ "$seen" -eq 0 ]; then
-    stop_check H-08 "the marker did not reach the history file before the recreate" \
+    fail H-08 "the marker did not reach the history file before the recreate" \
       "looked for $marker in $historyFile for 10 s while the first shell was open"
+    return 1
   fi
 }
 
@@ -61,8 +62,8 @@ check_fresh_shell_history() {
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 start_background_shell
-wait_for_marker
-restart_test_sandbox H-08 h08-down.log
+wait_for_marker || exit 1
+restart_test_sandbox H-08 h08-down.log || exit 1
 check_fresh_shell_history
 report_check H-08 "the marker is not in a fresh shell's history after the recreate" \
   "history was written while the shell was open and a fresh shell shows it after the recreate"
