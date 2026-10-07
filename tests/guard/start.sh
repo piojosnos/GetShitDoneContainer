@@ -43,10 +43,28 @@ start_hooks_have_two_digit_names() {
 }
 
 # --------------------------------------------------------------------------------
+# compose_starts_in_the_workspace: Compose starts the container in the workspace, never in the project folder: Docker creates a missing working directory, which would put a folder on the Mac for a mistyped name.
+# --------------------------------------------------------------------------------
+# The entrypoint checks that the project folder exists and moves into it.
+compose_starts_in_the_workspace() {
+  local ok=0
+
+  nowhere_matches 'working_dir:.*SBX_NAME' $COMPOSE || ok=1
+
+  if ! grep -Eq '^[[:space:]]*working_dir:[[:space:]]*"?/home/sandbox/workspace"?[[:space:]]*$' $COMPOSE; then
+    echo "    $COMPOSE has no working_dir line set to /home/sandbox/workspace"
+    ok=1
+  fi
+
+  return "$ok"
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 enter_repo_root || exit 1
 run_rules \
   no_installs_at_container_start \
-  start_hooks_have_two_digit_names || exit 1
+  start_hooks_have_two_digit_names \
+  compose_starts_in_the_workspace || exit 1
