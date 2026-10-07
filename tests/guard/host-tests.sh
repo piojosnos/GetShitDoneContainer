@@ -71,6 +71,66 @@ host_tests_are_portable() {
 }
 
 # --------------------------------------------------------------------------------
+# host_tests_have_blank_lines_before_control_flow: Every if, for, while, until and case in the host scripts has a blank line before it, unless it follows an opening line or a comment; here-document bodies are not code.
+# --------------------------------------------------------------------------------
+# A line counts as opening when it ends in {, then, do, else, ;;, ), in or a backslash. POSIX awk only, so the BSD awk on the Mac runs it.
+# The single quote comes in with -v because the program sits in a single-quoted string.
+host_tests_have_blank_lines_before_control_flow() {
+  local hits
+  local awkStatus
+
+  require_readable_files $HOST_FILES || return 1
+
+  hits=$(awk -v quote="'" '
+    FNR == 1 {
+      endMark = ""
+      prev = ""
+    }
+    {
+      line = $0
+      if (endMark != "") {
+        if (line == endMark) {
+          endMark = ""
+        }
+        prev = line
+        next
+      }
+      text = line
+      sub(/^[ \t]+/, "", text)
+      if (text ~ /^(if|for|while|until|case)[ (]/ && prev != "") {
+        before = prev
+        sub(/^[ \t]+/, "", before)
+        if (before !~ /^#/ && before !~ /(\{|then|do|else|;;|\)|in)$/ && before !~ /\\$/) {
+          printf "    %s:%d: %s\n", FILENAME, FNR, text
+        }
+      }
+      if (match(line, "(^|[^<])<<-?[ ]*[" quote "\"]?[A-Za-z_]+[" quote "\"]?")) {
+        mark = substr(line, RSTART, RLENGTH)
+        gsub("^[^<]?<<-?[ ]*[" quote "\"]?", "", mark)
+        gsub("[" quote "\"]", "", mark)
+        endMark = mark
+      }
+      prev = line
+    }
+  ' $HOST_FILES)
+  awkStatus=$?
+
+  if [ "$awkStatus" -ne 0 ]; then
+    echo "    awk could not read every file it was given"
+
+    return 1
+  fi
+
+  if [ -z "$hits" ]; then
+    return 0
+  fi
+
+  printf '%s\n' "$hits"
+
+  return 1
+}
+
+# --------------------------------------------------------------------------------
 # host_tests_never_delete: The host tests delete nothing: no rm, mv or truncate, no docker removal, kill, stop or prune, no git clean, no down with a volume flag or --rmi.
 # --------------------------------------------------------------------------------
 # Allowed: docker run --rm (a throwaway container) and the cleanup line that print_next_block prints.
@@ -171,6 +231,7 @@ require_no_arguments "$@" || exit 2
 enter_repo_root || exit 1
 run_rules \
   host_tests_are_portable \
+  host_tests_have_blank_lines_before_control_flow \
   host_tests_never_delete \
   host_tests_are_unattended \
   host_checks_declare_dependencies \

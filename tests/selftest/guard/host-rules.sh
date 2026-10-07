@@ -22,6 +22,18 @@ plant_lines() {
 }
 
 # --------------------------------------------------------------------------------
+# plant_block FILE LINE...: appends the lines to FILE as one block after a blank line, so they stay next to each other.
+# --------------------------------------------------------------------------------
+plant_block() {
+  local blockFile=$1
+
+  shift
+
+  printf '\n' >>"$blockFile"
+  printf '%s\n' "$@" >>"$blockFile"
+}
+
+# --------------------------------------------------------------------------------
 # Cases on a clean copy and on copies that lack host scripts
 # --------------------------------------------------------------------------------
 case_missing_scripts() {
@@ -97,6 +109,42 @@ case_gnu_only_forms() {
 }
 
 # --------------------------------------------------------------------------------
+# Cases of the blank-line rule: each plants text and looks only for that text in the output
+# --------------------------------------------------------------------------------
+case_blank_lines() {
+  echo "--- blank lines before control flow"
+
+  make_scratch_repo || return 1
+  plant_block "$WORK/repo/tests/host/h04-nonroot-user.sh" \
+    'plantedValue=1' \
+    'if [ "$plantedValue" -eq 1 ]; then' \
+    '  plantedValue=2' \
+    'fi'
+  run_scratch_guard "$WORK/blank-if.out" host-tests.sh
+  expect "blank lines: an if right after a command is named" has_text "$WORK/blank-if.out" 'if [ "$plantedValue" -eq 1 ]; then'
+
+  make_scratch_repo || return 1
+  plant_block "$WORK/repo/tests/host/h04-nonroot-user.sh" \
+    'planted_text() {' \
+    "  cat <<'PLANTED_END'" \
+    'plantedText=1' \
+    'if true; then' \
+    'PLANTED_END' \
+    '}'
+  run_scratch_guard "$WORK/blank-heredoc.out" host-tests.sh
+  expect "blank lines: a here-document body is not read as code" lacks_text "$WORK/blank-heredoc.out" 'if true; then'
+
+  make_scratch_repo || return 1
+  plant_block "$WORK/repo/tests/host/h04-nonroot-user.sh" \
+    'plantedWord=$(cat <<<"word")' \
+    'plantedCount=1' \
+    'if [ "$plantedCount" -eq 1 ]; then' \
+    'fi'
+  run_scratch_guard "$WORK/blank-herestring.out" host-tests.sh
+  expect "blank lines: a here-string does not hide the next line" has_text "$WORK/blank-herestring.out" 'if [ "$plantedCount" -eq 1 ]; then'
+}
+
+# --------------------------------------------------------------------------------
 # Cases of the planning-ID rule: a code review finding ID in a host check
 # --------------------------------------------------------------------------------
 # The ID is built at run time, so this file never holds one itself.
@@ -122,5 +170,6 @@ start_group || exit 1
 case_missing_scripts
 case_delete_forms
 case_gnu_only_forms
+case_blank_lines
 case_finding_id
 finish_cases
