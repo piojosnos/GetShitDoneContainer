@@ -11,7 +11,7 @@ set -u
 # --------------------------------------------------------------------------------
 # Group programs, in run order
 # --------------------------------------------------------------------------------
-groupList="start-hooks.sh start-library.sh"
+groupList="start-hooks.sh start-library.sh start-folders.sh"
 
 # --------------------------------------------------------------------------------
 # Main / Entry Point
