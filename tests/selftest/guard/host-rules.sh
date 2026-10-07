@@ -97,6 +97,24 @@ case_gnu_only_forms() {
 }
 
 # --------------------------------------------------------------------------------
+# Cases of the planning-ID rule: a code review finding ID in a host check
+# --------------------------------------------------------------------------------
+# The ID is built at run time, so this file never holds one itself.
+case_finding_id() {
+  local findingPrefix=WR
+  local findingNumber=07
+  local findingId=$findingPrefix-$findingNumber
+
+  echo "--- finding ID"
+
+  make_scratch_repo || return 1
+  plant_lines "$WORK/repo/tests/host/h04-nonroot-user.sh" "# see $findingId for the reason"
+  run_scratch_guard "$WORK/finding-id.out" planning-ids.sh
+  expect "planning ids: a code review finding ID in a host check fails" equals "$GUARD_RC" 1
+  expect "planning ids: the planted finding ID is named" has_text "$WORK/finding-id.out" "$findingId"
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -104,4 +122,5 @@ start_group || exit 1
 case_missing_scripts
 case_delete_forms
 case_gnu_only_forms
+case_finding_id
 finish_cases
