@@ -10,6 +10,8 @@ set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 
+identityName=hosttest-$$-$(date +%s)
+
 # --------------------------------------------------------------------------------
 # Makes the project folder a git repository from the host, ignoring your own git configuration
 # --------------------------------------------------------------------------------
@@ -29,7 +31,7 @@ read_git_state() {
   statusOutput=$(in_container git status)
   statusCode=$?
   safeOutput=$(in_container git config --system --get-all safe.directory)
-  identityOutput=$(in_container git config --global user.name T)
+  identityOutput=$(in_container git config --global user.name "$identityName")
   identityCode=$?
 }
 
@@ -56,11 +58,11 @@ check_safe_directory() {
 # --------------------------------------------------------------------------------
 check_identity_stored() {
   if [ "$identityCode" -ne 0 ]; then
-    add_problem "git config --global user.name T failed in the container: $identityOutput"
+    add_problem "git config --global user.name $identityName failed in the container: $identityOutput"
   fi
 
-  if ! grep -Fq "name = T" "$RUN/state/git/config" 2>/dev/null; then
-    add_problem "$RUN/state/git/config does not contain 'name = T'"
+  if ! grep -Eq "^[[:space:]]*name = $identityName\$" "$RUN/state/git/config" 2>/dev/null; then
+    add_problem "$RUN/state/git/config does not contain the line 'name = $identityName'"
   fi
 }
 
@@ -75,4 +77,4 @@ check_git_status
 check_safe_directory
 check_identity_stored
 report_check H-06 "git or the stored identity is wrong" \
-  "git status is clean of ownership errors, safe.directory is *, the identity is in state/git/config"
+  "git status is clean of ownership errors, safe.directory is *, the run's identity is in state/git/config"
