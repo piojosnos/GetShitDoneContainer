@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of the sandbox rules: the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder; the docs rule passes on an image comment without the promise and fails when the image comment promises that nothing is created.
+# Self-test of the sandbox rules: the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build.
 # - Run by run-all.sh; runs alone too.
 # - Runs the real tests/guard/start.sh and tests/guard/docs.sh inside a scratch copy of the tree, so a planted problem never touches the real files.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
@@ -36,7 +36,7 @@ case_start_rules() {
 }
 
 # --------------------------------------------------------------------------------
-# Cases of the docs rule: a clean copy and an image comment that promises nothing is created
+# Cases of the docs rules: a clean copy, an image comment that promises nothing is created, and a doc that promises a good build
 # --------------------------------------------------------------------------------
 case_docs_rule() {
   echo "--- docs rule"
@@ -51,6 +51,13 @@ case_docs_rule() {
   run_scratch_guard "$WORK/docs-promise.out" docs.sh
   expect "sandbox rules: a promise that nothing is created fails" has_text "$WORK/docs-promise.out" "FAIL: docs_promise_only_what_happens"
   expect "sandbox rules: the promising line is named" has_text "$WORK/docs-promise.out" "never creates anything on the Mac"
+
+  make_scratch_repo || return 1
+  printf 'When it passes, the build is good.\n' >>"$WORK/repo/SANDBOX.md"
+  run_scratch_guard "$WORK/docs-good-build.out" docs.sh
+  expect "sandbox rules: a doc that promises a good build fails" has_text "$WORK/docs-good-build.out" "FAIL: docs_promise_only_what_happens"
+  expect "sandbox rules: the good-build line is named" has_text "$WORK/docs-good-build.out" "When it passes, the build is good."
+  expect "sandbox rules: a doc that promises a good build exits non-zero" test "$GUARD_RC" -ne 0
 }
 
 # --------------------------------------------------------------------------------
