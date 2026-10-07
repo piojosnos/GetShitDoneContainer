@@ -12,6 +12,10 @@
 # - Runs without set -u, as it always has, so an absent knob reads as empty.
 # - docker exec starts in the working_dir of FAKE_REPO/compose.yml, as the real container does,
 #   unless it is given -w or FAKE_WORKDIR is set.
+# - Compose up creates the working_dir of FAKE_REPO/compose.yml under the mount, as the Docker daemon does for
+#   a missing working directory.
+# - Compose up then runs the real check_project_and_state_folders on the mounted folder; a refusal leaves an
+#   exited container behind, and docker logs prints what the check said.
 #
 # Knobs, one line each:
 # FAKE_STATE: the folder that holds the fake container state (set by lib.sh)
@@ -31,6 +35,7 @@
 # FAKE_DOTENV_SBX_DIR: a compose call without --env-file and without SBX_DIR runs with this SBX_DIR, as a repo .env would give it
 # FAKE_BUILD_FAIL: the image tag whose build fails
 # FAKE_UP_RC: a non-zero value makes compose up fail with that status
+# FAKE_FOLDER_CHECK_OFF: 1 makes compose up skip the project and state folder check, as an entrypoint that does not check would
 # FAKE_H10: what compose up does when the project folder is missing: honored, ignored or started
 # FAKE_NO_SYNC: 1 makes compose up skip the start hook
 # FAKE_SYNC_CLOBBERS: 1 makes compose up delete state/claude/skills and projects before the hook
@@ -181,6 +186,32 @@ compose_config() {
 }
 
 # --------------------------------------------------------------------------------
+# create_working_dir: records the mount and creates the working_dir of compose.yml under it, as the daemon does when it is missing.
+# --------------------------------------------------------------------------------
+create_working_dir() {
+  local workHostPath
+
+  printf '%s\n' "$SBX_DIR" >"$FAKE_STATE/container.dir"
+
+  if workHostPath=$(host_path_of "$(compose_working_dir)"); then
+    mkdir -p "$workHostPath"
+  fi
+}
+
+# --------------------------------------------------------------------------------
+# run_folder_check: runs the real check_project_and_state_folders on the mounted folder; its messages go to container.log.
+# --------------------------------------------------------------------------------
+run_folder_check() {
+  (
+    . "$FAKE_REPO/base/sbx-start-lib.sh"
+    ws=$SBX_DIR
+    state=$ws/state
+    SBX_NAME=${SBX_NAME:-hosttest}
+    check_project_and_state_folders
+  ) 2>"$FAKE_STATE/container.log"
+}
+
+# --------------------------------------------------------------------------------
 # compose_up: starts the fake container and runs the real start hook, as the real entrypoint does.
 # --------------------------------------------------------------------------------
 compose_up() {
@@ -212,8 +243,16 @@ compose_up() {
     echo "fake compose: up failed" >&2
     return "$FAKE_UP_RC"
   fi
+  create_working_dir
+  if [ "${FAKE_FOLDER_CHECK_OFF:-0}" != 1 ] && ! run_folder_check; then
+    : >"$FAKE_STATE/container"
+    : >"$FAKE_STATE/container.exited"
+    cat "$FAKE_STATE/container.log" >&2
+    echo "fake compose: container sbx-hosttest exited (1)" >&2
+    return 1
+  fi
+  rm -f "$FAKE_STATE/container.exited" "$FAKE_STATE/container.log"
   : >"$FAKE_STATE/container"
-  printf '%s\n' "$SBX_DIR" >"$FAKE_STATE/container.dir"
   mkdir -p "$SBX_DIR/state/claude"
   if [ "${FAKE_SYNC_CLOBBERS:-0}" = 1 ]; then
     rm -rf "$SBX_DIR/state/claude/skills" "$SBX_DIR/state/claude/projects"
@@ -236,7 +275,7 @@ compose_down() {
     rm -f "$(cat "$FAKE_STATE/container.dir")/state/shell/bash_history"
   fi
   if [ "${FAKE_DOWN_KEEPS:-0}" != 1 ]; then
-    rm -f "$FAKE_STATE/container" "$FAKE_STATE/container.dir"
+    rm -f "$FAKE_STATE/container" "$FAKE_STATE/container.dir" "$FAKE_STATE/container.exited" "$FAKE_STATE/container.log"
   fi
   return 0
 }
@@ -299,9 +338,31 @@ fake_container_inspect() {
       fi
       ;;
     *Mounts*) cat "$FAKE_STATE/container.dir" ;;
-    *State.Running*) printf 'true\n' ;;
+    *State.Running*)
+      if [ -f "$FAKE_STATE/container.exited" ]; then
+        printf 'false\n'
+      else
+        printf 'true\n'
+      fi
+      ;;
     *) unhandled "container inspect $template" ;;
   esac
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# fake_logs ARG...: answers docker logs for the test container: what the start check printed, or nothing.
+# --------------------------------------------------------------------------------
+fake_logs() {
+  shift
+  containerName=${1:-}
+  if [ "$containerName" != "sbx-hosttest" ] || ! has_container; then
+    echo "Error: No such container: $containerName" >&2
+    return 1
+  fi
+  if [ -f "$FAKE_STATE/container.log" ]; then
+    cat "$FAKE_STATE/container.log"
+  fi
   return 0
 }
 
@@ -739,6 +800,7 @@ case "${1:-}" in
   compose) fake_compose "$@" ;;
   context) fake_context "$@" ;;
   container) fake_container_inspect "$@" ;;
+  logs) fake_logs "$@" ;;
   image) fake_image_inspect "$@" ;;
   run) fake_run "$@" ;;
   build) fake_build "$@" ;;

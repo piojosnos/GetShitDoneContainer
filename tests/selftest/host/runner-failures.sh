@@ -15,7 +15,7 @@ case_failing_check() {
   run_runner "$WORK/out.badid" FAKE_ID="uid=0(root) gid=0(root)"
   expect "runner: a wrong id exits 1" equals "$RUNNER_RC" "1"
   expect "runner: a wrong id prints FAIL: H-04" has_text "$WORK/out.badid" "FAIL: H-04"
-  expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 18 passed, 1 failed, 0 not run"
+  expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 19 passed, 1 failed, 0 not run"
   expect "runner: a wrong id still prints the Next block" has_text "$WORK/out.badid" "If something looks wrong, see tests/host/manual/"
 }
 
@@ -84,8 +84,9 @@ case_full_chain() {
   expect "runner: a kept container exits 1" equals "$RUNNER_RC" "1"
   expect "runner: a kept container prints FAIL: H-11" has_text "$WORK/out.chain.keep" "FAIL: H-11"
   expect "runner: the chain stops, so H-09 is not run" has_text "$WORK/out.chain.keep" "NOT RUN: h09-rebuild-keeps-files-no-volumes.sh"
+  expect "runner: the chain stops, so H-20 is not run" has_text "$WORK/out.chain.keep" "NOT RUN: h20-mistyped-name-refused.sh"
   expect "runner: the chain stops, so H-10 is not run" has_text "$WORK/out.chain.keep" "NOT RUN: h10-missing-folder-refused.sh"
-  expect "runner: H-09 prints no result after the chain stopped" lacks_match "$WORK/out.chain.keep" '^(PASS|FAIL): H-(09|10)'
+  expect "runner: H-09 prints no result after the chain stopped" lacks_match "$WORK/out.chain.keep" '^(PASS|FAIL): H-(09|10|20)'
   expect "runner: Coexistence still runs after the chain stopped" has_text "$WORK/out.chain.keep" "PASS: Coexistence"
   reset_state
   run_runner "$WORK/out.nocache" SBXTEST_NO_CACHE=1
@@ -106,7 +107,7 @@ case_h18_failure_continues() {
   expect "runner: an H-18 failure prints FAIL: H-18" has_text "$WORK/out.h18keep" "FAIL: H-18"
   expect "runner: an H-18 failure marks no check not run" lacks_text "$WORK/out.h18keep" "NOT RUN"
   expect "runner: an H-18 failure still runs the chain" has_text "$WORK/out.h18keep" "PASS: H-16"
-  expect "runner: an H-18 failure is in the summary" has_text "$WORK/out.h18keep" "Summary: 18 passed, 1 failed, 0 not run"
+  expect "runner: an H-18 failure is in the summary" has_text "$WORK/out.h18keep" "Summary: 19 passed, 1 failed, 0 not run"
   expect "runner: an H-18 failure is listed" has_text "$WORK/out.h18keep" "Failed: h18-scope-and-deny.sh"
 }
 
