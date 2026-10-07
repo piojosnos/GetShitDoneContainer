@@ -40,8 +40,9 @@
 # FAKE_HOOK_DIR_IGNORED: 1 makes a run with its own folder over /etc/sbx/start.d skip the hook step
 # FAKE_PS: the docker ps answer (default: one old cc_oldbox container, running)
 # FAKE_PS_FAIL: 1 makes docker ps fail as if the daemon were unreachable
-# FAKE_VOLUMES: the volume names docker volume ls lists
-# FAKE_VOLUMES_AFTER_BUILD: the volume names docker volume ls lists once a build has run
+# FAKE_VOLUMES: the volume names of the test project that docker volume ls lists
+# FAKE_VOLUMES_AFTER_BUILD: the volume names of the test project that docker volume ls lists once a build has run
+# FAKE_UNRELATED_VOLUMES_AFTER_BUILD: volume names of other projects, listed once a build has run, only when the list is not scoped to the test project
 # FAKE_BUNDLE_DRIFT: 1 gives the bundle copied out of the image an extra file
 # FAKE_BUNDLE_OWNER: the owner of /opt/sbx/best-practices (default root)
 # FAKE_BUNDLE_WRITABLE: 1 lets the sandbox user write in the bundle
@@ -422,15 +423,35 @@ fake_build() {
 }
 
 # --------------------------------------------------------------------------------
-# fake_volume ARG...: answers docker volume ls from FAKE_VOLUMES, or FAKE_VOLUMES_AFTER_BUILD once a build ran.
+# fake_volume ARG...: answers docker volume ls; the list is scoped by --filter label=com.docker.compose.project=sbx-hosttest.
 # --------------------------------------------------------------------------------
+# Test project volumes come from FAKE_VOLUMES, or FAKE_VOLUMES_AFTER_BUILD once a build ran.
+# An unscoped list adds FAKE_UNRELATED_VOLUMES_AFTER_BUILD once a build ran.
 fake_volume() {
   if [ "${2:-}" != "ls" ]; then
     unhandled "volume $*"
   fi
+  shift 2
+  volumeScoped=0
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      -q) shift ;;
+      --filter)
+        if [ "${2:-}" != "label=com.docker.compose.project=sbx-hosttest" ]; then
+          unhandled "volume ls --filter ${2:-}"
+        fi
+        volumeScoped=1
+        shift 2
+        ;;
+      *) unhandled "volume ls $*" ;;
+    esac
+  done
   volumeList=${FAKE_VOLUMES:-}
   if [ -f "$FAKE_STATE/built" ] && [ -n "${FAKE_VOLUMES_AFTER_BUILD:-}" ]; then
     volumeList=$FAKE_VOLUMES_AFTER_BUILD
+  fi
+  if [ -f "$FAKE_STATE/built" ] && [ "$volumeScoped" = 0 ]; then
+    volumeList="$volumeList ${FAKE_UNRELATED_VOLUMES_AFTER_BUILD:-}"
   fi
   for volumeName in $volumeList; do
     printf '%s\n' "$volumeName"

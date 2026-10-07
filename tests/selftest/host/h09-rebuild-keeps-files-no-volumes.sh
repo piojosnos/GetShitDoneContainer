@@ -47,9 +47,24 @@ case_h09_alone() {
 }
 
 # --------------------------------------------------------------------------------
+# Cases of H-09 for the volume list: other projects' volumes are ignored
+# --------------------------------------------------------------------------------
+case_h09_volume_scope() {
+  echo "--- H-09 volume list"
+  reset_state
+  make_fixture_run
+  run_standalone "$WORK/out.h09.other" h09-rebuild-keeps-files-no-volumes.sh FAKE_VOLUMES="olddata" FAKE_UNRELATED_VOLUMES_AFTER_BUILD="other_cache"
+  expect "H-09: a volume made by something else during the rebuild does not fail" equals "$CHECK_RC" "0"
+  sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.h09.scope"
+  expect "H-09: the volume list is scoped to the test project" \
+    has_text "$WORK/args.h09.scope" "volume ls -q --filter label=com.docker.compose.project=sbx-hosttest"
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 start_group || exit 1
 case_h09_alone
+case_h09_volume_scope
 finish_cases
