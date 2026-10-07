@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.5"
 current_phase_name: Host test fixes (INSERTED)
 status: executing
-stopped_at: Completed 01.5-02-PLAN.md
-last_updated: "2026-10-07T05:44:05.599Z"
+stopped_at: Completed 01.5-03-PLAN.md
+last_updated: "2026-10-07T05:54:01.044Z"
 last_activity: 2026-10-07
 last_activity_desc: Phase 01.5 execution started
-state_head: b403553adb97d8d5019811dded4ecc0149a8c392
+state_head: dba65db4d15e6318ce5dedf35ccbba5ed04e03d2
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 39
-  completed_plans: 30
+  completed_plans: 31
   percent: 42
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 ## Current Position
 
 Phase: 01.5 (Host test fixes (INSERTED)) — EXECUTING
-Plan: 3 of 11
+Plan: 4 of 11
 Status: Ready to execute
 Last activity: 2026-10-07 — Phase 01.5 execution started
 
@@ -90,6 +90,7 @@ Progress: [████████████████████] 28/28 p
 | Phase 01.4 P01.4-08 | 35 min | 2 tasks | 1 files |
 | Phase 01.5 P01 | 12 min | 3 tasks | 10 files |
 | Phase 01.5 P02 | 14 min | 2 tasks | 14 files |
+| Phase 01.5 P03 | 25 min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -151,6 +152,8 @@ Recent decisions affecting current work:
 - [Phase 01.5]: 01.5-01: negative assertions (lacks_text, lacks_match) and guard scan helpers (nowhere_matches, host rules) fail closed on missing input; guard self-test suite is tests/selftest/guard/; a truncating redirect stays allowed by the delete rule
 - [Phase 01.5]: Suite-list self-test cases assert exit status 1, so a missing rule group (status 127) cannot satisfy a failing-guard case
 - [Phase 01.5]: plant_block added beside plant_lines: contiguous planted lines are needed to test a missing blank line
+- [Phase 01.5]: grep -P guard term matches as a whole word so pgrep -P is allowed (host side tree kill uses pgrep -P only)
+- [Phase 01.5]: Sandbox identity is split: loose rule for cleanup (mount or its parent named sbx-hosttest-*), strict rule before a check acts (mount folder name equals RUN name)
 
 ### Pending Todos
 
@@ -194,6 +197,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-07T05:44:05.464Z
-Stopped at: Completed 01.5-02-PLAN.md
+Last session: 2026-10-07T05:54:00.914Z
+Stopped at: Completed 01.5-03-PLAN.md
 Resume file: None
