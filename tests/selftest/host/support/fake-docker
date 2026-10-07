@@ -21,6 +21,7 @@
 # FAKE_CLAUDE_VERSION: the version claude --version prints (default: the pin in claude/Dockerfile)
 # FAKE_COMPOSE_VERSION: what docker compose version prints (default 2.39.1)
 # FAKE_COMPOSE_FAIL: 1 makes docker compose version fail
+# FAKE_CONTEXT: the name docker context show prints (default desktop-linux)
 # FAKE_CONFIG_NAME: the project name docker compose config prints (default sbx-<SBX_NAME>)
 # FAKE_CONFIG_LAX: 1 makes docker compose config work without SBX_DIR
 # FAKE_BUILD_FAIL: the image tag whose build fails
@@ -65,8 +66,8 @@
 # log_call ARG...: appends one line for the call to FAKE_LOG, in the format the safety cases parse.
 # --------------------------------------------------------------------------------
 log_call() {
-  printf 'ENV SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
-    "${SBX_NAME-unset}" "${SBX_DIR-unset}" "${COMPOSE_PROJECT_NAME-unset}" "$*" >>"$FAKE_LOG"
+  printf 'ENV DOCKER_HOST=%s SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
+    "${DOCKER_HOST-unset}" "${SBX_NAME-unset}" "${SBX_DIR-unset}" "${COMPOSE_PROJECT_NAME-unset}" "$*" >>"$FAKE_LOG"
 }
 
 # --------------------------------------------------------------------------------
@@ -112,6 +113,17 @@ compose_version() {
   fi
   printf '%s\n' "${FAKE_COMPOSE_VERSION:-2.39.1}"
   return 0
+}
+
+# --------------------------------------------------------------------------------
+# fake_context ARG...: answers docker context show with FAKE_CONTEXT; any other context call is unhandled.
+# --------------------------------------------------------------------------------
+fake_context() {
+  if [ "${2:-}" = "show" ]; then
+    printf '%s\n' "${FAKE_CONTEXT:-desktop-linux}"
+    return 0
+  fi
+  unhandled "$@"
 }
 
 # --------------------------------------------------------------------------------
@@ -626,6 +638,7 @@ case "${1:-}" in
   info) fake_info "$@" ;;
   version) fake_version "$@" ;;
   compose) fake_compose "$@" ;;
+  context) fake_context "$@" ;;
   container) fake_container_inspect "$@" ;;
   image) fake_image_inspect "$@" ;;
   run) fake_run "$@" ;;

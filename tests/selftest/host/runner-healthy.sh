@@ -72,9 +72,26 @@ case_healthy_run() {
 }
 
 # --------------------------------------------------------------------------------
+# A run with DOCKER_HOST set and a named Docker context
+# --------------------------------------------------------------------------------
+case_docker_target() {
+  echo "--- docker target"
+  reset_state
+  run_runner "$WORK/out.target" DOCKER_HOST=tcp://docker.test:2375 FAKE_CONTEXT=desktop-test
+
+  expect "runner: a run with DOCKER_HOST set still passes" equals "$RUNNER_RC" "0"
+  expect "runner: the run names the Docker it talks to" \
+    has_text "$WORK/out.target" "INFO: docker context: desktop-test, DOCKER_HOST: tcp://docker.test:2375"
+  expect "runner: the docker log is not empty" test -s "$FAKE_LOG"
+  expect "runner: DOCKER_HOST reaches every docker call unchanged" \
+    equals "$(grep '^ENV ' "$FAKE_LOG" | grep -vc '^ENV DOCKER_HOST=tcp://docker.test:2375 ')" "0"
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 start_group || exit 1
 case_healthy_run
+case_docker_target
 finish_cases
