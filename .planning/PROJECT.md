@@ -23,6 +23,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 - ✓ `cc-bash.sh` opens a shell and `cc-down.sh` stops the container — existing
 - ✓ The host mount no longer covers `/home/sandbox`: one sandbox folder is mounted at `/home/sandbox/workspace`, so the image's `.bashrc` and `.local` stay visible — Phase 1
 - ✓ Agent state (Claude login, `~/.claude.json`, settings, session history, shell history) lives in `<sandbox>/state` on the host and survives recreate and rebuild — Phase 1
+- ✓ Every new sandbox starts with the best-practices bundle (standing rules, path-scoped language rules, `/pr-reply` and `/merged`), synced from the image at each start; the image version wins and user skills, memories and `CLAUDE.md` are never touched — Phase 1.2
 
 ### Active
 
@@ -93,6 +94,9 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 | ClaudeCode first, OpenCode next, pluggable later | Get one sandbox solid before generalizing | — Pending |
 | Migration is documented, not scripted | Only about 4 existing sandboxes. Script only if it proves painful | — Pending |
 | One unattended host test run (`tests/host/run-all.sh`) plus a short manual pass verifies every image change on the Mac | The manual checklist was too slow, and Docker cannot run in the dev sandbox | Good: 14 of 14 checks and the 3 helpers passed on the Mac (2026-10-03) |
+| Ship the best-practices bundle as plain files in this repo, baked into the image and synced into the Claude config by a start hook | Stopgap until the bundle gets its own repo (Phase 2.1); every change is a reviewed diff, and a rebuild plus restart delivers it | Good: 19 of 19 host checks and the attended h19 pass on the Mac (Phase 1.2) |
+| Guard the synced bundle with managed Edit deny rules, documented as not a security boundary | Stops Claude from rewriting the instructions every later session loads; a script can still write until the next start recopies | Good: deny proven in the real image (H-18) and with a negative control at the pinned Claude |
+| A start hook entry that is not an executable regular file stops the container start (folders and dot names are skipped) | A skipped hook means the agent starts with a stale bundle; failing closed makes the fault visible at once | Good: H-17 proves a non-executable hook and a dangling hook link stop the start in the real image (Phase 1.3) |
 
 ## Evolution
 
@@ -112,4 +116,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-04 after Phase 1*
+*Last updated: 2026-10-05 after Phase 1.3*

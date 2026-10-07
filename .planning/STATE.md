@@ -1,43 +1,43 @@
 ---
 gsd_state_version: "1.0"
-current_phase: "01.2"
-current_phase_name: Best-practices bundle baked into the image (stopgap)
-status: verifying
-stopped_at: Completed 01.2-06-PLAN.md
-last_updated: "2026-10-04T08:01:41.264Z"
-last_activity: 2026-10-04
-last_activity_desc: Phase 01.2 execution started
-state_head: a467f6115e04a4f1e377706c436ecb9f2d7b298a
+current_phase: "01.4"
+current_phase_name: Test suite refactor
+status: planning
+stopped_at: Phase 01.3 complete, ready to plan Phase 01.4
+last_updated: "2026-10-05T22:03:11.392Z"
+last_activity: 2026-10-05
+last_activity_desc: Phase 01.3 complete, transitioned to Phase 01.4
+state_head: 010e206a3aabb13ee5df0425f57b7118a2e25c3c
 progress:
-  total_phases: 9
-  completed_phases: 2
-  total_plans: 14
-  completed_plans: 14
-  percent: 22
+  total_phases: 12
+  completed_phases: 4
+  total_plans: 20
+  completed_plans: 20
+  percent: 33
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-04)
+See: .planning/PROJECT.md (updated 2026-10-05)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 01.2 — Best-practices bundle baked into the image (stopgap)
+**Current focus:** Phase 01.4: Test suite refactor (INSERTED)
 
 ## Current Position
 
-Phase: 01.2 (Best-practices bundle baked into the image (stopgap)) — EXECUTING
-Plan: 6 of 6
-Status: Phase complete — ready for verification
-Last activity: 2026-10-04 — Phase 01.2 execution started
+Phase: 01.4 — Test suite refactor
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-05 — Phase 01.3 complete, transitioned to Phase 01.4
 
-Progress: [██░░░░░░░░] 22%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 20
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -47,6 +47,8 @@ Progress: [██░░░░░░░░] 22%
 |-------|-------|-------|----------|
 | 01.1 | 4 | - | - |
 | 1 | 4 | - | - |
+| 01.2 | 6 | - | - |
+| 01.3 | 6 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -71,6 +73,12 @@ Progress: [██░░░░░░░░] 22%
 | Phase 01.2 P04 | 6 min | 2 tasks | 5 files |
 | Phase 01.2 P05 | 8 min | 2 tasks | 10 files |
 | Phase 01.2 P06 | 25 min | 2 tasks | 7 files |
+| Phase 01.3 P01 | 17 min | 2 tasks | 7 files |
+| Phase 01.3 P02 | 15 min | 2 tasks | 6 files |
+| Phase 01.3 P03 | 8 min | 2 tasks | 5 files |
+| Phase 01.3 P04 | 15 min | 2 tasks | 6 files |
+| Phase 01.3 P06 | 13 min | 2 tasks | 4 files |
+| Phase 01.3 P05 | 12 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -105,6 +113,17 @@ Recent decisions affecting current work:
 - [Phase 01.2]: Managed settings hold exactly four Edit deny entries (rules, skill list, each bundle skill); guard rule managed_settings_cover_bundle keeps them in step with the bundle
 - [Phase 01.2]: H-14 reads owners and modes with find -printf inside the container, so the host portability rule on stat -c needs no exception
 - [Phase 01.2]: H-18 runs in the sandbox stage and is droppable; the fake API protocol from research needed no change at the pinned Claude
+- [Phase 01.2]: PR #9 review: rules made project-neutral; java.md split into java.md (*.java) and freemarker.md (*.ftl), no pom.xml glob; project-specific path/URL rule left to its own project; migration prompt in prompts/consolidate-memories.md
+- [Phase 01.2]: Script layout rule (80-column section banners, functions, Main / Entry Point) and shared-library rule added to shell.md; new scripts follow it, the rest is Phases 1.3 and 1.4
+- [Phase 01.2]: Security: threats_open 0; non-executable start hook skip (WR-04) accepted as AR-01 and scheduled in Phase 1.3
+- [Phase 01.3]: Host test libraries stay flat files next to lib.sh; the frozen selftest copies only tests/host/*.sh and reaches make_run_dir, claude_pin, expected_arch through lib.sh
+- [Phase 01.3]: Code is moved verbatim during the layout phase; prove.sh (identical output against baseline 0a58e7d) is the gate for every later plan
+- [Phase 01.3]: 01.3-02: remove_leftover_test_container calls fatal itself on both failure paths so the run-all.sh Main block stays a flat list of calls
+- [Phase 01.3]: 01.3-02: H-02 starts baseCount at 0 so its eagerly expanded PASS text cannot abort with an unbound variable
+- [Phase 01.3]: H-04 stays one block with no functions (single assertion); file-based tr sites in Coexistence and grep -Fl in H-01 kept as written
+- [Phase 01.3]: restart_test_sandbox lives in lib-sandbox.sh because H-08 and H-16 carried identical code and messages; H-09 and H-11 sentinel loops stay local
+- [Phase 01.3]: 01.3-06: the entrypoint stops at the first non-executable start hook (after earlier hooks ran), behind a BASH_SOURCE source guard; no env override of hookDir
+- [Phase 01.3]: 01.3-05: lib-manual.sh lives in tests/host/manual/ (the guard forbids read and tty flags in tests/host/*.sh); the attended helpers start with lib-manual.sh, require_terminal, then lib.sh and host_init
 
 ### Pending Todos
 
@@ -118,12 +137,23 @@ None yet.
 - [Phase 1]: Re-review left 7 findings open (WR-01: the missing-project-folder check in base/sbx-entrypoint cannot fire because compose working_dir creates the folder; WR-02: base/Dockerfile comment overclaims create_host_path; WR-03: Claude Code has no integrity hash). See 01-REVIEW-DISPOSITION.md
 - [Phase 1]: SC3 says rebuild with `--no-cache`; the Mac run did not record it. One run of `bash tests/host/manual/h09-rebuild-resume.sh --no-cache` would confirm
 - [Phase 1.1]: Code review left 14 findings open (CR-01: run_timeout does not stop a docker call behind a shell function; WR-01..08 robustness). See 01.1-REVIEW-DISPOSITION.md
+- [Phase 1.2]: Code review left 13 findings open (WR-01..03 are bugs in the ported pr-reply and merged skills; WR-04 was fixed in Phase 1.3; WR-05 deny negative control fits Phase 1.4). See 01.2-REVIEW-DISPOSITION.md
+- [Phase 1.3]: Code review left 4 findings open (WR-02: run_timeout does not stop a shell function it wraps, same as the Phase 1.1 CR-01 and planned for Phase 1.5; IN-01..03 style and self-test coverage). See 01.3-REVIEW-DISPOSITION.md
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 261005-7zj | Start hooks: refuse non-regular entries and check bad hooks in H-17 | 2026-10-05 | 6664206 | [261005-7zj-start-hooks-refuse-non-regular-entries-a](./quick/261005-7zj-start-hooks-refuse-non-regular-entries-a/) |
 
 ### Roadmap Evolution
 
 - Phase 01.1 inserted after Phase 1: Best-practices bundle baked into the image (stopgap) (URGENT)
 - Phase 02.1 inserted after Phase 2: Best-practices from git, editable from any sandbox
 - Phase 6 added: Automated checks (CI): run tests/guard.sh on every PR push, from the PR #1 review
+- Phase 01.3 inserted after Phase 1.2: Shell script layout (banners, functions, entry point in every script), from the PR #9 review
+- Phase 01.4 inserted after Phase 1.3: Test suite refactor (real Docker instead of the fake, simplify, split into units), from the PR #9 review; Phase 1.3 narrowed to the non-test scripts
+- Phase 01.5 inserted after Phase 1.4: Host test fixes (open Phase 1 and 1.1 review findings, proven with real Docker), from the Phase 1.3 discussion
 
 ## Deferred Items
 
@@ -135,6 +165,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-04T08:01:41.196Z
-Stopped at: Completed 01.2-06-PLAN.md
+Last session: 2026-10-05T04:56:01.095Z
+Stopped at: Phase 01.3 complete, ready to plan Phase 01.4
 Resume file: None

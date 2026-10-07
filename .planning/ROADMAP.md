@@ -14,7 +14,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Two-Mount Claude Sandbox** - A Claude sandbox that runs on the Mac with code and state in separate host folders, a visible image home, and a login that survives rebuilds (completed 2026-10-04)
 - [x] **Phase 1.1: Automated host tests** (INSERTED) - One unattended command on the Mac runs every automatable host check (H-00 to H-13) with a PASS/FAIL line each; login, resume and doctor are a short manual pass with helper scripts (completed 2026-10-04)
-- [ ] **Phase 1.2: Best-practices bundle baked into the image (stopgap)** (INSERTED) - New sandboxes start with the user's skills, standing rules, and shared memories installed, taken from files in this repo
+- [x] **Phase 1.2: Best-practices bundle baked into the image (stopgap)** (INSERTED) - New sandboxes start with the user's skills, standing rules, and shared memories installed, taken from files in this repo (completed 2026-10-05)
+- [x] **Phase 1.3: Shell script layout** (INSERTED) - Every shell script gets section banners, functions and an entry point, with no change in behaviour (completed 2026-10-05)
+- [ ] **Phase 1.4: Test suite refactor** (INSERTED) - The test suite gets a real Docker instead of a large fake one, is simplified and split into logical units
+- [ ] **Phase 1.5: Host test fixes** (INSERTED) - The known bugs in the host tests and entrypoint from earlier reviews are fixed, each proven against a real Docker
 - [ ] **Phase 2: Pinned Toolchain, GSD, and ccusage** - Every tool is baked in at a version pinned in `versions.env`, the image's GSD wins over persisted state, and `ccusage` reports real usage
 - [ ] **Phase 2.1: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs
 - [ ] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login
@@ -91,7 +94,7 @@ Plans:
   4. After the agent learns a new memory, a container recreate and a `--no-cache` rebuild keep it. Skills and rules are refreshed from the image on every start, so the image version wins, and an accidental edit to a synced file is undone by the next start.
   5. Container start still works with networking disabled, and the Phase 1 mount checks and layout still pass.
 
-**Plans:** 6/6 plans executed
+**Plans:** 6/6 plans complete
 
 Plans:
 **Wave 1**
@@ -111,6 +114,63 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [x] 01.2-06-PLAN.md: H-18 fake-API proof of on-demand language rules and the deny under bypass (last, droppable)
+
+### Phase 01.3: Shell script layout (INSERTED)
+
+**Goal**: Every shell script in the repo follows the bundle's script layout rule: an 80-column banner before each logical section, longer sections moved into functions, and a `Main / Entry Point` banner over a short list of calls at the end. Behaviour does not change. From the PR #9 review.
+**Depends on**: Phase 1.2 (it adds the layout rule to `best-practices/rules/shell.md` and converts the scripts that phase added)
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. Every shell script outside the old layout and outside the three big test scripts (`base/sbx-entrypoint`, `tests/host/lib.sh`, `tests/host/run-all.sh`, the older host checks H-00 to H-13 and the manual helpers) has the banners, functions and entry point the rule describes, and uses the shared helpers in `tests/host/lib.sh` where they fit. `tests/host-selftest.sh`, `tests/bundle-selftest.sh` and `tests/guard.sh` are left to Phase 1.4, so they are reworked once.
+  2. Output, exit codes and behaviour are unchanged: `tests/guard.sh`, `tests/host-selftest.sh` and `tests/bundle-selftest.sh` pass with identical output, and `tests/host/run-all.sh` passes on the Mac.
+  3. The scripts still run on macOS bash 3.2 with BSD tools.
+  4. `base/sbx-entrypoint` stops the start with `[sbx] ERROR` when a start hook exists but is not executable, instead of skipping it (review WR-04; accepted risk AR-01 in `01.2-SECURITY.md`), with a self-test case.
+
+**Plans:** 6/6 plans complete
+
+Plans:
+**Wave 1**
+- [x] 01.3-01-PLAN.md: Tracer: H-05 through the new reporting library, proven identical by prove.sh; lib.sh split into topic libraries
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 01.3-02-PLAN.md: Runner layout; H-00, H-02, H-03, H-12 converted; H-17 uses stop_check
+- [x] 01.3-03-PLAN.md: H-01, H-04, H-06, H-13 and Coexistence converted
+- [x] 01.3-04-PLAN.md: Restart chain H-08, H-16, H-11, H-09, H-10; shared restart_test_sandbox
+- [x] 01.3-06-PLAN.md: Entrypoint stops on a non-executable start hook, with its self-test; SANDBOX.md and Dockerfile wording
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 01.3-05-PLAN.md: Manual helpers on lib-manual.sh; phase gate (lint clean, output identical); Mac run
+
+### Phase 01.4: Test suite refactor (INSERTED)
+
+**Goal**: The test suite is small enough to read and change. The root cause of its size is fixed: most of `tests/host-selftest.sh` is a fake docker that exists only because the dev sandbox has no real Docker. The suite is simplified and split into logical units, and the three big test scripts get the script layout rule. From the PR #9 review.
+**Depends on**: Phase 1.3 (shared helpers and layout in the rest of the scripts)
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. A decision on where the host checks run against a real Docker, recorded with its trade-offs. Candidates: a GitHub Actions runner (real Docker on Linux, ties in with Phase 6), or another isolated Docker the dev sandbox can reach. Giving the dev sandbox the host Docker socket is out: it is root on the Mac and defeats the isolation this project exists for.
+  2. With real Docker covering the host checks, the fake docker shrinks to what still needs it, or goes away. Whatever remains lives in its own file under `tests/host/support/`, not in a heredoc.
+  3. `tests/host-selftest.sh`, `tests/bundle-selftest.sh` and `tests/guard.sh` are split into logical units (one file per check group, a shared helpers library, a short runner), follow the script layout rule, and reuse `tests/host/lib.sh` and `tests/host/lib-bundle.sh` where they fit.
+  4. Every check that runs today still runs and still catches what it catches today (the deliberately broken cases still fail), and `tests/host/run-all.sh` passes on the Mac.
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 01.4 to break down)
+
+### Phase 01.5: Host test fixes (INSERTED)
+
+**Goal**: The known bugs in the host tests and the entrypoint, found by the Phase 1 and Phase 1.1 code reviews, are fixed and each fix is proven against a real Docker. Kept out of Phase 1.3 so that identical output stays the proof of a safe restructure, and placed after Phase 1.4 so a real Docker can prove the fixes. From the Phase 1.3 discussion.
+**Depends on**: Phase 1.4 (a real Docker for the host checks)
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. Every open finding in `01-REVIEW-DISPOSITION.md` and `01.1-REVIEW-DISPOSITION.md` is fixed or explicitly closed with a reason. This includes `run_timeout` not stopping a shell function (01.1 CR-01), the flaky H-09 volume compare (01.1 WR-02), Coexistence false FAIL and false PASS (01.1 WR-05), H-13 treating any exec failure as success (01.1 WR-08), and the entrypoint's dead "project folder missing" check (01 WR-01).
+  2. Each fix has a test that fails before the fix and passes after it, run against a real Docker where the bug needs one.
+  3. `tests/host/run-all.sh` passes on the Mac.
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 01.5 to break down)
 
 ### Phase 2: Pinned Toolchain, GSD, and ccusage
 
@@ -210,10 +270,23 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 |-------|----------------|--------|-----------|
 | 1. Two-Mount Claude Sandbox | 4/4 | Complete    | 2026-10-04 |
 | 1.1. Automated host tests | 4/4 | Complete    | 2026-10-04 |
-| 1.2. Best-practices bundle baked into the image (stopgap) | 6/6 | In Progress|  |
+| 1.2. Best-practices bundle baked into the image (stopgap) | 6/6 | Complete    | 2026-10-05 |
+| 1.3. Shell script layout | 6/6 | Complete    | 2026-10-05 |
+| 1.4. Test suite refactor | 0/TBD | Not started | - |
+| 1.5. Host test fixes | 0/TBD | Not started | - |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
 | 4. Jump-In and Sandbox Housekeeping | 0/TBD | Not started | - |
 | 5. Migration, Docs, and Old-Layout Retirement | 0/TBD | Not started | - |
 | 6. Automated checks (CI) | 0/TBD | Not started | - |
+
+## Backlog
+
+### Phase 999.1: Follow-up: Phase 01.3 deferred UAT follow-up: Test 4 (BACKLOG)
+
+**Goal:** Resolve the UAT checkpoint deferred during Phase 01.3 verification
+**Source phase:** 01.3
+**Deferred at:** 2026-10-05 during /gsd-verify-work 01.3 session completion
+**Follow-ups:**
+- [ ] Test 4: The rest of manual tests are a pain to run; we either automate them (not worth it for now), find another way to test them, or test much less frequently (deferred 2026-10-05). The manual helpers h09, h13 and h19 were not run in Phase 01.3; Phase 1.4 runs the whole test suite anyway, and should settle when each manual helper must run.
