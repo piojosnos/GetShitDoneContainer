@@ -51,6 +51,7 @@ case_healthy_run() {
     has_text "$WORK/out.healthy" "SBX_DIR=$healthyRunDir docker compose down && rm -rf $healthyRunDir"
   expect "runner: the run folder is still there afterwards" test -d "$healthyRunDir"
   expect "runner: the old container snapshot was written" has_text "$healthyRunDir/logs/old-containers.before" "cc_oldbox"
+  expect "runner: the old folder snapshot was written" has_match "$healthyRunDir/logs/old-folders.before" '^[0-9a-f]{40}$'
   expect "docker log: nothing is removed or pruned" \
     lacks_match "$WORK/args.healthy" '^(rm|rmi|system|container rm|image rm|volume rm|network rm)( |$)|prune'
   expect "docker log: no down with a volume flag" lacks_match "$WORK/args.healthy" 'down.*(-v|--volumes)'

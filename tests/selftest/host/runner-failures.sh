@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of how tests/host/run-all.sh handles failures against the fake docker: a failing check, a start that never synced, a failed build, a foreign leftover container, a sandbox that does not start, a chain that stops, failures that do not stop the run, and a fatal Compose check.
+# Self-test of how tests/host/run-all.sh handles failures against the fake docker: a failing check, a start that never synced, a failed build, a foreign leftover container, a sandbox that does not start, a chain that stops, failures that do not stop the run, and a fatal Compose check, and a failed docker ps at the start.
 # - Run by run-all.sh; runs alone too.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
 # - Usage, from anywhere: bash tests/selftest/host/runner-failures.sh   (exit 0 = every case passes)
@@ -124,6 +124,18 @@ case_fatal_h00() {
 }
 
 # --------------------------------------------------------------------------------
+# docker ps fails at the start, so the old containers cannot be recorded
+# --------------------------------------------------------------------------------
+case_failed_ps_at_start() {
+  echo "--- docker ps fails at the start of the run"
+  reset_state
+  run_runner "$WORK/out.psfail" FAKE_PS_FAIL=1
+  expect "runner: a failed docker ps at the start stops the run" \
+    failed_with "$RUNNER_RC" "$WORK/out.psfail" "FAIL: SETUP docker ps failed; the old containers cannot be recorded"
+  expect "runner: no check runs after a failed docker ps" has_text "$WORK/out.psfail" "NOT RUN: h00-compose-v2.sh"
+}
+
+# --------------------------------------------------------------------------------
 # An H-02 failure does not stop the run
 # --------------------------------------------------------------------------------
 case_h02_failure_continues() {
@@ -135,6 +147,13 @@ case_h02_failure_continues() {
   expect "runner: an H-02 failure still runs H-04" has_text "$WORK/out.h02keep" "PASS: H-04"
   expect "runner: an H-02 failure still runs H-12" has_text "$WORK/out.h02keep" "PASS: H-12"
   expect "runner: an H-02 failure is in the summary" has_text "$WORK/out.h02keep" "Failed: h02-claude-on-base.sh"
+}
+
+# --------------------------------------------------------------------------------
+# failed_with STATUS FILE TEXT: true if STATUS is 1 and FILE contains TEXT.
+# --------------------------------------------------------------------------------
+failed_with() {
+  [ "$1" = 1 ] && has_text "$2" "$3"
 }
 
 # --------------------------------------------------------------------------------
@@ -151,4 +170,5 @@ case_full_chain
 case_h18_failure_continues
 case_fatal_h00
 case_h02_failure_continues
+case_failed_ps_at_start
 finish_cases
