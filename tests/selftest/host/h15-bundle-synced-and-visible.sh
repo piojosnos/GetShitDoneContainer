@@ -18,7 +18,9 @@ case_h15_alone() {
   expect "H-15: a synced bundle that Claude lists passes" equals "$CHECK_RC" "0"
   expect "H-15: prints PASS: H-15" has_text "$WORK/out.h15" "PASS: H-15"
   expect "H-15: the probe runs claude -p /context with a dummy key and no network" \
-    has_match "$FAKE_LOG" 'ARGS: exec sbx-hosttest env ANTHROPIC_API_KEY=sk-ant-dummy ANTHROPIC_BASE_URL=http://127.0.0.1:1 claude -p /context$'
+    has_match "$FAKE_LOG" 'ARGS: exec( -w [^ ]+)? sbx-hosttest env ANTHROPIC_API_KEY=sk-ant-dummy ANTHROPIC_BASE_URL=http://127.0.0.1:1 claude -p /context$'
+  expect "H-15: Claude runs in the project folder" \
+    has_match "$FAKE_LOG" 'ARGS: exec -w /home/sandbox/workspace/hosttest sbx-hosttest env .*claude -p /context$'
   run_standalone "$WORK/out.h15.scoped" h15-bundle-synced-and-visible.sh FAKE_CONTEXT_SCOPED=1
   expect "H-15: a path-scoped rule loaded at start fails" equals "$CHECK_RC" "1"
   expect "H-15: the loaded path-scoped rule is named" has_text "$WORK/out.h15.scoped" "shell.md"
