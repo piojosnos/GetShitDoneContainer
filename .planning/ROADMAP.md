@@ -189,7 +189,7 @@ Plans:
   2. Each fix has a test that fails before the fix and passes after it, run on the Mac where the bug needs Docker.
   3. `tests/host/run-all.sh` passes on the Mac.
 
-**Plans:** 11/11 plans executed
+**Plans:** 11/16 plans executed
 
 Plans:
 **Wave 1**
@@ -224,6 +224,23 @@ Plans:
 
 **Wave 11** *(blocked on Wave 10 completion)*
 - [x] 01.5-11-PLAN.md: Final gate with every red commit re-proven, the Mac run (checkpoint), then the dispositions
+
+Gap closure, from the 01.5-11 Mac run (H-03 failed: Compose lowercases an uppercase SBX_NAME, 19 of 20):
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [ ] 01.5-12-PLAN.md: The sandbox name rule in the entrypoint with a clear error; new check H-21 proves it with the real image
+
+**Wave 13** *(blocked on Wave 12 completion)*
+- [ ] 01.5-13-PLAN.md: run_timeout escalates to SIGKILL; H-10 checks the reason of its refusal; reset_state refuses an empty work folder
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [ ] 01.5-14-PLAN.md: A name-check service makes up refuse an uppercase SBX_NAME before anything is created; H-03 asserts that refusal; a guard rule keeps it
+
+**Wave 15** *(blocked on Wave 14 completion)*
+- [ ] 01.5-15-PLAN.md: SANDBOX.md, compose.yml and the checklist state the name rule; the fake docker models only real Compose; two guard rules
+
+**Wave 16** *(blocked on Wave 15 completion)*
+- [ ] 01.5-16-PLAN.md: Final gate with the new red commits re-proven, the Mac run (checkpoint, 21 checks), then the dispositions
 
 ### Phase 2: Pinned Toolchain, GSD, and ccusage
 
