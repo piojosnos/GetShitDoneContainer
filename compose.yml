@@ -7,6 +7,7 @@
 # - Every subcommand (up, down, ps, config) needs both variables: Compose reads the
 #   whole file first.
 # - A missing variable stops Compose with an error naming it, before anything is created.
+# - A mistyped SBX_NAME is refused by the container start, and nothing is created.
 # - Never ask "down" to remove volumes. There are none; all data is in $SBX_DIR on the Mac.
 name: "sbx-${SBX_NAME:?SBX_NAME is required (lowercase letters, digits, - and _)}"
 
@@ -17,9 +18,11 @@ services:
     pull_policy: never             # a missing image is an error, never a pull from Docker Hub
     container_name: "sbx-${SBX_NAME}"
     init: true                     # tini as PID 1: reaps zombies, stops promptly
-    command: ["sleep", "infinity"] # shells come from: docker exec -it sbx-<name> bash
-    # Shells start in the project folder. The entrypoint needs SBX_NAME to check it exists.
-    working_dir: "/home/sandbox/workspace/${SBX_NAME}"
+    command: ["sleep", "infinity"] # shells come from: docker exec -it -w /home/sandbox/workspace/<name> sbx-<name> bash
+    # The entrypoint checks that <name>/ exists in the mounted folder, then starts the command in it.
+    # working_dir is the mount point itself: Docker creates a missing working directory, which
+    # would put an empty <name>/ on the Mac for a mistyped name.
+    working_dir: "/home/sandbox/workspace"
     environment:
       SBX_NAME: "${SBX_NAME}"
     # Privileges:
