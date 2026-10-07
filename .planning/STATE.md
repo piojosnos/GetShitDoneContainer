@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.5"
 current_phase_name: Host test fixes (INSERTED)
 status: executing
-stopped_at: Completed 01.5-07-PLAN.md
-last_updated: "2026-10-07T06:20:25.368Z"
+stopped_at: Completed 01.5-08-PLAN.md
+last_updated: "2026-10-07T06:31:04.314Z"
 last_activity: 2026-10-07
 last_activity_desc: Phase 01.5 execution started
-state_head: 353ca7c09dbfa155392c122c99122c2981526577
+state_head: 6e6717e0b28a5db3e3007fbe9167294c5ac679f7
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 39
-  completed_plans: 35
+  completed_plans: 36
   percent: 42
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 ## Current Position
 
 Phase: 01.5 (Host test fixes (INSERTED)) — EXECUTING
-Plan: 8 of 11
+Plan: 9 of 11
 Status: Ready to execute
 Last activity: 2026-10-07 — Phase 01.5 execution started
 
@@ -95,6 +95,7 @@ Progress: [████████████████████] 28/28 p
 | Phase 01.5 P05 | 25 min | 3 tasks | 12 files |
 | Phase 01.5 P06 | 20min | 2 tasks | 8 files |
 | Phase 01.5 P07 | 15 min | 2 tasks | 6 files |
+| Phase 01.5 P08 | 25 min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -166,6 +167,8 @@ Recent decisions affecting current work:
 - [Phase 01.5]: H-01 scans only build-*, rebuild-* and compose-up logs, one file at a time, for the two platform warning phrases
 - [Phase 01.5]: Workspace check says 'is not a mount point' and does not reject tmpfs (Docker Desktop file system type never observed)
 - [Phase 01.5]: enter_project_folder runs after the start hooks, so hooks keep running in the start folder; unwritable state message matches the workspace message
+- [Phase 01.5]: H-05 and H-06 use a run-unique file name and git identity, so a stale file or identity left by an earlier run cannot pass
+- [Phase 01.5]: Checks that depend on the start folder pass -w through in_project or docker exec -w PROJECT_DIR; the fake docker follows compose.yml working_dir by default and FAKE_WORKDIR models a workspace start
 
 ### Pending Todos
 
@@ -209,6 +212,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-07T06:20:25.234Z
-Stopped at: Completed 01.5-07-PLAN.md
+Last session: 2026-10-07T06:31:04.179Z
+Stopped at: Completed 01.5-08-PLAN.md
 Resume file: None
