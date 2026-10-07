@@ -36,9 +36,10 @@ equals() { [ "$1" = "$2" ]; }
 has_text() { grep -Fq -- "$2" "$1"; }
 
 # --------------------------------------------------------------------------------
-# lacks_text FILE TEXT: true if FILE does not contain TEXT.
+# lacks_text FILE TEXT: true if FILE is a readable file that does not contain TEXT.
 # --------------------------------------------------------------------------------
-lacks_text() { ! grep -Fq -- "$2" "$1"; }
+# A missing or unreadable file is never a pass, so a negative check cannot succeed on input it never read.
+lacks_text() { [ -f "$1" ] && [ -r "$1" ] && ! grep -Fq -- "$2" "$1"; }
 
 # --------------------------------------------------------------------------------
 # fails COMMAND...: true if COMMAND ran and exited non-zero; its stderr is discarded.

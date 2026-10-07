@@ -41,9 +41,10 @@ prepare_fake_docker() {
 has_match() { grep -Eq -- "$2" "$1"; }
 
 # --------------------------------------------------------------------------------
-# lacks_match FILE REGEX: true if no line of FILE matches REGEX.
+# lacks_match FILE REGEX: true if FILE is a readable file and no line of it matches REGEX.
 # --------------------------------------------------------------------------------
-lacks_match() { ! grep -Eq -- "$2" "$1"; }
+# A missing or unreadable file is never a pass, so a negative check cannot succeed on input it never read.
+lacks_match() { [ -f "$1" ] && [ -r "$1" ] && ! grep -Eq -- "$2" "$1"; }
 
 # --------------------------------------------------------------------------------
 # string_matches REGEX STRING: true if STRING matches REGEX.
