@@ -34,6 +34,7 @@ check_layer_prefix() {
 
     if [ "$claudePrefix" != "$baseLayers" ]; then
       i=1
+
       while [ "$i" -le "$baseCount" ]; do
         baseLine=$(printf '%s\n' "$baseLayers" | sed -n "${i}p")
         claudeLine=$(printf '%s\n' "$claudeLayers" | sed -n "${i}p")

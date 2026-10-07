@@ -36,8 +36,10 @@ run_timeout() {
   commandPid=$!
   (
     elapsedSeconds=0
+
     while [ "$elapsedSeconds" -lt "$seconds" ]; do
       sleep 1
+
       if ! kill -0 "$commandPid" 2>/dev/null; then
         exit 0
       fi
@@ -114,6 +116,7 @@ assert_test_sandbox() {
   local label mountSource
 
   label=$(docker container inspect --format '{{index .Config.Labels "sbx.name"}}' "$CONTAINER" 2>/dev/null </dev/null) || return 1
+
   if [ "$label" != "hosttest" ]; then
     return 1
   fi
@@ -121,6 +124,7 @@ assert_test_sandbox() {
   mountSource=$(docker container inspect \
     --format '{{range .Mounts}}{{if eq .Destination "/home/sandbox/workspace"}}{{.Source}}{{end}}{{end}}' \
     "$CONTAINER" 2>/dev/null </dev/null) || return 1
+
   case "$mountSource" in
     *sbx-hosttest-*) return 0 ;;
   esac

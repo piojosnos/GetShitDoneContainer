@@ -44,6 +44,7 @@ drop_remaining() {
   local keptList=""
 
   script=$1
+
   for item in $remainingList; do
     if [ "$item" != "$script" ]; then
       keptList="$keptList $item"
@@ -59,6 +60,7 @@ run_check() {
   local script=$1
 
   drop_remaining "$script"
+
   if bash "$HOST_DIR/$script" </dev/null; then
     passedCount=$((passedCount + 1))
     return 0
@@ -125,6 +127,7 @@ record_setup_failure() {
 finish() {
   mark_not_run "$remainingList" "$1"
   printf '\nSummary: %s passed, %s failed, %s not run\n' "$passedCount" "$failedCount" "$notRunCount"
+
   if [ -n "$failedList" ]; then
     printf 'Failed:%s\n' "$failedList"
   fi
@@ -224,6 +227,7 @@ run_compose_check() {
 # --------------------------------------------------------------------------------
 build_all_images() {
   info "building the images (logs in $RUN/logs)"
+
   if ! build_images build; then
     fatal "the image build failed"
   fi

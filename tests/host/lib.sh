@@ -108,6 +108,7 @@ make_run_dir() {
 
   baseDir=${TMPDIR:-/tmp}
   baseDir=${baseDir%/}
+
   if [ -z "$baseDir" ]; then
     baseDir=/tmp
   fi
