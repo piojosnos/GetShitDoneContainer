@@ -39,6 +39,7 @@
 # FAKE_HOOK_IGNORED: 1 makes a run whose hook fails still run its command
 # FAKE_HOOK_DIR_IGNORED: 1 makes a run with its own folder over /etc/sbx/start.d skip the hook step
 # FAKE_PS: the docker ps answer (default: one old cc_oldbox container, running)
+# FAKE_PS_FAIL: 1 makes docker ps fail as if the daemon were unreachable
 # FAKE_VOLUMES: the volume names docker volume ls lists
 # FAKE_VOLUMES_AFTER_BUILD: the volume names docker volume ls lists once a build has run
 # FAKE_BUNDLE_DRIFT: 1 gives the bundle copied out of the image an extra file
@@ -441,6 +442,10 @@ fake_volume() {
 # fake_ps ARG...: answers docker ps with the one old container, or FAKE_PS.
 # --------------------------------------------------------------------------------
 fake_ps() {
+  if [ "${FAKE_PS_FAIL:-0}" = 1 ]; then
+    echo "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?" >&2
+    return 1
+  fi
   printf '%s\n' "${FAKE_PS-deadbeef0001 cc_oldbox running}"
   return 0
 }
