@@ -39,6 +39,7 @@ check_workspace_mount() {
 check_project_and_state_folders() {
   [ -d "$ws/$SBX_NAME" ] || { start_error "$ws/$SBX_NAME (the project folder) is missing."; return 1; }
   [ -d "$state" ] || { start_error "$state is missing."; return 1; }
+  [ -w "$state" ] || { start_error "$state is not writable by $(id -un)."; return 1; }
 }
 
 # --------------------------------------------------------------------------------
@@ -46,9 +47,12 @@ check_project_and_state_folders() {
 # --------------------------------------------------------------------------------
 create_state_dirs() {
   local stateFolder
+  local stateFolderList
 
-  # ${SBX_STATE_DIRS:-} is unquoted on purpose: one word per folder name.
-  for stateFolder in shell gh git ${SBX_STATE_DIRS:-}; do
+  # The list is split on spaces only; a * or ? in a name is never expanded.
+  read -r -a stateFolderList <<< "shell gh git ${SBX_STATE_DIRS:-}"
+
+  for stateFolder in "${stateFolderList[@]}"; do
     mkdir -p "$state/$stateFolder" || return 1
   done
 }
