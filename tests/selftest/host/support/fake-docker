@@ -699,10 +699,12 @@ fake_exec() {
       echo "On branch main"
       ;;
     "git config --system --get-all safe.directory") printf '%s\n' "${FAKE_SAFE_DIR:-*}" ;;
-    "git config --global user.name T")
+    "git config --global user.name "*)
       if [ "${FAKE_NO_GIT_WRITE:-0}" != 1 ]; then
+        identityValue=$*
+        identityValue=${identityValue#git config --global user.name }
         mkdir -p "$(cat "$FAKE_STATE/container.dir")/state/git"
-        printf '[user]\n\tname = T\n' >"$(cat "$FAKE_STATE/container.dir")/state/git/config"
+        printf '[user]\n\tname = %s\n' "$identityValue" >"$(cat "$FAKE_STATE/container.dir")/state/git/config"
       fi
       ;;
     "bash -i") exec_history_shell ;;
