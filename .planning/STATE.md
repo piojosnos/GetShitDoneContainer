@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.5"
 current_phase_name: Host test fixes (INSERTED)
 status: executing
-stopped_at: Completed 01.5-04-PLAN.md
-last_updated: "2026-10-07T05:59:15.012Z"
+stopped_at: Completed 01.5-05-PLAN.md
+last_updated: "2026-10-07T06:09:21.939Z"
 last_activity: 2026-10-07
 last_activity_desc: Phase 01.5 execution started
-state_head: 9935f82b1da5e3f5ea5ea3831cf5403697e43da0
+state_head: 73d7a772d50ec049720f657506ed5bba8c332407
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 39
-  completed_plans: 32
+  completed_plans: 33
   percent: 42
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 ## Current Position
 
 Phase: 01.5 (Host test fixes (INSERTED)) — EXECUTING
-Plan: 5 of 11
+Plan: 6 of 11
 Status: Ready to execute
 Last activity: 2026-10-07 — Phase 01.5 execution started
 
@@ -92,6 +92,7 @@ Progress: [████████████████████] 28/28 p
 | Phase 01.5 P02 | 14 min | 2 tasks | 14 files |
 | Phase 01.5 P03 | 25 min | 3 tasks | 9 files |
 | Phase 01.5 P04 | 20 min | 2 tasks | 11 files |
+| Phase 01.5 P05 | 25 min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -156,6 +157,8 @@ Recent decisions affecting current work:
 - [Phase 01.5]: grep -P guard term matches as a whole word so pgrep -P is allowed (host side tree kill uses pgrep -P only)
 - [Phase 01.5]: Sandbox identity is split: loose rule for cleanup (mount or its parent named sbx-hosttest-*), strict rule before a check acts (mount folder name equals RUN name)
 - [Phase 01.5]: Plan 04: compose guard regex is compose([[:space:]].*)?[[:space:]]-f[[:space:]] so a plain 'docker compose -f' call is matched; DOCKER_HOST and DOCKER_CONTEXT stay set and are printed, not unset (D-12)
+- [Phase 01.5]: A failed docker ps at the start of a run is fatal; a failed git at the start is an INFO line and Coexistence reports it at the end
+- [Phase 01.5]: The old folder snapshot uses tree hashes of ClaudeCode/ and OpenCode/ at HEAD plus git status, so a commit made elsewhere during a run is not a change
 
 ### Pending Todos
 
@@ -199,6 +202,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-07T05:59:14.882Z
-Stopped at: Completed 01.5-04-PLAN.md
+Last session: 2026-10-07T06:09:21.809Z
+Stopped at: Completed 01.5-05-PLAN.md
 Resume file: None
