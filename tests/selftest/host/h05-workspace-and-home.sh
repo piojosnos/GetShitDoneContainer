@@ -7,6 +7,13 @@ set -u
 . "$(dirname "$0")/lib.sh"
 
 # --------------------------------------------------------------------------------
+# run_unique_file_count DIR: prints how many files named x-NUMBER-NUMBER.txt are in DIR.
+# --------------------------------------------------------------------------------
+run_unique_file_count() {
+  ls "$1" 2>/dev/null | grep -c '^x-[0-9][0-9]*-[0-9][0-9]*\.txt$'
+}
+
+# --------------------------------------------------------------------------------
 # Cases of H-05, each run alone against the fake docker
 # --------------------------------------------------------------------------------
 case_h05_alone() {
@@ -16,12 +23,17 @@ case_h05_alone() {
   run_standalone "$WORK/out.h05" h05-workspace-and-home.sh
   expect "H-05: x.txt on the host, .bashrc and .local listed, sandbox owners pass" equals "$CHECK_RC" "0"
   expect "H-05: prints PASS: H-05" has_text "$WORK/out.h05" "PASS: H-05"
-  expect "H-05: x.txt exists in the run folder" test -f "$FIXTURE/hosttest/x.txt"
+  expect "H-05: the file made in the container is in the run folder" equals "$(run_unique_file_count "$FIXTURE/hosttest")" "1"
   reset_state
   make_fixture_run
   run_standalone "$WORK/out.h05.notouch" h05-workspace-and-home.sh FAKE_NO_TOUCH=1
   expect "H-05: a file that never reaches the host fails" equals "$CHECK_RC" "1"
-  expect "H-05: the missing file is named" has_text "$WORK/out.h05.notouch" "x.txt"
+  expect "H-05: the missing file is named" has_text "$WORK/out.h05.notouch" "did not appear"
+  reset_state
+  make_fixture_run
+  : >"$FIXTURE/hosttest/x.txt"
+  run_standalone "$WORK/out.h05.stale" h05-workspace-and-home.sh FAKE_NO_TOUCH=1
+  expect "H-05: a file left by an earlier run does not pass" equals "$CHECK_RC" "1"
   reset_state
   make_fixture_run
   run_standalone "$WORK/out.h05.root" h05-workspace-and-home.sh FAKE_STAT_OWNER=root

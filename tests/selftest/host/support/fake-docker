@@ -52,7 +52,7 @@
 # FAKE_MANAGED_BAD: 1 makes the managed settings not parse
 # FAKE_ID: the answer of id in the container (default: the sandbox user)
 # FAKE_UNAME: the answer of uname -m in the container (default aarch64)
-# FAKE_NO_TOUCH: 1 makes a file written in the workspace never reach the host
+# FAKE_NO_TOUCH: 1 makes a file written in the workspace never reach the host (a touched file is named as the command names it)
 # FAKE_STAT_OWNER: the owner stat reports for any path (default sandbox)
 # FAKE_ENV_MISSING: the name of one variable left out of the container environment
 # FAKE_UPDATE_ON: 1 makes claude update run instead of saying updates are disabled
@@ -626,8 +626,11 @@ fake_exec() {
     "uname -m") printf '%s\n' "${FAKE_UNAME:-aarch64}" ;;
     "sh -c touch"*)
       if [ "${FAKE_NO_TOUCH:-0}" != 1 ]; then
+        touchRest=$*
+        touchRest=${touchRest#sh -c touch }
+        touchName=${touchRest%%;*}
         mkdir -p "$(cat "$FAKE_STATE/container.dir")/hosttest"
-        : >"$(cat "$FAKE_STATE/container.dir")/hosttest/x.txt"
+        : >"$(cat "$FAKE_STATE/container.dir")/hosttest/$touchName"
       fi
       printf '.\n..\n.bashrc\n.local\nworkspace\n'
       ;;
