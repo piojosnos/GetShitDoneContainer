@@ -72,6 +72,65 @@ sandbox_doc_names_what_only_the_helpers_check() {
 }
 
 # --------------------------------------------------------------------------------
+# checklist_lists_every_host_check: The host checklist has a row for every host check script, its title ends at the highest ID, and it names the chain in the order run-all.sh runs it.
+# --------------------------------------------------------------------------------
+# The IDs come from the file names (h20-... is H-20) and from the chainCheckList line of tests/host/run-all.sh.
+checklist_lists_every_host_check() {
+  local checklist=tests/host-checklist.md
+  local checkScript
+  local checkId
+  local highestId=""
+  local chainNameText
+  local chainName
+  local chainText=""
+  local ok=0
+
+  for checkScript in tests/host/h[0-9][0-9]-*.sh; do
+    checkId=$(basename "$checkScript" | sed -E 's/^h([0-9]{2})-.*/H-\1/')
+    highestId=$checkId
+
+    if ! grep -q "^| $checkId |" "$checklist"; then
+      echo "    $checklist has no table row starting \"| $checkId |\" for $checkScript"
+      ok=1
+    fi
+  done
+
+  if [ -z "$highestId" ]; then
+    echo "    no tests/host/hNN-*.sh script found"
+    return 1
+  fi
+
+  if ! head -n 1 "$checklist" | grep -Fq "(H-00..$highestId)"; then
+    echo "    line 1 of $checklist does not hold (H-00..$highestId)"
+    ok=1
+  fi
+
+  chainNameText=$(sed -n -E 's/^chainCheckList="([^"]*)".*/\1/p' tests/host/run-all.sh)
+
+  if [ -z "$chainNameText" ]; then
+    echo "    tests/host/run-all.sh has no chainCheckList line"
+    return 1
+  fi
+
+  for chainName in $chainNameText; do
+    checkId=$(echo "$chainName" | sed -E 's/^h([0-9]{2})-.*/H-\1/')
+
+    if [ -z "$chainText" ]; then
+      chainText=$checkId
+    else
+      chainText="$chainText, $checkId"
+    fi
+  done
+
+  if ! grep -Fq "chain $chainText" "$checklist"; then
+    echo "    $checklist does not hold: chain $chainText"
+    ok=1
+  fi
+
+  return "$ok"
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -80,4 +139,5 @@ run_rules \
   docs_promise_only_what_happens \
   sandbox_doc_checks_the_folder_first \
   sandbox_doc_shells_pass_w \
-  sandbox_doc_names_what_only_the_helpers_check || exit 1
+  sandbox_doc_names_what_only_the_helpers_check \
+  checklist_lists_every_host_check || exit 1
