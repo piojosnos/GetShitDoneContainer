@@ -130,6 +130,50 @@ case_mount_wording() {
 }
 
 # --------------------------------------------------------------------------------
+# Case: the self-test runs as a user the permission bits apply to
+# --------------------------------------------------------------------------------
+# Root can write anywhere, so the unwritable state case would prove nothing.
+case_runs_as_non_root() {
+  echo '--- the self-test runs as a non-root user'
+
+  expect "start folders: the self-test runs as a non-root user" test "$(id -u)" -ne 0
+}
+
+# --------------------------------------------------------------------------------
+# Case: an unwritable state folder is refused by name
+# --------------------------------------------------------------------------------
+case_unwritable_state() {
+  local stateRc
+
+  echo '--- an unwritable state folder is refused by name'
+  mkdir -p "$WORK/ws-ro/demo" "$WORK/ws-ro/state"
+  chmod 555 "$WORK/ws-ro/state"
+
+  ( . "$START_LIB"; ws=$WORK/ws-ro; state=$ws/state; SBX_NAME=demo; check_project_and_state_folders ) >"$WORK/ws-ro/out" 2>&1 </dev/null
+  stateRc=$?
+
+  chmod 755 "$WORK/ws-ro/state"
+
+  expect "check_project_and_state_folders: an unwritable state folder is refused" equals "$stateRc" 1
+  expect "check_project_and_state_folders: the unwritable state folder is named" \
+    has_text "$WORK/ws-ro/out" "$WORK/ws-ro/state is not writable by"
+}
+
+# --------------------------------------------------------------------------------
+# Case: a * in the state folder list stays a literal name
+# --------------------------------------------------------------------------------
+case_literal_state_names() {
+  echo '--- a * in the state folder list stays a literal name'
+  mkdir -p "$WORK/cwd" "$WORK/ws-glob/state"
+  : >"$WORK/cwd/aaa"
+
+  ( cd "$WORK/cwd" && . "$START_LIB"; ws=$WORK/ws-glob; state=$ws/state; SBX_STATE_DIRS='*'; create_state_dirs ) >"$WORK/ws-glob/out" 2>&1 </dev/null
+
+  expect "create_state_dirs: a * in SBX_STATE_DIRS is not expanded" test ! -e "$WORK/ws-glob/state/aaa"
+  expect "create_state_dirs: the folder named * is made" test -d "$WORK/ws-glob/state/*"
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -139,4 +183,7 @@ case_command_starts_in_project
 case_missing_project_stops_start
 case_cannot_enter_project
 case_mount_wording
+case_runs_as_non_root
+case_unwritable_state
+case_literal_state_names
 finish_cases
