@@ -55,6 +55,7 @@
 # FAKE_ENV_MISSING: the name of one variable left out of the container environment
 # FAKE_UPDATE_ON: 1 makes claude update run instead of saying updates are disabled
 # FAKE_SHARE_EXISTS: 1 makes ~/.local/share/claude exist in the container home
+# FAKE_EXEC_RC: a non-zero value makes the exec of the share folder test return that status, as a docker exec that could not run does
 # FAKE_GIT_DUBIOUS: 1 makes git status fail with a dubious ownership message
 # FAKE_SAFE_DIR: the safe.directory values git config lists (default *)
 # FAKE_NO_GIT_WRITE: 1 makes the git identity write never reach the state folder
@@ -656,6 +657,9 @@ fake_exec() {
     "env H18_SCRIPT="*) exec_h18_run "$@" ;;
     "sh -c : h14-probe"*) exec_h14_probe ;;
     "sh -c test ! -e"*)
+      if [ "${FAKE_EXEC_RC:-0}" != 0 ]; then
+        return "$FAKE_EXEC_RC"
+      fi
       if [ "${FAKE_SHARE_EXISTS:-0}" = 1 ]; then
         return 1
       fi
