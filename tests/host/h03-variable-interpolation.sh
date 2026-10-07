@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# H-03: variables reach compose.yml. The project name is sbx-hosttest, and a missing
-# SBX_DIR is refused with a message that names it.
+# H-03: variables reach compose.yml: the project name is sbx-hosttest, a missing SBX_NAME or
+# SBX_DIR is refused by name, an uppercase SBX_NAME is refused; config only, nothing starts.
 # Depends on: nothing
 # Needs: nothing
 set -u
@@ -22,6 +22,17 @@ read_configs() {
 }
 
 # --------------------------------------------------------------------------------
+# Renders the compose config with no SBX_NAME and with an uppercase one
+# --------------------------------------------------------------------------------
+read_name_probes() {
+  noNameOutput=$(env -u SBX_NAME SBX_DIR=/sbx-hosttest-config-only docker compose --env-file /dev/null -f "$REPO_DIR/compose.yml" config </dev/null 2>&1)
+  noNameStatus=$?
+
+  upperOutput=$(SBX_NAME=HostTest SBX_DIR=/sbx-hosttest-config-only docker compose --env-file /dev/null -f "$REPO_DIR/compose.yml" config </dev/null 2>&1)
+  upperStatus=$?
+}
+
+# --------------------------------------------------------------------------------
 # Checks the project name is sbx-hosttest
 # --------------------------------------------------------------------------------
 check_project_name() {
@@ -40,11 +51,32 @@ check_missing_dir_refused() {
 }
 
 # --------------------------------------------------------------------------------
+# Checks a missing SBX_NAME is refused by name
+# --------------------------------------------------------------------------------
+check_missing_name_refused() {
+  if [ "$noNameStatus" -eq 0 ] || [[ "$noNameOutput" != *"SBX_NAME is required"* ]]; then
+    add_problem "expected 'SBX_NAME is required' and a non-zero exit without SBX_NAME; got exit $noNameStatus: $(first_lines "$noNameOutput")"
+  fi
+}
+
+# --------------------------------------------------------------------------------
+# Checks an uppercase SBX_NAME is refused as a project name
+# --------------------------------------------------------------------------------
+check_uppercase_refused() {
+  if [ "$upperStatus" -eq 0 ] || [[ "$upperOutput" != *"project name"* ]]; then
+    add_problem "expected an error about the project name and a non-zero exit for an uppercase SBX_NAME; got exit $upperStatus: $(first_lines "$upperOutput")"
+  fi
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 read_configs
+read_name_probes
 check_project_name
 check_missing_dir_refused
+check_missing_name_refused
+check_uppercase_refused
 report_check H-03 "variable interpolation is wrong" \
-  "the project name is sbx-hosttest and a missing SBX_DIR is refused by name"
+  "the project name is sbx-hosttest; a missing SBX_NAME or SBX_DIR is refused by name; an uppercase SBX_NAME is refused"
