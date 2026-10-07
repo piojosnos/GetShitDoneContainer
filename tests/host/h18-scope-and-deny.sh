@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 # H-18: in the real image, a path-scoped rule loads only after Claude reads a matching file, and the managed deny refuses edits to synced files under bypassPermissions.
 # - A fake Anthropic API in tests/host/support scripts Claude's tool calls, so no login and no network
-#   are needed. The scripts and assertions are the same as the fake API sections of
-#   tests/bundle-selftest.sh.
-# - It is tied to the wire format of the pinned Claude. After a pin bump, run bash tests/bundle-selftest.sh
-#   in the dev sandbox first.
+#   are needed. The scripts and assertions are the same as tests/selftest/bundle/fake-api.sh.
+# - It is tied to the wire format of the pinned Claude. After a pin bump, run
+#   bash tests/selftest/bundle/run-all.sh in the dev sandbox first.
 # - No other check depends on it: remove this script and its entry in run-all.sh to drop it.
 # Depends on: nothing
 # Needs: test sandbox running

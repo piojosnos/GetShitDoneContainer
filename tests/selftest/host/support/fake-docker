@@ -1,0 +1,640 @@
+#!/usr/bin/env bash
+# Fake docker for the Linux self-test of the host tests. It is not Docker.
+# - Installed by tests/selftest/host/lib.sh as WORK/bin/docker, first on PATH, so no real docker is reached.
+# - Logs every call to FAKE_LOG.
+# - Answers from the state folder FAKE_STATE and the knobs below.
+# - Exits 99 on any call it does not know.
+# - Only the container sbx-hosttest exists; any other name gets "No such container".
+# - Compose up and a run with --network none execute the real claude/start.d/10-best-practices,
+#   as the real entrypoint does (FAKE_REPO points at the repo).
+# - A run that mounts its own folder over /etc/sbx/start.d runs the real start library on that folder
+#   instead of the bundle sync.
+# - Runs without set -u, as it always has, so an absent knob reads as empty.
+#
+# Knobs, one line each:
+# FAKE_STATE: the folder that holds the fake container state (set by lib.sh)
+# FAKE_LOG: the file every call is logged to (set by lib.sh)
+# FAKE_REPO: the repo checkout whose real start hook and start library the fake runs (set by lib.sh)
+# FAKE_ARCH: the architecture docker info reports (default aarch64)
+# FAKE_CLAUDE_ARCH: the architecture of the sbx-claude:local image (default arm64)
+# FAKE_CLAUDE_LAYERS: the layer list of sbx-claude:local (default: the base layers plus two more)
+# FAKE_CLAUDE_VERSION: the version claude --version prints (default: the pin in claude/Dockerfile)
+# FAKE_COMPOSE_VERSION: what docker compose version prints (default 2.39.1)
+# FAKE_COMPOSE_FAIL: 1 makes docker compose version fail
+# FAKE_CONFIG_NAME: the project name docker compose config prints (default sbx-<SBX_NAME>)
+# FAKE_CONFIG_LAX: 1 makes docker compose config work without SBX_DIR
+# FAKE_BUILD_FAIL: the image tag whose build fails
+# FAKE_UP_RC: a non-zero value makes compose up fail with that status
+# FAKE_H10: what compose up does when the project folder is missing: honored, ignored or started
+# FAKE_NO_SYNC: 1 makes compose up skip the start hook
+# FAKE_SYNC_CLOBBERS: 1 makes compose up delete state/claude/skills and projects before the hook
+# FAKE_DOWN_KEEPS: 1 makes compose down leave the container in place
+# FAKE_DOWN_LOSES_HISTORY: 1 makes compose down delete the shell history file
+# FAKE_LABEL: the sbx.name label of the container (default hosttest)
+# FAKE_EXTRA_MOUNT: 1 adds a volume mount to the container inspect answer
+# FAKE_PLAIN_OK: 1 lets a plain docker run start instead of refusing it
+# FAKE_OFFLINE_FAIL: 1 makes a run with --network none fail to start
+# FAKE_HOOK_IGNORED: 1 makes a run whose hook fails still run its command
+# FAKE_HOOK_DIR_IGNORED: 1 makes a run with its own folder over /etc/sbx/start.d skip the hook step
+# FAKE_PS: the docker ps answer (default: one old cc_oldbox container, running)
+# FAKE_VOLUMES: the volume names docker volume ls lists
+# FAKE_VOLUMES_AFTER_BUILD: the volume names docker volume ls lists once a build has run
+# FAKE_BUNDLE_DRIFT: 1 gives the bundle copied out of the image an extra file
+# FAKE_BUNDLE_OWNER: the owner of /opt/sbx/best-practices (default root)
+# FAKE_BUNDLE_WRITABLE: 1 lets the sandbox user write in the bundle
+# FAKE_BUNDLE_MOUNT: 1 puts a mount under /opt/sbx
+# FAKE_MANAGED_BAD: 1 makes the managed settings not parse
+# FAKE_ID: the answer of id in the container (default: the sandbox user)
+# FAKE_UNAME: the answer of uname -m in the container (default aarch64)
+# FAKE_NO_TOUCH: 1 makes a file written in the workspace never reach the host
+# FAKE_STAT_OWNER: the owner stat reports for any path (default sandbox)
+# FAKE_ENV_MISSING: the name of one variable left out of the container environment
+# FAKE_UPDATE_ON: 1 makes claude update run instead of saying updates are disabled
+# FAKE_SHARE_EXISTS: 1 makes ~/.local/share/claude exist in the container home
+# FAKE_GIT_DUBIOUS: 1 makes git status fail with a dubious ownership message
+# FAKE_SAFE_DIR: the safe.directory values git config lists (default *)
+# FAKE_NO_GIT_WRITE: 1 makes the git identity write never reach the state folder
+# FAKE_NO_HISTORY: 1 makes the fake shell keep no history
+# FAKE_CONTEXT_SCOPED: 1 makes the fake /context also list path-scoped rules
+# FAKE_CONTEXT_NO_SKILLS: 1 makes the fake /context list no skills
+# FAKE_SCOPE_EAGER: 1 makes the fake scope run show the path-scoped rule in the first request
+# FAKE_DENY_BROKEN: 1 makes the fake deny run change the first always-on rule and plant a file
+# FAKE_H18_TOOLS_OFF: 1 makes the fake deny run never edit the project file
+
+# --------------------------------------------------------------------------------
+# log_call ARG...: appends one line for the call to FAKE_LOG, in the format the safety cases parse.
+# --------------------------------------------------------------------------------
+log_call() {
+  printf 'ENV SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
+    "${SBX_NAME-unset}" "${SBX_DIR-unset}" "${COMPOSE_PROJECT_NAME-unset}" "$*" >>"$FAKE_LOG"
+}
+
+# --------------------------------------------------------------------------------
+# unhandled ARG...: stops the program with status 99; this is an exit on purpose.
+# --------------------------------------------------------------------------------
+unhandled() {
+  echo "fake docker: unhandled: $*" >&2
+  exit 99
+}
+
+# --------------------------------------------------------------------------------
+# has_container: true while the fake test container exists.
+# --------------------------------------------------------------------------------
+has_container() {
+  [ -f "$FAKE_STATE/container" ]
+}
+
+# --------------------------------------------------------------------------------
+# fake_info ARG...: answers docker info.
+# --------------------------------------------------------------------------------
+fake_info() {
+  if [ "${2:-}" = "--format" ]; then
+    printf '%s\n' "${FAKE_ARCH:-aarch64}"
+  fi
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# fake_version ARG...: answers docker version.
+# --------------------------------------------------------------------------------
+fake_version() {
+  printf 'Docker Desktop 4.99.0 (fake)\n'
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# compose_version: answers docker compose version.
+# --------------------------------------------------------------------------------
+compose_version() {
+  if [ "${FAKE_COMPOSE_FAIL:-0}" = 1 ]; then
+    echo "docker: 'compose' is not a docker command." >&2
+    return 1
+  fi
+  printf '%s\n' "${FAKE_COMPOSE_VERSION:-2.39.1}"
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# compose_config: answers docker compose config, which needs SBX_DIR unless FAKE_CONFIG_LAX is 1.
+# --------------------------------------------------------------------------------
+compose_config() {
+  if [ -z "${SBX_DIR:-}" ] && [ "${FAKE_CONFIG_LAX:-0}" != 1 ]; then
+    echo "required variable SBX_DIR is missing a value: SBX_DIR is required (absolute host path of the sandbox folder)" >&2
+    return 15
+  fi
+  printf 'name: %s\nservices:\n  sandbox: {}\n' "${FAKE_CONFIG_NAME:-sbx-${SBX_NAME:-unset}}"
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# compose_up: starts the fake container and runs the real start hook, as the real entrypoint does.
+# --------------------------------------------------------------------------------
+compose_up() {
+  if [ -z "${SBX_DIR:-}" ]; then
+    echo "required variable SBX_DIR is missing a value: SBX_DIR is required" >&2
+    return 15
+  fi
+  if [ ! -d "$SBX_DIR" ]; then
+    case "${FAKE_H10:-honored}" in
+      ignored)
+        mkdir -p "$SBX_DIR"
+        : >"$FAKE_STATE/container"
+        printf '%s\n' "$SBX_DIR" >"$FAKE_STATE/container.dir"
+        echo "[sbx] ERROR: the project folder is missing." >&2
+        return 1
+        ;;
+      started)
+        : >"$FAKE_STATE/container"
+        printf '%s\n' "$SBX_DIR" >"$FAKE_STATE/container.dir"
+        return 0
+        ;;
+      *)
+        echo "fake compose: bind source path does not exist: $SBX_DIR" >&2
+        return 1
+        ;;
+    esac
+  fi
+  if [ "${FAKE_UP_RC:-0}" != 0 ]; then
+    echo "fake compose: up failed" >&2
+    return "$FAKE_UP_RC"
+  fi
+  : >"$FAKE_STATE/container"
+  printf '%s\n' "$SBX_DIR" >"$FAKE_STATE/container.dir"
+  mkdir -p "$SBX_DIR/state/claude"
+  if [ "${FAKE_SYNC_CLOBBERS:-0}" = 1 ]; then
+    rm -rf "$SBX_DIR/state/claude/skills" "$SBX_DIR/state/claude/projects"
+  fi
+  if [ "${FAKE_NO_SYNC:-0}" != 1 ]; then
+    if ! SBX_BUNDLE_DIR="$FAKE_REPO/best-practices" CLAUDE_CONFIG_DIR="$SBX_DIR/state/claude" \
+      bash "$FAKE_REPO/claude/start.d/10-best-practices"; then
+      echo "[sbx] ERROR: start hook /etc/sbx/start.d/10-best-practices failed; the container was not started." >&2
+      return 1
+    fi
+  fi
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# compose_down: removes the fake container, unless FAKE_DOWN_KEEPS is 1.
+# --------------------------------------------------------------------------------
+compose_down() {
+  if [ "${FAKE_DOWN_LOSES_HISTORY:-0}" = 1 ] && [ -f "$FAKE_STATE/container.dir" ]; then
+    rm -f "$(cat "$FAKE_STATE/container.dir")/state/shell/bash_history"
+  fi
+  if [ "${FAKE_DOWN_KEEPS:-0}" != 1 ]; then
+    rm -f "$FAKE_STATE/container" "$FAKE_STATE/container.dir"
+  fi
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# fake_compose ARG...: drops the -f FILE pair, then answers version, config, up or down.
+# --------------------------------------------------------------------------------
+fake_compose() {
+  shift
+  if [ "${1:-}" = "-f" ]; then
+    shift 2
+  fi
+  composeSub=${1:-}
+  shift
+  case "$composeSub" in
+    version) compose_version ;;
+    config) compose_config ;;
+    up) compose_up ;;
+    down) compose_down ;;
+    *) unhandled "compose $composeSub $*" ;;
+  esac
+}
+
+# --------------------------------------------------------------------------------
+# fake_container_inspect ARG...: answers docker container inspect for the test container only.
+# --------------------------------------------------------------------------------
+fake_container_inspect() {
+  shift
+  if [ "${1:-}" != "inspect" ]; then
+    unhandled "container $*"
+  fi
+  shift
+  template=""
+  if [ "${1:-}" = "--format" ]; then
+    template=$2
+    shift 2
+  fi
+  containerName=${1:-}
+  if [ "$containerName" != "sbx-hosttest" ] || ! has_container; then
+    echo "Error: No such container: $containerName" >&2
+    return 1
+  fi
+  case "$template" in
+    '') return 0 ;;
+    *sbx.name*) printf '%s\n' "${FAKE_LABEL:-hosttest}" ;;
+    *.Type*)
+      printf 'bind /home/sandbox/workspace %s\n' "$(cat "$FAKE_STATE/container.dir")"
+      if [ "${FAKE_EXTRA_MOUNT:-0}" = 1 ]; then
+        printf 'volume /home/sandbox/extra /var/lib/docker/volumes/extra\n'
+      fi
+      ;;
+    *Mounts*) cat "$FAKE_STATE/container.dir" ;;
+    *State.Running*) printf 'true\n' ;;
+    *) unhandled "container inspect $template" ;;
+  esac
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# fake_image_inspect ARG...: answers docker image inspect for the architecture and the layer list.
+# --------------------------------------------------------------------------------
+fake_image_inspect() {
+  shift
+  if [ "${1:-}" != "inspect" ]; then
+    unhandled "image $*"
+  fi
+  shift
+  imageTemplate=""
+  if [ "${1:-}" = "--format" ]; then
+    imageTemplate=$2
+    shift 2
+  fi
+  case "$imageTemplate" in
+    *Architecture*)
+      for imageRef in "$@"; do
+        case "$imageRef" in
+          sbx-claude:local) printf '%s\n' "${FAKE_CLAUDE_ARCH:-arm64}" ;;
+          sbx-base:local) printf '%s\n' "arm64" ;;
+          *)
+            echo "Error: No such image: $imageRef" >&2
+            return 1
+            ;;
+        esac
+      done
+      return 0
+      ;;
+  esac
+  imageRef=${1:-}
+  baseLayers="sha256:b1 sha256:b2"
+  case "$imageRef" in
+    sbx-base:local) layerList=$baseLayers ;;
+    sbx-claude:local) layerList=${FAKE_CLAUDE_LAYERS:-$baseLayers sha256:c1 sha256:c2} ;;
+    *)
+      echo "Error: No such image: $imageRef" >&2
+      return 1
+      ;;
+  esac
+  for layer in $layerList; do
+    printf '%s\n' "$layer"
+  done
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# run_network_none ARG...: a run with --network none: runs the real start hook, then the command.
+# --------------------------------------------------------------------------------
+run_network_none() {
+  hookBroken=0
+  case "$*" in
+    *"CLAUDE_CONFIG_DIR=/proc/"*) hookBroken=1 ;;
+  esac
+  if [ "$hookBroken" = 1 ] && [ "${FAKE_HOOK_IGNORED:-0}" != 1 ]; then
+    echo "[sbx] ERROR: start hook /etc/sbx/start.d/10-best-practices failed; the container was not started." >&2
+    return 1
+  fi
+  if [ "$hookBroken" = 0 ] && [ "${FAKE_OFFLINE_FAIL:-0}" = 1 ]; then
+    echo "fake docker: the container could not start with networking disabled" >&2
+    return 1
+  fi
+  mountSource=""
+  hookSource=""
+  lastArg=""
+  for runArg in "$@"; do
+    case "$runArg" in
+      type=bind,source=*)
+        mountTarget=${runArg#*,target=}
+        mountTarget=${mountTarget%,readonly}
+        mountPath=${runArg#type=bind,source=}
+        mountPath=${mountPath%%,target=*}
+        if [ "$mountTarget" = /etc/sbx/start.d ]; then
+          hookSource=$mountPath
+        else
+          mountSource=$mountPath
+        fi
+        ;;
+    esac
+    lastArg=$runArg
+  done
+  if [ -n "$hookSource" ]; then
+    if [ "${FAKE_HOOK_DIR_IGNORED:-0}" != 1 ]; then
+      hookOutput=$( ( . "$FAKE_REPO/base/sbx-start-lib.sh"; hookDir=$hookSource; run_start_hooks ) 2>&1 </dev/null )
+      hookStatus=$?
+      if [ "$hookStatus" -ne 0 ]; then
+        printf '%s\n' "${hookOutput//"$hookSource"//etc/sbx/start.d}" >&2
+        return 1
+      fi
+    fi
+  elif [ "$hookBroken" = 0 ]; then
+    mkdir -p "$mountSource/state/claude"
+    if ! SBX_BUNDLE_DIR="$FAKE_REPO/best-practices" CLAUDE_CONFIG_DIR="$mountSource/state/claude" \
+      bash "$FAKE_REPO/claude/start.d/10-best-practices"; then
+      echo "[sbx] ERROR: start hook /etc/sbx/start.d/10-best-practices failed; the container was not started." >&2
+      return 1
+    fi
+  fi
+  sh -c "$lastArg"
+  return $?
+}
+
+# --------------------------------------------------------------------------------
+# run_claude_version ARG...: a run with --entrypoint claude: prints the installed Claude Code version.
+# --------------------------------------------------------------------------------
+run_claude_version() {
+  fakePin=$(sed -n 's/^ARG CLAUDE_CODE_VERSION=//p' "$FAKE_REPO/claude/Dockerfile")
+  printf '%s (Claude Code)\n' "${FAKE_CLAUDE_VERSION:-$fakePin}"
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# run_plain ARG...: a plain run without a mount: refused, as the real image refuses it.
+# --------------------------------------------------------------------------------
+run_plain() {
+  if [ "${FAKE_PLAIN_OK:-0}" = 1 ]; then
+    echo "started without a mount"
+    return 0
+  fi
+  echo "[sbx] ERROR: /home/sandbox/workspace is not a bind mount; its data would be lost on recreate." >&2
+  echo "[sbx]        Start the sandbox with 'docker compose up' (see SANDBOX.md)." >&2
+  return 1
+}
+
+# --------------------------------------------------------------------------------
+# fake_run ARG...: answers docker run, by the kind of run.
+# --------------------------------------------------------------------------------
+fake_run() {
+  case "$*" in
+    *"--network none"*) run_network_none "$@" ;;
+    *"--entrypoint claude"*) run_claude_version "$@" ;;
+    *) run_plain "$@" ;;
+  esac
+}
+
+# --------------------------------------------------------------------------------
+# fake_build ARG...: answers docker build; fails for the tag in FAKE_BUILD_FAIL.
+# --------------------------------------------------------------------------------
+fake_build() {
+  shift
+  imageTag=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      -t) imageTag=$2; shift 2 ;;
+      -f) shift 2 ;;
+      *) shift ;;
+    esac
+  done
+  if [ -n "$imageTag" ] && [ "$imageTag" = "${FAKE_BUILD_FAIL:-}" ]; then
+    echo "ERROR: failed to solve: fake build failure for $imageTag" >&2
+    return 1
+  fi
+  : >"$FAKE_STATE/built"
+  echo "built $imageTag"
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# fake_volume ARG...: answers docker volume ls from FAKE_VOLUMES, or FAKE_VOLUMES_AFTER_BUILD once a build ran.
+# --------------------------------------------------------------------------------
+fake_volume() {
+  if [ "${2:-}" != "ls" ]; then
+    unhandled "volume $*"
+  fi
+  volumeList=${FAKE_VOLUMES:-}
+  if [ -f "$FAKE_STATE/built" ] && [ -n "${FAKE_VOLUMES_AFTER_BUILD:-}" ]; then
+    volumeList=$FAKE_VOLUMES_AFTER_BUILD
+  fi
+  for volumeName in $volumeList; do
+    printf '%s\n' "$volumeName"
+  done
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# fake_ps ARG...: answers docker ps with the one old container, or FAKE_PS.
+# --------------------------------------------------------------------------------
+fake_ps() {
+  printf '%s\n' "${FAKE_PS-deadbeef0001 cc_oldbox running}"
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# fake_cp ARG...: answers docker cp of the bundle out of the test container.
+# --------------------------------------------------------------------------------
+fake_cp() {
+  shift
+  if ! has_container || [ "$#" -ne 2 ] || [ "$1" != "sbx-hosttest:/opt/sbx/best-practices" ]; then
+    unhandled "cp $*"
+  fi
+  cp -R "$FAKE_REPO/best-practices" "$2"
+  if [ "${FAKE_BUNDLE_DRIFT:-0}" = 1 ]; then
+    printf 'drift\n' >"$2/rules/h14-drift.md"
+  fi
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# exec_history_shell: the bash -i shell; keeps the echo lines it reads as a history file.
+# --------------------------------------------------------------------------------
+exec_history_shell() {
+  historyPath="$(cat "$FAKE_STATE/container.dir")/state/shell/bash_history"
+  while IFS= read -r shellLine; do
+    case "$shellLine" in
+      echo*)
+        if [ "${FAKE_NO_HISTORY:-0}" != 1 ]; then
+          mkdir -p "$(dirname "$historyPath")"
+          printf '%s\n' "$shellLine" >>"$historyPath"
+        fi
+        ;;
+      history)
+        if [ -f "$historyPath" ]; then
+          nl -ba "$historyPath"
+        fi
+        ;;
+      exit) return 0 ;;
+    esac
+  done
+}
+
+# --------------------------------------------------------------------------------
+# exec_h18_run ARG...: the scripted Claude run of the scope and deny checks; writes the log the check reads.
+# --------------------------------------------------------------------------------
+exec_h18_run() {
+  h18Log=""
+  for h18Arg in "$@"; do
+    case "$h18Arg" in
+      H18_LOG=*) h18Log=${h18Arg#H18_LOG=} ;;
+    esac
+  done
+  h18Root=$(cat "$FAKE_STATE/container.dir")
+  h18Log="$h18Root/${h18Log#/home/sandbox/workspace/}"
+  case "$h18Log" in
+    *scope*)
+      if [ "${FAKE_SCOPE_EAGER:-0}" = 1 ]; then
+        printf 'step=0 always=yes scoped=yes\n' >"$h18Log"
+      else
+        printf 'step=0 always=yes scoped=no\n' >"$h18Log"
+      fi
+      printf 'step=1 always=yes scoped=yes\n' >>"$h18Log"
+      ;;
+    *deny*)
+      if [ "${FAKE_H18_TOOLS_OFF:-0}" != 1 ]; then
+        sed 's/before/after/' "$h18Root/hosttest/h18/control.txt" >"$h18Root/hosttest/h18/control.tmp"
+        mv "$h18Root/hosttest/h18/control.tmp" "$h18Root/hosttest/h18/control.txt"
+        if [ "${FAKE_DENY_BROKEN:-0}" = 1 ]; then
+          for h18Rule in $(cd "$h18Root/state/claude/rules" && find . -type f -name '*.md' | sed 's|^\./||' | sort); do
+            if [ "$(sed -n 1p "$h18Root/state/claude/rules/$h18Rule")" != "---" ]; then
+              printf 'scribble\n' >>"$h18Root/state/claude/rules/$h18Rule"
+              break
+            fi
+          done
+          printf 'planted\n' >"$h18Root/state/claude/rules/h18-planted.md"
+        fi
+      fi
+      ;;
+  esac
+}
+
+# --------------------------------------------------------------------------------
+# exec_h14_probe: the ownership probe of the bundle-in-image check.
+# --------------------------------------------------------------------------------
+exec_h14_probe() {
+  printf 'OWNER /opt/sbx/best-practices %s:%s 755\n' "${FAKE_BUNDLE_OWNER:-root}" "${FAKE_BUNDLE_OWNER:-root}"
+  printf 'OWNER /etc/sbx/start.d root:root 755\n'
+  printf 'OWNER /etc/sbx/start.d/10-best-practices root:root 755\n'
+  printf 'OWNER /etc/claude-code/managed-settings.json root:root 644\n'
+  if [ "${FAKE_BUNDLE_WRITABLE:-0}" = 1 ]; then
+    printf 'WRITABLE /opt/sbx/best-practices/rules/communication.md\n'
+  fi
+  if [ "${FAKE_BUNDLE_MOUNT:-0}" = 1 ]; then
+    printf 'MOUNT /opt/sbx/best-practices\n'
+  fi
+  if [ "${FAKE_MANAGED_BAD:-0}" = 1 ]; then
+    printf 'JSON bad\n'
+  else
+    printf 'JSON ok\n'
+  fi
+}
+
+# --------------------------------------------------------------------------------
+# exec_context: the claude -p /context run; lists the always-on rules and the skills of the repo bundle.
+# --------------------------------------------------------------------------------
+exec_context() {
+  contextRules=$FAKE_REPO/best-practices/rules
+  echo "### Memory Files"
+  echo "| Type | Path | Tokens |"
+  echo "|------|------|--------|"
+  for contextRel in $(cd "$contextRules" && find . -type f | sed 's|^\./||' | sort); do
+    if [ "$(sed -n 1p "$contextRules/$contextRel")" != "---" ] || [ "${FAKE_CONTEXT_SCOPED:-0}" = 1 ]; then
+      printf '| User | /home/sandbox/workspace/state/claude/rules/%s | 10 |\n' "$contextRel"
+    fi
+  done
+  echo
+  echo "### Skills"
+  echo "| Skill | Source | Tokens |"
+  echo "|-------|--------|--------|"
+  if [ "${FAKE_CONTEXT_NO_SKILLS:-0}" != 1 ]; then
+    for contextSkill in "$FAKE_REPO"/best-practices/skills/*/; do
+      printf '| %s | User | < 20 |\n' "$(basename "$contextSkill")"
+    done
+  fi
+}
+
+# --------------------------------------------------------------------------------
+# fake_exec ARG...: answers docker exec for the test container only, by the command it is given.
+# --------------------------------------------------------------------------------
+fake_exec() {
+  shift
+  while [ "$#" -gt 0 ] && [ "${1#-}" != "$1" ]; do
+    shift
+  done
+  execName=${1:-}
+  shift
+  if [ "$execName" != "sbx-hosttest" ] || ! has_container; then
+    echo "Error: No such container: $execName" >&2
+    return 1
+  fi
+  case "$*" in
+    id) printf '%s\n' "${FAKE_ID:-uid=1000(sandbox) gid=1000(sandbox) groups=1000(sandbox)}" ;;
+    "uname -m") printf '%s\n' "${FAKE_UNAME:-aarch64}" ;;
+    "sh -c touch"*)
+      if [ "${FAKE_NO_TOUCH:-0}" != 1 ]; then
+        mkdir -p "$(cat "$FAKE_STATE/container.dir")/hosttest"
+        : >"$(cat "$FAKE_STATE/container.dir")/hosttest/x.txt"
+      fi
+      printf '.\n..\n.bashrc\n.local\nworkspace\n'
+      ;;
+    "stat -c"*)
+      shift 3
+      for statPath in "$@"; do
+        printf '%s %s\n' "${FAKE_STAT_OWNER:-sandbox}" "$statPath"
+      done
+      ;;
+    env)
+      for envName in CLAUDE_CONFIG_DIR DISABLE_UPDATES HISTFILE GH_CONFIG_DIR GIT_CONFIG_GLOBAL; do
+        if [ "$envName" != "${FAKE_ENV_MISSING:-}" ]; then
+          printf '%s=/fake/%s\n' "$envName" "$envName"
+        fi
+      done
+      printf 'HOME=/home/sandbox\n'
+      ;;
+    "claude update")
+      if [ "${FAKE_UPDATE_ON:-0}" = 1 ]; then
+        echo "Checking for updates... installed 9.9.9"
+      else
+        echo "Updates are disabled by your administrator"
+      fi
+      ;;
+    "git status")
+      if [ "${FAKE_GIT_DUBIOUS:-0}" = 1 ]; then
+        echo "fatal: detected dubious ownership in repository at '/home/sandbox/workspace/hosttest'" >&2
+        return 128
+      fi
+      echo "On branch main"
+      ;;
+    "git config --system --get-all safe.directory") printf '%s\n' "${FAKE_SAFE_DIR:-*}" ;;
+    "git config --global user.name T")
+      if [ "${FAKE_NO_GIT_WRITE:-0}" != 1 ]; then
+        mkdir -p "$(cat "$FAKE_STATE/container.dir")/state/git"
+        printf '[user]\n\tname = T\n' >"$(cat "$FAKE_STATE/container.dir")/state/git/config"
+      fi
+      ;;
+    "bash -i") exec_history_shell ;;
+    "env H18_SCRIPT="*) exec_h18_run "$@" ;;
+    "sh -c : h14-probe"*) exec_h14_probe ;;
+    "sh -c test ! -e"*)
+      if [ "${FAKE_SHARE_EXISTS:-0}" = 1 ]; then
+        return 1
+      fi
+      ;;
+    *"claude -p /context") exec_context ;;
+    *) unhandled "exec $execName $*" ;;
+  esac
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+log_call "$@"
+
+case "${1:-}" in
+  info) fake_info "$@" ;;
+  version) fake_version "$@" ;;
+  compose) fake_compose "$@" ;;
+  container) fake_container_inspect "$@" ;;
+  image) fake_image_inspect "$@" ;;
+  run) fake_run "$@" ;;
+  build) fake_build "$@" ;;
+  volume) fake_volume "$@" ;;
+  ps) fake_ps "$@" ;;
+  cp) fake_cp "$@" ;;
+  exec) fake_exec "$@" ;;
+  *) unhandled "$@" ;;
+esac
+
+exit $?

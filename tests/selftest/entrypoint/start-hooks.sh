@@ -1,69 +1,24 @@
 #!/usr/bin/env bash
-# Self-test for the container start: runs the start hooks step on Linux against fixture hook folders.
-# - Sources base/sbx-start-lib.sh in a subshell, so no mount and no Docker are needed.
-# - Also checks that the library runs nothing when sourced and that base/sbx-entrypoint runs the start checks.
+# Self-test of the start hook step: runs run_start_hooks from base/sbx-start-lib.sh on Linux against fixture hook folders.
+# - Proves that an executable hook runs, that a hook that is not executable, fails, is a dangling link or is a fifo
+#   stops the start before a later hook, and that folders, dotfiles and an empty folder are handled.
+# - Run by run-all.sh; runs alone too.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
-# - Usage, from anywhere: bash tests/entrypoint-selftest.sh   (exit 0 = every case passes)
+# - Usage, from anywhere: bash tests/selftest/entrypoint/start-hooks.sh   (exit 0 = every case passes)
 set -u
-cd "$(dirname "$0")/.." || exit 1
-REPO=$(pwd -P)
-
-ENTRY=$REPO/base/sbx-entrypoint
-START_LIB=$REPO/base/sbx-start-lib.sh
-FAILS=0
+. "$(dirname "$0")/lib.sh"
 
 # --------------------------------------------------------------------------------
-# Makes the work folder and removes it, and only it, at exit
-# --------------------------------------------------------------------------------
-make_work_folder() {
-  WORK=$(mktemp -d "${TMPDIR:-/tmp}/sbx-entrytest.XXXXXX") || exit 1
-  WORK=$(cd "$WORK" && pwd -P)
-
-  trap cleanup_work EXIT
-  trap 'exit 130' INT TERM
-}
-
-# cleanup_work: removes the work folder made above, and only that.
-cleanup_work() {
-  case "$WORK" in
-    */sbx-entrytest.*) rm -rf "$WORK" ;;
-  esac
-}
-
-# --------------------------------------------------------------------------------
-# Helpers the cases share
-# --------------------------------------------------------------------------------
-
-# expect NAME COMMAND...: PASS when the command succeeds.
-expect() {
-  local name=$1
-
-  shift
-
-  if "$@"; then
-    echo "PASS: $name"
-  else
-    echo "FAIL: $name"
-    FAILS=$((FAILS + 1))
-  fi
-}
-
-# equals A B: true if the two strings are equal.
-equals() { [ "$1" = "$2" ]; }
-
-# has_text FILE TEXT: true if FILE contains TEXT.
-has_text() { grep -Fq -- "$2" "$1"; }
-
-# lacks_text FILE TEXT: true if FILE does not contain TEXT.
-lacks_text() { ! grep -Fq -- "$2" "$1"; }
-
 # run_hooks DIR OUTFILE: sources the start library in a subshell, points it at DIR and runs the hooks; sets HOOKS_RC.
+# --------------------------------------------------------------------------------
 run_hooks() {
   ( . "$START_LIB"; hookDir=$1; run_start_hooks ) >"$2" 2>&1 </dev/null
   HOOKS_RC=$?
 }
 
+# --------------------------------------------------------------------------------
 # write_hook FILE MARKER EXIT_CODE MODE: writes a small hook that creates MARKER and exits with EXIT_CODE.
+# --------------------------------------------------------------------------------
 write_hook() {
   printf '#!/bin/sh\ntouch "%s"\nexit %s\n' "$2" "$3" >"$1"
   chmod "$4" "$1"
@@ -207,55 +162,10 @@ case_fifo_stops() {
 }
 
 # --------------------------------------------------------------------------------
-# Case: sourcing the start library runs no start step
-# --------------------------------------------------------------------------------
-case_sourcing_runs_nothing() {
-  local sourceRc
-
-  echo '--- sourcing the start library runs no start step'
-  mkdir -p "$WORK/sourced"
-
-  ( . "$START_LIB" ) >"$WORK/sourced/out" 2>&1 </dev/null
-  sourceRc=$?
-
-  expect "sourced: the library exits 0" equals "$sourceRc" 0
-  expect "sourced: nothing is printed" test ! -s "$WORK/sourced/out"
-}
-
-# --------------------------------------------------------------------------------
-# Case: executing the script runs the start checks and not the command
-# --------------------------------------------------------------------------------
-case_direct_run_checks() {
-  local directRc
-
-  echo '--- executing the script runs the start checks'
-  mkdir -p "$WORK/direct"
-
-  env -u SBX_NAME bash "$ENTRY" echo entrypoint-command-ran >"$WORK/direct/out" 2>&1 </dev/null
-  directRc=$?
-
-  expect "direct run: the script exits 1" equals "$directRc" 1
-  expect "direct run: a start check printed [sbx] ERROR" has_text "$WORK/direct/out" "[sbx] ERROR:"
-  expect "direct run: the command never ran" lacks_text "$WORK/direct/out" "entrypoint-command-ran"
-}
-
-# --------------------------------------------------------------------------------
-# Prints the summary and exits 0 only when every case passed
-# --------------------------------------------------------------------------------
-report_and_exit() {
-  if [ "$FAILS" -eq 0 ]; then
-    echo "All cases pass."
-    exit 0
-  fi
-
-  echo "$FAILS case(s) failed."
-  exit 1
-}
-
-# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
-make_work_folder
+require_no_arguments "$@" || exit 2
+start_group || exit 1
 case_executable_hook_runs
 case_not_executable_stops
 case_failing_hook_stops
@@ -264,6 +174,4 @@ case_empty_folder
 case_symlink_not_executable
 case_dangling_link_stops
 case_fifo_stops
-case_sourcing_runs_nothing
-case_direct_run_checks
-report_and_exit
+finish_cases

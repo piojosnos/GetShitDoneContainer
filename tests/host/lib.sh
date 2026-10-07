@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Shared setup for the host tests: the run folder and a scrubbed environment; loads the topic libraries.
-# - Sourced by run-all.sh and by every check; never run directly.
+# - Sourced by run-all.sh, by every check, by the self-tests in tests/selftest/ (through lib-expect.sh) and by the guard in tests/guard/ (through lib.sh); never run directly.
 # - Loads lib-report.sh (PASS and FAIL lines, collecting a check's result), lib-sandbox.sh (the test
 #   sandbox) and lib-docker.sh (the images and the old containers), all from this folder.
 # - Sets no shell options and does not cd, so the caller keeps control of both.
