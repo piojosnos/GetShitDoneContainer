@@ -41,13 +41,6 @@ case_coexistence_alone() {
 }
 
 # --------------------------------------------------------------------------------
-# failed_with STATUS FILE TEXT: true if STATUS is 1 and FILE contains TEXT.
-# --------------------------------------------------------------------------------
-failed_with() {
-  [ "$1" = 1 ] && has_text "$2" "$3"
-}
-
-# --------------------------------------------------------------------------------
 # scratch_git REPO ARG...: runs git in REPO with the user's own git configuration switched off.
 # --------------------------------------------------------------------------------
 scratch_git() {
