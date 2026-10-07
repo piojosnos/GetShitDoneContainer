@@ -21,7 +21,7 @@ case_h05_alone() {
   reset_state
   make_fixture_run
   run_standalone "$WORK/out.h05" h05-workspace-and-home.sh
-  expect "H-05: x.txt on the host, .bashrc and .local listed, sandbox owners pass" equals "$CHECK_RC" "0"
+  expect "H-05: the file on the host, .bashrc and .local listed, sandbox owners pass" equals "$CHECK_RC" "0"
   expect "H-05: prints PASS: H-05" has_text "$WORK/out.h05" "PASS: H-05"
   expect "H-05: the file made in the container is in the run folder" equals "$(run_unique_file_count "$FIXTURE/hosttest")" "1"
   reset_state

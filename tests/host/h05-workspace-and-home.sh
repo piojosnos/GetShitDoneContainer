@@ -7,11 +7,13 @@ set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 
+fileName=x-$$-$(date +%s).txt
+
 # --------------------------------------------------------------------------------
-# Creates a file in the container and reads the home listing and the owners
+# Creates a file with a name unique to this run in the container and reads the home listing and the owners
 # --------------------------------------------------------------------------------
 read_container_home() {
-  listing=$(in_container sh -c 'touch x.txt; ls -a /home/sandbox')
+  listing=$(in_container sh -c "touch $fileName; ls -a /home/sandbox")
   owners=$(in_container stat -c '%U %n' /home/sandbox/.local /home/sandbox/.local/state)
 }
 
@@ -19,8 +21,8 @@ read_container_home() {
 # Checks the file made in the container reached the project folder on the host
 # --------------------------------------------------------------------------------
 check_file_reached_host() {
-  if [ ! -f "$RUN/hosttest/x.txt" ]; then
-    add_problem "x.txt created in the container did not appear in $RUN/hosttest"
+  if [ ! -f "$RUN/hosttest/$fileName" ]; then
+    add_problem "$fileName created in the container did not appear in $RUN/hosttest"
   fi
 }
 
@@ -60,4 +62,4 @@ check_file_reached_host
 check_home_entries
 check_home_owners
 report_check H-05 "the workspace or home layout is wrong" \
-  "x.txt reached the host, .bashrc and .local exist, owners are sandbox"
+  "a run-unique file reached the host, .bashrc and .local exist, owners are sandbox"
