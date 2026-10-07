@@ -25,10 +25,10 @@ start_error() {
 }
 
 # --------------------------------------------------------------------------------
-# Checks the workspace is a writable mount and SBX_NAME is set; prints the error and returns 1 if not
+# Checks the workspace is a writable mount point and SBX_NAME is set; prints the error and returns 1 if not
 # --------------------------------------------------------------------------------
 check_workspace_mount() {
-  is_mount "$ws" || { start_error "$ws is not a bind mount; its data would be lost on recreate."; return 1; }
+  is_mount "$ws" || { start_error "$ws is not a mount point; its data would be lost on recreate."; return 1; }
   [ -w "$ws" ] || { start_error "$ws is not writable by $(id -un)."; return 1; }
   [ -n "${SBX_NAME:-}" ] || { start_error "SBX_NAME is not set."; return 1; }
 }

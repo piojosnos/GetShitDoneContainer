@@ -4,7 +4,7 @@ set -eu
 # Container start check, then run the command.
 # - Runs only at container start, never in docker exec shells, so it sets no
 #   environment (shells get everything from image ENV).
-# - Refuses to start unless the workspace is a real, writable mount. Without it
+# - Refuses to start unless the workspace is a writable mount point. Without it
 #   (a plain docker run, a broken compose file), data would land in the container
 #   layer and be lost on recreate.
 # - Refuses to start unless the project and state folders exist. A mistyped
