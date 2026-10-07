@@ -206,6 +206,26 @@ create_run_folder() {
 }
 
 # --------------------------------------------------------------------------------
+# record_old_layout: writes the old containers and the old folders to the run folder's logs, for Coexistence to compare at the end.
+# --------------------------------------------------------------------------------
+# Each snapshot is captured first and written after, so a failed one never leaves a partial baseline.
+record_old_layout() {
+  local containerSnapshot folderSnapshot
+
+  if ! containerSnapshot=$(snapshot_old_containers); then
+    fatal "docker ps failed; the old containers cannot be recorded"
+  fi
+
+  printf '%s\n' "$containerSnapshot" >"$RUN/logs/old-containers.before"
+
+  if folderSnapshot=$(snapshot_old_folders); then
+    printf '%s\n' "$folderSnapshot" >"$RUN/logs/old-folders.before"
+  else
+    info "git could not read ClaudeCode/ and OpenCode/; Coexistence will report it"
+  fi
+}
+
+# --------------------------------------------------------------------------------
 # remove_leftover_test_container: takes down an earlier test container; stops the run if the name is taken by something else or the take down fails.
 # --------------------------------------------------------------------------------
 remove_leftover_test_container() {
@@ -269,7 +289,7 @@ install_traps
 print_docker_target
 check_docker_reachable
 create_run_folder
-snapshot_old_containers >"$RUN/logs/old-containers.before"
+record_old_layout
 remove_leftover_test_container
 run_compose_check
 build_all_images
