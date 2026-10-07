@@ -13,7 +13,7 @@ fileName=x-$$-$(date +%s).txt
 # Creates a file with a name unique to this run in the container and reads the home listing and the owners
 # --------------------------------------------------------------------------------
 read_container_home() {
-  listing=$(in_container sh -c "touch $fileName; ls -a /home/sandbox")
+  listing=$(in_project sh -c "touch $fileName; ls -a /home/sandbox")
   owners=$(in_container stat -c '%U %n' /home/sandbox/.local /home/sandbox/.local/state)
 }
 

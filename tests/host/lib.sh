@@ -14,7 +14,7 @@
 . "$(dirname "${BASH_SOURCE[0]}")/lib-docker.sh"
 
 # --------------------------------------------------------------------------------
-# host_init: sets REPO_DIR, HOST_DIR, SBX_NAME, CONTAINER and RUN; scrubs the environment.
+# host_init: sets REPO_DIR, HOST_DIR, SBX_NAME, PROJECT_DIR, CONTAINER and RUN; scrubs the environment.
 # --------------------------------------------------------------------------------
 host_init() {
   local libDir
@@ -26,6 +26,7 @@ host_init() {
   unset COMPOSE_PROJECT_NAME COMPOSE_FILE COMPOSE_PROFILES COMPOSE_PATH_SEPARATOR COMPOSE_ENV_FILES COMPOSE_IGNORE_ORPHANS COMPOSE_REMOVE_ORPHANS SBX_DIR
   SBX_NAME=hosttest
   export SBX_NAME
+  PROJECT_DIR=/home/sandbox/workspace/$SBX_NAME
   CONTAINER=sbx-hosttest
 
   resolve_run_dir

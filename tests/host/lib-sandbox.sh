@@ -2,7 +2,7 @@
 # The test sandbox for the host tests: run commands in it, start and stop it, and refuse to act on anything else.
 # - Loaded by lib.sh; never run directly. Defines functions only.
 # - Every Docker call is aimed at the throwaway sandbox: project hosttest, container sbx-hosttest.
-# - Reads CONTAINER, RUN and REPO_DIR, set by host_init. Never removes volumes.
+# - Reads CONTAINER, PROJECT_DIR, RUN and REPO_DIR, set by host_init. Never removes volumes.
 # - Host side code is stock bash 3.2 with BSD tools (macOS).
 
 # --------------------------------------------------------------------------------
@@ -10,6 +10,13 @@
 # --------------------------------------------------------------------------------
 in_container() {
   docker exec "$CONTAINER" "$@" </dev/null 2>&1
+}
+
+# --------------------------------------------------------------------------------
+# in_project CMD...: runs CMD in the project folder of the test container; stdin closed, stderr merged, never a tty.
+# --------------------------------------------------------------------------------
+in_project() {
+  docker exec -w "$PROJECT_DIR" "$CONTAINER" "$@" </dev/null 2>&1
 }
 
 # --------------------------------------------------------------------------------
