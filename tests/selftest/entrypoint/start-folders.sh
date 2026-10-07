@@ -114,6 +114,22 @@ case_cannot_enter_project() {
 }
 
 # --------------------------------------------------------------------------------
+# Case: the workspace check says what it checks
+# --------------------------------------------------------------------------------
+case_mount_wording() {
+  local mountRc
+
+  echo '--- the workspace check says what it checks'
+  mkdir -p "$WORK/mount/plain"
+
+  ( . "$START_LIB"; ws=$WORK/mount/plain; SBX_NAME=demo; check_workspace_mount ) >"$WORK/mount/out" 2>&1 </dev/null
+  mountRc=$?
+
+  expect "check_workspace_mount: a plain folder is refused" equals "$mountRc" 1
+  expect "check_workspace_mount: says the workspace is not a mount point" has_text "$WORK/mount/out" "is not a mount point"
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -122,4 +138,5 @@ case_copy_is_real
 case_command_starts_in_project
 case_missing_project_stops_start
 case_cannot_enter_project
+case_mount_wording
 finish_cases

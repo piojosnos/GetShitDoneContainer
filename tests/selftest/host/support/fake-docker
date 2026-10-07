@@ -399,8 +399,7 @@ run_plain() {
     echo "started without a mount"
     return 0
   fi
-  echo "[sbx] ERROR: /home/sandbox/workspace is not a bind mount; its data would be lost on recreate." >&2
-  echo "[sbx]        Start the sandbox with 'docker compose up' (see SANDBOX.md)." >&2
+  ( . "$FAKE_REPO/base/sbx-start-lib.sh"; is_mount() { return 1; }; check_workspace_mount ) </dev/null
   return 1
 }
 
