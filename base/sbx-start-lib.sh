@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# The container start steps, as functions: the mount and folder checks, the state folders and
-# the start hooks.
+# The container start steps, as functions: the mount and folder checks, the state folders, the
+# start hooks and the move into the project folder.
 # - A library: it defines variables and functions and runs nothing. base/sbx-entrypoint
 #   sources it from its own folder and runs the steps; the self-tests source it to call them.
 # - Sets no shell options; the entrypoint sets set -eu before sourcing it.
@@ -87,4 +87,12 @@ run_start_hooks() {
       return 1
     fi
   done
+}
+
+# --------------------------------------------------------------------------------
+# Changes to the project folder; prints the error and returns 1 if it cannot
+# --------------------------------------------------------------------------------
+# The command runs in the project folder. docker exec shells pick their own folder with -w.
+enter_project_folder() {
+  cd "$ws/$SBX_NAME" || { start_error "cannot enter $ws/$SBX_NAME."; return 1; }
 }

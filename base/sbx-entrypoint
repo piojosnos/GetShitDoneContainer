@@ -16,6 +16,7 @@ set -eu
 #   Folders are skipped and the glob never matches dotfiles; anything else must be an
 #   executable regular file. A link that points nowhere, a fifo or a socket stops the
 #   start, as do a file that is not executable and a hook that fails.
+# - Then changes to the project folder and runs the command there.
 # - The steps live in sbx-start-lib.sh, next to this file; this file only runs them.
 
 . "$(dirname "$0")/sbx-start-lib.sh"
@@ -27,4 +28,5 @@ check_workspace_mount || exit 1
 check_project_and_state_folders || exit 1
 create_state_dirs || exit 1
 run_start_hooks || exit 1
+enter_project_folder || exit 1
 exec "$@"
