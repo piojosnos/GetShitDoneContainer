@@ -28,7 +28,7 @@ init_host_repo() {
 # Runs git in the container: status, the system safe.directory value, and setting the identity
 # --------------------------------------------------------------------------------
 read_git_state() {
-  statusOutput=$(in_container git status)
+  statusOutput=$(in_project git status)
   statusCode=$?
   safeOutput=$(in_container git config --system --get-all safe.directory)
   identityOutput=$(in_container git config --global user.name "$identityName")
