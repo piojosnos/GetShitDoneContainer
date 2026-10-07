@@ -25,7 +25,35 @@ compose_cmd() {
 }
 
 # --------------------------------------------------------------------------------
-# run_timeout SECONDS CMD...: runs CMD; kills it after SECONDS; returns 143 on timeout.
+# tree_pids PID: prints PID, then every process it started, parent first, one per line.
+# --------------------------------------------------------------------------------
+tree_pids() {
+  local parentPid=$1
+  local childPid
+
+  printf '%s\n' "$parentPid"
+
+  for childPid in $(pgrep -P "$parentPid" 2>/dev/null); do
+    tree_pids "$childPid"
+  done
+}
+
+# --------------------------------------------------------------------------------
+# kill_tree PID: stops PID and everything it started; collects the list first, then signals all in one call; returns 0.
+# --------------------------------------------------------------------------------
+kill_tree() {
+  local pidList
+
+  pidList=$(tree_pids "$1")
+
+  # The list is left unquoted on purpose: kill takes one argument per pid.
+  kill $pidList 2>/dev/null
+
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# run_timeout SECONDS CMD...: runs CMD; after SECONDS stops it and everything it started; returns 143 on timeout.
 # --------------------------------------------------------------------------------
 run_timeout() {
   local seconds=$1
@@ -45,12 +73,12 @@ run_timeout() {
       fi
       elapsedSeconds=$((elapsedSeconds + 1))
     done
-    kill "$commandPid" 2>/dev/null
+    kill_tree "$commandPid"
   ) >/dev/null 2>&1 &
   watcherPid=$!
   wait "$commandPid"
   exitCode=$?
-  kill "$watcherPid" 2>/dev/null
+  kill_tree "$watcherPid"
   wait "$watcherPid" 2>/dev/null
 
   return "$exitCode"
