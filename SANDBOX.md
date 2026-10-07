@@ -46,7 +46,7 @@ What lives where:
 | On the Mac | In the container | Env var |
 |---|---|---|
 | `$SBX_DIR` (the one mount) | `/home/sandbox/workspace` | |
-| `$SBX_DIR/$SBX_NAME` (your code) | `/home/sandbox/workspace/$SBX_NAME` (the shell starts here) | |
+| `$SBX_DIR/$SBX_NAME` (your code) | `/home/sandbox/workspace/$SBX_NAME` (the command runs here; shells use `-w`) | |
 | `$SBX_DIR/state/claude` | `/home/sandbox/workspace/state/claude` (also `~/.claude`) | `CLAUDE_CONFIG_DIR` |
 | `$SBX_DIR/state/shell` (holds `bash_history`) | `/home/sandbox/workspace/state/shell` | `HISTFILE` |
 | `$SBX_DIR/state/gh` (holds `hosts.yml`) | `/home/sandbox/workspace/state/gh` | `GH_CONFIG_DIR` |
@@ -75,10 +75,10 @@ docker compose up -d --wait
 Open a shell. Open as many as you like:
 
 ```bash
-docker exec -it "sbx-$SBX_NAME" bash
+docker exec -it -w "/home/sandbox/workspace/$SBX_NAME" "sbx-$SBX_NAME" bash
 ```
 
-The shell starts in your project folder. Start Claude there:
+`-w` starts the shell in your project folder; without it a shell starts in `/home/sandbox/workspace`. Start Claude there:
 
 ```bash
 claude
@@ -159,8 +159,8 @@ Moving an existing project into a sandbox: its old memories and `CLAUDE.md` may 
 
 At start, the container refuses to run unless:
 
-- `/home/sandbox/workspace` is a real, writable mount of a folder on the Mac. Otherwise your work would land in the container's own layer and be lost on recreate.
-- The project folder (`$SBX_DIR/$SBX_NAME`) and `$SBX_DIR/state` exist. A mistyped `SBX_DIR` has neither.
+- `/home/sandbox/workspace` is a real, writable mount point of a folder on the Mac. Otherwise your work would land in the container's own layer and be lost on recreate.
+- The project folder (`$SBX_DIR/$SBX_NAME`) and `$SBX_DIR/state` exist, and `state` is writable. A mistyped `SBX_DIR` has neither. A mistyped `SBX_NAME` has no project folder: the start is refused, and nothing is created on your Mac.
 
 After the checks, the start runs the image's start hooks (the bundle sync is one):
 
@@ -179,10 +179,12 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 
 - Compose is told not to create a missing folder, but some Compose versions ignore that (docker/compose issue 13602).
 - A mistyped `SBX_DIR` could then get an empty folder on your Mac. The container still refuses to start, but the bogus folder is left behind.
+- `SBX_DIR` must be an absolute path: Compose reads a relative one from the repo folder and does not expand `~`.
 
 Paste this right before `docker compose up -d --wait`. If it prints anything, fix `SBX_DIR` or run the `mkdir` above, and do not start:
 
 ```bash
+case "$SBX_DIR" in /*) ;; *) echo "NOT ABSOLUTE: $SBX_DIR" ;; esac
 for d in "$SBX_NAME" state; do [ -d "$SBX_DIR/$d" ] || echo "MISSING: $SBX_DIR/$d"; done
 ```
 
@@ -190,7 +192,7 @@ If `up` fails, `docker compose logs` shows the `[sbx] ERROR` line that says what
 
 ## Verify a new build
 
-After building, or after changing anything under `base/`, `claude/`, `best-practices/` or `compose.yml`, run `bash tests/host/run-all.sh` on the Mac. When it passes, the build is good. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers in `tests/host/manual/` to run when something looks wrong.
+After building, or after changing anything under `base/`, `claude/`, `best-practices/` or `compose.yml`, run `bash tests/host/run-all.sh` on the Mac. When it passes, the automated checks hold. Claude's login and Claude's own behaviour are checked only by the helpers in `tests/host/manual/`: H-07 (login), the second half of H-09 (login and session survive a rebuild), the `claude doctor` part of H-13, and H-19 (the bundle as Claude uses it). Run them after a Claude Code pin change, a change to the managed settings, or a change to login handling. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers.
 
 It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
 
@@ -210,4 +212,4 @@ It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
 | The container stops right after `up` | Run `docker logs sbx-<name>`. The `[sbx] ERROR: start hook ... failed` line and the hook's own error above it say what broke. If the line says `is not executable`, the image lost the hook's execute bit; rebuild the image. If it says `is not a regular file`, a hook link in the image points nowhere (or something that is not a file sits in the hook folder); rebuild the image. |
 | Claude refuses to edit a file under `~/.claude/rules` or a bundle skill | Intended. Edit `best-practices/` in this repo (see "Best-practices bundle"). |
 | A sandbox migrated from the old layout loads the same rules twice | Remove the `@AGENTS.md` and `@code-conventions.md` imports from `state/claude/CLAUDE.md`. |
-| Host check H-10 showed Docker creating the missing folder | Planned follow-up: an `env_file` sentinel file at the root of `SBX_DIR`, which makes Compose fail when the folder is missing. It changes the folder layout, so it waits for your approval. |
+| Host check H-10 showed Docker creating the missing folder | Report it. An `env_file` sentinel at the root of `SBX_DIR` would make Compose itself refuse a missing folder; it is not planned while H-10 passes, and the container refuses to start either way. |
