@@ -4,7 +4,7 @@
 # - Loads lib-report.sh (PASS and FAIL lines, collecting a check's result), lib-sandbox.sh (the test
 #   sandbox) and lib-docker.sh (the images and the old containers), all from this folder.
 # - Sets no shell options and does not cd, so the caller keeps control of both.
-# - The caller's SBX_NAME, SBX_DIR and COMPOSE_* values are never used.
+# - The caller's SBX_NAME, SBX_DIR and COMPOSE_* values are never used. DOCKER_HOST and the current Docker context are used as set; run-all.sh prints them.
 # - Deletes nothing.
 # - Host side code is stock bash 3.2 with BSD tools (macOS); GNU tools only inside docker exec.
 
@@ -23,7 +23,7 @@ host_init() {
   HOST_DIR=$libDir
   REPO_DIR=$(cd "$libDir/../.." && pwd -P)
 
-  unset COMPOSE_PROJECT_NAME COMPOSE_FILE COMPOSE_PROFILES COMPOSE_PATH_SEPARATOR SBX_DIR
+  unset COMPOSE_PROJECT_NAME COMPOSE_FILE COMPOSE_PROFILES COMPOSE_PATH_SEPARATOR COMPOSE_ENV_FILES COMPOSE_IGNORE_ORPHANS COMPOSE_REMOVE_ORPHANS SBX_DIR
   SBX_NAME=hosttest
   export SBX_NAME
   CONTAINER=sbx-hosttest

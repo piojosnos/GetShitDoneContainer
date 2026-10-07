@@ -4,6 +4,8 @@
 # - Builds sbx-base:local and sbx-claude:local (the real tags). Images are never removed.
 # - Creates a throwaway sandbox named sbx-hosttest in a fresh temp folder. Real sandboxes
 #   are never touched, whatever SBX_NAME, SBX_DIR or COMPOSE_* hold in your terminal.
+# - Uses the Docker your terminal points at (DOCKER_HOST or the current Docker context) and
+#   prints which one first.
 # - Deletes nothing. At the end, pass or fail, it prints the cleanup command for you to run
 #   and where the diagnostic helpers are.
 # - SBXTEST_NO_CACHE=1 (optional) makes the rebuild check rebuild without the cache; slow.
@@ -171,6 +173,19 @@ install_traps() {
 }
 
 # --------------------------------------------------------------------------------
+# print_docker_target: prints the Docker context and DOCKER_HOST this run talks to.
+# --------------------------------------------------------------------------------
+print_docker_target() {
+  local contextName
+
+  if ! contextName=$(docker context show 2>/dev/null </dev/null) || [ -z "$contextName" ]; then
+    contextName=unknown
+  fi
+
+  info "docker context: $contextName, DOCKER_HOST: ${DOCKER_HOST:-not set}"
+}
+
+# --------------------------------------------------------------------------------
 # check_docker_reachable: stops the run when the Docker daemon does not answer.
 # --------------------------------------------------------------------------------
 check_docker_reachable() {
@@ -251,6 +266,7 @@ run_sandbox_checks() {
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 install_traps
+print_docker_target
 check_docker_reachable
 create_run_folder
 snapshot_old_containers >"$RUN/logs/old-containers.before"
