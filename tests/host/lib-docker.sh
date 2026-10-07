@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Docker beyond the test sandbox: building the images, facts about them, and the old-layout containers.
+# Docker beyond the test sandbox: building the images, facts about them, and the old-layout containers and folders.
 # - Loaded by lib.sh; never run directly. Defines functions only.
 # - Reads RUN and REPO_DIR, set by host_init. Removes no image and no container.
 # - claude_pin and expected_arch stay shared because the self-test of the host tests calls them through lib.sh.
@@ -53,8 +53,41 @@ claude_pin() {
 }
 
 # --------------------------------------------------------------------------------
-# snapshot_old_containers: one sorted line per old-layout container: ID, name, state.
+# snapshot_old_containers: one sorted line per old-layout container: ID, name, state; returns 1 when docker ps fails.
 # --------------------------------------------------------------------------------
+# docker ps is captured first, so a failed call is a failure and never an empty list.
 snapshot_old_containers() {
-  docker ps -a --format '{{.ID}} {{.Names}} {{.State}}' </dev/null 2>/dev/null | grep -E '^[0-9a-f]+ cc_' | sort
+  local psOutput
+
+  if ! psOutput=$(docker ps -a --format '{{.ID}} {{.Names}} {{.State}}' </dev/null 2>/dev/null); then
+    return 1
+  fi
+
+  printf '%s\n' "$psOutput" | grep -E '^[0-9a-f]+ cc_' | sort
+
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# snapshot_old_folders: the tree hashes of ClaudeCode/ and OpenCode/ at HEAD, then git status of both; returns 1 when git fails.
+# --------------------------------------------------------------------------------
+# Tree hashes, not HEAD itself: a commit made elsewhere during a run changes nothing here.
+snapshot_old_folders() {
+  local treeHashes statusOutput
+
+  if ! treeHashes=$(git -C "$REPO_DIR" rev-parse HEAD:ClaudeCode HEAD:OpenCode 2>/dev/null </dev/null); then
+    return 1
+  fi
+
+  if ! statusOutput=$(git -C "$REPO_DIR" status --porcelain --untracked-files=all -- ClaudeCode OpenCode 2>/dev/null </dev/null); then
+    return 1
+  fi
+
+  printf '%s\n' "$treeHashes"
+
+  if [ -n "$statusOutput" ]; then
+    printf '%s\n' "$statusOutput"
+  fi
+
+  return 0
 }
