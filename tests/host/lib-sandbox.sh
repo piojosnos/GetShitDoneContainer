@@ -15,13 +15,14 @@ in_container() {
 # --------------------------------------------------------------------------------
 # compose_cmd ARGS...: runs docker compose against compose.yml for the test sandbox only.
 # --------------------------------------------------------------------------------
+# --env-file /dev/null: a .env file in the repo never reaches the test sandbox.
 compose_cmd() {
   if [ -z "${RUN:-}" ]; then
     printf 'No run folder, so no compose command is run.\n' >&2
     return 1
   fi
 
-  SBX_NAME=hosttest SBX_DIR="$RUN" docker compose -f "$REPO_DIR/compose.yml" "$@" </dev/null
+  SBX_NAME=hosttest SBX_DIR="$RUN" docker compose --env-file /dev/null -f "$REPO_DIR/compose.yml" "$@" </dev/null
 }
 
 # --------------------------------------------------------------------------------

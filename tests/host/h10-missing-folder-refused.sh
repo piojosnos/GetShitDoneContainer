@@ -32,7 +32,7 @@ stop_sandbox_first() {
 # Tries to start a sandbox on the missing folder and notes whether Docker created it
 # --------------------------------------------------------------------------------
 try_start_on_missing_folder() {
-  upOutput=$(run_timeout 120 env SBX_NAME=hosttest SBX_DIR="$badDir" docker compose -f "$REPO_DIR/compose.yml" up -d --wait </dev/null 2>&1)
+  upOutput=$(run_timeout 120 env SBX_NAME=hosttest SBX_DIR="$badDir" docker compose --env-file /dev/null -f "$REPO_DIR/compose.yml" up -d --wait </dev/null 2>&1)
   upStatus=$?
   pathExists=0
 

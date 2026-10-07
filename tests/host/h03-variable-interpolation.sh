@@ -14,10 +14,10 @@ read_configs() {
   if [ -n "$RUN" ]; then
     nameOutput=$(compose_cmd config 2>&1)
   else
-    nameOutput=$(SBX_NAME=hosttest SBX_DIR=/sbx-hosttest-config-only docker compose -f "$REPO_DIR/compose.yml" config </dev/null 2>&1)
+    nameOutput=$(SBX_NAME=hosttest SBX_DIR=/sbx-hosttest-config-only docker compose --env-file /dev/null -f "$REPO_DIR/compose.yml" config </dev/null 2>&1)
   fi
 
-  missingOutput=$(env -u SBX_DIR SBX_NAME=hosttest docker compose -f "$REPO_DIR/compose.yml" config </dev/null 2>&1)
+  missingOutput=$(env -u SBX_DIR SBX_NAME=hosttest docker compose --env-file /dev/null -f "$REPO_DIR/compose.yml" config </dev/null 2>&1)
   missingStatus=$?
 }
 
