@@ -8,8 +8,8 @@ set -u
 # --------------------------------------------------------------------------------
 # Constants: what counts as an internal planning reference
 # --------------------------------------------------------------------------------
-# Internal planning references: decision IDs, test-plan IDs, phase numbers, planning documents.
-PLANNING_ID_REGEX='\bD-[0-9]{2}\b|\bHT-0[0-9]\b|Phase [0-9]|CONTEXT\.md|\.planning'
+# Internal planning references: decision IDs, test-plan IDs, code review finding IDs, phase numbers, planning documents.
+PLANNING_ID_REGEX='\bD-[0-9]{2}\b|\bHT-0[0-9]\b|\b(CR|WR|IN)-[0-9]{2}\b|Phase [0-9]|CONTEXT\.md|\.planning'
 
 # --------------------------------------------------------------------------------
 # host_tests_have_no_planning_ids: Internal planning IDs mean nothing to a reader of the scripts: keep them out.
