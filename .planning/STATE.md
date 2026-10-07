@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.5"
 current_phase_name: Host test fixes (INSERTED)
 status: executing
-stopped_at: Completed 01.5-05-PLAN.md
-last_updated: "2026-10-07T06:09:21.939Z"
+stopped_at: Completed 01.5-06-PLAN.md
+last_updated: "2026-10-07T06:14:11.187Z"
 last_activity: 2026-10-07
 last_activity_desc: Phase 01.5 execution started
-state_head: 73d7a772d50ec049720f657506ed5bba8c332407
+state_head: 400498d6a7831c2bd7be0d068f94095cc4775869
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 39
-  completed_plans: 33
+  completed_plans: 34
   percent: 42
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 ## Current Position
 
 Phase: 01.5 (Host test fixes (INSERTED)) — EXECUTING
-Plan: 6 of 11
+Plan: 7 of 11
 Status: Ready to execute
 Last activity: 2026-10-07 — Phase 01.5 execution started
 
@@ -93,6 +93,7 @@ Progress: [████████████████████] 28/28 p
 | Phase 01.5 P03 | 25 min | 3 tasks | 9 files |
 | Phase 01.5 P04 | 20 min | 2 tasks | 11 files |
 | Phase 01.5 P05 | 25 min | 3 tasks | 12 files |
+| Phase 01.5 P06 | 20min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -159,6 +160,9 @@ Recent decisions affecting current work:
 - [Phase 01.5]: Plan 04: compose guard regex is compose([[:space:]].*)?[[:space:]]-f[[:space:]] so a plain 'docker compose -f' call is matched; DOCKER_HOST and DOCKER_CONTEXT stay set and are printed, not unset (D-12)
 - [Phase 01.5]: A failed docker ps at the start of a run is fatal; a failed git at the start is an INFO line and Coexistence reports it at the end
 - [Phase 01.5]: The old folder snapshot uses tree hashes of ClaudeCode/ and OpenCode/ at HEAD plus git status, so a commit made elsewhere during a run is not a change
+- [Phase 01.5]: H-03 asserts a non-zero status plus the words 'project name' for the uppercase probe, never the full Compose message (wording differs by version)
+- [Phase 01.5]: H-03 name probes are config only (SBX_DIR=/sbx-hosttest-config-only, --env-file /dev/null); the runner log cases allow exactly two such lines
+- [Phase 01.5]: H-01 scans only build-*, rebuild-* and compose-up logs, one file at a time, for the two platform warning phrases
 
 ### Pending Todos
 
@@ -202,6 +206,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-07T06:09:21.809Z
-Stopped at: Completed 01.5-05-PLAN.md
+Last session: 2026-10-07T06:14:11.050Z
+Stopped at: Completed 01.5-06-PLAN.md
 Resume file: None
