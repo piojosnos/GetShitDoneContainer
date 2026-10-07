@@ -189,10 +189,41 @@ Plans:
   2. Each fix has a test that fails before the fix and passes after it, run on the Mac where the bug needs Docker.
   3. `tests/host/run-all.sh` passes on the Mac.
 
-**Plans:** 0 plans
+**Plans:** 11 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 01.5 to break down)
+**Wave 1**
+- [ ] 01.5-01-PLAN.md: Tracer: code branch, then the self-test assertions and the guard scans fail closed; new guard self-test suite
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 01.5-02-PLAN.md: Guard rules for runner lists, finding IDs and blank lines before control flow
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 01.5-03-PLAN.md: run_timeout stops a shell function and its children; H-08 leaves nothing running; a check acts only on its own run's sandbox
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 01.5-04-PLAN.md: The run names the Docker it uses; Compose variables scrubbed; every compose call reads no .env
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 01.5-05-PLAN.md: Coexistence compares with the start of the run; H-09 scoped volumes; H-13 exec status
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 01.5-06-PLAN.md: H-03 name checks; H-01 platform phrases and logs; H-02 requires added layers
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 01.5-07-PLAN.md: Entrypoint moves into the project folder; mount point wording; unwritable state refused; literal state names
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 01.5-08-PLAN.md: Checks pass -w for the project folder; run-unique names in H-05 and H-06
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 01.5-09-PLAN.md: compose.yml starts in the workspace; new check H-20 (mistyped name refused, nothing created); Dockerfile comment
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 01.5-10-PLAN.md: SANDBOX.md and the checklist promise only what happens (-w, H-20, absolute SBX_DIR, what a green run covers)
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 01.5-11-PLAN.md: Final gate with every red commit re-proven, the Mac run (checkpoint), then the dispositions
 
 ### Phase 2: Pinned Toolchain, GSD, and ccusage
 
