@@ -22,13 +22,33 @@ HOST_FILES="tests/host/*.sh tests/host/manual/*.sh"
 HOST_UNATTENDED_FILES="tests/host/*.sh"
 
 # --------------------------------------------------------------------------------
-# nowhere_matches REGEX FILE...: true if no line matches; prints the offending lines.
+# nowhere_matches REGEX FILE...: true if no line matches; prints the offending lines. Fails when a file cannot be read or none is given.
 # --------------------------------------------------------------------------------
+# grep keeps its stderr, so its own message names the file it could not read.
 nowhere_matches() {
-  local regex=$1; shift
+  local regex=$1
   local hits
-  hits=$(grep -En -- "$regex" "$@" 2>/dev/null)
-  [ -z "$hits" ] && return 0
+  local grepStatus
+
+  shift
+
+  if [ "$#" -eq 0 ]; then
+    echo "    no file to scan"
+    return 1
+  fi
+
+  hits=$(grep -En -- "$regex" "$@")
+  grepStatus=$?
+
+  if [ "$grepStatus" -gt 1 ]; then
+    echo "    grep could not read every file it was given"
+    return 1
+  fi
+
+  if [ -z "$hits" ]; then
+    return 0
+  fi
+
   echo "$hits" | sed 's/^/    /'
   return 1
 }
