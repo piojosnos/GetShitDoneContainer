@@ -26,6 +26,8 @@ case_h03_alone() {
   run_standalone "$WORK/out.h03.lax" h03-variable-interpolation.sh FAKE_CONFIG_LAX=1
   expect "H-03: a config that works without SBX_DIR fails" equals "$CHECK_RC" "1"
   expect "H-03: a config that works without SBX_DIR names that half" has_text "$WORK/out.h03.lax" "SBX_DIR is required"
+  run_standalone "$WORK/out.h03.dotenv" h03-variable-interpolation.sh FAKE_DOTENV_SBX_DIR=/sbx-hosttest-dotenv
+  expect "H-03: a repo .env that sets SBX_DIR does not hide the missing-SBX_DIR refusal" equals "$CHECK_RC" "0"
 }
 
 # --------------------------------------------------------------------------------

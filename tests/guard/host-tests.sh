@@ -225,12 +225,20 @@ host_tests_only_name_the_test_sandbox() {
 }
 
 # --------------------------------------------------------------------------------
+# host_compose_calls_read_no_env_file: Every docker compose call with -f also passes --env-file, so a .env file in the repo never changes a test.
+# --------------------------------------------------------------------------------
+host_compose_calls_read_no_env_file() {
+  no_host_code_matches 'compose([[:space:]].*)?[[:space:]]-f[[:space:]]' '--env-file' $HOST_FILES
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 enter_repo_root || exit 1
 run_rules \
   host_tests_are_portable \
+  host_compose_calls_read_no_env_file \
   host_tests_have_blank_lines_before_control_flow \
   host_tests_never_delete \
   host_tests_are_unattended \

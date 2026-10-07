@@ -24,6 +24,7 @@
 # FAKE_CONTEXT: the name docker context show prints (default desktop-linux)
 # FAKE_CONFIG_NAME: the project name docker compose config prints (default sbx-<SBX_NAME>)
 # FAKE_CONFIG_LAX: 1 makes docker compose config work without SBX_DIR
+# FAKE_DOTENV_SBX_DIR: a compose call without --env-file and without SBX_DIR runs with this SBX_DIR, as a repo .env would give it
 # FAKE_BUILD_FAIL: the image tag whose build fails
 # FAKE_UP_RC: a non-zero value makes compose up fail with that status
 # FAKE_H10: what compose up does when the project folder is missing: honored, ignored or started
@@ -200,13 +201,23 @@ compose_down() {
 }
 
 # --------------------------------------------------------------------------------
-# fake_compose ARG...: drops the -f FILE pair, then answers version, config, up or down.
+# fake_compose ARG...: drops the -f FILE and --env-file FILE pairs, then answers version, config, up or down.
 # --------------------------------------------------------------------------------
 fake_compose() {
+  local envFileGiven=0
+
   shift
-  if [ "${1:-}" = "-f" ]; then
+  while [ "${1:-}" = "-f" ] || [ "${1:-}" = "--env-file" ]; do
+    if [ "$1" = "--env-file" ]; then
+      envFileGiven=1
+    fi
     shift 2
+  done
+
+  if [ "$envFileGiven" -eq 0 ] && [ -z "${SBX_DIR:-}" ] && [ -n "${FAKE_DOTENV_SBX_DIR:-}" ]; then
+    export SBX_DIR=$FAKE_DOTENV_SBX_DIR
   fi
+
   composeSub=${1:-}
   shift
   case "$composeSub" in

@@ -126,6 +126,23 @@ case_pgrep_is_not_grep() {
 }
 
 # --------------------------------------------------------------------------------
+# Cases of the env-file rule: a compose call with -f must also pass --env-file
+# --------------------------------------------------------------------------------
+case_env_file() {
+  echo "--- env-file"
+
+  make_scratch_repo || return 1
+  plant_lines "$WORK/repo/tests/host/h04-nonroot-user.sh" "docker compose -f planted.yml config"
+  run_scratch_guard "$WORK/env-file.out" host-tests.sh
+  expect "host rules: a compose call without --env-file is named" has_text "$WORK/env-file.out" "docker compose -f planted.yml config"
+
+  make_scratch_repo || return 1
+  plant_lines "$WORK/repo/tests/host/h04-nonroot-user.sh" "docker compose --env-file /dev/null -f planted.yml config"
+  run_scratch_guard "$WORK/env-file-ok.out" host-tests.sh
+  expect "host rules: a compose call with --env-file is not named" lacks_text "$WORK/env-file-ok.out" "-f planted.yml config"
+}
+
+# --------------------------------------------------------------------------------
 # Cases of the blank-line rule: each plants text and looks only for that text in the output
 # --------------------------------------------------------------------------------
 case_blank_lines() {
@@ -188,6 +205,7 @@ case_missing_scripts
 case_delete_forms
 case_gnu_only_forms
 case_pgrep_is_not_grep
+case_env_file
 case_blank_lines
 case_finding_id
 finish_cases
