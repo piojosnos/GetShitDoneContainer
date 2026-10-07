@@ -1,18 +1,18 @@
 ---
 gsd_state_version: "1.0"
 current_phase: "01.5"
-current_phase_name: Host test fixes
+current_phase_name: Host test fixes (INSERTED)
 status: executing
-stopped_at: Phase 01.5 context gathered
-last_updated: "2026-10-07T05:10:40.392Z"
-last_activity: 2026-10-06
-last_activity_desc: Phase 01.4 complete, transitioned to Phase 01.5
-state_head: 9bc326fc30f5a20c0ab1babbc50fccd3158e1593
+stopped_at: Completed 01.5-01-PLAN.md
+last_updated: "2026-10-07T05:38:16.098Z"
+last_activity: 2026-10-07
+last_activity_desc: Phase 01.5 execution started
+state_head: 1f5b1120b5f4d9d16552e8b40eb3996e1b3cc781
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 39
-  completed_plans: 28
+  completed_plans: 29
   percent: 42
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-06)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 01.5: Host test fixes
+**Current focus:** Phase 01.5 — Host test fixes (INSERTED)
 
 ## Current Position
 
-Phase: 01.5 (Host test fixes) — READY TO EXECUTE
-Plan: Not started
+Phase: 01.5 (Host test fixes (INSERTED)) — EXECUTING
+Plan: 2 of 11
 Status: Ready to execute
-Last activity: 2026-10-06 — Phase 01.4 complete, transitioned to Phase 01.5
+Last activity: 2026-10-07 — Phase 01.5 execution started
 
 Progress: [████████████████████] 28/28 plans ([████░░░░░░] 42%)
 
@@ -88,6 +88,7 @@ Progress: [████████████████████] 28/28 p
 | Phase 01.4 P06 | 15 min | 3 tasks | 12 files |
 | Phase 01.4 P07 | 12 min | 2 tasks | 6 files |
 | Phase 01.4 P01.4-08 | 35 min | 2 tasks | 1 files |
+| Phase 01.5 P01 | 12 min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -145,6 +146,8 @@ Recent decisions affecting current work:
 - [Phase 01.4]: The host checks run against real Docker on the Mac; run-all.sh passing is the gate and the manual helpers are diagnostic tools
 - [Phase 01.4]: Backlog 999.1 closed by the diagnostic-helper decision; retiring the slim fake docker is backlog 999.2
 - [Phase 01.4]: 01.4-08: the Mac run of tests/host/run-all.sh (19 passed, 0 failed, 0 not run) and the guard on stock bash is the real-Docker gate; only the run from the code worktree at a821736 counts
+- [Phase 01.5]: 01.5-01: code branch fix/phase-01.5-host-test-fixes is cut from main at 79d819b (PR #13 merge); the code PR targets main
+- [Phase 01.5]: 01.5-01: negative assertions (lacks_text, lacks_match) and guard scan helpers (nowhere_matches, host rules) fail closed on missing input; guard self-test suite is tests/selftest/guard/; a truncating redirect stays allowed by the delete rule
 
 ### Pending Todos
 
@@ -188,6 +191,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-07T02:32:52.902Z
-Stopped at: Phase 01.5 context gathered
-Resume file: .planning/phases/01.5-host-test-fixes/01.5-CONTEXT.md
+Last session: 2026-10-07T05:38:15.845Z
+Stopped at: Completed 01.5-01-PLAN.md
+Resume file: None
