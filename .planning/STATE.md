@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.5"
 current_phase_name: Host test fixes (INSERTED)
 status: executing
-stopped_at: Completed 01.5-08-PLAN.md
-last_updated: "2026-10-07T06:31:04.314Z"
+stopped_at: Completed 01.5-09-PLAN.md
+last_updated: "2026-10-07T06:37:48.253Z"
 last_activity: 2026-10-07
 last_activity_desc: Phase 01.5 execution started
-state_head: 6e6717e0b28a5db3e3007fbe9167294c5ac679f7
+state_head: 0cde04c0bd33275bbed0c78c13c6777d6017f136
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 39
-  completed_plans: 36
+  completed_plans: 37
   percent: 42
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 ## Current Position
 
 Phase: 01.5 (Host test fixes (INSERTED)) — EXECUTING
-Plan: 9 of 11
+Plan: 10 of 11
 Status: Ready to execute
 Last activity: 2026-10-07 — Phase 01.5 execution started
 
@@ -96,6 +96,7 @@ Progress: [████████████████████] 28/28 p
 | Phase 01.5 P06 | 20min | 2 tasks | 8 files |
 | Phase 01.5 P07 | 15 min | 2 tasks | 6 files |
 | Phase 01.5 P08 | 25 min | 3 tasks | 11 files |
+| Phase 01.5 P09 | 20 min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -169,6 +170,8 @@ Recent decisions affecting current work:
 - [Phase 01.5]: enter_project_folder runs after the start hooks, so hooks keep running in the start folder; unwritable state message matches the workspace message
 - [Phase 01.5]: H-05 and H-06 use a run-unique file name and git identity, so a stale file or identity left by an earlier run cannot pass
 - [Phase 01.5]: Checks that depend on the start folder pass -w through in_project or docker exec -w PROJECT_DIR; the fake docker follows compose.yml working_dir by default and FAKE_WORKDIR models a workspace start
+- [Phase 01.5]: compose.yml working_dir is the mount point /home/sandbox/workspace; the entrypoint checks workspace/NAME, so a mistyped SBX_NAME is refused and Docker creates nothing on the Mac (H-20 proves it) — Docker creates a missing working directory, which put an empty NAME/ on the Mac
+- [Phase 01.5]: No env_file sentinel; base/Dockerfile says Compose may still create a missing sandbox folder and the entrypoint then refuses — The old comment promised that nothing is created on the Mac, which is not true on every Compose version
 
 ### Pending Todos
 
@@ -212,6 +215,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-07T06:31:04.179Z
-Stopped at: Completed 01.5-08-PLAN.md
+Last session: 2026-10-07T06:37:48.111Z
+Stopped at: Completed 01.5-09-PLAN.md
 Resume file: None
