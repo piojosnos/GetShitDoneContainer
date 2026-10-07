@@ -66,7 +66,7 @@ no_host_code_matches() {
 # --------------------------------------------------------------------------------
 # GNU tools are fine only inside the container (in_container, docker exec).
 host_tests_are_portable() {
-  no_host_code_matches 'declare -A|mapfile|readarray|\$\{[A-Za-z_]+(,,|\^\^)\}|sed -i|grep -P|readlink -f|date -d|\btimeout\b|sha256sum|echo -e|&>>|\|&|\bjq\b|\bpython3?\b|\bcoproc\b|wait -n|EPOCHSECONDS|local -n|sed -r|sort -V|xargs -r|\brealpath\b|date --date|mktemp --tmpdir' '' $HOST_FILES \
+  no_host_code_matches 'declare -A|mapfile|readarray|\$\{[A-Za-z_]+(,,|\^\^)\}|sed -i|\bgrep -P|readlink -f|date -d|\btimeout\b|sha256sum|echo -e|&>>|\|&|\bjq\b|\bpython3?\b|\bcoproc\b|wait -n|EPOCHSECONDS|local -n|sed -r|sort -V|xargs -r|\brealpath\b|date --date|mktemp --tmpdir' '' $HOST_FILES \
     && no_host_code_matches 'stat -c' 'in_container|docker exec' $HOST_FILES
 }
 
