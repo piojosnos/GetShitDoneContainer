@@ -138,8 +138,19 @@ restart_test_sandbox() {
 }
 
 # --------------------------------------------------------------------------------
-# assert_test_sandbox: true only if sbx-hosttest exists, is labelled sbx.name=hosttest and mounts a sbx-hosttest-* folder.
+# sandbox_mount_source: prints the host folder mounted at /home/sandbox/workspace in sbx-hosttest; returns 1 when the container cannot be inspected.
 # --------------------------------------------------------------------------------
+sandbox_mount_source() {
+  docker container inspect \
+    --format '{{range .Mounts}}{{if eq .Destination "/home/sandbox/workspace"}}{{.Source}}{{end}}{{end}}' \
+    "$CONTAINER" 2>/dev/null </dev/null
+}
+
+# --------------------------------------------------------------------------------
+# assert_test_sandbox: for cleanup; true only if sbx-hosttest is labelled sbx.name=hosttest and its mount, or the folder holding the mount, is named sbx-hosttest-*.
+# --------------------------------------------------------------------------------
+# Loose on purpose: it accepts the sandbox of an earlier run and the exited containers
+# that H-10 and the mistyped-name check leave on a folder inside a run folder.
 assert_test_sandbox() {
   local label mountSource
 
@@ -149,19 +160,38 @@ assert_test_sandbox() {
     return 1
   fi
 
-  mountSource=$(docker container inspect \
-    --format '{{range .Mounts}}{{if eq .Destination "/home/sandbox/workspace"}}{{.Source}}{{end}}{{end}}' \
-    "$CONTAINER" 2>/dev/null </dev/null) || return 1
+  mountSource=$(sandbox_mount_source) || return 1
 
-  case "$mountSource" in
-    *sbx-hosttest-*) return 0 ;;
-  esac
+  if [ -z "$mountSource" ]; then
+    return 1
+  fi
+
+  if run_dir_name_ok "$mountSource"; then
+    return 0
+  fi
+
+  if run_dir_name_ok "$(dirname "$mountSource")"; then
+    return 0
+  fi
 
   return 1
 }
 
 # --------------------------------------------------------------------------------
-# require_test_sandbox ID: true when the test sandbox is running; else prints a FAIL line for ID, returns 1.
+# assert_this_run_sandbox: for a check about to act; true only if assert_test_sandbox holds and the mount folder has the same name as the run folder.
+# --------------------------------------------------------------------------------
+assert_this_run_sandbox() {
+  local mountSource
+
+  assert_test_sandbox || return 1
+
+  mountSource=$(sandbox_mount_source) || return 1
+
+  [ "$(basename "$mountSource")" = "$(basename "${RUN:-}")" ]
+}
+
+# --------------------------------------------------------------------------------
+# require_test_sandbox ID: true when the test sandbox of this run is running; else prints a FAIL line for ID, returns 1.
 # --------------------------------------------------------------------------------
 require_test_sandbox() {
   local checkId=$1
@@ -169,8 +199,16 @@ require_test_sandbox() {
 
   if [ -n "${RUN:-}" ]; then
     running=$(docker container inspect --format '{{.State.Running}}' "$CONTAINER" 2>/dev/null </dev/null)
-    if [ "$running" = "true" ] && assert_test_sandbox; then
+
+    if [ "$running" = "true" ] && assert_this_run_sandbox; then
       return 0
+    fi
+
+    if [ "$running" = "true" ] && assert_test_sandbox; then
+      fail "$checkId" "sbx-hosttest mounts another run folder: $(sandbox_mount_source)" \
+        "set SBXTEST_DIR to that folder, or run: bash tests/host/run-all.sh"
+
+      return 1
     fi
   fi
 

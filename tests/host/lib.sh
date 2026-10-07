@@ -83,9 +83,7 @@ resolve_run_dir() {
     return 0
   fi
 
-  mountSource=$(docker container inspect \
-    --format '{{range .Mounts}}{{if eq .Destination "/home/sandbox/workspace"}}{{.Source}}{{end}}{{end}}' \
-    "$CONTAINER" 2>/dev/null </dev/null) || return 0
+  mountSource=$(sandbox_mount_source) || return 0
 
   if [ -z "$mountSource" ]; then
     return 0
