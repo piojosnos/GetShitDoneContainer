@@ -36,6 +36,10 @@ case_h06_alone() {
   expect "H-06: the missing identity file is named" has_text "$WORK/out.h06.nowrite" "state/git/config"
   reset_state
   make_fixture_run
+  run_standalone "$WORK/out.h06.workspace" h06-git-and-identity.sh FAKE_WORKDIR=/home/sandbox/workspace
+  expect "H-06: git status runs in the project folder when shells start in the workspace" equals "$CHECK_RC" "0"
+  reset_state
+  make_fixture_run
   mkdir -p "$FIXTURE/state/git"
   printf '[user]\n\tname = T\n' >"$FIXTURE/state/git/config"
   run_standalone "$WORK/out.h06.stale" h06-git-and-identity.sh FAKE_NO_GIT_WRITE=1

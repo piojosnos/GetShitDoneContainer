@@ -61,7 +61,7 @@
 # FAKE_UPDATE_ON: 1 makes claude update run instead of saying updates are disabled
 # FAKE_SHARE_EXISTS: 1 makes ~/.local/share/claude exist in the container home
 # FAKE_EXEC_RC: a non-zero value makes the exec of the share folder test return that status, as a docker exec that could not run does
-# FAKE_GIT_DUBIOUS: 1 makes git status fail with a dubious ownership message
+# FAKE_GIT_DUBIOUS: 1 makes git status fail with a dubious ownership message (git status works only in the project folder)
 # FAKE_SAFE_DIR: the safe.directory values git config lists (default *)
 # FAKE_NO_GIT_WRITE: 1 makes the git identity write never reach the state folder
 # FAKE_NO_HISTORY: 1 makes the fake shell keep no history
@@ -692,6 +692,10 @@ fake_exec() {
       fi
       ;;
     "git status")
+      if [ "$execDir" != "/home/sandbox/workspace/hosttest" ]; then
+        echo "fatal: not a git repository (or any of the parent directories): .git" >&2
+        return 128
+      fi
       if [ "${FAKE_GIT_DUBIOUS:-0}" = 1 ]; then
         echo "fatal: detected dubious ownership in repository at '/home/sandbox/workspace/hosttest'" >&2
         return 128
