@@ -24,6 +24,8 @@
 # FAKE_CONTEXT: the name docker context show prints (default desktop-linux)
 # FAKE_CONFIG_NAME: the project name docker compose config prints (default sbx-<SBX_NAME>)
 # FAKE_CONFIG_LAX: 1 makes docker compose config work without SBX_DIR
+# FAKE_CONFIG_NO_NAME_CHECK: 1 makes docker compose config work without SBX_NAME
+# FAKE_CONFIG_NO_CASE_CHECK: 1 makes docker compose config accept an SBX_NAME with characters outside a-z, 0-9, _ and -
 # FAKE_DOTENV_SBX_DIR: a compose call without --env-file and without SBX_DIR runs with this SBX_DIR, as a repo .env would give it
 # FAKE_BUILD_FAIL: the image tag whose build fails
 # FAKE_UP_RC: a non-zero value makes compose up fail with that status
@@ -131,9 +133,21 @@ fake_context() {
 }
 
 # --------------------------------------------------------------------------------
-# compose_config: answers docker compose config, which needs SBX_DIR unless FAKE_CONFIG_LAX is 1.
+# compose_config: answers docker compose config, which needs a lowercase SBX_NAME unless FAKE_CONFIG_NO_NAME_CHECK or FAKE_CONFIG_NO_CASE_CHECK is 1, and SBX_DIR unless FAKE_CONFIG_LAX is 1.
 # --------------------------------------------------------------------------------
 compose_config() {
+  if [ -z "${SBX_NAME:-}" ] && [ "${FAKE_CONFIG_NO_NAME_CHECK:-0}" != 1 ]; then
+    echo "required variable SBX_NAME is missing a value: SBX_NAME is required (lowercase letters, digits, - and _)" >&2
+    return 15
+  fi
+  case "${SBX_NAME:-}" in
+    *[!a-z0-9_-]*)
+      if [ "${FAKE_CONFIG_NO_CASE_CHECK:-0}" != 1 ]; then
+        echo "\"sbx-${SBX_NAME}\" is not a valid project name: it must contain only characters from [a-z0-9_-] and start with [a-z0-9]" >&2
+        return 1
+      fi
+      ;;
+  esac
   if [ -z "${SBX_DIR:-}" ] && [ "${FAKE_CONFIG_LAX:-0}" != 1 ]; then
     echo "required variable SBX_DIR is missing a value: SBX_DIR is required (absolute host path of the sandbox folder)" >&2
     return 15

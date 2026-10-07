@@ -62,7 +62,9 @@ case_healthy_run() {
     equals "$(grep -E 'ARGS: compose .* (up|down)( |$)' "$FAKE_LOG" | grep -vcE "SBX_NAME=hosttest SBX_DIR=$healthyRunDir(/does-not-exist)? ")" "0"
   expect "docker log: the sandbox was started" has_match "$FAKE_LOG" 'ARGS: compose .* up -d --wait'
   expect "docker log: every compose call names the test name" \
-    equals "$(grep 'ARGS: compose' "$FAKE_LOG" | grep -vc 'SBX_NAME=hosttest ')" "0"
+    equals "$(grep 'ARGS: compose' "$FAKE_LOG" | grep -v 'SBX_DIR=/sbx-hosttest-config-only ' | grep -vc 'SBX_NAME=hosttest ')" "0"
+  expect "docker log: the two name probes only render the config" \
+    equals "$(grep -c 'SBX_DIR=/sbx-hosttest-config-only ' "$FAKE_LOG") $(grep 'SBX_DIR=/sbx-hosttest-config-only ' "$FAKE_LOG" | grep -vc 'ARGS: compose .* config$')" "2 0"
   expect "docker log: the SBX_DIR probe runs without SBX_DIR and with the test name" \
     has_match "$FAKE_LOG" 'SBX_NAME=hosttest SBX_DIR=unset COMPOSE_PROJECT_NAME=unset ARGS: compose .* config'
   expect "docker log: the plain docker run uses the real image tag" has_match "$WORK/args.healthy" '^run --rm sbx-claude:local claude --version'
