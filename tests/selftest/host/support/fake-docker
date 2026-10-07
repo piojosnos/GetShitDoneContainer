@@ -10,6 +10,8 @@
 # - A run that mounts its own folder over /etc/sbx/start.d runs the real start library on that folder
 #   instead of the bundle sync.
 # - Runs without set -u, as it always has, so an absent knob reads as empty.
+# - docker exec starts in the working_dir of FAKE_REPO/compose.yml, as the real container does,
+#   unless it is given -w or FAKE_WORKDIR is set.
 #
 # Knobs, one line each:
 # FAKE_STATE: the folder that holds the fake container state (set by lib.sh)
@@ -52,6 +54,7 @@
 # FAKE_MANAGED_BAD: 1 makes the managed settings not parse
 # FAKE_ID: the answer of id in the container (default: the sandbox user)
 # FAKE_UNAME: the answer of uname -m in the container (default aarch64)
+# FAKE_WORKDIR: the folder docker exec starts in when it is given no -w (default: the working_dir of compose.yml)
 # FAKE_NO_TOUCH: 1 makes a file written in the workspace never reach the host (a touched file is named as the command names it)
 # FAKE_STAT_OWNER: the owner stat reports for any path (default sandbox)
 # FAKE_ENV_MISSING: the name of one variable left out of the container environment
@@ -89,6 +92,27 @@ unhandled() {
 # --------------------------------------------------------------------------------
 has_container() {
   [ -f "$FAKE_STATE/container" ]
+}
+
+# --------------------------------------------------------------------------------
+# compose_working_dir: prints the working_dir of FAKE_REPO/compose.yml, without quotes, with ${SBX_NAME} replaced by hosttest.
+# --------------------------------------------------------------------------------
+compose_working_dir() {
+  sed -n 's/^[[:space:]]*working_dir:[[:space:]]*//p' "$FAKE_REPO/compose.yml" | head -n 1 | tr -d '"' | sed 's/\${SBX_NAME}/hosttest/'
+}
+
+# --------------------------------------------------------------------------------
+# host_path_of CONTAINER_PATH: prints the host path of /home/sandbox/workspace or a path under it; returns 1 for any other path.
+# --------------------------------------------------------------------------------
+host_path_of() {
+  local hostRoot
+
+  hostRoot=$(cat "$FAKE_STATE/container.dir")
+  case "$1" in
+    /home/sandbox/workspace) printf '%s\n' "$hostRoot" ;;
+    /home/sandbox/workspace/*) printf '%s/%s\n' "$hostRoot" "${1#/home/sandbox/workspace/}" ;;
+    *) return 1 ;;
+  esac
 }
 
 # --------------------------------------------------------------------------------
@@ -612,7 +636,14 @@ exec_context() {
 # --------------------------------------------------------------------------------
 fake_exec() {
   shift
+  execDir=""
   while [ "$#" -gt 0 ] && [ "${1#-}" != "$1" ]; do
+    case "$1" in
+      -w | --workdir)
+        execDir=${2:-}
+        shift
+        ;;
+    esac
     shift
   done
   execName=${1:-}
@@ -620,6 +651,9 @@ fake_exec() {
   if [ "$execName" != "sbx-hosttest" ] || ! has_container; then
     echo "Error: No such container: $execName" >&2
     return 1
+  fi
+  if [ -z "$execDir" ]; then
+    execDir=${FAKE_WORKDIR:-$(compose_working_dir)}
   fi
   case "$*" in
     id) printf '%s\n' "${FAKE_ID:-uid=1000(sandbox) gid=1000(sandbox) groups=1000(sandbox)}" ;;
@@ -629,8 +663,10 @@ fake_exec() {
         touchRest=$*
         touchRest=${touchRest#sh -c touch }
         touchName=${touchRest%%;*}
-        mkdir -p "$(cat "$FAKE_STATE/container.dir")/hosttest"
-        : >"$(cat "$FAKE_STATE/container.dir")/hosttest/$touchName"
+        if touchDir=$(host_path_of "$execDir"); then
+          mkdir -p "$touchDir"
+          : >"$touchDir/$touchName"
+        fi
       fi
       printf '.\n..\n.bashrc\n.local\nworkspace\n'
       ;;

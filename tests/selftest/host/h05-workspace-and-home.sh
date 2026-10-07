@@ -36,6 +36,11 @@ case_h05_alone() {
   expect "H-05: a file left by an earlier run does not pass" equals "$CHECK_RC" "1"
   reset_state
   make_fixture_run
+  run_standalone "$WORK/out.h05.workspace" h05-workspace-and-home.sh FAKE_WORKDIR=/home/sandbox/workspace
+  expect "H-05: the file lands in the project folder when shells start in the workspace" \
+    string_matches '^0 1$' "$CHECK_RC $(run_unique_file_count "$FIXTURE/hosttest")"
+  reset_state
+  make_fixture_run
   run_standalone "$WORK/out.h05.root" h05-workspace-and-home.sh FAKE_STAT_OWNER=root
   expect "H-05: a root owner fails" equals "$CHECK_RC" "1"
   expect "H-05: the root owner is shown" has_text "$WORK/out.h05.root" "root /home/sandbox/.local"
