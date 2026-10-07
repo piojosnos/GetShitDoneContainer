@@ -109,6 +109,23 @@ case_gnu_only_forms() {
 }
 
 # --------------------------------------------------------------------------------
+# Cases of the grep -P term of the portability rule: it must not match inside pgrep -P
+# --------------------------------------------------------------------------------
+case_pgrep_is_not_grep() {
+  echo "--- pgrep and grep"
+
+  make_scratch_repo || return 1
+  plant_lines "$WORK/repo/tests/host/h04-nonroot-user.sh" "pgrep -P planted-pid"
+  run_scratch_guard "$WORK/pgrep.out" host-tests.sh
+  expect "host rules: pgrep -P is not named by the portability rule" lacks_text "$WORK/pgrep.out" "pgrep -P planted-pid"
+
+  make_scratch_repo || return 1
+  plant_lines "$WORK/repo/tests/host/h04-nonroot-user.sh" "grep -P planted planted-file"
+  run_scratch_guard "$WORK/grep-p.out" host-tests.sh
+  expect "host rules: grep -P is still named by the portability rule" has_text "$WORK/grep-p.out" "grep -P planted planted-file"
+}
+
+# --------------------------------------------------------------------------------
 # Cases of the blank-line rule: each plants text and looks only for that text in the output
 # --------------------------------------------------------------------------------
 case_blank_lines() {
@@ -170,6 +187,7 @@ start_group || exit 1
 case_missing_scripts
 case_delete_forms
 case_gnu_only_forms
+case_pgrep_is_not_grep
 case_blank_lines
 case_finding_id
 finish_cases
