@@ -2,17 +2,17 @@
 gsd_state_version: "1.0"
 current_phase: "01.5"
 current_phase_name: Host test fixes (INSERTED)
-status: executing
-stopped_at: Completed 01.5-10-PLAN.md
-last_updated: "2026-10-07T06:42:23.346Z"
+status: verifying
+stopped_at: Completed 01.5-11-PLAN.md (Mac run 19/20, H-03 gap open)
+last_updated: "2026-10-07T13:02:56.873Z"
 last_activity: 2026-10-07
 last_activity_desc: Phase 01.5 execution started
-state_head: 4de1ca15523321300b2dde614e8ae6046f527d75
+state_head: ba6114449bebf699f86d3ad9b9335f679662e5b9
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 39
-  completed_plans: 38
+  completed_plans: 39
   percent: 42
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 
 Phase: 01.5 (Host test fixes (INSERTED)) — EXECUTING
 Plan: 11 of 11
-Status: Ready to execute
+Status: All 11 plans executed; Mac run 19/20 (H-03 gap open), gap-closure plan needed before the phase can complete
 Last activity: 2026-10-07 — Phase 01.5 execution started
 
 Progress: [████████████████████] 28/28 plans ([████░░░░░░] 42%)
@@ -98,6 +98,7 @@ Progress: [████████████████████] 28/28 p
 | Phase 01.5 P08 | 25 min | 3 tasks | 11 files |
 | Phase 01.5 P09 | 20 min | 2 tasks | 14 files |
 | Phase 01.5 P10 | 15 min | 2 tasks | 4 files |
+| Phase 01.5 P11 | 35 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -175,6 +176,7 @@ Recent decisions affecting current work:
 - [Phase 01.5]: No env_file sentinel; base/Dockerfile says Compose may still create a missing sandbox folder and the entrypoint then refuses — The old comment promised that nothing is created on the Mac, which is not true on every Compose version
 - [Phase 01.5]: The checklist guard rule derives its expected IDs from the h??-*.sh file names and the chainCheckList line, so a new check or a reordered chain fails the guard until the checklist follows
 - [Phase 01.5]: Docs state that a green run does not cover the login or Claude behaviour; H-07, the second half of H-09, the doctor part of H-13 and H-19 are helper-only
+- [Phase 01.5]: 01.5-11: Mac run of ebfa086 gave 19 passed, 1 failed (H-03 uppercase SBX_NAME, Compose 2.40 lowercases the project name instead of refusing it, so assumption A1 was wrong); the phase gate is not met and 1.1 WR-03 stays open for a gap-closure plan
 
 ### Pending Todos
 
@@ -192,6 +194,7 @@ None yet.
 - [Phase 1.3]: Code review left 4 findings open (WR-02: run_timeout does not stop a shell function it wraps, same as the Phase 1.1 CR-01 and planned for Phase 1.5; IN-01..03 style and self-test coverage). See 01.3-REVIEW-DISPOSITION.md
 - [Phase 1.4]: Code review left 11 findings open (see 01.4-REVIEW-DISPOSITION.md). Follow-ups for Phase 1.5 or a quick task: WR-01 a group program missing from a run-all list never runs; WR-02 and WR-06 `nowhere_matches` and the `lacks_*` helpers fail open when a file is missing or unreadable; WR-05 SANDBOX.md overclaims what a passing `run-all.sh` proves
 - [Phase 1.4]: Open note: the user's Mac `git status` listed 10 files as modified in the code worktree while the sandbox shows it clean; cause pending
+- [Phase 1.5]: H-03 uppercase SBX_NAME is not refused by real Compose 2.40 (Mac run 19/20). Gap-closure plan needed: enforce lowercase in the sandbox, or drop the assertion and correct SANDBOX.md lines 17 and 208, the checklist H-03 row and compose.yml line 12. See 01.5-11-SUMMARY.md
 
 ### Quick Tasks Completed
 
@@ -218,6 +221,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-07T06:42:23.192Z
-Stopped at: Completed 01.5-10-PLAN.md
+Last session: 2026-10-07T13:02:56.731Z
+Stopped at: Completed 01.5-11-PLAN.md (Mac run 19/20, H-03 gap open)
 Resume file: None
