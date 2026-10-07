@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.5"
 current_phase_name: Host test fixes (INSERTED)
 status: executing
-stopped_at: Completed 01.5-06-PLAN.md
-last_updated: "2026-10-07T06:14:11.187Z"
+stopped_at: Completed 01.5-07-PLAN.md
+last_updated: "2026-10-07T06:20:25.368Z"
 last_activity: 2026-10-07
 last_activity_desc: Phase 01.5 execution started
-state_head: 400498d6a7831c2bd7be0d068f94095cc4775869
+state_head: 353ca7c09dbfa155392c122c99122c2981526577
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 39
-  completed_plans: 34
+  completed_plans: 35
   percent: 42
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 ## Current Position
 
 Phase: 01.5 (Host test fixes (INSERTED)) — EXECUTING
-Plan: 7 of 11
+Plan: 8 of 11
 Status: Ready to execute
 Last activity: 2026-10-07 — Phase 01.5 execution started
 
@@ -94,6 +94,7 @@ Progress: [████████████████████] 28/28 p
 | Phase 01.5 P04 | 20 min | 2 tasks | 11 files |
 | Phase 01.5 P05 | 25 min | 3 tasks | 12 files |
 | Phase 01.5 P06 | 20min | 2 tasks | 8 files |
+| Phase 01.5 P07 | 15 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -163,6 +164,8 @@ Recent decisions affecting current work:
 - [Phase 01.5]: H-03 asserts a non-zero status plus the words 'project name' for the uppercase probe, never the full Compose message (wording differs by version)
 - [Phase 01.5]: H-03 name probes are config only (SBX_DIR=/sbx-hosttest-config-only, --env-file /dev/null); the runner log cases allow exactly two such lines
 - [Phase 01.5]: H-01 scans only build-*, rebuild-* and compose-up logs, one file at a time, for the two platform warning phrases
+- [Phase 01.5]: Workspace check says 'is not a mount point' and does not reject tmpfs (Docker Desktop file system type never observed)
+- [Phase 01.5]: enter_project_folder runs after the start hooks, so hooks keep running in the start folder; unwritable state message matches the workspace message
 
 ### Pending Todos
 
@@ -206,6 +209,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-07T06:14:11.050Z
-Stopped at: Completed 01.5-06-PLAN.md
+Last session: 2026-10-07T06:20:25.234Z
+Stopped at: Completed 01.5-07-PLAN.md
 Resume file: None
