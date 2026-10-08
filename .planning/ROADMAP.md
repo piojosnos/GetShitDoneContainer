@@ -189,7 +189,7 @@ Plans:
   2. Each fix has a test that fails before the fix and passes after it, run on the Mac where the bug needs Docker.
   3. `tests/host/run-all.sh` passes on the Mac.
 
-**Plans:** 11/16 plans executed
+**Plans:** 12/16 plans executed
 
 Plans:
 **Wave 1**
@@ -228,7 +228,7 @@ Plans:
 Gap closure, from the 01.5-11 Mac run (H-03 failed: Compose lowercases an uppercase SBX_NAME, 19 of 20):
 
 **Wave 12** *(blocked on Wave 11 completion)*
-- [ ] 01.5-12-PLAN.md: The sandbox name rule in the entrypoint with a clear error; new check H-21 proves it with the real image
+- [x] 01.5-12-PLAN.md: The sandbox name rule in the entrypoint with a clear error; new check H-21 proves it with the real image
 
 **Wave 13** *(blocked on Wave 12 completion)*
 - [ ] 01.5-13-PLAN.md: run_timeout escalates to SIGKILL; H-10 checks the reason of its refusal; reset_state refuses an empty work folder
@@ -343,7 +343,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 1.2. Best-practices bundle baked into the image (stopgap) | 6/6 | Complete    | 2026-10-05 |
 | 1.3. Shell script layout | 6/6 | Complete    | 2026-10-05 |
 | 1.4. Test suite refactor | 8/8 | Complete    | 2026-10-06 |
-| 1.5. Host test fixes | 11/11 | In Progress|  |
+| 1.5. Host test fixes | 12/16 | In Progress|  |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |

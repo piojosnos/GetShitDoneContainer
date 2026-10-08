@@ -2,17 +2,17 @@
 gsd_state_version: "1.0"
 current_phase: "01.5"
 current_phase_name: Host test fixes (INSERTED)
-status: verifying
-stopped_at: Completed 01.5-11-PLAN.md (Mac run 19/20, H-03 gap open)
-last_updated: "2026-10-07T21:54:01.179Z"
-last_activity: 2026-10-07
+status: executing
+stopped_at: Completed 01.5-12-PLAN.md
+last_updated: "2026-10-08T05:03:11.189Z"
+last_activity: 2026-10-08
 last_activity_desc: Phase 01.5 execution started
-state_head: 26023d697066075d44b7a85d1da1ac20cf30c8a2
+state_head: 65f372087700cce0d1c937bf1f9ba10275197a28
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 44
-  completed_plans: 39
+  completed_plans: 40
   percent: 42
 ---
 
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 
 ## Current Position
 
-Phase: 01.5 (Host test fixes (INSERTED)) — READY TO EXECUTE
-Plan: 11 of 11
-Status: All 11 plans executed; Mac run 19/20 (H-03 gap open), gap-closure plan needed before the phase can complete
-Last activity: 2026-10-07 — Phase 01.5 execution started
+Phase: 01.5 (Host test fixes (INSERTED)) — EXECUTING
+Plan: 13 of 16
+Status: Executing Phase 01.5 (plan 12 complete)
+Last activity: 2026-10-08 — Phase 01.5 execution started
 
 Progress: [████████████████████] 28/28 plans ([████░░░░░░] 42%)
 
@@ -99,6 +99,7 @@ Progress: [████████████████████] 28/28 p
 | Phase 01.5 P09 | 20 min | 2 tasks | 14 files |
 | Phase 01.5 P10 | 15 min | 2 tasks | 4 files |
 | Phase 01.5 P11 | 35 min | 3 tasks | 5 files |
+| Phase 01.5 P12 | 25 min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -177,6 +178,7 @@ Recent decisions affecting current work:
 - [Phase 01.5]: The checklist guard rule derives its expected IDs from the h??-*.sh file names and the chainCheckList line, so a new check or a reordered chain fails the guard until the checklist follows
 - [Phase 01.5]: Docs state that a green run does not cover the login or Claude behaviour; H-07, the second half of H-09, the doctor part of H-13 and H-19 are helper-only
 - [Phase 01.5]: 01.5-11: Mac run of ebfa086 gave 19 passed, 1 failed (H-03 uppercase SBX_NAME, Compose 2.40 lowercases the project name instead of refusing it, so assumption A1 was wrong); the phase gate is not met and 1.1 WR-03 stays open for a gap-closure plan
+- [Phase 01.5]: Sandbox name rule ^[a-z][a-z0-9-]{0,30}$ is defined once in base/sbx-start-lib.sh and enforced by the entrypoint right after the mount check; H-21 proves it on the real image
 
 ### Pending Todos
 
@@ -221,6 +223,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-07T13:02:56.731Z
-Stopped at: Completed 01.5-11-PLAN.md (Mac run 19/20, H-03 gap open)
+Last session: 2026-10-08T05:03:11.039Z
+Stopped at: Completed 01.5-12-PLAN.md
 Resume file: None
