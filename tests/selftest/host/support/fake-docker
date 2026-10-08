@@ -37,7 +37,7 @@
 # FAKE_BUILD_FAIL: the image tag whose build fails
 # FAKE_UP_RC: a non-zero value makes compose up fail with that status
 # FAKE_FOLDER_CHECK_OFF: 1 makes compose up skip the project and state folder check, as an entrypoint that does not check would
-# FAKE_H10: what compose up does when the project folder is missing: honored, ignored or started
+# FAKE_H10: what compose up does when the sandbox folder is missing: honored, ignored, started, or other (it fails for a reason that is not the folder)
 # FAKE_NO_SYNC: 1 makes compose up skip the start hook
 # FAKE_SYNC_CLOBBERS: 1 makes compose up delete state/claude/skills and projects before the hook
 # FAKE_DOWN_KEEPS: 1 makes compose down leave the container in place
@@ -234,6 +234,10 @@ compose_up() {
         : >"$FAKE_STATE/container"
         printf '%s\n' "$SBX_DIR" >"$FAKE_STATE/container.dir"
         return 0
+        ;;
+      other)
+        echo "fake compose: the start failed for another reason" >&2
+        return 1
         ;;
       *)
         echo "fake compose: bind source path does not exist: $SBX_DIR" >&2

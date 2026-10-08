@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of H-10 (tests/host/h10-missing-folder-refused.sh) against the fake docker: a refused missing folder passes; a path that Docker created and a start on a missing folder fail, and the real sandbox is up at the end.
+# Self-test of H-10 (tests/host/h10-missing-folder-refused.sh) against the fake docker: a refused missing folder passes; a path that Docker created, a start on a missing folder and a start that fails for another reason fail, and the real sandbox is up at the end.
 # - Run by run-all.sh; runs alone too.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
 # - Usage, from anywhere: bash tests/selftest/host/h10-missing-folder-refused.sh   (exit 0 = every case passes)
@@ -37,6 +37,11 @@ case_h10_alone() {
   expect "H-10: a start on a missing folder says so" has_text "$WORK/out.h10.start" "started on a missing folder"
   expect "H-10: the real sandbox is up at the end after a start" test -f "$WORK/state/container"
   expect "H-10: the real sandbox mounts the real run folder after a start" equals "$(cat "$WORK/state/container.dir")" "$FIXTURE"
+  reset_state
+  make_fixture_run
+  run_standalone "$WORK/out.h10.other" h10-missing-folder-refused.sh FAKE_H10=other
+  expect "H-10: a start that fails for another reason fails" failed_with "$CHECK_RC" "$WORK/out.h10.other" "not because the folder is missing"
+  expect "H-10: the real sandbox is up at the end after another failure" test -f "$WORK/state/container"
 }
 
 # --------------------------------------------------------------------------------
