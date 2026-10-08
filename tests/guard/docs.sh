@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Guard rules on the docs and comments: they promise only what the sandbox and the tests do.
+# Guard rules on the docs and comments: they promise only what the sandbox and the tests do; the fake docker claims only what real Compose does.
 # - Run by tests/guard/run-all.sh; runs alone too.
 # - Usage, from anywhere: bash tests/guard/docs.sh   (exit 0 = every rule holds)
 set -u
@@ -171,6 +171,14 @@ docs_state_the_sandbox_name_rule() {
 }
 
 # --------------------------------------------------------------------------------
+# fake_docker_claims_only_real_compose: The fake docker claims no Compose behaviour that real Compose lacks: no refusal of a project name for its case, no switch for it, no old name rule.
+# --------------------------------------------------------------------------------
+# Real Compose turns the project name into lowercase and never refuses it for its case.
+fake_docker_claims_only_real_compose() {
+  nowhere_matches "$OLD_NAME_RULE_REGEX|not a valid project name|FAKE_CONFIG_NO_CASE_CHECK" tests/selftest/host/support/fake-docker tests/selftest/host/*.sh
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -181,4 +189,5 @@ run_rules \
   sandbox_doc_shells_pass_w \
   sandbox_doc_names_what_only_the_helpers_check \
   checklist_lists_every_host_check \
-  docs_state_the_sandbox_name_rule || exit 1
+  docs_state_the_sandbox_name_rule \
+  fake_docker_claims_only_real_compose || exit 1

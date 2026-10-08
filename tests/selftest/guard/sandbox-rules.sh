@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of the sandbox rules: the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder, and fail when the name-check service is gone or can run a container; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build, and fails when a doc's name pattern differs from the code or a doc states the old name rule.
+# Self-test of the sandbox rules: the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder, and fail when the name-check service is gone or can run a container; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build, and fails when a doc's name pattern differs from the code, a doc states the old name rule or the fake docker invents a Compose refusal.
 # - Run by run-all.sh; runs alone too.
 # - Runs the real tests/guard/start.sh and tests/guard/docs.sh inside a scratch copy of the tree, so a planted problem never touches the real files.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
@@ -47,7 +47,7 @@ case_start_rules() {
 }
 
 # --------------------------------------------------------------------------------
-# Cases of the docs rules: a clean copy, an image comment that promises nothing is created, a doc that promises a good build, a drifted name pattern and the old name rule
+# Cases of the docs rules: a clean copy, an image comment that promises nothing is created, a doc that promises a good build, a drifted name pattern, the old name rule and an invented Compose refusal in the fake docker
 # --------------------------------------------------------------------------------
 case_docs_rule() {
   echo "--- docs rule"
@@ -81,6 +81,12 @@ case_docs_rule() {
   run_scratch_guard "$WORK/docs-old-rule.out" docs.sh
   expect "sandbox rules: the old name rule in a doc fails" has_text "$WORK/docs-old-rule.out" "FAIL: docs_state_the_sandbox_name_rule"
   expect "sandbox rules: the old rule line is named" has_text "$WORK/docs-old-rule.out" "SBX_NAME: lowercase letters, digits, - and _."
+
+  make_scratch_repo || return 1
+  printf '# fake note: "sbx-X" is not a valid project name\n' >>"$WORK/repo/tests/selftest/host/support/fake-docker"
+  run_scratch_guard "$WORK/docs-fake-refusal.out" docs.sh
+  expect "sandbox rules: an invented Compose refusal in the fake docker fails" has_text "$WORK/docs-fake-refusal.out" "FAIL: fake_docker_claims_only_real_compose"
+  expect "sandbox rules: the invented refusal line is named" has_text "$WORK/docs-fake-refusal.out" 'fake note: "sbx-X" is not a valid project name'
 }
 
 # --------------------------------------------------------------------------------
