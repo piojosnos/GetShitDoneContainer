@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.5"
 current_phase_name: Host test fixes (INSERTED)
 status: executing
-stopped_at: Completed 01.5-13-PLAN.md
-last_updated: "2026-10-08T05:10:55.259Z"
+stopped_at: Completed 01.5-14-PLAN.md
+last_updated: "2026-10-08T05:17:11.362Z"
 last_activity: 2026-10-08
 last_activity_desc: Phase 01.5 execution started
-state_head: a6c8be9e06463d0095e55bef9a1c93f9c55d71df
+state_head: 6dcfb474d5a244d34ac9a7de16218bdf8e231e83
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 44
-  completed_plans: 41
+  completed_plans: 42
   percent: 42
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 ## Current Position
 
 Phase: 01.5 (Host test fixes (INSERTED)) — EXECUTING
-Plan: 14 of 16
+Plan: 15 of 16
 Status: Ready to execute
 Last activity: 2026-10-08 — Phase 01.5 execution started
 
@@ -101,6 +101,7 @@ Progress: [████████████████████] 28/28 p
 | Phase 01.5 P11 | 35 min | 3 tasks | 5 files |
 | Phase 01.5 P12 | 25 min | 2 tasks | 11 files |
 | Phase 01.5 P13 | 6 min | 3 tasks | 7 files |
+| Phase 01.5 P14 | 10 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -181,6 +182,7 @@ Recent decisions affecting current work:
 - [Phase 01.5]: 01.5-11: Mac run of ebfa086 gave 19 passed, 1 failed (H-03 uppercase SBX_NAME, Compose 2.40 lowercases the project name instead of refusing it, so assumption A1 was wrong); the phase gate is not met and 1.1 WR-03 stays open for a gap-closure plan
 - [Phase 01.5]: Sandbox name rule ^[a-z][a-z0-9-]{0,30}$ is defined once in base/sbx-start-lib.sh and enforced by the entrypoint right after the mount check; H-21 proves it on the real image
 - [Phase 01.5]: 01.5-13: run_timeout escalates SIGTERM, 5 s grace, SIGKILL on the pid list collected first (status 137); H-10 passes only when the refusal matches 'does not exist|no such file|bind source' (Mac assumption M4); reset_state uses ${WORK:?}
+- [Phase 01.5]: Plan 14: compose.yml gets a name-check service (scale 0, pull_policy never, image sbx-${SBX_NAME}-name-check) so up refuses an uppercase SBX_NAME at the image check; H-03 asserts it with a real up on a nonexistent folder (Mac assumptions M1, M2)
 
 ### Pending Todos
 
@@ -225,6 +227,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-08T05:10:55.117Z
-Stopped at: Completed 01.5-13-PLAN.md
+Last session: 2026-10-08T05:17:11.218Z
+Stopped at: Completed 01.5-14-PLAN.md
 Resume file: None
