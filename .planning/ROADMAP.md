@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1.2: Best-practices bundle baked into the image (stopgap)** (INSERTED) - New sandboxes start with the user's skills, standing rules, and shared memories installed, taken from files in this repo (completed 2026-10-05)
 - [x] **Phase 1.3: Shell script layout** (INSERTED) - Every shell script gets section banners, functions and an entry point, with no change in behaviour (completed 2026-10-05)
 - [x] **Phase 1.4: Test suite refactor** (INSERTED) - Every test suite is a folder run by its own `run-all.sh`, the fake docker is slim and in its own file, and the Mac run covers the success paths (completed 2026-10-06)
-- [ ] **Phase 1.5: Host test fixes** (INSERTED) - The known bugs in the host tests and entrypoint from earlier reviews are fixed, each proven on the Mac
+- [x] **Phase 1.5: Host test fixes** (INSERTED) - The known bugs in the host tests and entrypoint from earlier reviews are fixed, each proven on the Mac (completed 2026-10-08)
 - [ ] **Phase 2: Pinned Toolchain, GSD, and ccusage** - Every tool is baked in at a version pinned in `versions.env`, the image's GSD wins over persisted state, and `ccusage` reports real usage
 - [ ] **Phase 2.1: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs
 - [ ] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login
@@ -189,7 +189,7 @@ Plans:
   2. Each fix has a test that fails before the fix and passes after it, run on the Mac where the bug needs Docker.
   3. `tests/host/run-all.sh` passes on the Mac.
 
-**Plans:** 16/16 plans executed
+**Plans:** 16/16 plans complete
 
 Plans:
 **Wave 1**
@@ -343,7 +343,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 1.2. Best-practices bundle baked into the image (stopgap) | 6/6 | Complete    | 2026-10-05 |
 | 1.3. Shell script layout | 6/6 | Complete    | 2026-10-05 |
 | 1.4. Test suite refactor | 8/8 | Complete    | 2026-10-06 |
-| 1.5. Host test fixes | 16/16 | In Progress|  |
+| 1.5. Host test fixes | 16/16 | Complete    | 2026-10-08 |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
