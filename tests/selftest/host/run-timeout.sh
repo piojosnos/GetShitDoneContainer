@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of the time limit in tests/host/lib-sandbox.sh (run_timeout): a shell function and everything it started stop at the limit.
+# Self-test of the time limit in tests/host/lib-sandbox.sh (run_timeout): a shell function and everything it started stop at the limit; a function that ignores SIGTERM is killed after a grace period.
 # - Run by run-all.sh; runs alone too.
 # - run_timeout and the function it runs must share one shell, so each case writes a small script
 #   into the work folder, runs it with stdin closed and reads its key=value lines.
@@ -35,6 +35,30 @@ else
   run_timeout 2 slow_function plain >/dev/null 2>&1
   echo "status=$?"
 fi
+EOF
+}
+
+# --------------------------------------------------------------------------------
+# write_stubborn_script: writes WORK/stubborn.sh, which runs a function that ignores SIGTERM and starts a child sleeping 20 s
+# --------------------------------------------------------------------------------
+# The ignored signal is inherited by the child, so only SIGKILL stops either of them.
+# The trailing true keeps bash from replacing the function's shell with the child.
+write_stubborn_script() {
+  cat >"$WORK/stubborn.sh" <<'EOF'
+set -u
+. "$REPO_ROOT/tests/host/lib.sh"
+
+stubborn_function() {
+  trap '' TERM
+  sh -c 'echo $$ >"$1"; exec sleep 20' sh "$WORK_DIR/stubborn.pid"
+  true
+}
+
+startSeconds=$(date +%s)
+captured=$(run_timeout 2 stubborn_function)
+echo "status=$?"
+endSeconds=$(date +%s)
+echo "elapsed=$((endSeconds - startSeconds))"
 EOF
 }
 
@@ -157,6 +181,7 @@ case_run_timeout() {
   echo "--- run_timeout"
   write_slow_script
   write_quick_script
+  write_stubborn_script
 
   expect "run_timeout: setsid, pgrep and ps are available" tools_available
 
@@ -170,6 +195,11 @@ case_run_timeout() {
   run_script "$WORK/out.quick" quick.sh
   expect "run_timeout: a quick command keeps its own status" quick_command_status_in_time "$WORK/out.quick"
   expect "run_timeout: nothing is left running after a quick command" nothing_left_after_quick_command
+
+  run_script "$WORK/out.stubborn" stubborn.sh
+  expect "run_timeout: a function that ignores SIGTERM stops within the grace period" is_under 12 "$(value_of "$WORK/out.stubborn" elapsed)"
+  expect "run_timeout: a function that had to be killed returns 137" equals "$(value_of "$WORK/out.stubborn" status)" "137"
+  expect "run_timeout: the child that ignores SIGTERM is gone" child_is_gone "$WORK/stubborn.pid"
 }
 
 # --------------------------------------------------------------------------------
