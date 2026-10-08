@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of H-03 (tests/host/h03-variable-interpolation.sh) against the fake docker: the right project name with SBX_NAME and SBX_DIR required passes; a wrong name and a config that works without SBX_DIR, without SBX_NAME or with an uppercase name fail.
+# Self-test of H-03 (tests/host/h03-variable-interpolation.sh) against the fake docker: the right project name with SBX_NAME and SBX_DIR required passes; a wrong name and a config that works without SBX_DIR or without SBX_NAME, and an up that is not refused for an uppercase name, fail.
 # - Run by run-all.sh; runs alone too.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
 # - Usage, from anywhere: bash tests/selftest/host/h03-variable-interpolation.sh   (exit 0 = every case passes)
@@ -30,12 +30,16 @@ case_h03_alone() {
   expect "H-03: a repo .env that sets SBX_DIR does not hide the missing-SBX_DIR refusal" equals "$CHECK_RC" "0"
   run_standalone "$WORK/out.h03.noname" h03-variable-interpolation.sh FAKE_CONFIG_NO_NAME_CHECK=1
   expect "H-03: a config that works without SBX_NAME fails" failed_with "$CHECK_RC" "$WORK/out.h03.noname" "SBX_NAME is required"
-  run_standalone "$WORK/out.h03.upper" h03-variable-interpolation.sh FAKE_CONFIG_NO_CASE_CHECK=1
-  expect "H-03: a config that accepts an uppercase name fails" failed_with "$CHECK_RC" "$WORK/out.h03.upper" "uppercase"
   reset_state
   run_standalone "$WORK/out.h03.probes" h03-variable-interpolation.sh
-  expect "H-03: both name probes run as config only" equals \
-    "$(grep -cE 'SBX_NAME=(unset|HostTest) SBX_DIR=/sbx-hosttest-config-only COMPOSE_PROJECT_NAME=unset ARGS: compose .* config$' "$FAKE_LOG")" "2"
+  expect "H-03: the missing-name probe only renders the config" equals \
+    "$(grep -cE 'SBX_NAME=unset SBX_DIR=/sbx-hosttest-config-only COMPOSE_PROJECT_NAME=unset ARGS: compose .* config$' "$FAKE_LOG")" "1"
+  expect "H-03: the uppercase probe is one up on a folder that does not exist" equals \
+    "$(grep -cE 'SBX_NAME=HostTest SBX_DIR=/sbx-hosttest-no-such-folder COMPOSE_PROJECT_NAME=unset ARGS: compose --env-file /dev/null -f .* up -d$' "$FAKE_LOG")" "1"
+  expect "H-03: the uppercase probe leaves no container" test ! -e "$WORK/state/container"
+  expect "H-03: the uppercase probe creates no folder" test ! -e /sbx-hosttest-no-such-folder
+  run_standalone "$WORK/out.h03.upper" h03-variable-interpolation.sh FAKE_IMAGE_NAME_CHECK_OFF=1
+  expect "H-03: an up that is not refused for an uppercase name fails" failed_with "$CHECK_RC" "$WORK/out.h03.upper" "uppercase"
 }
 
 # --------------------------------------------------------------------------------

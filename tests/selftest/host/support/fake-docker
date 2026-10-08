@@ -17,6 +17,9 @@
 #   a missing working directory.
 # - Compose up then runs the real check_project_and_state_folders on the mounted folder; a refusal leaves an
 #   exited container behind, and docker logs prints what the check said.
+# - Compose up refuses an uppercase letter in the image name of the name-check service it reads from
+#   FAKE_REPO/compose.yml, before anything else, as Docker refuses such an image name. The order and the
+#   message are claims that the Mac run of H-03 confirms.
 #
 # Knobs, one line each:
 # FAKE_STATE: the folder that holds the fake container state (set by lib.sh)
@@ -37,6 +40,7 @@
 # FAKE_BUILD_FAIL: the image tag whose build fails
 # FAKE_UP_RC: a non-zero value makes compose up fail with that status
 # FAKE_FOLDER_CHECK_OFF: 1 makes compose up skip the project and state folder check, as an entrypoint that does not check would
+# FAKE_IMAGE_NAME_CHECK_OFF: 1 makes compose up skip that image name check, as a Compose that never inspects the image of a service without containers would
 # FAKE_H10: what compose up does when the sandbox folder is missing: honored, ignored, started, or other (it fails for a reason that is not the folder)
 # FAKE_NO_SYNC: 1 makes compose up skip the start hook
 # FAKE_SYNC_CLOBBERS: 1 makes compose up delete state/claude/skills and projects before the hook
@@ -106,6 +110,23 @@ has_container() {
 # --------------------------------------------------------------------------------
 compose_working_dir() {
   sed -n 's/^[[:space:]]*working_dir:[[:space:]]*//p' "$FAKE_REPO/compose.yml" | head -n 1 | tr -d '"' | sed 's/\${SBX_NAME}/hosttest/'
+}
+
+# --------------------------------------------------------------------------------
+# name_check_image: prints the image of FAKE_REPO/compose.yml that holds ${SBX_NAME}, without quotes, with ${SBX_NAME} replaced by SBX_NAME as given; prints nothing when there is no such line.
+# --------------------------------------------------------------------------------
+name_check_image() {
+  local imageLine
+  local placeholder='${SBX_NAME}'
+  local imageName
+
+  imageLine=$(sed -n 's/^[[:space:]]*image:[[:space:]]*//p' "$FAKE_REPO/compose.yml" | grep -F '${SBX_NAME}' | head -n 1 | tr -d '"')
+  if [ -z "$imageLine" ]; then
+    return 0
+  fi
+
+  imageName=${imageLine//"$placeholder"/${SBX_NAME:-}}
+  printf '%s\n' "$imageName"
 }
 
 # --------------------------------------------------------------------------------
@@ -217,9 +238,20 @@ run_folder_check() {
 # compose_up: starts the fake container and runs the real start hook, as the real entrypoint does.
 # --------------------------------------------------------------------------------
 compose_up() {
+  local imageName
+
   if [ -z "${SBX_DIR:-}" ]; then
     echo "required variable SBX_DIR is missing a value: SBX_DIR is required" >&2
     return 15
+  fi
+  if [ "${FAKE_IMAGE_NAME_CHECK_OFF:-0}" != 1 ]; then
+    imageName=$(name_check_image)
+    case "$imageName" in
+      *[A-Z]*)
+        echo "unable to get image '$imageName': Error response from daemon: invalid reference format: repository name (library/$imageName) must be lowercase" >&2
+        return 1
+        ;;
+    esac
   fi
   if [ ! -d "$SBX_DIR" ]; then
     case "${FAKE_H10:-honored}" in
