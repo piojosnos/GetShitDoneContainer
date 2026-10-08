@@ -1,18 +1,18 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 2
+current_phase: 02
 current_phase_name: Pinned Toolchain, GSD, and ccusage
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-10-08T07:47:12.513Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-10-08T18:13:46.181Z"
 last_activity: 2026-10-08
-last_activity_desc: Phase 01.5 complete, transitioned to Phase 2
-state_head: 6ede9b492e413f3124b1d581fbd32f1eef53afd0
+last_activity_desc: Phase 02 execution started
+state_head: 972e8859e83b976296b3c2ce24505d9f5f72fe78
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 53
-  completed_plans: 44
+  completed_plans: 45
   percent: 50
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-08)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 2: Pinned Toolchain, GSD, and ccusage
+**Current focus:** Phase 02 — Pinned Toolchain, GSD, and ccusage
 
 ## Current Position
 
-Phase: 2 (Pinned Toolchain, GSD, and ccusage) — READY TO EXECUTE
-Plan: Not started
+Phase: 02 (Pinned Toolchain, GSD, and ccusage) — EXECUTING
+Plan: 2 of 9
 Status: Ready to execute
-Last activity: 2026-10-08 — Phase 01.5 complete, transitioned to Phase 2
+Last activity: 2026-10-08 — Phase 02 execution started
 
 Progress: [████████████████████] 44/44 plans ([█████░░░░░] 50%)
 
@@ -105,6 +105,7 @@ Progress: [████████████████████] 44/44 p
 | Phase 01.5 P14 | 10 min | 2 tasks | 7 files |
 | Phase 01.5 P15 | 15 min | 2 tasks | 6 files |
 | Phase 01.5 P16 | 30 min | 3 tasks | 4 files |
+| Phase 02 P01 | 9 min | 3 tasks | 22 files |
 
 ## Accumulated Context
 
@@ -189,6 +190,8 @@ Recent decisions affecting current work:
 - [Phase 01.5]: Plan 15: the docs guard reads sandboxNamePattern and sandboxNameRuleText from base/sbx-start-lib.sh, so SANDBOX.md and compose.yml cannot drift from the check
 - [Phase 01.5]: Plan 15: the fake docker config answers as real Compose does (lowercase project name, exit 0, never a case refusal); the missing-variable messages are read from compose.yml
 - [Phase 01.5]: 01.5-16: the Mac run passed (21 checks, 36 guard rules); 1.1 WR-03 and 01.5 WR-01 to WR-04 recorded fixed, IN-01 to IN-07 stay open
+- [Phase 02]: versions.env is the only place versions live; build.sh sources ./versions.env and passes every name as a bare --build-arg to both builds — Adding or bumping a pin never changes build.sh; Dockerfiles carry no version defaults so a build that skips build.sh stops and names the missing pin
+- [Phase 02]: UBUNTU_IMAGE stays on the 24.04 tag until the plan 02 approval adds the digest; BASE_IMAGE=sbx-base:local is the only ARG default — A local tag is not a version; the digest needs human approval
 
 ### Pending Todos
 
@@ -233,6 +236,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-08T06:20:58.727Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-pinned-toolchain-gsd-and-ccusage/02-CONTEXT.md
+Last session: 2026-10-08T18:13:46.022Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None
