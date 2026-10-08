@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "01.5"
 current_phase_name: Host test fixes (INSERTED)
 status: executing
-stopped_at: Completed 01.5-14-PLAN.md
-last_updated: "2026-10-08T05:17:11.362Z"
+stopped_at: Completed 01.5-15-PLAN.md
+last_updated: "2026-10-08T05:22:57.134Z"
 last_activity: 2026-10-08
 last_activity_desc: Phase 01.5 execution started
-state_head: 6dcfb474d5a244d34ac9a7de16218bdf8e231e83
+state_head: 38d161a210ad014e86a268c966c612087afbed5f
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 44
-  completed_plans: 42
+  completed_plans: 43
   percent: 42
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 ## Current Position
 
 Phase: 01.5 (Host test fixes (INSERTED)) — EXECUTING
-Plan: 15 of 16
+Plan: 16 of 16
 Status: Ready to execute
 Last activity: 2026-10-08 — Phase 01.5 execution started
 
@@ -102,6 +102,7 @@ Progress: [████████████████████] 28/28 p
 | Phase 01.5 P12 | 25 min | 2 tasks | 11 files |
 | Phase 01.5 P13 | 6 min | 3 tasks | 7 files |
 | Phase 01.5 P14 | 10 min | 2 tasks | 7 files |
+| Phase 01.5 P15 | 15 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -183,6 +184,8 @@ Recent decisions affecting current work:
 - [Phase 01.5]: Sandbox name rule ^[a-z][a-z0-9-]{0,30}$ is defined once in base/sbx-start-lib.sh and enforced by the entrypoint right after the mount check; H-21 proves it on the real image
 - [Phase 01.5]: 01.5-13: run_timeout escalates SIGTERM, 5 s grace, SIGKILL on the pid list collected first (status 137); H-10 passes only when the refusal matches 'does not exist|no such file|bind source' (Mac assumption M4); reset_state uses ${WORK:?}
 - [Phase 01.5]: Plan 14: compose.yml gets a name-check service (scale 0, pull_policy never, image sbx-${SBX_NAME}-name-check) so up refuses an uppercase SBX_NAME at the image check; H-03 asserts it with a real up on a nonexistent folder (Mac assumptions M1, M2)
+- [Phase 01.5]: Plan 15: the docs guard reads sandboxNamePattern and sandboxNameRuleText from base/sbx-start-lib.sh, so SANDBOX.md and compose.yml cannot drift from the check
+- [Phase 01.5]: Plan 15: the fake docker config answers as real Compose does (lowercase project name, exit 0, never a case refusal); the missing-variable messages are read from compose.yml
 
 ### Pending Todos
 
@@ -227,6 +230,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-08T05:17:11.218Z
-Stopped at: Completed 01.5-14-PLAN.md
+Last session: 2026-10-08T05:22:56.991Z
+Stopped at: Completed 01.5-15-PLAN.md
 Resume file: None
