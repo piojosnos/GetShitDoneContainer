@@ -16,8 +16,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1.1: Automated host tests** (INSERTED) - One unattended command on the Mac runs every automatable host check (H-00 to H-13) with a PASS/FAIL line each; login, resume and doctor are a short manual pass with helper scripts (completed 2026-10-04)
 - [x] **Phase 1.2: Best-practices bundle baked into the image (stopgap)** (INSERTED) - New sandboxes start with the user's skills, standing rules, and shared memories installed, taken from files in this repo (completed 2026-10-05)
 - [x] **Phase 1.3: Shell script layout** (INSERTED) - Every shell script gets section banners, functions and an entry point, with no change in behaviour (completed 2026-10-05)
-- [ ] **Phase 1.4: Test suite refactor** (INSERTED) - The test suite gets a real Docker instead of a large fake one, is simplified and split into logical units
-- [ ] **Phase 1.5: Host test fixes** (INSERTED) - The known bugs in the host tests and entrypoint from earlier reviews are fixed, each proven against a real Docker
+- [x] **Phase 1.4: Test suite refactor** (INSERTED) - Every test suite is a folder run by its own `run-all.sh`, the fake docker is slim and in its own file, and the Mac run covers the success paths (completed 2026-10-06)
+- [x] **Phase 1.5: Host test fixes** (INSERTED) - The known bugs in the host tests and entrypoint from earlier reviews are fixed, each proven on the Mac (completed 2026-10-08)
 - [ ] **Phase 2: Pinned Toolchain, GSD, and ccusage** - Every tool is baked in at a version pinned in `versions.env`, the image's GSD wins over persisted state, and `ccusage` reports real usage
 - [ ] **Phase 2.1: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs
 - [ ] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login
@@ -143,34 +143,104 @@ Plans:
 
 ### Phase 01.4: Test suite refactor (INSERTED)
 
-**Goal**: The test suite is small enough to read and change. The root cause of its size is fixed: most of `tests/host-selftest.sh` is a fake docker that exists only because the dev sandbox has no real Docker. The suite is simplified and split into logical units, and the three big test scripts get the script layout rule. From the PR #9 review.
+**Goal**: The test suite is small enough to read and change. The fake docker that made up most of the old host self-test stays only to prove the failure paths, slim and in its own file, while the Mac run covers the success paths. The suite is simplified and split into logical units, and the three big test scripts get the script layout rule. From the PR #9 review.
 **Depends on**: Phase 1.3 (shared helpers and layout in the rest of the scripts)
 **Requirements**: TBD
 **Success Criteria** (what must be TRUE):
-  1. A decision on where the host checks run against a real Docker, recorded with its trade-offs. Candidates: a GitHub Actions runner (real Docker on Linux, ties in with Phase 6), or another isolated Docker the dev sandbox can reach. Giving the dev sandbox the host Docker socket is out: it is root on the Mac and defeats the isolation this project exists for.
-  2. With real Docker covering the host checks, the fake docker shrinks to what still needs it, or goes away. Whatever remains lives in its own file under `tests/host/support/`, not in a heredoc.
-  3. `tests/host-selftest.sh`, `tests/bundle-selftest.sh` and `tests/guard.sh` are split into logical units (one file per check group, a shared helpers library, a short runner), follow the script layout rule, and reuse `tests/host/lib.sh` and `tests/host/lib-bundle.sh` where they fit.
+  1. A decision on where the host checks run against a real Docker, recorded with its trade-offs. Decided: they run against real Docker on the user's Mac with Docker Desktop (`bash tests/host/run-all.sh`). Docker inside the dev sandbox was checked and rejected: privileged mode is effectively the host socket, and seccomp unconfined with rootless Podman weakens the isolation. A GitHub Actions runner, a dind sidecar or a separate VM are too complex for this project. Giving the dev sandbox the host Docker socket stays out: it is root on the Mac and defeats the isolation this project exists for.
+  2. The Mac run covers the success paths; the slim fake covers the failure paths. What remains of the fake lives in its own file, `tests/selftest/host/support/fake-docker`, not in a heredoc.
+  3. The guard, the host self-test, the bundle self-test and the entrypoint self-test are each a folder (`tests/guard/`, `tests/selftest/host/`, `tests/selftest/bundle/`, `tests/selftest/entrypoint/`) with a short `run-all.sh`, shared helper libraries and one file per check group. They follow the script layout rule and reuse `tests/host/lib.sh` and `tests/host/lib-bundle.sh` where they fit. The old single-file scripts are gone.
   4. Every check that runs today still runs and still catches what it catches today (the deliberately broken cases still fail), and `tests/host/run-all.sh` passes on the Mac.
 
-**Plans:** 0 plans
+**Plans:** 8/8 plans complete
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 01.4 to break down)
+**Wave 1**
+- [x] 01.4-01-PLAN.md: Tracer: proof harness, shared self-test library, entrypoint suite as a folder (byte-identical)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 01.4-02-PLAN.md: Bundle self-test as a folder of seven groups; H-18 and fake API headers point at it
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 01.4-03-PLAN.md: Slim fake docker in its own file (proven equivalent), host self-test folder, first eight checks
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 01.4-04-PLAN.md: Host self-test: restart chain, library units, H-06, H-14, H-15
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 01.4-05-PLAN.md: New end-of-run text with its cases, last host groups, old script removed, mutation proof
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 01.4-06-PLAN.md: Guard as a folder of seven rule groups; moved path lists proven by planted violations
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 01.4-07-PLAN.md: Checklist and SANDBOX.md wording; roadmap and requirements text (separate planning branch)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 01.4-08-PLAN.md: Final gate, then the Mac run of tests/host/run-all.sh (checkpoint)
 
 ### Phase 01.5: Host test fixes (INSERTED)
 
-**Goal**: The known bugs in the host tests and the entrypoint, found by the Phase 1 and Phase 1.1 code reviews, are fixed and each fix is proven against a real Docker. Kept out of Phase 1.3 so that identical output stays the proof of a safe restructure, and placed after Phase 1.4 so a real Docker can prove the fixes. From the Phase 1.3 discussion.
-**Depends on**: Phase 1.4 (a real Docker for the host checks)
+**Goal**: The known bugs in the host tests and the entrypoint, found by the Phase 1 and Phase 1.1 code reviews, are fixed and each fix is proven on the Mac. Kept out of Phase 1.3 so that identical output stays the proof of a safe restructure, and placed after Phase 1.4, which settled that the host checks run on the Mac. From the Phase 1.3 discussion.
+**Depends on**: Phase 1.4 (the new test suite layout)
 **Requirements**: TBD
 **Success Criteria** (what must be TRUE):
   1. Every open finding in `01-REVIEW-DISPOSITION.md` and `01.1-REVIEW-DISPOSITION.md` is fixed or explicitly closed with a reason. This includes `run_timeout` not stopping a shell function (01.1 CR-01), the flaky H-09 volume compare (01.1 WR-02), Coexistence false FAIL and false PASS (01.1 WR-05), H-13 treating any exec failure as success (01.1 WR-08), and the entrypoint's dead "project folder missing" check (01 WR-01).
-  2. Each fix has a test that fails before the fix and passes after it, run against a real Docker where the bug needs one.
+  2. Each fix has a test that fails before the fix and passes after it, run on the Mac where the bug needs Docker.
   3. `tests/host/run-all.sh` passes on the Mac.
 
-**Plans:** 0 plans
+**Plans:** 16/16 plans complete
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 01.5 to break down)
+**Wave 1**
+- [x] 01.5-01-PLAN.md: Tracer: code branch, then the self-test assertions and the guard scans fail closed; new guard self-test suite
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 01.5-02-PLAN.md: Guard rules for runner lists, finding IDs and blank lines before control flow
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 01.5-03-PLAN.md: run_timeout stops a shell function and its children; H-08 leaves nothing running; a check acts only on its own run's sandbox
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 01.5-04-PLAN.md: The run names the Docker it uses; Compose variables scrubbed; every compose call reads no .env
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 01.5-05-PLAN.md: Coexistence compares with the start of the run; H-09 scoped volumes; H-13 exec status
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 01.5-06-PLAN.md: H-03 name checks; H-01 platform phrases and logs; H-02 requires added layers
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 01.5-07-PLAN.md: Entrypoint moves into the project folder; mount point wording; unwritable state refused; literal state names
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 01.5-08-PLAN.md: Checks pass -w for the project folder; run-unique names in H-05 and H-06
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [x] 01.5-09-PLAN.md: compose.yml starts in the workspace; new check H-20 (mistyped name refused, nothing created); Dockerfile comment
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [x] 01.5-10-PLAN.md: SANDBOX.md and the checklist promise only what happens (-w, H-20, absolute SBX_DIR, what a green run covers)
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [x] 01.5-11-PLAN.md: Final gate with every red commit re-proven, the Mac run (checkpoint), then the dispositions
+
+Gap closure, from the 01.5-11 Mac run (H-03 failed: Compose lowercases an uppercase SBX_NAME, 19 of 20):
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [x] 01.5-12-PLAN.md: The sandbox name rule in the entrypoint with a clear error; new check H-21 proves it with the real image
+
+**Wave 13** *(blocked on Wave 12 completion)*
+- [x] 01.5-13-PLAN.md: run_timeout escalates to SIGKILL; H-10 checks the reason of its refusal; reset_state refuses an empty work folder
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [x] 01.5-14-PLAN.md: A name-check service makes up refuse an uppercase SBX_NAME before anything is created; H-03 asserts that refusal; a guard rule keeps it
+
+**Wave 15** *(blocked on Wave 14 completion)*
+- [x] 01.5-15-PLAN.md: SANDBOX.md, compose.yml and the checklist state the name rule; the fake docker models only real Compose; two guard rules
+
+**Wave 16** *(blocked on Wave 15 completion)*
+- [x] 01.5-16-PLAN.md: Final gate with the new red commits re-proven, the Mac run (checkpoint, 21 checks), then the dispositions
 
 ### Phase 2: Pinned Toolchain, GSD, and ccusage
 
@@ -248,15 +318,15 @@ Plans:
 
 ### Phase 6: Automated checks (CI)
 
-**Goal**: The repo's automated checks run on their own. GitHub runs `tests/guard.sh` on every push to a PR and shows the result as a check on the PR, without running anything on the Mac or in a sandbox container.
+**Goal**: The repo's automated checks run on their own. GitHub runs `bash tests/guard/run-all.sh` on every push to a PR and shows the result as a check on the PR, without running anything on the Mac or in a sandbox container.
 **Mode:** mvp
 **Depends on**: Phase 5
 **Requirements**: CI-01
 **Success Criteria** (what must be TRUE):
-  1. Every push to a PR runs `tests/guard.sh` on GitHub's machines, and the PR shows it as a passing or failing check.
+  1. Every push to a PR runs `bash tests/guard/run-all.sh` on GitHub's machines, and the PR shows it as a passing or failing check.
   2. Breaking a guard rule on a PR branch turns the check red; fixing it turns it green.
   3. Nothing runs on the Mac or in a sandbox container: no git hook, nothing the agent could edit that the Mac executes.
-  4. Running `bash tests/guard.sh` by hand still works the same way.
+  4. Running `bash tests/guard/run-all.sh` by hand still works the same way.
   5. Candidates to add when planned: shellcheck for the scripts, hadolint for the Dockerfiles.
 
 **Plans**: TBD
@@ -272,8 +342,8 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 1.1. Automated host tests | 4/4 | Complete    | 2026-10-04 |
 | 1.2. Best-practices bundle baked into the image (stopgap) | 6/6 | Complete    | 2026-10-05 |
 | 1.3. Shell script layout | 6/6 | Complete    | 2026-10-05 |
-| 1.4. Test suite refactor | 0/TBD | Not started | - |
-| 1.5. Host test fixes | 0/TBD | Not started | - |
+| 1.4. Test suite refactor | 8/8 | Complete    | 2026-10-06 |
+| 1.5. Host test fixes | 16/16 | Complete    | 2026-10-08 |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
@@ -283,10 +353,11 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 
 ## Backlog
 
-### Phase 999.1: Follow-up: Phase 01.3 deferred UAT follow-up: Test 4 (BACKLOG)
+### Phase 999.2: Retire the fake docker (BACKLOG)
 
-**Goal:** Resolve the UAT checkpoint deferred during Phase 01.3 verification
-**Source phase:** 01.3
-**Deferred at:** 2026-10-05 during /gsd-verify-work 01.3 session completion
-**Follow-ups:**
-- [ ] Test 4: The rest of manual tests are a pain to run; we either automate them (not worth it for now), find another way to test them, or test much less frequently (deferred 2026-10-05). The manual helpers h09, h13 and h19 were not run in Phase 01.3; Phase 1.4 runs the whole test suite anyway, and should settle when each manual helper must run.
+**Goal:** Run the host checks against real Docker from the agent side, so `tests/selftest/host/support/fake-docker` and its self-test can be deleted. The fake is too complex to own long term.
+**Source phase:** 01.4
+**Deferred at:** 2026-10-06
+**Options:**
+- [ ] Docker-in-Docker in the dev sandbox, accepting the isolation trade-off and changing only that container.
+- [ ] GitHub Actions on each PR, which ties in with Phase 6.

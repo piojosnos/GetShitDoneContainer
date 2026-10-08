@@ -1,43 +1,43 @@
 ---
 gsd_state_version: "1.0"
-current_phase: "01.4"
-current_phase_name: Test suite refactor
+current_phase: 2
+current_phase_name: Pinned Toolchain, GSD, and ccusage
 status: planning
-stopped_at: Phase 01.3 complete, ready to plan Phase 01.4
-last_updated: "2026-10-05T22:03:11.392Z"
-last_activity: 2026-10-05
-last_activity_desc: Phase 01.3 complete, transitioned to Phase 01.4
-state_head: 010e206a3aabb13ee5df0425f57b7118a2e25c3c
+stopped_at: Phase 01.5 complete, ready to plan Phase 2
+last_updated: "2026-10-08T05:37:38.971Z"
+last_activity: 2026-10-08
+last_activity_desc: Phase 01.5 complete, transitioned to Phase 2
+state_head: 5cfd5a41e94087d65af7cdddd00d3f11f7f85b02
 progress:
   total_phases: 12
-  completed_phases: 4
-  total_plans: 20
-  completed_plans: 20
-  percent: 33
+  completed_phases: 6
+  total_plans: 44
+  completed_plans: 44
+  percent: 50
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-05)
+See: .planning/PROJECT.md (updated 2026-10-08)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 01.4: Test suite refactor (INSERTED)
+**Current focus:** Phase 2: Pinned Toolchain, GSD, and ccusage
 
 ## Current Position
 
-Phase: 01.4 — Test suite refactor
+Phase: 2 — Pinned Toolchain, GSD, and ccusage
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-05 — Phase 01.3 complete, transitioned to Phase 01.4
+Last activity: 2026-10-08 — Phase 01.5 complete, transitioned to Phase 2
 
-Progress: [███░░░░░░░] 33%
+Progress: [████████████████████] 44/44 plans ([█████░░░░░] 50%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
+- Total plans completed: 44
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -49,6 +49,8 @@ Progress: [███░░░░░░░] 33%
 | 1 | 4 | - | - |
 | 01.2 | 6 | - | - |
 | 01.3 | 6 | - | - |
+| 01.4 | 8 | - | - |
+| 01.5 | 16 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -79,6 +81,30 @@ Progress: [███░░░░░░░] 33%
 | Phase 01.3 P04 | 15 min | 2 tasks | 6 files |
 | Phase 01.3 P06 | 13 min | 2 tasks | 4 files |
 | Phase 01.3 P05 | 12 min | 2 tasks | 5 files |
+| Phase 01.4 P01 | 5 min | 2 tasks | 10 files |
+| Phase 01.4 P02 | 7 min | 3 tasks | 15 files |
+| Phase 01.4 P03 | 13 min | 3 tasks | 13 files |
+| Phase 01.4 P04 | 5 min | 3 tasks | 11 files |
+| Phase 01.4 P05 | 10 min | 3 tasks | 11 files |
+| Phase 01.4 P06 | 15 min | 3 tasks | 12 files |
+| Phase 01.4 P07 | 12 min | 2 tasks | 6 files |
+| Phase 01.4 P01.4-08 | 35 min | 2 tasks | 1 files |
+| Phase 01.5 P01 | 12 min | 3 tasks | 10 files |
+| Phase 01.5 P02 | 14 min | 2 tasks | 14 files |
+| Phase 01.5 P03 | 25 min | 3 tasks | 9 files |
+| Phase 01.5 P04 | 20 min | 2 tasks | 11 files |
+| Phase 01.5 P05 | 25 min | 3 tasks | 12 files |
+| Phase 01.5 P06 | 20min | 2 tasks | 8 files |
+| Phase 01.5 P07 | 15 min | 2 tasks | 6 files |
+| Phase 01.5 P08 | 25 min | 3 tasks | 11 files |
+| Phase 01.5 P09 | 20 min | 2 tasks | 14 files |
+| Phase 01.5 P10 | 15 min | 2 tasks | 4 files |
+| Phase 01.5 P11 | 35 min | 3 tasks | 5 files |
+| Phase 01.5 P12 | 25 min | 2 tasks | 11 files |
+| Phase 01.5 P13 | 6 min | 3 tasks | 7 files |
+| Phase 01.5 P14 | 10 min | 2 tasks | 7 files |
+| Phase 01.5 P15 | 15 min | 2 tasks | 6 files |
+| Phase 01.5 P16 | 30 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -124,6 +150,45 @@ Recent decisions affecting current work:
 - [Phase 01.3]: restart_test_sandbox lives in lib-sandbox.sh because H-08 and H-16 carried identical code and messages; H-09 and H-11 sentinel loops stay local
 - [Phase 01.3]: 01.3-06: the entrypoint stops at the first non-executable start hook (after earlier hooks ran), behind a BASH_SOURCE source guard; no env override of hookDir
 - [Phase 01.3]: 01.3-05: lib-manual.sh lives in tests/host/manual/ (the guard forbids read and tty flags in tests/host/*.sh); the attended helpers start with lib-manual.sh, require_terminal, then lib.sh and host_init
+- [Phase 01.4]: 01.4-01: entrypoint suite output is byte-identical to the old script; prove.sh uses exact mode for entrypoint and sorted case lines for guard, bundle and host; make_work_folder resolves the physical path only after the traps are installed
+- [Phase 01.4]: Bundle self-test cases moved byte for byte; helpers got banners; guard file list and host checklist name tests/selftest/bundle
+- [Phase 01.4]: The fake docker is its own file with every retained knob in one header table; only the three knobs no case sets are dropped, so no self-test case is dropped
+- [Phase 01.4]: fake-transcript.sh builds both fake transcripts under fresh state folders instead of removing old ones, so its only removal is the sbx-fake14 case branch
+- [Phase 01.4]: Plan 04 moves host sections by locating each by its echo header (baseline line numbers shifted after plan 03) and rewrites groupList in final relative order each task
+- [Phase 01.4]: The Mac runner's end-of-run text names the cleanup command and tests/host/manual/; the helpers are no longer listed as an ordered pass (plan 05)
+- [Phase 01.4]: The planning-id guard rule scans tests/selftest/host/ instead of the removed tests/host-selftest.sh (plan 05); plan 06 keeps the new folder in that path list
+- [Phase 01.4]: Guard split: the old guard sourced tests/guard/lib.sh until it was removed, so every rule function and constant was defined exactly once at each step and rules.sh could prove bodies byte for byte against the baseline
+- [Phase 01.4]: Guard path lists: no_compromised_gsd_package and host_tests_have_no_planning_ids scan tests/selftest/*.sh, tests/selftest/*/*.sh and tests/selftest/*/support/*; 14 planted violations prove every location is still scanned
+- [Phase 01.4]: The host checks run against real Docker on the Mac; run-all.sh passing is the gate and the manual helpers are diagnostic tools
+- [Phase 01.4]: Backlog 999.1 closed by the diagnostic-helper decision; retiring the slim fake docker is backlog 999.2
+- [Phase 01.4]: 01.4-08: the Mac run of tests/host/run-all.sh (19 passed, 0 failed, 0 not run) and the guard on stock bash is the real-Docker gate; only the run from the code worktree at a821736 counts
+- [Phase 01.5]: 01.5-01: code branch fix/phase-01.5-host-test-fixes is cut from main at 79d819b (PR #13 merge); the code PR targets main
+- [Phase 01.5]: 01.5-01: negative assertions (lacks_text, lacks_match) and guard scan helpers (nowhere_matches, host rules) fail closed on missing input; guard self-test suite is tests/selftest/guard/; a truncating redirect stays allowed by the delete rule
+- [Phase 01.5]: Suite-list self-test cases assert exit status 1, so a missing rule group (status 127) cannot satisfy a failing-guard case
+- [Phase 01.5]: plant_block added beside plant_lines: contiguous planted lines are needed to test a missing blank line
+- [Phase 01.5]: grep -P guard term matches as a whole word so pgrep -P is allowed (host side tree kill uses pgrep -P only)
+- [Phase 01.5]: Sandbox identity is split: loose rule for cleanup (mount or its parent named sbx-hosttest-*), strict rule before a check acts (mount folder name equals RUN name)
+- [Phase 01.5]: Plan 04: compose guard regex is compose([[:space:]].*)?[[:space:]]-f[[:space:]] so a plain 'docker compose -f' call is matched; DOCKER_HOST and DOCKER_CONTEXT stay set and are printed, not unset (D-12)
+- [Phase 01.5]: A failed docker ps at the start of a run is fatal; a failed git at the start is an INFO line and Coexistence reports it at the end
+- [Phase 01.5]: The old folder snapshot uses tree hashes of ClaudeCode/ and OpenCode/ at HEAD plus git status, so a commit made elsewhere during a run is not a change
+- [Phase 01.5]: H-03 asserts a non-zero status plus the words 'project name' for the uppercase probe, never the full Compose message (wording differs by version)
+- [Phase 01.5]: H-03 name probes are config only (SBX_DIR=/sbx-hosttest-config-only, --env-file /dev/null); the runner log cases allow exactly two such lines
+- [Phase 01.5]: H-01 scans only build-*, rebuild-* and compose-up logs, one file at a time, for the two platform warning phrases
+- [Phase 01.5]: Workspace check says 'is not a mount point' and does not reject tmpfs (Docker Desktop file system type never observed)
+- [Phase 01.5]: enter_project_folder runs after the start hooks, so hooks keep running in the start folder; unwritable state message matches the workspace message
+- [Phase 01.5]: H-05 and H-06 use a run-unique file name and git identity, so a stale file or identity left by an earlier run cannot pass
+- [Phase 01.5]: Checks that depend on the start folder pass -w through in_project or docker exec -w PROJECT_DIR; the fake docker follows compose.yml working_dir by default and FAKE_WORKDIR models a workspace start
+- [Phase 01.5]: compose.yml working_dir is the mount point /home/sandbox/workspace; the entrypoint checks workspace/NAME, so a mistyped SBX_NAME is refused and Docker creates nothing on the Mac (H-20 proves it) — Docker creates a missing working directory, which put an empty NAME/ on the Mac
+- [Phase 01.5]: No env_file sentinel; base/Dockerfile says Compose may still create a missing sandbox folder and the entrypoint then refuses — The old comment promised that nothing is created on the Mac, which is not true on every Compose version
+- [Phase 01.5]: The checklist guard rule derives its expected IDs from the h??-*.sh file names and the chainCheckList line, so a new check or a reordered chain fails the guard until the checklist follows
+- [Phase 01.5]: Docs state that a green run does not cover the login or Claude behaviour; H-07, the second half of H-09, the doctor part of H-13 and H-19 are helper-only
+- [Phase 01.5]: 01.5-11: Mac run of ebfa086 gave 19 passed, 1 failed (H-03 uppercase SBX_NAME, Compose 2.40 lowercases the project name instead of refusing it, so assumption A1 was wrong); the phase gate is not met and 1.1 WR-03 stays open for a gap-closure plan
+- [Phase 01.5]: Sandbox name rule ^[a-z][a-z0-9-]{0,30}$ is defined once in base/sbx-start-lib.sh and enforced by the entrypoint right after the mount check; H-21 proves it on the real image
+- [Phase 01.5]: 01.5-13: run_timeout escalates SIGTERM, 5 s grace, SIGKILL on the pid list collected first (status 137); H-10 passes only when the refusal matches 'does not exist|no such file|bind source' (Mac assumption M4); reset_state uses ${WORK:?}
+- [Phase 01.5]: Plan 14: compose.yml gets a name-check service (scale 0, pull_policy never, image sbx-${SBX_NAME}-name-check) so up refuses an uppercase SBX_NAME at the image check; H-03 asserts it with a real up on a nonexistent folder (Mac assumptions M1, M2)
+- [Phase 01.5]: Plan 15: the docs guard reads sandboxNamePattern and sandboxNameRuleText from base/sbx-start-lib.sh, so SANDBOX.md and compose.yml cannot drift from the check
+- [Phase 01.5]: Plan 15: the fake docker config answers as real Compose does (lowercase project name, exit 0, never a case refusal); the missing-variable messages are read from compose.yml
+- [Phase 01.5]: 01.5-16: the Mac run passed (21 checks, 36 guard rules); 1.1 WR-03 and 01.5 WR-01 to WR-04 recorded fixed, IN-01 to IN-07 stay open
 
 ### Pending Todos
 
@@ -134,11 +199,14 @@ None yet.
 - [Phase 1]: Until Phase 3 there are no scripts, so the sandbox runs from a documented `docker compose` command
 - [Phase 2]: Confirm that ccusage's native binary is executable (chmod) on arm64 (DISABLE_UPDATES was confirmed by `claude doctor` in the Phase 1.1 Mac run)
 - [Phase 5]: Decide whether SCR-08 ("remove whole-home-mount layout") also covers the out-of-scope `OpenCode/` directory, or whether it stays for the next milestone
-- [Phase 1]: Re-review left 7 findings open (WR-01: the missing-project-folder check in base/sbx-entrypoint cannot fire because compose working_dir creates the folder; WR-02: base/Dockerfile comment overclaims create_host_path; WR-03: Claude Code has no integrity hash). See 01-REVIEW-DISPOSITION.md
+- [Phase 1]: Review findings: 0 open, 2 deferred with reasons (WR-03: Claude Code has no integrity hash). See 01-REVIEW-DISPOSITION.md
 - [Phase 1]: SC3 says rebuild with `--no-cache`; the Mac run did not record it. One run of `bash tests/host/manual/h09-rebuild-resume.sh --no-cache` would confirm
-- [Phase 1.1]: Code review left 14 findings open (CR-01: run_timeout does not stop a docker call behind a shell function; WR-01..08 robustness). See 01.1-REVIEW-DISPOSITION.md
+- [Phase 1.1]: Review findings: 0 open (13 fixed, 1 deferred); WR-03 was closed by the Phase 1.5 Mac run. See 01.1-REVIEW-DISPOSITION.md
 - [Phase 1.2]: Code review left 13 findings open (WR-01..03 are bugs in the ported pr-reply and merged skills; WR-04 was fixed in Phase 1.3; WR-05 deny negative control fits Phase 1.4). See 01.2-REVIEW-DISPOSITION.md
-- [Phase 1.3]: Code review left 4 findings open (WR-02: run_timeout does not stop a shell function it wraps, same as the Phase 1.1 CR-01 and planned for Phase 1.5; IN-01..03 style and self-test coverage). See 01.3-REVIEW-DISPOSITION.md
+- [Phase 1.3]: Code review left 2 info findings open (IN-02, IN-03: style and self-test coverage); WR-02 run_timeout was fixed in Phase 1.5. See 01.3-REVIEW-DISPOSITION.md
+- [Phase 1.4]: Code review left 7 findings open (WR-03, WR-04, IN-01 to IN-05); WR-01, WR-02, WR-05 and WR-06 were fixed in Phase 1.5. See 01.4-REVIEW-DISPOSITION.md
+- [Phase 1.4]: Open note: the user's Mac `git status` listed 10 files as modified in the code worktree while the sandbox shows it clean; cause pending
+- [Phase 1.5]: The H-03 gap is closed: plans 12 to 15 added the entrypoint name rule and the Compose name check, and the Mac run of 01.5-16 passed 21 of 21 checks. 01.5 IN-01 to IN-07 stay open. See 01.5-16-SUMMARY.md
 
 ### Quick Tasks Completed
 
@@ -165,6 +233,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-05T04:56:01.095Z
-Stopped at: Phase 01.3 complete, ready to plan Phase 01.4
+Last session: 2026-10-08T05:31:26.717Z
+Stopped at: Phase 01.5 complete, ready to plan Phase 2
 Resume file: None

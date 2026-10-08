@@ -1,0 +1,3 @@
+# Self-test cases renamed on purpose, one per line: old name, a tab, new name.
+runner: healthy run prints the manual pass commands	runner: healthy run points at tests/host/manual/ for diagnosis
+runner: healthy run prints the bundle behaviour helper	runner: healthy run no longer lists the helpers as a pass to run
