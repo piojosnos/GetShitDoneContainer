@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of the negative assertions: lacks_text, lacks_match and fails are false on input they cannot use.
+# Self-test of the negative assertions: lacks_text, lacks_match and fails are false on input they cannot use; reset_state refuses an empty work folder.
 # - Run by run-all.sh; runs alone too.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
 # - Usage, from anywhere: bash tests/selftest/host/assertions.sh   (exit 0 = every case passes)
@@ -30,9 +30,40 @@ case_negative_assertions() {
 }
 
 # --------------------------------------------------------------------------------
+# Case: reset_state refuses an empty work folder
+# --------------------------------------------------------------------------------
+# rm and mkdir are replaced by functions that only record their arguments, so this case deletes nothing.
+case_reset_state_guard() {
+  echo "--- reset_state with an empty work folder"
+
+  local callLog="$WORK/reset.calls"
+  local resetLog="$WORK/reset.log"
+  local resetErr="$WORK/reset.err"
+  local resetStatus
+
+  : >"$callLog"
+  (
+    rm() {
+      printf 'rm %s\n' "$*" >>"$callLog"
+    }
+    mkdir() {
+      printf 'mkdir %s\n' "$*" >>"$callLog"
+    }
+    FAKE_LOG="$resetLog"
+    WORK=""
+    reset_state
+  ) 2>"$resetErr"
+  resetStatus=$?
+
+  expect "reset_state: an empty work folder is refused" test "$resetStatus" -ne 0
+  expect "reset_state: an empty work folder removes and makes nothing" test ! -s "$callLog"
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 start_group || exit 1
 case_negative_assertions
+case_reset_state_guard
 finish_cases
