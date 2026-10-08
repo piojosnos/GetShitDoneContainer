@@ -8,6 +8,7 @@
 #   whole file first.
 # - A missing variable stops Compose with an error naming it, before anything is created.
 # - A mistyped SBX_NAME is refused by the container start, and nothing is created.
+# - An SBX_NAME with an uppercase letter is refused by up before anything is created (the name-check service).
 # - Never ask "down" to remove volumes. There are none; all data is in $SBX_DIR on the Mac.
 name: "sbx-${SBX_NAME:?SBX_NAME is required (lowercase letters, digits, - and _)}"
 
@@ -46,3 +47,13 @@ services:
         target: /home/sandbox/workspace
         bind:
           create_host_path: false
+
+  # The name check never runs a container (scale 0, never pulled).
+  # - Its image name holds SBX_NAME, and Docker refuses an image name with an uppercase letter,
+  #   so up stops while it checks the images, before it creates or replaces anything.
+  # - Compose itself would turn the project name into lowercase and go on, so Foo would replace
+  #   the container of foo.
+  name-check:
+    image: "sbx-${SBX_NAME}-name-check"
+    pull_policy: never
+    scale: 0
