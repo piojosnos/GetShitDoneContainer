@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of the sandbox rules: the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build.
+# Self-test of the sandbox rules: the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder, and fail when the name-check service is gone or can run a container; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build.
 # - Run by run-all.sh; runs alone too.
 # - Runs the real tests/guard/start.sh and tests/guard/docs.sh inside a scratch copy of the tree, so a planted problem never touches the real files.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
@@ -33,6 +33,17 @@ case_start_rules() {
   expect "sandbox rules: a working_dir under the project folder fails" has_text "$WORK/start-under.out" "FAIL: compose_starts_in_the_workspace"
   expect "sandbox rules: that working_dir line is named" has_text "$WORK/start-under.out" 'working_dir: "/home/sandbox/workspace/${SBX_NAME}"'
   expect "sandbox rules: a working_dir under the project folder exits non-zero" test "$GUARD_RC" -ne 0
+
+  make_scratch_repo || return 1
+  edit_scratch_file compose.yml 's/^\( *\)scale: 0$/\1scale: 1/' || return 1
+  run_scratch_guard "$WORK/start-scaled.out" start.sh
+  expect "sandbox rules: a name check that can run a container fails" has_text "$WORK/start-scaled.out" "FAIL: compose_checks_the_name_before_it_acts"
+
+  make_scratch_repo || return 1
+  edit_scratch_file compose.yml '/image: "sbx-${SBX_NAME}-name-check"/d' || return 1
+  run_scratch_guard "$WORK/start-nocheck.out" start.sh
+  expect "sandbox rules: a compose.yml without the name check fails" has_text "$WORK/start-nocheck.out" "FAIL: compose_checks_the_name_before_it_acts"
+  expect "sandbox rules: a missing name check exits non-zero" test "$GUARD_RC" -ne 0
 }
 
 # --------------------------------------------------------------------------------

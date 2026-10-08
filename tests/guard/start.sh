@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Guard rules on the container start: nothing is installed at start, and start hooks have orderly names.
+# Guard rules on the container start: nothing is installed at start, start hooks have orderly names, and Compose checks the sandbox name before it acts.
 # - Run by tests/guard/run-all.sh; runs alone too.
 # - Usage, from anywhere: bash tests/guard/start.sh   (exit 0 = every rule holds)
 set -u
@@ -60,6 +60,45 @@ compose_starts_in_the_workspace() {
 }
 
 # --------------------------------------------------------------------------------
+# compose_checks_the_name_before_it_acts: compose.yml keeps the name-check service: its image name holds SBX_NAME, so up refuses an uppercase letter before it creates anything, and it never runs a container (scale 0, never pulled, no mount, port or command)
+# --------------------------------------------------------------------------------
+# The block runs from the line "  name-check:" to the next line indented by two spaces or less.
+compose_checks_the_name_before_it_acts() {
+  local ok=0
+  local blockText
+  local trimmedText
+  local requiredLine
+
+  blockText=$(awk '
+    /^  name-check:[[:space:]]*$/ { inBlock = 1; next }
+    inBlock && /^[[:space:]]*$/ { next }
+    inBlock && (/^[^ ]/ || /^ [^ ]/ || /^  [^ ]/) { inBlock = 0 }
+    inBlock { print }
+  ' $COMPOSE)
+
+  if [ -z "$blockText" ]; then
+    echo "    $COMPOSE has no name-check service"
+    return 1
+  fi
+
+  trimmedText=$(printf '%s\n' "$blockText" | sed 's/^[[:space:]]*//')
+
+  for requiredLine in 'image: "sbx-${SBX_NAME}-name-check"' 'pull_policy: never' 'scale: 0'; do
+    if ! printf '%s\n' "$trimmedText" | grep -Fxq -- "$requiredLine"; then
+      echo "    the name-check service in $COMPOSE lacks the line: $requiredLine"
+      ok=1
+    fi
+  done
+
+  if printf '%s\n' "$trimmedText" | grep -Eq '^(volumes|ports|command|entrypoint):'; then
+    echo "    the name-check service in $COMPOSE must not run anything: $(printf '%s\n' "$trimmedText" | grep -E '^(volumes|ports|command|entrypoint):' | head -n 1)"
+    ok=1
+  fi
+
+  return "$ok"
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -67,4 +106,5 @@ enter_repo_root || exit 1
 run_rules \
   no_installs_at_container_start \
   start_hooks_have_two_digit_names \
-  compose_starts_in_the_workspace || exit 1
+  compose_starts_in_the_workspace \
+  compose_checks_the_name_before_it_acts || exit 1
