@@ -61,10 +61,26 @@ kill_tree() {
 }
 
 # --------------------------------------------------------------------------------
-# run_timeout SECONDS CMD...: runs CMD; after SECONDS stops it and everything it started; returns 143 on timeout.
+# any_alive PID...: true when at least one of the pids still exists
+# --------------------------------------------------------------------------------
+any_alive() {
+  local checkedPid
+
+  for checkedPid in "$@"; do
+    if kill -0 "$checkedPid" 2>/dev/null; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+# --------------------------------------------------------------------------------
+# run_timeout SECONDS CMD...: runs CMD; after SECONDS stops it and everything it started with SIGTERM, then with SIGKILL after a 5 s grace; returns 143 on timeout, or 137 when it had to be killed.
 # --------------------------------------------------------------------------------
 run_timeout() {
   local seconds=$1
+  local graceSeconds=5
   local commandPid watcherPid exitCode
 
   shift
@@ -81,13 +97,35 @@ run_timeout() {
       fi
       elapsedSeconds=$((elapsedSeconds + 1))
     done
-    kill_tree "$commandPid"
+
+    # The list is taken before the first signal: children are re-parented once their parent dies.
+    pidList=$(tree_pids "$commandPid")
+
+    # The list is left unquoted on purpose: kill takes one argument per pid.
+    kill $pidList 2>/dev/null
+    graceElapsed=0
+
+    while [ "$graceElapsed" -lt "$graceSeconds" ]; do
+      sleep 1
+
+      if ! any_alive $pidList; then
+        exit 0
+      fi
+      graceElapsed=$((graceElapsed + 1))
+    done
+    kill -9 $pidList 2>/dev/null
   ) >/dev/null 2>&1 &
   watcherPid=$!
   wait "$commandPid"
   exitCode=$?
-  kill_tree "$watcherPid"
-  wait "$watcherPid" 2>/dev/null
+
+  # 143 and 137 can mean the watcher is still in its grace loop; it ends on its own. Any other status stops it at once.
+  if [ "$exitCode" -eq 143 ] || [ "$exitCode" -eq 137 ]; then
+    wait "$watcherPid" 2>/dev/null
+  else
+    kill_tree "$watcherPid"
+    wait "$watcherPid" 2>/dev/null
+  fi
 
   return "$exitCode"
 }
