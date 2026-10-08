@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # H-10: starting the sandbox on a folder that does not exist is refused.
 # - The missing folder is $RUN/does-not-exist, so the printed cleanup removes it if Docker creates it.
-# - Three outcomes, three different lines:
-#     refused and the folder was not created                    PASS
-#     refused, but Docker created the folder (the flag ignored) FAIL
-#     the sandbox started on the missing folder                 FAIL
+# - Four outcomes, four different lines:
+#     refused and the folder was not created                       PASS
+#     refused, but Docker created the folder (the flag ignored)    FAIL
+#     the sandbox started on the missing folder                    FAIL
+#     refused for another reason (a time limit, a missing image)   FAIL
 # - A FAIL here can be a correct report about Docker Compose. The script never edits
 #   compose.yml and never removes the folder.
 # - Always ends with the real test sandbox started again.
@@ -53,7 +54,7 @@ restart_real_sandbox() {
 }
 
 # --------------------------------------------------------------------------------
-# Reports one of the three outcomes; see the header
+# Reports one of the four outcomes; see the header
 # --------------------------------------------------------------------------------
 report_outcome() {
   local lastLines
@@ -70,6 +71,12 @@ report_outcome() {
     fail H-10 "Docker created $badDir (create_host_path ignored); the entrypoint still refused (rc=$upStatus). Compose $composeVersion.$restartNote" \
       "last output: $lastLines" \
       "the printed cleanup removes the run folder, and the path with it"
+    return 1
+  fi
+
+  if ! printf '%s\n' "$upOutput" | grep -Eqi 'does not exist|no such file|bind source'; then
+    fail H-10 "the start failed (rc=$upStatus), but not because the folder is missing.$restartNote" \
+      "last output: $lastLines"
     return 1
   fi
 
