@@ -1,8 +1,9 @@
+# BASE_IMAGE keeps a default because it names the local base tag, not a version.
 ARG BASE_IMAGE=sbx-base:local
 FROM ${BASE_IMAGE}
 
-# Pinned version. Override for one build with --build-arg CLAUDE_CODE_VERSION=VERSION.
-ARG CLAUDE_CODE_VERSION=2.1.285
+# Versions live only in versions.env and reach this file through build.sh.
+# - No ARG below has a default, so a build without build.sh stops and names the missing pin.
 
 # --- Claude Code ---
 # - Installed from npm at an exact version, as root, into /usr/local.
@@ -14,7 +15,9 @@ ARG CLAUDE_CODE_VERSION=2.1.285
 # - ~/.claude is a symlink to state/claude, only as a fallback for tools that
 #   ignore CLAUDE_CONFIG_DIR. Claude itself uses CLAUDE_CONFIG_DIR.
 USER root
-RUN npm install -g --allow-scripts=@anthropic-ai/claude-code "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
+ARG CLAUDE_CODE_VERSION
+RUN : "${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION is not set; build with ./build.sh}" \
+    && npm install -g --allow-scripts=@anthropic-ai/claude-code "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
     && rm -rf /root/.npm \
     && ln -s /home/sandbox/workspace/state/claude /home/sandbox/.claude \
     && chown -h sandbox:sandbox /home/sandbox/.claude
@@ -51,3 +54,9 @@ USER sandbox
 
 # Build-time smoke test, as the runtime user: the installed version must equal the pin.
 RUN test "$(claude --version)" = "${CLAUDE_CODE_VERSION} (Claude Code)"
+
+# --- Pin record ---
+# - A copy of versions.env: the pins this image was built with.
+# - Nothing reads it at runtime.
+# - Last, so a pin bump changes only this layer.
+COPY --chmod=644 versions.env /etc/sbx/versions.env

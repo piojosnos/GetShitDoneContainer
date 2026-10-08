@@ -30,7 +30,7 @@
 # FAKE_ARCH: the architecture docker info reports (default aarch64)
 # FAKE_CLAUDE_ARCH: the architecture of the sbx-claude:local image (default arm64)
 # FAKE_CLAUDE_LAYERS: the layer list of sbx-claude:local (default: the base layers plus two more)
-# FAKE_CLAUDE_VERSION: the version claude --version prints (default: the pin in claude/Dockerfile)
+# FAKE_CLAUDE_VERSION: the version claude --version prints (default: the pin in versions.env)
 # FAKE_COMPOSE_VERSION: what docker compose version prints (default 2.39.1)
 # FAKE_COMPOSE_FAIL: 1 makes docker compose version fail
 # FAKE_CONTEXT: the name docker context show prints (default desktop-linux)
@@ -561,7 +561,7 @@ run_network_none() {
 # run_claude_version ARG...: a run with --entrypoint claude: prints the installed Claude Code version.
 # --------------------------------------------------------------------------------
 run_claude_version() {
-  fakePin=$(sed -n 's/^ARG CLAUDE_CODE_VERSION=//p' "$FAKE_REPO/claude/Dockerfile")
+  fakePin=$(sed -n 's/^CLAUDE_CODE_VERSION=//p' "$FAKE_REPO/versions.env")
   printf '%s (Claude Code)\n' "${FAKE_CLAUDE_VERSION:-$fakePin}"
   return 0
 }

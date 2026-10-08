@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of the host library units: claude_pin, expected_arch, make_run_dir and the scrub in host_init.
+# Self-test of the host library units: claude_pin, pin_of, expected_arch, make_run_dir and the scrub in host_init.
 # - Run by run-all.sh; runs alone too.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
 # - Usage, from anywhere: bash tests/selftest/host/units.sh   (exit 0 = every case passes)
@@ -14,9 +14,16 @@ case_lib_units() {
   reset_state
 
   pinFromLib=$(lib_eval 'claude_pin')
-  pinFromFile=$(grep '^ARG CLAUDE_CODE_VERSION=' claude/Dockerfile | cut -d= -f2)
-  expect "lib: claude_pin equals the ARG in claude/Dockerfile" equals "$pinFromLib" "$pinFromFile"
+  pinFromFile=$(sed -n 's/^CLAUDE_CODE_VERSION=//p' versions.env)
+  expect "lib: claude_pin equals CLAUDE_CODE_VERSION in versions.env" equals "$pinFromLib" "$pinFromFile"
   expect "lib: claude_pin is not empty" string_matches '^[0-9]+\.[0-9]+\.[0-9]+$' "$pinFromLib"
+
+  nodePinFromLib=$(lib_eval 'pin_of NODE_VERSION')
+  nodePinFromFile=$(sed -n 's/^NODE_VERSION=//p' versions.env)
+  expect "lib: pin_of NODE_VERSION equals its versions.env line" equals "$nodePinFromLib" "$nodePinFromFile"
+
+  missingPin=$(lib_eval 'pin_of NO_SUCH_PIN')
+  expect "lib: pin_of prints nothing for a name versions.env does not set" equals "$missingPin" ""
 
   archAarch=$( export FAKE_ARCH=aarch64; lib_eval 'expected_arch' )
   archIntel=$( export FAKE_ARCH=x86_64; lib_eval 'expected_arch' )

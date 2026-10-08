@@ -1,13 +1,16 @@
+# check=skip=InvalidDefaultArgInFrom
 # Shared base for every sbx agent image.
 # - Holds nothing agent-specific.
-# - Build from the repo root: docker build -f base/Dockerfile -t sbx-base:local .
-FROM ubuntu:24.04
+# - Build with ./build.sh from the repo root.
+#
+# Versions live only in versions.env and reach this file through build.sh.
+# - No ARG has a default, so a build without build.sh stops and names the missing pin.
+# - The FROM image is a pin too; the directive on line 1 silences the build check
+#   that warns about an ARG without a default in FROM.
+ARG UBUNTU_IMAGE
+FROM ${UBUNTU_IMAGE}
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-# Pinned versions. Override for one build with --build-arg NAME=VERSION.
-ARG NODE_VERSION=24.21.0
-ARG GH_VERSION=2.102.0
 
 # --- OS packages ---
 # - One layer, no recommended extras.
@@ -20,7 +23,9 @@ RUN apt-get update \
 # - Official tarball, checked against nodejs.org's SHASUMS256.txt.
 # - dpkg arch names (amd64, arm64) map to Node's (x64, arm64).
 # - No arch override anywhere, so Apple Silicon builds natively.
-RUN arch="$(dpkg --print-architecture)" \
+ARG NODE_VERSION
+RUN : "${NODE_VERSION:?NODE_VERSION is not set; build with ./build.sh}" \
+    && arch="$(dpkg --print-architecture)" \
     && case "$arch" in amd64) node_arch=x64 ;; arm64) node_arch=arm64 ;; *) echo "unsupported arch: $arch" >&2; exit 1 ;; esac \
     && f="node-v${NODE_VERSION}-linux-${node_arch}.tar.xz" \
     && curl -fsSLO "https://nodejs.org/dist/v${NODE_VERSION}/${f}" \
@@ -33,7 +38,9 @@ RUN arch="$(dpkg --print-architecture)" \
 # - Why a tarball: the cli.github.com apt repo serves only the latest version, so it can't be pinned.
 # - dpkg arch names match the release asset names, so arm64 gets the native build.
 # - Only the gh binary is extracted, owned by root.
-RUN arch="$(dpkg --print-architecture)" \
+ARG GH_VERSION
+RUN : "${GH_VERSION:?GH_VERSION is not set; build with ./build.sh}" \
+    && arch="$(dpkg --print-architecture)" \
     && d="gh_${GH_VERSION}_linux_${arch}" \
     && curl -fsSLO "https://github.com/cli/cli/releases/download/v${GH_VERSION}/${d}.tar.gz" \
     && curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_checksums.txt" | grep " ${d}.tar.gz\$" | sha256sum -c - \

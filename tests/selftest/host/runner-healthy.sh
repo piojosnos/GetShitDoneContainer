@@ -72,10 +72,10 @@ case_healthy_run() {
   expect "docker log: the SBX_DIR probe runs without SBX_DIR and with the test name" \
     has_match "$FAKE_LOG" 'SBX_NAME=hosttest SBX_DIR=unset COMPOSE_PROJECT_NAME=unset ARGS: compose .* config'
   expect "docker log: the plain docker run uses the real image tag" has_match "$WORK/args.healthy" '^run --rm sbx-claude:local claude --version'
-  expect "docker log: the builds use the real tags" \
-    has_match "$WORK/args.healthy" '^build -f .*/base/Dockerfile -t sbx-base:local /'
+  expect "docker log: build.sh builds the base image with the pins" \
+    has_match "$WORK/args.healthy" '^build -f base/Dockerfile( --build-arg [A-Z_]+)+ -t sbx-base:local \.$'
   expect "docker log: the claude image is built after the base image" \
-    has_match "$WORK/args.healthy" '^build -f .*/claude/Dockerfile -t sbx-claude:local /'
+    has_match "$WORK/args.healthy" '^build -f claude/Dockerfile( --build-arg [A-Z_]+)+ -t sbx-claude:local \.$'
 }
 
 # --------------------------------------------------------------------------------

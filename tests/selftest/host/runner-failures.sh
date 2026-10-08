@@ -39,7 +39,7 @@ case_failed_build() {
   run_runner "$WORK/out.build" FAKE_BUILD_FAIL=sbx-claude:local
   expect "runner: a failed build exits 1" equals "$RUNNER_RC" "1"
   expect "runner: a failed build runs no check" lacks_match "$WORK/out.build" '^(PASS|FAIL): H-04'
-  expect "runner: a failed build prints the log path" has_text "$WORK/out.build" "logs/build-claude.log"
+  expect "runner: a failed build prints the log path" has_text "$WORK/out.build" "logs/build-images.log"
   expect "runner: a failed build still prints the Next block" has_text "$WORK/out.build" "If something looks wrong, see tests/host/manual/"
 }
 

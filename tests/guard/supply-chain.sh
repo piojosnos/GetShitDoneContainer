@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Guard rules on the supply chain: GSD comes from one package, and every tool is pinned and never piped into a shell.
+# Guard rules on the supply chain: GSD comes from one package, and every tool is pinned in versions.env and never piped into a shell.
 # - Run by tests/guard/run-all.sh; runs alone too.
 # - Usage, from anywhere: bash tests/guard/supply-chain.sh   (exit 0 = every rule holds)
 set -u
@@ -27,13 +27,124 @@ no_floating_latest_versions() {
 }
 
 # --------------------------------------------------------------------------------
-# versions_are_pinned: Every tool version is an exact pin.
+# versions_are_pinned: Every version is an exact pin set once in versions.env, and the Dockerfiles take versions only from there.
 # --------------------------------------------------------------------------------
+# Fail closed: every problem found is printed. The only ARG with a default is the local base tag.
 versions_are_pinned() {
-  has_line $BASE 'FROM ubuntu:24.04' \
-    && grep -Eq '^ARG NODE_VERSION=[0-9]+\.[0-9]+\.[0-9]+$' $BASE \
-    && grep -Eq '^ARG GH_VERSION=[0-9]+\.[0-9]+\.[0-9]+$' $BASE \
-    && grep -Eq '^ARG CLAUDE_CODE_VERSION=[0-9]+\.[0-9]+\.[0-9]+$' $CLAUDE
+  local ok=0
+  local lineText pinName pinValue dockerfile argText argName
+  local seenNameText=" "
+  local declaredNameText=" "
+
+  if [ ! -f versions.env ]; then
+    echo "    versions.env is missing"
+    return 1
+  fi
+
+  while IFS= read -r lineText; do
+    if printf '%s\n' "$lineText" | grep -Eq '^[[:space:]]*(#.*)?$'; then
+      continue
+    fi
+
+    if ! printf '%s\n' "$lineText" | grep -Eq '^[A-Z_]+=[^[:space:]]+$'; then
+      echo "    versions.env: not a NAME=value line: $lineText"
+      ok=1
+      continue
+    fi
+
+    pinName=${lineText%%=*}
+    pinValue=${lineText#*=}
+
+    case "$seenNameText" in
+      *" $pinName "*)
+        echo "    versions.env: $pinName is set on more than one line"
+        ok=1
+        ;;
+    esac
+
+    seenNameText="$seenNameText$pinName "
+
+    case "$pinName" in
+      *_VERSION)
+        if ! printf '%s\n' "$pinValue" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+          echo "    versions.env: $pinName=$pinValue is not an exact x.y.z version"
+          ok=1
+        fi
+        ;;
+      *_IMAGE)
+        if ! printf '%s\n' "$pinValue" | grep -Eq '^[a-z0-9][a-z0-9./-]*:[A-Za-z0-9._-]+(@sha256:[0-9a-f]{64})?$'; then
+          echo "    versions.env: $pinName=$pinValue is not an image reference"
+          ok=1
+        fi
+        ;;
+      *)
+        echo "    versions.env: $pinName must end in _VERSION or _IMAGE"
+        ok=1
+        ;;
+    esac
+  done <<EOF
+$(cat versions.env)
+EOF
+
+  for dockerfile in $DOCKERFILES; do
+    while IFS= read -r lineText; do
+      if [ -z "$lineText" ]; then
+        continue
+      fi
+
+      argText=${lineText#ARG }
+
+      case "$argText" in
+        *=*)
+          if [ "$dockerfile" = "$CLAUDE" ] && [ "$lineText" = "ARG BASE_IMAGE=sbx-base:local" ]; then
+            continue
+          fi
+
+          echo "    $dockerfile: an ARG with a default value: $lineText"
+          ok=1
+          ;;
+        *)
+          argName=$argText
+          declaredNameText="$declaredNameText$argName "
+
+          case "$seenNameText" in
+            *" $argName "*) ;;
+            *)
+              echo "    $dockerfile declares ARG $argName, which versions.env does not set"
+              ok=1
+              ;;
+          esac
+          ;;
+      esac
+    done <<EOF
+$(grep -E '^ARG ' "$dockerfile")
+EOF
+  done
+
+  for pinName in $seenNameText; do
+    case "$declaredNameText" in
+      *" $pinName "*) ;;
+      *)
+        echo "    versions.env sets $pinName, which no Dockerfile declares"
+        ok=1
+        ;;
+    esac
+  done
+
+  while IFS= read -r lineText; do
+    if [ -z "$lineText" ]; then
+      continue
+    fi
+
+    if ! printf '%s\n' "$lineText" | grep -Eq '^FROM \$\{[A-Z_]+\}( AS [a-z]+)?$'; then
+      echo "    $BASE: FROM must take its image from a pin: $lineText"
+      ok=1
+    fi
+  done <<EOF
+$(grep -E '^FROM ' "$BASE")
+EOF
+
+  return "$ok"
 }
 
 # --------------------------------------------------------------------------------
