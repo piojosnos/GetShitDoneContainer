@@ -38,7 +38,7 @@ What each check proves:
 | H-00 | Compose v2 or newer is installed | `h00-compose-v2.sh` | automatic |
 | H-01 | Images build natively (arm64 on Apple silicon) | `h01-native-arch.sh` | automatic |
 | H-02 | The Claude image sits on the base image | `h02-claude-on-base.sh` | automatic |
-| H-03 | Name and folder variables are required; an uppercase name is refused | `h03-variable-interpolation.sh` | automatic |
+| H-03 | Name and folder variables are required; `up` refuses an uppercase name before it creates anything | `h03-variable-interpolation.sh` | automatic |
 | H-04 | The user is non-root (uid 1000) | `h04-nonroot-user.sh` | automatic |
 | H-05 | Workspace and home layout | `h05-workspace-and-home.sh` | automatic |
 | H-06 | Git works and the identity persists | `h06-git-and-identity.sh` | automatic |
@@ -92,6 +92,8 @@ bash tests/host/manual/h19-bundle-behaviour.sh
   - Do not change `compose.yml`.
   - See the env_file follow-up in [`SANDBOX.md`, Troubleshooting](../SANDBOX.md#troubleshooting-and-known-limits). It needs your approval.
 - **H-20 says the sandbox started, or a folder appeared:** the start folder in `compose.yml` or the project-folder check in `base/sbx-start-lib.sh` changed. Do not create the folder by hand.
+- **H-03 says an uppercase `SBX_NAME` was not refused:** `docker compose up` got past the `name-check` service in `compose.yml`. Paste the FAIL line; the refusal before anything is created needs another design, and SANDBOX.md must not promise it until then.
+- **H-21 says a name was not refused:** the image's entrypoint has no name check. Rebuild the images and run again; if it still fails, the check in `base/sbx-start-lib.sh` changed.
 - **H-15 fails after a Claude Code pin change:** the format of `/context` may have changed. Compare with what `manual/h19-bundle-behaviour.sh` shows before suspecting the bundle.
 - **H-15 and a login:** H-15 runs Claude without a login, so `state/claude/.claude.json` exists before `h07-login.sh` runs. The login proof in `h07-login.sh` is `.credentials.json` and `claude auth status`.
 - **H-18 fails after a Claude Code pin change:** H-18 follows the wire format of the pinned Claude through a small fake API.
@@ -116,5 +118,6 @@ Paste the `run-all.sh` summary and the lines of any helper you ran.
 - `docker compose version` output:
 - Docker Desktop version:
 - H-10 observation (what `up` printed, whether the folder existed afterwards):
+- H-03 observation (what the uppercase `up` printed):
 
 Any failure becomes input for gap-closure planning.

@@ -8,9 +8,10 @@
 #   whole file first.
 # - A missing variable stops Compose with an error naming it, before anything is created.
 # - A mistyped SBX_NAME is refused by the container start, and nothing is created.
-# - An SBX_NAME with an uppercase letter is refused by up before anything is created (the name-check service).
+# - SBX_NAME follows the sandbox name rule, ^[a-z][a-z0-9-]{0,30}$: starts with a lowercase letter, then lowercase letters, digits or hyphens, 31 characters at most.
+# - Compose turns the project name into lowercase. up refuses an uppercase letter through the name-check service below; the container start refuses any other name that breaks the rule. Use the exact name with every other command.
 # - Never ask "down" to remove volumes. There are none; all data is in $SBX_DIR on the Mac.
-name: "sbx-${SBX_NAME:?SBX_NAME is required (lowercase letters, digits, - and _)}"
+name: "sbx-${SBX_NAME:?SBX_NAME is required (starts with a lowercase letter, then lowercase letters, digits or hyphens, 31 characters at most)}"
 
 services:
   sandbox:
