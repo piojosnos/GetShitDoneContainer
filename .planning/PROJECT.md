@@ -25,6 +25,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 - ✓ Agent state (Claude login, `~/.claude.json`, settings, session history, shell history) lives in `<sandbox>/state` on the host and survives recreate and rebuild — Phase 1
 - ✓ Every new sandbox starts with the best-practices bundle (standing rules, path-scoped language rules, `/pr-reply` and `/merged`), synced from the image at each start; the image version wins and user skills, memories and `CLAUDE.md` are never touched — Phase 1.2
 - ✓ The test suite is small enough to read and change: guard, host, bundle and entrypoint self-tests are each a folder with a `run-all.sh`, and the fake docker is its own file used only for failure paths (Phase 1.4)
+- ✓ A sandbox name must follow one rule, `^[a-z][a-z0-9-]{0,30}$`: `up` refuses an uppercase name before it creates anything, and the entrypoint refuses any other bad name before it uses it as a folder; the host checks are proven against real Docker with 21 of 21 passing (Phase 1.5)
 
 ### Active
 
@@ -101,6 +102,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 | Real Docker runs only on the Mac; `tests/host/run-all.sh` passing there is the gate, and the manual helpers are diagnostic tools, not an ordered pass | Docker cannot run in the dev sandbox, and Actions, dind, a VM and the host socket were each rejected | Good: 19 passed, 0 failed, 0 not run on the Mac at `a821736` (Phase 1.4) |
 | Split each suite into a folder with a short `run-all.sh`, shared libraries and one file per check group | A suite of single 1000-line scripts was too big to read; the largest group file is now 182 lines and `prove.sh` shows case-for-case equality with the old scripts | Good: 23 guard, 25 entrypoint, 111 bundle and 295 host self-test cases identical to the baseline (Phase 1.4) |
 | The fake docker lives in its own file (`tests/selftest/host/support/fake-docker`) and covers failure paths only | The Mac run covers the success paths, so the fake can stay slim and its knobs sit in one header table | Good: the file answers like the old heredoc across 1922 transcript lines (Phase 1.4) |
+| One sandbox name rule, `^[a-z][a-z0-9-]{0,30}$`, defined once in `base/sbx-start-lib.sh`; a `name-check` service in `compose.yml` makes `up` refuse an uppercase name, and the entrypoint refuses the rest | Compose lowercases the project name instead of refusing it, so a mixed-case name could collide with another sandbox; docs and a guard rule read the rule from the code so they cannot drift | Good: H-03 and H-21 pass on the Mac, 21 passed, 0 failed (Phase 1.5) |
 
 ## Evolution
 
@@ -120,4 +122,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-06 after Phase 1.4*
+*Last updated: 2026-10-08 after Phase 1.5*

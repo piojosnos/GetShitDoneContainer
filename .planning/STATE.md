@@ -20,10 +20,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-06)
+See: .planning/PROJECT.md (updated 2026-10-08)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 01.5 — Host test fixes (INSERTED)
+**Current focus:** Phase 2: Pinned Toolchain, GSD, and ccusage
 
 ## Current Position
 
@@ -199,12 +199,12 @@ None yet.
 - [Phase 1]: Until Phase 3 there are no scripts, so the sandbox runs from a documented `docker compose` command
 - [Phase 2]: Confirm that ccusage's native binary is executable (chmod) on arm64 (DISABLE_UPDATES was confirmed by `claude doctor` in the Phase 1.1 Mac run)
 - [Phase 5]: Decide whether SCR-08 ("remove whole-home-mount layout") also covers the out-of-scope `OpenCode/` directory, or whether it stays for the next milestone
-- [Phase 1]: Re-review left 7 findings open (WR-01: the missing-project-folder check in base/sbx-entrypoint cannot fire because compose working_dir creates the folder; WR-02: base/Dockerfile comment overclaims create_host_path; WR-03: Claude Code has no integrity hash). See 01-REVIEW-DISPOSITION.md
+- [Phase 1]: Review findings: 0 open, 2 deferred with reasons (WR-03: Claude Code has no integrity hash). See 01-REVIEW-DISPOSITION.md
 - [Phase 1]: SC3 says rebuild with `--no-cache`; the Mac run did not record it. One run of `bash tests/host/manual/h09-rebuild-resume.sh --no-cache` would confirm
-- [Phase 1.1]: Code review left 14 findings open (CR-01: run_timeout does not stop a docker call behind a shell function; WR-01..08 robustness). See 01.1-REVIEW-DISPOSITION.md
+- [Phase 1.1]: Review findings: 0 open (13 fixed, 1 deferred); WR-03 was closed by the Phase 1.5 Mac run. See 01.1-REVIEW-DISPOSITION.md
 - [Phase 1.2]: Code review left 13 findings open (WR-01..03 are bugs in the ported pr-reply and merged skills; WR-04 was fixed in Phase 1.3; WR-05 deny negative control fits Phase 1.4). See 01.2-REVIEW-DISPOSITION.md
-- [Phase 1.3]: Code review left 4 findings open (WR-02: run_timeout does not stop a shell function it wraps, same as the Phase 1.1 CR-01 and planned for Phase 1.5; IN-01..03 style and self-test coverage). See 01.3-REVIEW-DISPOSITION.md
-- [Phase 1.4]: Code review left 11 findings open (see 01.4-REVIEW-DISPOSITION.md). Follow-ups for Phase 1.5 or a quick task: WR-01 a group program missing from a run-all list never runs; WR-02 and WR-06 `nowhere_matches` and the `lacks_*` helpers fail open when a file is missing or unreadable; WR-05 SANDBOX.md overclaims what a passing `run-all.sh` proves
+- [Phase 1.3]: Code review left 2 info findings open (IN-02, IN-03: style and self-test coverage); WR-02 run_timeout was fixed in Phase 1.5. See 01.3-REVIEW-DISPOSITION.md
+- [Phase 1.4]: Code review left 7 findings open (WR-03, WR-04, IN-01 to IN-05); WR-01, WR-02, WR-05 and WR-06 were fixed in Phase 1.5. See 01.4-REVIEW-DISPOSITION.md
 - [Phase 1.4]: Open note: the user's Mac `git status` listed 10 files as modified in the code worktree while the sandbox shows it clean; cause pending
 - [Phase 1.5]: The H-03 gap is closed: plans 12 to 15 added the entrypoint name rule and the Compose name check, and the Mac run of 01.5-16 passed 21 of 21 checks. 01.5 IN-01 to IN-07 stay open. See 01.5-16-SUMMARY.md
 
