@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# The container start steps, as functions: the mount and folder checks, the state folders, the
-# start hooks and the move into the project folder.
+# The container start steps, as functions: the mount check, the name check, the folder checks, the
+# state folders, the start hooks and the move into the project folder.
 # - A library: it defines variables and functions and runs nothing. base/sbx-entrypoint
 #   sources it from its own folder and runs the steps; the self-tests source it to call them.
 # - Sets no shell options; the entrypoint sets set -eu before sourcing it.
@@ -9,6 +9,11 @@
 ws=/home/sandbox/workspace
 state=$ws/state
 hookDir=/etc/sbx/start.d
+
+# SBX_NAME names the project folder, the container and the Compose project. Compose turns a
+# project name into lowercase, so two names that differ only in case would share one project.
+sandboxNamePattern='^[a-z][a-z0-9-]{0,30}$'
+sandboxNameRuleText='starts with a lowercase letter, then lowercase letters, digits or hyphens, 31 characters at most'
 
 # --------------------------------------------------------------------------------
 # is_mount PATH: true when PATH is a mount point.
@@ -31,6 +36,19 @@ check_workspace_mount() {
   is_mount "$ws" || { start_error "$ws is not a mount point; its data would be lost on recreate."; return 1; }
   [ -w "$ws" ] || { start_error "$ws is not writable by $(id -un)."; return 1; }
   [ -n "${SBX_NAME:-}" ] || { start_error "SBX_NAME is not set."; return 1; }
+}
+
+# --------------------------------------------------------------------------------
+# Checks SBX_NAME follows the sandbox name rule; prints the error and returns 1 if not
+# --------------------------------------------------------------------------------
+# LC_ALL=C makes [a-z] the 26 ASCII letters in any locale.
+check_sandbox_name() {
+  local LC_ALL=C
+
+  if [[ ! "${SBX_NAME:-}" =~ $sandboxNamePattern ]]; then
+    start_error "SBX_NAME \"${SBX_NAME:-}\" breaks the sandbox name rule: $sandboxNameRuleText. Example: my-project."
+    return 1
+  fi
 }
 
 # --------------------------------------------------------------------------------

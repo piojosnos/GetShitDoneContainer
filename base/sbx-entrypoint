@@ -7,6 +7,7 @@ set -eu
 # - Refuses to start unless the workspace is a writable mount point. Without it
 #   (a plain docker run, a broken compose file), data would land in the container
 #   layer and be lost on recreate.
+# - Refuses an SBX_NAME that breaks the sandbox name rule (see sbx-start-lib.sh) before it uses the name as a folder.
 # - Refuses to start unless the project and state folders exist. A mistyped
 #   SBX_DIR has neither.
 # - Creates the state subfolders that are missing. Installs nothing.
@@ -25,6 +26,7 @@ set -eu
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 check_workspace_mount || exit 1
+check_sandbox_name || exit 1
 check_project_and_state_folders || exit 1
 create_state_dirs || exit 1
 run_start_hooks || exit 1
