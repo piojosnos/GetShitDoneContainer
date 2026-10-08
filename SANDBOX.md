@@ -18,14 +18,20 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 
 ## Build the images
 
-From the repo root. Build the base first: the Claude image starts `FROM` it.
+From the repo root:
 
 ```bash
-docker build -f base/Dockerfile -t sbx-base:local .
-docker build -f claude/Dockerfile -t sbx-claude:local .
+./build.sh
 ```
 
-Both build from the repo root (the final `.`). A `.dockerignore` lets only `base/`, `claude/` and `best-practices/` into the build.
+- Builds `sbx-base:local`, then `sbx-claude:local`, which starts `FROM` the base.
+- Every version (base OS image, toolchains, Claude Code) lives in `versions.env` at the repo root. `build.sh` passes it to both builds.
+- The Dockerfiles have no default versions, so a plain `docker build` stops and names the missing pin.
+- Extra options pass through to both builds, for example `./build.sh --no-cache` for a clean build.
+- `build.sh` runs from any folder; the repo root is the build context.
+- Plain apt packages are not pinned. They follow the pinned Ubuntu release and pick up its security fixes at each rebuild.
+- In a sandbox shell, `cat /etc/sbx/versions.env` shows the pins the image was built with.
+- A `.dockerignore` lets only `base/`, `claude/`, `best-practices/` and `versions.env` into the build.
 
 ## Create a sandbox folder
 
@@ -99,16 +105,23 @@ docker compose down
 
 ## Rebuild without losing login
 
-Stop, rebuild both images (add `--no-cache` for a clean build), start again:
+Stop, rebuild both images (add `--no-cache` to `build.sh` for a clean build), start again:
 
 ```bash
 docker compose down
-docker build -f base/Dockerfile -t sbx-base:local .
-docker build -f claude/Dockerfile -t sbx-claude:local .
+./build.sh
 docker compose up -d --wait
 ```
 
 The login and history live in `state/` on the Mac, so the new container picks them up unchanged.
+
+## Bump a version or add a tool
+
+1. Change the value in `versions.env`. For a new tool, add one `NAME=value` line there, and in the Dockerfile that installs it an `ARG NAME` right above the `RUN` that uses it. `build.sh` needs no change.
+2. Run `./build.sh`.
+3. Run `docker compose up -d --wait`. Compose recreates the container on the new image; login and history stay in `state/`.
+
+- A new or bumped pin gets the same review as any new dependency: exact version, publish date, provenance, and the digest or checksum.
 
 ## Best-practices bundle
 
