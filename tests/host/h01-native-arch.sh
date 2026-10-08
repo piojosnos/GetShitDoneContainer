@@ -45,15 +45,20 @@ check_container_architecture() {
 }
 
 # --------------------------------------------------------------------------------
-# Checks no log of this run warns about a platform mismatch
+# Checks no build, rebuild or start log of this run has the BuildKit or the docker run platform warning
 # --------------------------------------------------------------------------------
+# The two phrases: "does not match the detected host platform" (docker run) and InvalidBaseImagePlatform (BuildKit).
 check_no_platform_warnings() {
-  local warningCount
-  local warningLogs
+  local logFile
+  local warningLogs=""
 
-  warningCount=$(cat "$RUN"/logs/*.log 2>/dev/null | grep -Fc "does not match")
-  if [ "$warningCount" -gt 0 ]; then
-    warningLogs=$(grep -Fl "does not match" "$RUN"/logs/*.log 2>/dev/null | tr '\n' ' ')
+  for logFile in "$RUN"/logs/build-*.log "$RUN"/logs/rebuild-*.log "$RUN"/logs/compose-up.log; do
+    if [ -f "$logFile" ] && grep -Eq 'does not match the detected host platform|InvalidBaseImagePlatform' "$logFile"; then
+      warningLogs="$warningLogs$logFile "
+    fi
+  done
+
+  if [ -n "$warningLogs" ]; then
     add_problem "platform mismatch warning in: $warningLogs"
   fi
 }

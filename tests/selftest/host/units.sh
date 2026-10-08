@@ -38,6 +38,11 @@ case_lib_units() {
     lib_eval 'printf "SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s" "$SBX_NAME" "${SBX_DIR-unset}" "${COMPOSE_PROJECT_NAME-unset}"' )
   expect "lib: host_init ignores the caller's SBX_NAME, SBX_DIR and COMPOSE_PROJECT_NAME" \
     equals "$scrubbed" "SBX_NAME=hosttest SBX_DIR=unset COMPOSE_PROJECT_NAME=unset"
+
+  composeScrubbed=$( export COMPOSE_ENV_FILES=/decoy.env COMPOSE_IGNORE_ORPHANS=1 COMPOSE_REMOVE_ORPHANS=1
+    lib_eval 'printf "%s %s %s" "${COMPOSE_ENV_FILES-unset}" "${COMPOSE_IGNORE_ORPHANS-unset}" "${COMPOSE_REMOVE_ORPHANS-unset}"' )
+  expect "lib: host_init clears COMPOSE_ENV_FILES, COMPOSE_IGNORE_ORPHANS and COMPOSE_REMOVE_ORPHANS" \
+    equals "$composeScrubbed" "unset unset unset"
 }
 
 # --------------------------------------------------------------------------------

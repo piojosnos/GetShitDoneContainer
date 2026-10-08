@@ -4,6 +4,8 @@
 # - Claude's own /context lists the always-on rules and both skills, and not the path-scoped rules.
 # - The /context probe needs no login and no network (dummy key, unreachable URL). Claude writes
 #   its own state/claude/.claude.json when it runs.
+# - Claude runs in the project folder (docker exec -w), so its project settings are the same
+#   whichever folder shells start in.
 # Depends on: nothing
 # Needs: test sandbox running
 set -u
@@ -20,7 +22,7 @@ syncedDir=$RUN/state/claude
 check_claude_view() {
   local contextOutput ruleRelList ruleRel skillNameList skillName
 
-  contextOutput=$(run_timeout 60 docker exec "$CONTAINER" env ANTHROPIC_API_KEY=sk-ant-dummy ANTHROPIC_BASE_URL=http://127.0.0.1:1 claude -p /context </dev/null 2>&1)
+  contextOutput=$(run_timeout 60 docker exec -w "$PROJECT_DIR" "$CONTAINER" env ANTHROPIC_API_KEY=sk-ant-dummy ANTHROPIC_BASE_URL=http://127.0.0.1:1 claude -p /context </dev/null 2>&1)
 
   ruleRelList=$(cd "$bundleDir/rules" && find . -type f ! -name .DS_Store | sed 's|^\./||' | sort)
 

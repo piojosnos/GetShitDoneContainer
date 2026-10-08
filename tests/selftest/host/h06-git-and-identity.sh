@@ -21,7 +21,7 @@ case_h06_alone() {
   expect "H-06: no dubious ownership, safe.directory * and the identity file pass" equals "$CHECK_RC" "0"
   expect "H-06: prints PASS: H-06" has_text "$WORK/out.h06" "PASS: H-06"
   expect "H-06: the host-side git init made a repository" test -d "$FIXTURE/hosttest/.git"
-  expect "H-06: the identity file is in the run folder" has_text "$FIXTURE/state/git/config" "name = T"
+  expect "H-06: the run's identity is in the identity file" has_match "$FIXTURE/state/git/config" 'name = hosttest-[0-9]+-[0-9]+$'
   expect "H-06: the host git config is not read (its template folder was not used)" test ! -e "$FIXTURE/hosttest/.git/MARK"
   expect "H-06: the host git config file is untouched" cmp -s "$WORK/fakehome/.gitconfig" "$WORK/gitconfig.before"
   reset_state
@@ -34,6 +34,16 @@ case_h06_alone() {
   run_standalone "$WORK/out.h06.nowrite" h06-git-and-identity.sh FAKE_NO_GIT_WRITE=1
   expect "H-06: a missing identity file fails" equals "$CHECK_RC" "1"
   expect "H-06: the missing identity file is named" has_text "$WORK/out.h06.nowrite" "state/git/config"
+  reset_state
+  make_fixture_run
+  run_standalone "$WORK/out.h06.workspace" h06-git-and-identity.sh FAKE_WORKDIR=/home/sandbox/workspace
+  expect "H-06: git status runs in the project folder when shells start in the workspace" equals "$CHECK_RC" "0"
+  reset_state
+  make_fixture_run
+  mkdir -p "$FIXTURE/state/git"
+  printf '[user]\n\tname = T\n' >"$FIXTURE/state/git/config"
+  run_standalone "$WORK/out.h06.stale" h06-git-and-identity.sh FAKE_NO_GIT_WRITE=1
+  expect "H-06: an identity left by an earlier run does not pass" equals "$CHECK_RC" "1"
   run_standalone "$WORK/out.h06.safe" h06-git-and-identity.sh FAKE_SAFE_DIR=/home/sandbox/workspace
   expect "H-06: a safe.directory value that is not * fails" equals "$CHECK_RC" "1"
 }

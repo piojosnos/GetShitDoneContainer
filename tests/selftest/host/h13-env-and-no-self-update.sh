@@ -23,6 +23,10 @@ case_h13_alone() {
   expect "H-13: an update that runs fails" equals "$CHECK_RC" "1"
   run_standalone "$WORK/out.h13.share" h13-env-and-no-self-update.sh FAKE_SHARE_EXISTS=1
   expect "H-13: an existing share folder fails" equals "$CHECK_RC" "1"
+  run_standalone "$WORK/out.h13.exec" h13-env-and-no-self-update.sh FAKE_EXEC_RC=125
+  expect "H-13: an exec that could not run fails as could not check" \
+    failed_with "$CHECK_RC" "$WORK/out.h13.exec" "could not check ~/.local/share/claude (docker exec exit 125)"
+  expect "H-13: an exec that could not run is not called an existing folder" lacks_text "$WORK/out.h13.exec" "exists in the container home"
 }
 
 # --------------------------------------------------------------------------------

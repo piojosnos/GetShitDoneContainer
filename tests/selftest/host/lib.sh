@@ -41,9 +41,17 @@ prepare_fake_docker() {
 has_match() { grep -Eq -- "$2" "$1"; }
 
 # --------------------------------------------------------------------------------
-# lacks_match FILE REGEX: true if no line of FILE matches REGEX.
+# lacks_match FILE REGEX: true if FILE is a readable file and no line of it matches REGEX.
 # --------------------------------------------------------------------------------
-lacks_match() { ! grep -Eq -- "$2" "$1"; }
+# A missing or unreadable file is never a pass, so a negative check cannot succeed on input it never read.
+lacks_match() { [ -f "$1" ] && [ -r "$1" ] && ! grep -Eq -- "$2" "$1"; }
+
+# --------------------------------------------------------------------------------
+# failed_with STATUS FILE TEXT: true if STATUS is 1 and FILE contains TEXT.
+# --------------------------------------------------------------------------------
+failed_with() {
+  [ "$1" = 1 ] && has_text "$2" "$3"
+}
 
 # --------------------------------------------------------------------------------
 # string_matches REGEX STRING: true if STRING matches REGEX.
@@ -51,10 +59,10 @@ lacks_match() { ! grep -Eq -- "$2" "$1"; }
 string_matches() { printf '%s\n' "$2" | grep -Eq -- "$1"; }
 
 # --------------------------------------------------------------------------------
-# reset_state: empty fake container state, log and run folders.
+# reset_state: empties the fake container state, the log and the run folders; stops when WORK is empty, so nothing outside the work folder is removed.
 # --------------------------------------------------------------------------------
 reset_state() {
-  rm -rf "$WORK/state" "$WORK/tmp"
+  rm -rf "${WORK:?}/state" "${WORK:?}/tmp"
   mkdir -p "$WORK/state" "$WORK/tmp"
   : >"$FAKE_LOG"
 }

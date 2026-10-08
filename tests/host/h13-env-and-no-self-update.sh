@@ -8,7 +8,7 @@ set -u
 host_init
 
 # --------------------------------------------------------------------------------
-# Reads the container environment, the claude update reply and whether ~/.local/share/claude exists
+# Reads the container environment, the claude update reply and the exit status of the ~/.local/share/claude test
 # --------------------------------------------------------------------------------
 read_environment() {
   envOutput=$(in_container env)
@@ -42,10 +42,13 @@ check_updates_disabled() {
 # --------------------------------------------------------------------------------
 # Checks ~/.local/share/claude does not exist in the container home
 # --------------------------------------------------------------------------------
+# The test exits 0 when the folder is absent and 1 when it exists; any other status means docker exec could not check.
 check_no_share_folder() {
-  if [ "$shareStatus" -ne 0 ]; then
-    add_problem "~/.local/share/claude exists in the container home"
-  fi
+  case "$shareStatus" in
+    0) ;;
+    1) add_problem "~/.local/share/claude exists in the container home" ;;
+    *) add_problem "could not check ~/.local/share/claude (docker exec exit $shareStatus)" ;;
+  esac
 }
 
 # --------------------------------------------------------------------------------

@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
-# Self-test of the container start: runs every group below and prints one summary.
-# - Sources base/sbx-start-lib.sh in a subshell, so no mount and no Docker are needed.
-# - Checks that the library runs nothing when sourced and that base/sbx-entrypoint runs the start checks.
+# Self-test of the guard: runs the real guard helpers and rules against planted problems, so a rule that cannot fail is caught.
+# - Each group runs real guard code, from the tree or from a scratch copy of it.
 # - Each group makes its own work folder under TMPDIR and removes only that folder at exit.
 # - Linux only, in the dev sandbox.
-# - Usage, from anywhere: bash tests/selftest/entrypoint/run-all.sh   (exit 0 = every case passes)
+# - Usage, from anywhere: bash tests/selftest/guard/run-all.sh   (exit 0 = every case passes)
 set -u
 . "$(dirname "$0")/../lib-expect.sh"
 
 # --------------------------------------------------------------------------------
 # Group programs, in run order
 # --------------------------------------------------------------------------------
-groupList="start-hooks.sh start-library.sh start-folders.sh"
+groupList="helpers.sh host-rules.sh suite-lists.sh sandbox-rules.sh"
 
 # --------------------------------------------------------------------------------
 # Main / Entry Point

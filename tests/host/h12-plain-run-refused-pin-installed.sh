@@ -21,8 +21,8 @@ run_containers() {
 # Checks a plain docker run is refused by the start check
 # --------------------------------------------------------------------------------
 check_plain_run_refused() {
-  if [ "$plainStatus" -ne 1 ] || [[ "$plainOutput" != *"[sbx] ERROR"* ]] || [[ "$plainOutput" != *"not a bind mount"* ]]; then
-    add_problem "a plain docker run must exit 1 with '[sbx] ERROR' and 'not a bind mount'; got exit $plainStatus: $(first_lines "$plainOutput")"
+  if [ "$plainStatus" -ne 1 ] || [[ "$plainOutput" != *"[sbx] ERROR"* ]] || [[ "$plainOutput" != *"not a mount point"* ]]; then
+    add_problem "a plain docker run must exit 1 with '[sbx] ERROR' and 'not a mount point'; got exit $plainStatus: $(first_lines "$plainOutput")"
   fi
 }
 

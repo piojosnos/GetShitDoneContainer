@@ -14,7 +14,7 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 
 - Docker Desktop on the Mac.
 - Compose v2. Run `docker compose version` and note the version for the host checklist.
-- `SBX_NAME`: lowercase letters, digits, `-` and `_`. `MyProject` is rejected; `myproject` works.
+- `SBX_NAME` follows the sandbox name rule: starts with a lowercase letter, then lowercase letters, digits or hyphens, 31 characters at most (`^[a-z][a-z0-9-]{0,30}$`). `my-project` works; `MyProject`, `my_project` and `my.project` are refused. Such a name is valid as a folder, a container name, a hostname and a Compose project.
 
 ## Build the images
 
@@ -46,7 +46,7 @@ What lives where:
 | On the Mac | In the container | Env var |
 |---|---|---|
 | `$SBX_DIR` (the one mount) | `/home/sandbox/workspace` | |
-| `$SBX_DIR/$SBX_NAME` (your code) | `/home/sandbox/workspace/$SBX_NAME` (the shell starts here) | |
+| `$SBX_DIR/$SBX_NAME` (your code) | `/home/sandbox/workspace/$SBX_NAME` (the command runs here; shells use `-w`) | |
 | `$SBX_DIR/state/claude` | `/home/sandbox/workspace/state/claude` (also `~/.claude`) | `CLAUDE_CONFIG_DIR` |
 | `$SBX_DIR/state/shell` (holds `bash_history`) | `/home/sandbox/workspace/state/shell` | `HISTFILE` |
 | `$SBX_DIR/state/gh` (holds `hosts.yml`) | `/home/sandbox/workspace/state/gh` | `GH_CONFIG_DIR` |
@@ -75,10 +75,10 @@ docker compose up -d --wait
 Open a shell. Open as many as you like:
 
 ```bash
-docker exec -it "sbx-$SBX_NAME" bash
+docker exec -it -w "/home/sandbox/workspace/$SBX_NAME" "sbx-$SBX_NAME" bash
 ```
 
-The shell starts in your project folder. Start Claude there:
+`-w` starts the shell in your project folder; without it a shell starts in `/home/sandbox/workspace`. Start Claude there:
 
 ```bash
 claude
@@ -159,8 +159,18 @@ Moving an existing project into a sandbox: its old memories and `CLAUDE.md` may 
 
 At start, the container refuses to run unless:
 
-- `/home/sandbox/workspace` is a real, writable mount of a folder on the Mac. Otherwise your work would land in the container's own layer and be lost on recreate.
-- The project folder (`$SBX_DIR/$SBX_NAME`) and `$SBX_DIR/state` exist. A mistyped `SBX_DIR` has neither.
+- `/home/sandbox/workspace` is a real, writable mount point of a folder on the Mac. Otherwise your work would land in the container's own layer and be lost on recreate.
+- The project folder (`$SBX_DIR/$SBX_NAME`) and `$SBX_DIR/state` exist, and `state` is writable. A mistyped `SBX_DIR` has neither. A mistyped `SBX_NAME` has no project folder: the start is refused, and nothing is created on your Mac.
+- `SBX_NAME` follows the sandbox name rule. Otherwise the start stops before any folder is used, with `[sbx] ERROR: SBX_NAME "<value>" breaks the sandbox name rule: ...` (the value in double quotes) and the example `my-project`.
+
+A name that breaks the rule is refused in one of two places:
+
+| Name | Refused by | When |
+|---|---|---|
+| An uppercase letter, `MyProject` | `docker compose up`: the image name of the `name-check` service must be lowercase | Before anything is created or replaced |
+| Any other name outside the rule, `my_project`, `my.project` | The container start, with the `[sbx] ERROR` line above | Before the project folder is used |
+
+Compose turns the project name into lowercase, and only `up` checks the name. Use the exact lowercase name with `down`, `ps` and `logs`.
 
 After the checks, the start runs the image's start hooks (the bundle sync is one):
 
@@ -179,10 +189,12 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 
 - Compose is told not to create a missing folder, but some Compose versions ignore that (docker/compose issue 13602).
 - A mistyped `SBX_DIR` could then get an empty folder on your Mac. The container still refuses to start, but the bogus folder is left behind.
+- `SBX_DIR` must be an absolute path: Compose reads a relative one from the repo folder and does not expand `~`.
 
 Paste this right before `docker compose up -d --wait`. If it prints anything, fix `SBX_DIR` or run the `mkdir` above, and do not start:
 
 ```bash
+case "$SBX_DIR" in /*) ;; *) echo "NOT ABSOLUTE: $SBX_DIR" ;; esac
 for d in "$SBX_NAME" state; do [ -d "$SBX_DIR/$d" ] || echo "MISSING: $SBX_DIR/$d"; done
 ```
 
@@ -190,7 +202,7 @@ If `up` fails, `docker compose logs` shows the `[sbx] ERROR` line that says what
 
 ## Verify a new build
 
-After building, or after changing anything under `base/`, `claude/`, `best-practices/` or `compose.yml`, run `bash tests/host/run-all.sh` on the Mac. When it passes, the build is good. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers in `tests/host/manual/` to run when something looks wrong.
+After building, or after changing anything under `base/`, `claude/`, `best-practices/` or `compose.yml`, run `bash tests/host/run-all.sh` on the Mac. When it passes, the automated checks hold. Claude's login and Claude's own behaviour are checked only by the helpers in `tests/host/manual/`: H-07 (login), the second half of H-09 (login and session survive a rebuild), the `claude doctor` part of H-13, and H-19 (the bundle as Claude uses it). Run them after a Claude Code pin change, a change to the managed settings, or a change to login handling. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers.
 
 It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
 
@@ -203,11 +215,12 @@ It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
 | A check fails only because of the capability drop | Remove the `cap_drop` block from `compose.yml`, keep `no-new-privileges`, and report it. |
 | "Mounts denied" or "path is not shared" | Add the parent of `SBX_DIR` in Docker Desktop, Settings, Resources, File sharing. |
 | `required variable SBX_DIR is missing a value` | Export both `SBX_NAME` and `SBX_DIR` in this terminal. |
-| Invalid project name | `SBX_NAME` must be lowercase. |
+| `up` fails with `... must be lowercase` and names `sbx-<name>-name-check` | `SBX_NAME` has an uppercase letter. Use the lowercase name; see the name rule in Requirements. |
+| `[sbx] ERROR: SBX_NAME "..." breaks the sandbox name rule` | Pick a name that follows the rule and rename the project folder to match. A sandbox named with `_` or `.` before this rule needs the same rename. |
 | `[sbx] ERROR: ... (the project folder) is missing` | Create it: `mkdir -p "$SBX_DIR/$SBX_NAME"`. Or `SBX_DIR` / `SBX_NAME` is mistyped. |
 | `claude --resume` shows nothing | Sessions are keyed by directory; start it from the same directory as before. |
 | A plain `docker run` is refused | Intended. Bypass the entrypoint, as in "Image-only smoke tests". |
 | The container stops right after `up` | Run `docker logs sbx-<name>`. The `[sbx] ERROR: start hook ... failed` line and the hook's own error above it say what broke. If the line says `is not executable`, the image lost the hook's execute bit; rebuild the image. If it says `is not a regular file`, a hook link in the image points nowhere (or something that is not a file sits in the hook folder); rebuild the image. |
 | Claude refuses to edit a file under `~/.claude/rules` or a bundle skill | Intended. Edit `best-practices/` in this repo (see "Best-practices bundle"). |
 | A sandbox migrated from the old layout loads the same rules twice | Remove the `@AGENTS.md` and `@code-conventions.md` imports from `state/claude/CLAUDE.md`. |
-| Host check H-10 showed Docker creating the missing folder | Planned follow-up: an `env_file` sentinel file at the root of `SBX_DIR`, which makes Compose fail when the folder is missing. It changes the folder layout, so it waits for your approval. |
+| Host check H-10 showed Docker creating the missing folder | Report it. An `env_file` sentinel at the root of `SBX_DIR` would make Compose itself refuse a missing folder; it is not planned while H-10 passes, and the container refuses to start either way. |

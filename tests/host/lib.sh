@@ -4,7 +4,7 @@
 # - Loads lib-report.sh (PASS and FAIL lines, collecting a check's result), lib-sandbox.sh (the test
 #   sandbox) and lib-docker.sh (the images and the old containers), all from this folder.
 # - Sets no shell options and does not cd, so the caller keeps control of both.
-# - The caller's SBX_NAME, SBX_DIR and COMPOSE_* values are never used.
+# - The caller's SBX_NAME, SBX_DIR and COMPOSE_* values are never used. DOCKER_HOST and the current Docker context are used as set; run-all.sh prints them.
 # - Deletes nothing.
 # - Host side code is stock bash 3.2 with BSD tools (macOS); GNU tools only inside docker exec.
 
@@ -14,7 +14,7 @@
 . "$(dirname "${BASH_SOURCE[0]}")/lib-docker.sh"
 
 # --------------------------------------------------------------------------------
-# host_init: sets REPO_DIR, HOST_DIR, SBX_NAME, CONTAINER and RUN; scrubs the environment.
+# host_init: sets REPO_DIR, HOST_DIR, SBX_NAME, PROJECT_DIR, CONTAINER and RUN; scrubs the environment.
 # --------------------------------------------------------------------------------
 host_init() {
   local libDir
@@ -23,9 +23,10 @@ host_init() {
   HOST_DIR=$libDir
   REPO_DIR=$(cd "$libDir/../.." && pwd -P)
 
-  unset COMPOSE_PROJECT_NAME COMPOSE_FILE COMPOSE_PROFILES COMPOSE_PATH_SEPARATOR SBX_DIR
+  unset COMPOSE_PROJECT_NAME COMPOSE_FILE COMPOSE_PROFILES COMPOSE_PATH_SEPARATOR COMPOSE_ENV_FILES COMPOSE_IGNORE_ORPHANS COMPOSE_REMOVE_ORPHANS SBX_DIR
   SBX_NAME=hosttest
   export SBX_NAME
+  PROJECT_DIR=/home/sandbox/workspace/$SBX_NAME
   CONTAINER=sbx-hosttest
 
   resolve_run_dir
@@ -83,9 +84,7 @@ resolve_run_dir() {
     return 0
   fi
 
-  mountSource=$(docker container inspect \
-    --format '{{range .Mounts}}{{if eq .Destination "/home/sandbox/workspace"}}{{.Source}}{{end}}{{end}}' \
-    "$CONTAINER" 2>/dev/null </dev/null) || return 0
+  mountSource=$(sandbox_mount_source) || return 0
 
   if [ -z "$mountSource" ]; then
     return 0
@@ -108,6 +107,7 @@ make_run_dir() {
 
   baseDir=${TMPDIR:-/tmp}
   baseDir=${baseDir%/}
+
   if [ -z "$baseDir" ]; then
     baseDir=/tmp
   fi

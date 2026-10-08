@@ -88,7 +88,7 @@ RUN mkdir -p /etc/sbx/start.d
 # - Creates the empty mount target (workspace) and ~/.local/state.
 # - Created as sandbox, so every level, including ~/.local, is owned by sandbox.
 # - At container start, compose mounts $SBX_DIR from the Mac over workspace.
-# - It never creates anything on the Mac.
+# - Compose is asked not to create a missing $SBX_DIR on the Mac, but some versions ignore that; the entrypoint then refuses to start.
 USER sandbox
 RUN mkdir -p /home/sandbox/workspace /home/sandbox/.local/state
 

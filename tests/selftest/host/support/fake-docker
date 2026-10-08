@@ -7,9 +7,21 @@
 # - Only the container sbx-hosttest exists; any other name gets "No such container".
 # - Compose up and a run with --network none execute the real claude/start.d/10-best-practices,
 #   as the real entrypoint does (FAKE_REPO points at the repo).
+# - A run with --network none first runs a copy of the real entrypoint with only the run's -e values (no hooks; the fake runs those below), as the real container does.
 # - A run that mounts its own folder over /etc/sbx/start.d runs the real start library on that folder
 #   instead of the bundle sync.
 # - Runs without set -u, as it always has, so an absent knob reads as empty.
+# - docker exec starts in the working_dir of FAKE_REPO/compose.yml, as the real container does,
+#   unless it is given -w or FAKE_WORKDIR is set.
+# - Compose up creates the working_dir of FAKE_REPO/compose.yml under the mount, as the Docker daemon does for
+#   a missing working directory.
+# - Compose up then runs the real check_project_and_state_folders on the mounted folder; a refusal leaves an
+#   exited container behind, and docker logs prints what the check said.
+# - Compose up refuses an uppercase letter in the image name of the name-check service it reads from
+#   FAKE_REPO/compose.yml, before anything else, as Docker refuses such an image name. The order and the
+#   message are claims that the Mac run of H-03 confirms.
+# - Compose config turns the project name into lowercase and never refuses a name for its case, as real
+#   Compose 2.40 does (measured on the Mac).
 #
 # Knobs, one line each:
 # FAKE_STATE: the folder that holds the fake container state (set by lib.sh)
@@ -21,11 +33,16 @@
 # FAKE_CLAUDE_VERSION: the version claude --version prints (default: the pin in claude/Dockerfile)
 # FAKE_COMPOSE_VERSION: what docker compose version prints (default 2.39.1)
 # FAKE_COMPOSE_FAIL: 1 makes docker compose version fail
+# FAKE_CONTEXT: the name docker context show prints (default desktop-linux)
 # FAKE_CONFIG_NAME: the project name docker compose config prints (default sbx-<SBX_NAME>)
 # FAKE_CONFIG_LAX: 1 makes docker compose config work without SBX_DIR
+# FAKE_CONFIG_NO_NAME_CHECK: 1 makes docker compose config work without SBX_NAME
+# FAKE_DOTENV_SBX_DIR: a compose call without --env-file and without SBX_DIR runs with this SBX_DIR, as a repo .env would give it
 # FAKE_BUILD_FAIL: the image tag whose build fails
 # FAKE_UP_RC: a non-zero value makes compose up fail with that status
-# FAKE_H10: what compose up does when the project folder is missing: honored, ignored or started
+# FAKE_FOLDER_CHECK_OFF: 1 makes compose up skip the project and state folder check, as an entrypoint that does not check would
+# FAKE_IMAGE_NAME_CHECK_OFF: 1 makes compose up skip that image name check, as a Compose that never inspects the image of a service without containers would
+# FAKE_H10: what compose up does when the sandbox folder is missing: honored, ignored, started, or other (it fails for a reason that is not the folder)
 # FAKE_NO_SYNC: 1 makes compose up skip the start hook
 # FAKE_SYNC_CLOBBERS: 1 makes compose up delete state/claude/skills and projects before the hook
 # FAKE_DOWN_KEEPS: 1 makes compose down leave the container in place
@@ -34,11 +51,14 @@
 # FAKE_EXTRA_MOUNT: 1 adds a volume mount to the container inspect answer
 # FAKE_PLAIN_OK: 1 lets a plain docker run start instead of refusing it
 # FAKE_OFFLINE_FAIL: 1 makes a run with --network none fail to start
+# FAKE_ENTRY_NAME_CHECK_OFF: 1 makes a docker run start as an entrypoint without the name check would
 # FAKE_HOOK_IGNORED: 1 makes a run whose hook fails still run its command
 # FAKE_HOOK_DIR_IGNORED: 1 makes a run with its own folder over /etc/sbx/start.d skip the hook step
 # FAKE_PS: the docker ps answer (default: one old cc_oldbox container, running)
-# FAKE_VOLUMES: the volume names docker volume ls lists
-# FAKE_VOLUMES_AFTER_BUILD: the volume names docker volume ls lists once a build has run
+# FAKE_PS_FAIL: 1 makes docker ps fail as if the daemon were unreachable
+# FAKE_VOLUMES: the volume names of the test project that docker volume ls lists
+# FAKE_VOLUMES_AFTER_BUILD: the volume names of the test project that docker volume ls lists once a build has run
+# FAKE_UNRELATED_VOLUMES_AFTER_BUILD: volume names of other projects, listed once a build has run, only when the list is not scoped to the test project
 # FAKE_BUNDLE_DRIFT: 1 gives the bundle copied out of the image an extra file
 # FAKE_BUNDLE_OWNER: the owner of /opt/sbx/best-practices (default root)
 # FAKE_BUNDLE_WRITABLE: 1 lets the sandbox user write in the bundle
@@ -46,12 +66,14 @@
 # FAKE_MANAGED_BAD: 1 makes the managed settings not parse
 # FAKE_ID: the answer of id in the container (default: the sandbox user)
 # FAKE_UNAME: the answer of uname -m in the container (default aarch64)
-# FAKE_NO_TOUCH: 1 makes a file written in the workspace never reach the host
+# FAKE_WORKDIR: the folder docker exec starts in when it is given no -w (default: the working_dir of compose.yml)
+# FAKE_NO_TOUCH: 1 makes a file written in the workspace never reach the host (a touched file is named as the command names it)
 # FAKE_STAT_OWNER: the owner stat reports for any path (default sandbox)
 # FAKE_ENV_MISSING: the name of one variable left out of the container environment
 # FAKE_UPDATE_ON: 1 makes claude update run instead of saying updates are disabled
 # FAKE_SHARE_EXISTS: 1 makes ~/.local/share/claude exist in the container home
-# FAKE_GIT_DUBIOUS: 1 makes git status fail with a dubious ownership message
+# FAKE_EXEC_RC: a non-zero value makes the exec of the share folder test return that status, as a docker exec that could not run does
+# FAKE_GIT_DUBIOUS: 1 makes git status fail with a dubious ownership message (git status works only in the project folder)
 # FAKE_SAFE_DIR: the safe.directory values git config lists (default *)
 # FAKE_NO_GIT_WRITE: 1 makes the git identity write never reach the state folder
 # FAKE_NO_HISTORY: 1 makes the fake shell keep no history
@@ -65,8 +87,8 @@
 # log_call ARG...: appends one line for the call to FAKE_LOG, in the format the safety cases parse.
 # --------------------------------------------------------------------------------
 log_call() {
-  printf 'ENV SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
-    "${SBX_NAME-unset}" "${SBX_DIR-unset}" "${COMPOSE_PROJECT_NAME-unset}" "$*" >>"$FAKE_LOG"
+  printf 'ENV DOCKER_HOST=%s SBX_NAME=%s SBX_DIR=%s COMPOSE_PROJECT_NAME=%s ARGS: %s\n' \
+    "${DOCKER_HOST-unset}" "${SBX_NAME-unset}" "${SBX_DIR-unset}" "${COMPOSE_PROJECT_NAME-unset}" "$*" >>"$FAKE_LOG"
 }
 
 # --------------------------------------------------------------------------------
@@ -82,6 +104,64 @@ unhandled() {
 # --------------------------------------------------------------------------------
 has_container() {
   [ -f "$FAKE_STATE/container" ]
+}
+
+# --------------------------------------------------------------------------------
+# compose_working_dir: prints the working_dir of FAKE_REPO/compose.yml, without quotes, with ${SBX_NAME} replaced by hosttest.
+# --------------------------------------------------------------------------------
+compose_working_dir() {
+  sed -n 's/^[[:space:]]*working_dir:[[:space:]]*//p' "$FAKE_REPO/compose.yml" | head -n 1 | tr -d '"' | sed 's/\${SBX_NAME}/hosttest/'
+}
+
+# --------------------------------------------------------------------------------
+# name_check_image: prints the image of FAKE_REPO/compose.yml that holds ${SBX_NAME}, without quotes, with ${SBX_NAME} replaced by SBX_NAME as given; prints nothing when there is no such line.
+# --------------------------------------------------------------------------------
+name_check_image() {
+  local imageLine
+  local placeholder='${SBX_NAME}'
+  local imageName
+
+  imageLine=$(sed -n 's/^[[:space:]]*image:[[:space:]]*//p' "$FAKE_REPO/compose.yml" | grep -F '${SBX_NAME}' | head -n 1 | tr -d '"')
+  if [ -z "$imageLine" ]; then
+    return 0
+  fi
+
+  imageName=${imageLine//"$placeholder"/${SBX_NAME:-}}
+  printf '%s\n' "$imageName"
+}
+
+# --------------------------------------------------------------------------------
+# required_message NAME: prints the text between ${NAME:? and the next } in FAKE_REPO/compose.yml (the first such text), as Compose prints it for a missing variable.
+# --------------------------------------------------------------------------------
+required_message() {
+  local startText='${'"$1"':?'
+  local endChar='}'
+  local messageLine
+
+  messageLine=$(grep -F -- "$startText" "$FAKE_REPO/compose.yml" | head -n 1)
+  messageLine=${messageLine#*"$startText"}
+  printf '%s\n' "${messageLine%%"$endChar"*}"
+}
+
+# --------------------------------------------------------------------------------
+# project_name_of TEXT: prints TEXT as Compose names a project from the name: line: lowercase, only a-z, 0-9, _ and -, no leading _ or -.
+# --------------------------------------------------------------------------------
+project_name_of() {
+  printf '%s\n' "$1" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9_\n-' | sed 's/^[_-]*//'
+}
+
+# --------------------------------------------------------------------------------
+# host_path_of CONTAINER_PATH: prints the host path of /home/sandbox/workspace or a path under it; returns 1 for any other path.
+# --------------------------------------------------------------------------------
+host_path_of() {
+  local hostRoot
+
+  hostRoot=$(cat "$FAKE_STATE/container.dir")
+  case "$1" in
+    /home/sandbox/workspace) printf '%s\n' "$hostRoot" ;;
+    /home/sandbox/workspace/*) printf '%s/%s\n' "$hostRoot" "${1#/home/sandbox/workspace/}" ;;
+    *) return 1 ;;
+  esac
 }
 
 # --------------------------------------------------------------------------------
@@ -115,24 +195,76 @@ compose_version() {
 }
 
 # --------------------------------------------------------------------------------
-# compose_config: answers docker compose config, which needs SBX_DIR unless FAKE_CONFIG_LAX is 1.
+# fake_context ARG...: answers docker context show with FAKE_CONTEXT; any other context call is unhandled.
+# --------------------------------------------------------------------------------
+fake_context() {
+  if [ "${2:-}" = "show" ]; then
+    printf '%s\n' "${FAKE_CONTEXT:-desktop-linux}"
+    return 0
+  fi
+  unhandled "$@"
+}
+
+# --------------------------------------------------------------------------------
+# compose_config: answers docker compose config as real Compose does: the project name in lowercase, exit 0; a missing SBX_NAME or SBX_DIR is refused with the message from compose.yml, unless FAKE_CONFIG_NO_NAME_CHECK or FAKE_CONFIG_LAX is 1.
 # --------------------------------------------------------------------------------
 compose_config() {
-  if [ -z "${SBX_DIR:-}" ] && [ "${FAKE_CONFIG_LAX:-0}" != 1 ]; then
-    echo "required variable SBX_DIR is missing a value: SBX_DIR is required (absolute host path of the sandbox folder)" >&2
+  if [ -z "${SBX_NAME:-}" ] && [ "${FAKE_CONFIG_NO_NAME_CHECK:-0}" != 1 ]; then
+    echo "required variable SBX_NAME is missing a value: $(required_message SBX_NAME)" >&2
     return 15
   fi
-  printf 'name: %s\nservices:\n  sandbox: {}\n' "${FAKE_CONFIG_NAME:-sbx-${SBX_NAME:-unset}}"
+  if [ -z "${SBX_DIR:-}" ] && [ "${FAKE_CONFIG_LAX:-0}" != 1 ]; then
+    echo "required variable SBX_DIR is missing a value: $(required_message SBX_DIR)" >&2
+    return 15
+  fi
+  printf 'name: %s\nservices:\n  sandbox: {}\n' "${FAKE_CONFIG_NAME:-$(project_name_of "sbx-${SBX_NAME:-unset}")}"
   return 0
+}
+
+# --------------------------------------------------------------------------------
+# create_working_dir: records the mount and creates the working_dir of compose.yml under it, as the daemon does when it is missing.
+# --------------------------------------------------------------------------------
+create_working_dir() {
+  local workHostPath
+
+  printf '%s\n' "$SBX_DIR" >"$FAKE_STATE/container.dir"
+
+  if workHostPath=$(host_path_of "$(compose_working_dir)"); then
+    mkdir -p "$workHostPath"
+  fi
+}
+
+# --------------------------------------------------------------------------------
+# run_folder_check: runs the real check_project_and_state_folders on the mounted folder; its messages go to container.log.
+# --------------------------------------------------------------------------------
+run_folder_check() {
+  (
+    . "$FAKE_REPO/base/sbx-start-lib.sh"
+    ws=$SBX_DIR
+    state=$ws/state
+    SBX_NAME=${SBX_NAME:-hosttest}
+    check_project_and_state_folders
+  ) 2>"$FAKE_STATE/container.log"
 }
 
 # --------------------------------------------------------------------------------
 # compose_up: starts the fake container and runs the real start hook, as the real entrypoint does.
 # --------------------------------------------------------------------------------
 compose_up() {
+  local imageName
+
   if [ -z "${SBX_DIR:-}" ]; then
-    echo "required variable SBX_DIR is missing a value: SBX_DIR is required" >&2
+    echo "required variable SBX_DIR is missing a value: $(required_message SBX_DIR)" >&2
     return 15
+  fi
+  if [ "${FAKE_IMAGE_NAME_CHECK_OFF:-0}" != 1 ]; then
+    imageName=$(name_check_image)
+    case "$imageName" in
+      *[A-Z]*)
+        echo "unable to get image '$imageName': Error response from daemon: invalid reference format: repository name (library/$imageName) must be lowercase" >&2
+        return 1
+        ;;
+    esac
   fi
   if [ ! -d "$SBX_DIR" ]; then
     case "${FAKE_H10:-honored}" in
@@ -148,6 +280,10 @@ compose_up() {
         printf '%s\n' "$SBX_DIR" >"$FAKE_STATE/container.dir"
         return 0
         ;;
+      other)
+        echo "fake compose: the start failed for another reason" >&2
+        return 1
+        ;;
       *)
         echo "fake compose: bind source path does not exist: $SBX_DIR" >&2
         return 1
@@ -158,8 +294,16 @@ compose_up() {
     echo "fake compose: up failed" >&2
     return "$FAKE_UP_RC"
   fi
+  create_working_dir
+  if [ "${FAKE_FOLDER_CHECK_OFF:-0}" != 1 ] && ! run_folder_check; then
+    : >"$FAKE_STATE/container"
+    : >"$FAKE_STATE/container.exited"
+    cat "$FAKE_STATE/container.log" >&2
+    echo "fake compose: container sbx-hosttest exited (1)" >&2
+    return 1
+  fi
+  rm -f "$FAKE_STATE/container.exited" "$FAKE_STATE/container.log"
   : >"$FAKE_STATE/container"
-  printf '%s\n' "$SBX_DIR" >"$FAKE_STATE/container.dir"
   mkdir -p "$SBX_DIR/state/claude"
   if [ "${FAKE_SYNC_CLOBBERS:-0}" = 1 ]; then
     rm -rf "$SBX_DIR/state/claude/skills" "$SBX_DIR/state/claude/projects"
@@ -182,19 +326,29 @@ compose_down() {
     rm -f "$(cat "$FAKE_STATE/container.dir")/state/shell/bash_history"
   fi
   if [ "${FAKE_DOWN_KEEPS:-0}" != 1 ]; then
-    rm -f "$FAKE_STATE/container" "$FAKE_STATE/container.dir"
+    rm -f "$FAKE_STATE/container" "$FAKE_STATE/container.dir" "$FAKE_STATE/container.exited" "$FAKE_STATE/container.log"
   fi
   return 0
 }
 
 # --------------------------------------------------------------------------------
-# fake_compose ARG...: drops the -f FILE pair, then answers version, config, up or down.
+# fake_compose ARG...: drops the -f FILE and --env-file FILE pairs, then answers version, config, up or down.
 # --------------------------------------------------------------------------------
 fake_compose() {
+  local envFileGiven=0
+
   shift
-  if [ "${1:-}" = "-f" ]; then
+  while [ "${1:-}" = "-f" ] || [ "${1:-}" = "--env-file" ]; do
+    if [ "$1" = "--env-file" ]; then
+      envFileGiven=1
+    fi
     shift 2
+  done
+
+  if [ "$envFileGiven" -eq 0 ] && [ -z "${SBX_DIR:-}" ] && [ -n "${FAKE_DOTENV_SBX_DIR:-}" ]; then
+    export SBX_DIR=$FAKE_DOTENV_SBX_DIR
   fi
+
   composeSub=${1:-}
   shift
   case "$composeSub" in
@@ -235,9 +389,31 @@ fake_container_inspect() {
       fi
       ;;
     *Mounts*) cat "$FAKE_STATE/container.dir" ;;
-    *State.Running*) printf 'true\n' ;;
+    *State.Running*)
+      if [ -f "$FAKE_STATE/container.exited" ]; then
+        printf 'false\n'
+      else
+        printf 'true\n'
+      fi
+      ;;
     *) unhandled "container inspect $template" ;;
   esac
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# fake_logs ARG...: answers docker logs for the test container: what the start check printed, or nothing.
+# --------------------------------------------------------------------------------
+fake_logs() {
+  shift
+  containerName=${1:-}
+  if [ "$containerName" != "sbx-hosttest" ] || ! has_container; then
+    echo "Error: No such container: $containerName" >&2
+    return 1
+  fi
+  if [ -f "$FAKE_STATE/container.log" ]; then
+    cat "$FAKE_STATE/container.log"
+  fi
   return 0
 }
 
@@ -287,7 +463,35 @@ fake_image_inspect() {
 }
 
 # --------------------------------------------------------------------------------
-# run_network_none ARG...: a run with --network none: runs the real start hook, then the command.
+# run_entrypoint_copy MOUNT NAME_ARG: runs a copy of the real entrypoint on MOUNT with a clean environment, then the command true; returns 1 and prints its output if it refuses.
+# --------------------------------------------------------------------------------
+# NAME_ARG is SBX_NAME=VALUE, or empty when the run gave no SBX_NAME. The library copy gets the
+# paths of the run, an empty hook folder (the fake runs the hooks itself) and a mount test that says yes.
+run_entrypoint_copy() {
+  entryDir=$FAKE_STATE/entry
+  rm -rf "$entryDir"
+  mkdir -p "$entryDir/hooks"
+  cp "$FAKE_REPO/base/sbx-entrypoint" "$FAKE_REPO/base/sbx-start-lib.sh" "$entryDir"
+  {
+    echo "ws=$1"
+    echo "state=$1/state"
+    echo "hookDir=$entryDir/hooks"
+    echo "is_mount() { return 0; }"
+    if [ "${FAKE_ENTRY_NAME_CHECK_OFF:-0}" = 1 ]; then
+      echo "check_sandbox_name() { return 0; }"
+    fi
+  } >>"$entryDir/sbx-start-lib.sh"
+  env -i PATH="$PATH" ${2:+"$2"} bash "$entryDir/sbx-entrypoint" true >"$entryDir/entry.out" 2>&1 </dev/null
+  entryStatus=$?
+  if [ "$entryStatus" -ne 0 ]; then
+    cat "$entryDir/entry.out" >&2
+    return 1
+  fi
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# run_network_none ARG...: a run with --network none: runs a copy of the real entrypoint, then the real start hook, then the command.
 # --------------------------------------------------------------------------------
 run_network_none() {
   hookBroken=0
@@ -305,7 +509,15 @@ run_network_none() {
   mountSource=""
   hookSource=""
   lastArg=""
+  nameArg=""
+  previousArg=""
   for runArg in "$@"; do
+    if [ "$previousArg" = "-e" ]; then
+      case "$runArg" in
+        SBX_NAME=*) nameArg=$runArg ;;
+      esac
+    fi
+    previousArg=$runArg
     case "$runArg" in
       type=bind,source=*)
         mountTarget=${runArg#*,target=}
@@ -321,6 +533,9 @@ run_network_none() {
     esac
     lastArg=$runArg
   done
+  if ! run_entrypoint_copy "$mountSource" "$nameArg"; then
+    return 1
+  fi
   if [ -n "$hookSource" ]; then
     if [ "${FAKE_HOOK_DIR_IGNORED:-0}" != 1 ]; then
       hookOutput=$( ( . "$FAKE_REPO/base/sbx-start-lib.sh"; hookDir=$hookSource; run_start_hooks ) 2>&1 </dev/null )
@@ -359,8 +574,7 @@ run_plain() {
     echo "started without a mount"
     return 0
   fi
-  echo "[sbx] ERROR: /home/sandbox/workspace is not a bind mount; its data would be lost on recreate." >&2
-  echo "[sbx]        Start the sandbox with 'docker compose up' (see SANDBOX.md)." >&2
+  ( . "$FAKE_REPO/base/sbx-start-lib.sh"; is_mount() { return 1; }; check_workspace_mount ) </dev/null
   return 1
 }
 
@@ -398,15 +612,35 @@ fake_build() {
 }
 
 # --------------------------------------------------------------------------------
-# fake_volume ARG...: answers docker volume ls from FAKE_VOLUMES, or FAKE_VOLUMES_AFTER_BUILD once a build ran.
+# fake_volume ARG...: answers docker volume ls; the list is scoped by --filter label=com.docker.compose.project=sbx-hosttest.
 # --------------------------------------------------------------------------------
+# Test project volumes come from FAKE_VOLUMES, or FAKE_VOLUMES_AFTER_BUILD once a build ran.
+# An unscoped list adds FAKE_UNRELATED_VOLUMES_AFTER_BUILD once a build ran.
 fake_volume() {
   if [ "${2:-}" != "ls" ]; then
     unhandled "volume $*"
   fi
+  shift 2
+  volumeScoped=0
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      -q) shift ;;
+      --filter)
+        if [ "${2:-}" != "label=com.docker.compose.project=sbx-hosttest" ]; then
+          unhandled "volume ls --filter ${2:-}"
+        fi
+        volumeScoped=1
+        shift 2
+        ;;
+      *) unhandled "volume ls $*" ;;
+    esac
+  done
   volumeList=${FAKE_VOLUMES:-}
   if [ -f "$FAKE_STATE/built" ] && [ -n "${FAKE_VOLUMES_AFTER_BUILD:-}" ]; then
     volumeList=$FAKE_VOLUMES_AFTER_BUILD
+  fi
+  if [ -f "$FAKE_STATE/built" ] && [ "$volumeScoped" = 0 ]; then
+    volumeList="$volumeList ${FAKE_UNRELATED_VOLUMES_AFTER_BUILD:-}"
   fi
   for volumeName in $volumeList; do
     printf '%s\n' "$volumeName"
@@ -418,6 +652,10 @@ fake_volume() {
 # fake_ps ARG...: answers docker ps with the one old container, or FAKE_PS.
 # --------------------------------------------------------------------------------
 fake_ps() {
+  if [ "${FAKE_PS_FAIL:-0}" = 1 ]; then
+    echo "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?" >&2
+    return 1
+  fi
   printf '%s\n' "${FAKE_PS-deadbeef0001 cc_oldbox running}"
   return 0
 }
@@ -549,7 +787,14 @@ exec_context() {
 # --------------------------------------------------------------------------------
 fake_exec() {
   shift
+  execDir=""
   while [ "$#" -gt 0 ] && [ "${1#-}" != "$1" ]; do
+    case "$1" in
+      -w | --workdir)
+        execDir=${2:-}
+        shift
+        ;;
+    esac
     shift
   done
   execName=${1:-}
@@ -558,13 +803,21 @@ fake_exec() {
     echo "Error: No such container: $execName" >&2
     return 1
   fi
+  if [ -z "$execDir" ]; then
+    execDir=${FAKE_WORKDIR:-$(compose_working_dir)}
+  fi
   case "$*" in
     id) printf '%s\n' "${FAKE_ID:-uid=1000(sandbox) gid=1000(sandbox) groups=1000(sandbox)}" ;;
     "uname -m") printf '%s\n' "${FAKE_UNAME:-aarch64}" ;;
     "sh -c touch"*)
       if [ "${FAKE_NO_TOUCH:-0}" != 1 ]; then
-        mkdir -p "$(cat "$FAKE_STATE/container.dir")/hosttest"
-        : >"$(cat "$FAKE_STATE/container.dir")/hosttest/x.txt"
+        touchRest=$*
+        touchRest=${touchRest#sh -c touch }
+        touchName=${touchRest%%;*}
+        if touchDir=$(host_path_of "$execDir"); then
+          mkdir -p "$touchDir"
+          : >"$touchDir/$touchName"
+        fi
       fi
       printf '.\n..\n.bashrc\n.local\nworkspace\n'
       ;;
@@ -590,6 +843,10 @@ fake_exec() {
       fi
       ;;
     "git status")
+      if [ "$execDir" != "/home/sandbox/workspace/hosttest" ]; then
+        echo "fatal: not a git repository (or any of the parent directories): .git" >&2
+        return 128
+      fi
       if [ "${FAKE_GIT_DUBIOUS:-0}" = 1 ]; then
         echo "fatal: detected dubious ownership in repository at '/home/sandbox/workspace/hosttest'" >&2
         return 128
@@ -597,16 +854,21 @@ fake_exec() {
       echo "On branch main"
       ;;
     "git config --system --get-all safe.directory") printf '%s\n' "${FAKE_SAFE_DIR:-*}" ;;
-    "git config --global user.name T")
+    "git config --global user.name "*)
       if [ "${FAKE_NO_GIT_WRITE:-0}" != 1 ]; then
+        identityValue=$*
+        identityValue=${identityValue#git config --global user.name }
         mkdir -p "$(cat "$FAKE_STATE/container.dir")/state/git"
-        printf '[user]\n\tname = T\n' >"$(cat "$FAKE_STATE/container.dir")/state/git/config"
+        printf '[user]\n\tname = %s\n' "$identityValue" >"$(cat "$FAKE_STATE/container.dir")/state/git/config"
       fi
       ;;
     "bash -i") exec_history_shell ;;
     "env H18_SCRIPT="*) exec_h18_run "$@" ;;
     "sh -c : h14-probe"*) exec_h14_probe ;;
     "sh -c test ! -e"*)
+      if [ "${FAKE_EXEC_RC:-0}" != 0 ]; then
+        return "$FAKE_EXEC_RC"
+      fi
       if [ "${FAKE_SHARE_EXISTS:-0}" = 1 ]; then
         return 1
       fi
@@ -626,7 +888,9 @@ case "${1:-}" in
   info) fake_info "$@" ;;
   version) fake_version "$@" ;;
   compose) fake_compose "$@" ;;
+  context) fake_context "$@" ;;
   container) fake_container_inspect "$@" ;;
+  logs) fake_logs "$@" ;;
   image) fake_image_inspect "$@" ;;
   run) fake_run "$@" ;;
   build) fake_build "$@" ;;

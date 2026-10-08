@@ -3,7 +3,7 @@
 # - A non-tty bash -i is held open in the background (the first shell of the manual check).
 # - The marker must reach the history file on the host while that shell is still open.
 # - Then the sandbox is taken down and started again, and a fresh shell must show the marker.
-# - The background pipeline is detached and never waited for; the recreate ends it.
+# - The background shell, with everything it started, is stopped when the check ends, pass or fail.
 # Depends on: nothing
 # Needs: test sandbox running; stops and restarts it
 set -u
@@ -18,6 +18,7 @@ historyFile="$RUN/state/shell/bash_history"
 # --------------------------------------------------------------------------------
 start_background_shell() {
   ( ( printf 'echo %s\n' "$marker"; sleep 25 ) | docker exec -i "$CONTAINER" bash -i ) >/dev/null 2>&1 &
+  shellPid=$!
 }
 
 # --------------------------------------------------------------------------------
@@ -27,6 +28,7 @@ wait_for_marker() {
   local seen i
 
   seen=0
+
   for i in 1 2 3 4 5 6 7 8 9 10; do
     if grep -Fq "$marker" "$historyFile" 2>/dev/null; then
       seen=1
@@ -63,6 +65,7 @@ check_fresh_shell_history() {
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-08 || exit 1
 start_background_shell
+trap 'kill_tree "$shellPid"' EXIT
 wait_for_marker || exit 1
 restart_test_sandbox H-08 h08-down.log || exit 1
 check_fresh_shell_history

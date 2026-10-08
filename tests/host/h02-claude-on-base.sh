@@ -18,10 +18,11 @@ read_layers() {
 }
 
 # --------------------------------------------------------------------------------
-# Checks the Claude image's layers start with every base layer
+# Checks the Claude image's layers start with every base layer and add at least one of their own
 # --------------------------------------------------------------------------------
 check_layer_prefix() {
   local claudePrefix
+  local claudeCount
   local i
   local baseLine
   local claudeLine
@@ -34,6 +35,7 @@ check_layer_prefix() {
 
     if [ "$claudePrefix" != "$baseLayers" ]; then
       i=1
+
       while [ "$i" -le "$baseCount" ]; do
         baseLine=$(printf '%s\n' "$baseLayers" | sed -n "${i}p")
         claudeLine=$(printf '%s\n' "$claudeLayers" | sed -n "${i}p")
@@ -45,6 +47,11 @@ check_layer_prefix() {
 
         i=$((i + 1))
       done
+    fi
+
+    claudeCount=$(( $(printf '%s\n' "$claudeLayers" | wc -l) ))
+    if [ "$claudeCount" -le "$baseCount" ]; then
+      add_problem "sbx-claude:local has no layer of its own on top of sbx-base:local (base: $baseCount layers, Claude image: $claudeCount)"
     fi
   fi
 }

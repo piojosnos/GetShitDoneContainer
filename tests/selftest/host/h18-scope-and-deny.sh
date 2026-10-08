@@ -7,6 +7,18 @@ set -u
 . "$(dirname "$0")/lib.sh"
 
 # --------------------------------------------------------------------------------
+# every_scenario_in_project_folder: true if the log has at least one scenario exec and each one passes -w for the project folder.
+# --------------------------------------------------------------------------------
+every_scenario_in_project_folder() {
+  local scenarioCount projectCount
+
+  scenarioCount=$(grep -c 'H18_SCRIPT=' "$FAKE_LOG")
+  projectCount=$(grep -c 'ARGS: exec -w /home/sandbox/workspace/hosttest sbx-hosttest .*H18_SCRIPT=' "$FAKE_LOG")
+
+  [ "$scenarioCount" -gt 0 ] && [ "$scenarioCount" = "$projectCount" ]
+}
+
+# --------------------------------------------------------------------------------
 # Cases of H-18, each run alone against the fake docker
 # --------------------------------------------------------------------------------
 case_h18_alone() {
@@ -22,7 +34,8 @@ case_h18_alone() {
   expect "H-18: the project file was edited" equals "$(cat "$FIXTURE/hosttest/h18/control.txt")" "h18 control after"
   expect "H-18: both scenario scripts name container paths" has_text "$FIXTURE/logs/h18-deny.json" "/home/sandbox/workspace/state/claude/rules/"
   expect "H-18: the exec runs with the fake API script and log in the environment" \
-    has_match "$FAKE_LOG" 'ARGS: exec sbx-hosttest env H18_SCRIPT=/home/sandbox/workspace/logs/h18-scope.json H18_LOG=/home/sandbox/workspace/logs/h18-scope.log '
+    has_match "$FAKE_LOG" 'ARGS: exec( -w [^ ]+)? sbx-hosttest env H18_SCRIPT=/home/sandbox/workspace/logs/h18-scope.json H18_LOG=/home/sandbox/workspace/logs/h18-scope.log '
+  expect "H-18: Claude runs in the project folder" every_scenario_in_project_folder
   run_standalone "$WORK/out.h18.eager" h18-scope-and-deny.sh FAKE_SCOPE_EAGER=1
   expect "H-18: a path-scoped rule loaded at the first request fails" equals "$CHECK_RC" "1"
   expect "H-18: the eager load is named" has_text "$WORK/out.h18.eager" "loaded before any matching file was touched"

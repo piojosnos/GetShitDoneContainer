@@ -1,8 +1,8 @@
-# Host checklist (H-00..H-19)
+# Host checklist (H-00..H-21)
 
-The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them. Four short helpers in `tests/host/manual/` cover the steps that need you; run one when something looks wrong.
+The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them. Four short helpers in `tests/host/manual/` check what the script cannot: Claude's login, Claude's own behaviour and `claude doctor`. Run them after a change the script cannot see, or when a check fails and you want to look closer.
 
-- **IDs:** each check has an ID, H-00 to H-19 (H for host), so results can be reported by ID ("H-10 failed").
+- **IDs:** each check has an ID, H-00 to H-21 (H for host), so results can be reported by ID ("H-10 failed").
 - **When:** once after building a new version of the images or `compose.yml`.
 - **Setup and daily use:** see [`SANDBOX.md`](../SANDBOX.md).
 - Commands run from the repo root.
@@ -27,7 +27,7 @@ What it does:
 - Leaves the test sandbox running, so a helper can use it.
 - Ends by printing the cleanup command and where the helpers are.
 
-It needs no exported variables and ignores `SBX_NAME` and `SBX_DIR` from your terminal, so your own sandboxes are never touched.
+It needs no exported variables and ignores `SBX_NAME` and `SBX_DIR` from your terminal, so your own sandboxes are never touched. It uses the Docker your terminal points at (`DOCKER_HOST` or the current context) and prints which one first.
 
 Optional: `SBXTEST_NO_CACHE=1 bash tests/host/run-all.sh` rebuilds the images without the cache in H-09. It is slow.
 
@@ -38,7 +38,7 @@ What each check proves:
 | H-00 | Compose v2 or newer is installed | `h00-compose-v2.sh` | automatic |
 | H-01 | Images build natively (arm64 on Apple silicon) | `h01-native-arch.sh` | automatic |
 | H-02 | The Claude image sits on the base image | `h02-claude-on-base.sh` | automatic |
-| H-03 | Name and folder variables are required | `h03-variable-interpolation.sh` | automatic |
+| H-03 | Name and folder variables are required; `up` refuses an uppercase name before it creates anything | `h03-variable-interpolation.sh` | automatic |
 | H-04 | The user is non-root (uid 1000) | `h04-nonroot-user.sh` | automatic |
 | H-05 | Workspace and home layout | `h05-workspace-and-home.sh` | automatic |
 | H-06 | Git works and the identity persists | `h06-git-and-identity.sh` | automatic |
@@ -55,11 +55,13 @@ What each check proves:
 | H-17 | A start works with networking off; a failing hook, a hook file that is not executable and a dangling hook link each stop the start | `h17-start-offline-and-failing-hook.sh` | automatic |
 | H-18 | In the real image, a path-scoped rule loads only after Claude reads a matching file, and the managed deny refuses edits to synced files under `bypassPermissions`; no login or network needed | `h18-scope-and-deny.sh` | automatic |
 | H-19 | Skills in Claude, a rule followed, a language rule on demand, a refused edit, the managed settings source | `manual/h19-bundle-behaviour.sh` | helper only |
+| H-20 | A sandbox folder without the project folder (a mistyped name) is refused, and nothing is created | `h20-mistyped-name-refused.sh` | automatic |
+| H-21 | An `SBX_NAME` that breaks the sandbox name rule is refused at start; the command never runs | `h21-bad-name-refused.sh` | automatic |
 | Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |
 
 ## Manual helpers (when something looks wrong)
 
-Not a required step. Run one when a check fails and you want to look closer, or after a change the automated checks cannot see (a Claude Code pin bump, the managed settings). Each needs a real terminal and the running test sandbox from `run-all.sh`.
+Run them after a change the script cannot see (a Claude Code pin bump, a change to the managed settings or to login handling), or when a check fails and you want to look closer. Each needs a real terminal and the running test sandbox from `run-all.sh`.
 
 ```bash
 bash tests/host/manual/h07-login.sh
@@ -83,12 +85,15 @@ bash tests/host/manual/h19-bundle-behaviour.sh
 ## Reading a failure
 
 - **FAIL line:** shows the check ID and what went wrong, with detail lines under it.
-- **NOT RUN:** an earlier step failed: the setup, or an earlier link of the chain H-08, H-16, H-11, H-09, H-10. Fix that one first.
+- **NOT RUN:** an earlier step failed: the setup, or an earlier link of the chain H-08, H-16, H-11, H-09, H-20, H-10. Fix that one first.
 - **Build failure:** the output names the log path, inside the run folder's `logs/`.
 - **"Mounts denied" during setup:** Docker Desktop does not share `$TMPDIR`. Add it in Settings, Resources, File sharing.
 - **H-10 says Docker created the missing folder:** Compose ignored `create_host_path: false`. That is a real finding, not a script bug.
   - Do not change `compose.yml`.
   - See the env_file follow-up in [`SANDBOX.md`, Troubleshooting](../SANDBOX.md#troubleshooting-and-known-limits). It needs your approval.
+- **H-20 says the sandbox started, or a folder appeared:** the start folder in `compose.yml` or the project-folder check in `base/sbx-start-lib.sh` changed. Do not create the folder by hand.
+- **H-03 says an uppercase `SBX_NAME` was not refused:** `docker compose up` got past the `name-check` service in `compose.yml`. Paste the FAIL line; the refusal before anything is created needs another design, and SANDBOX.md must not promise it until then.
+- **H-21 says a name was not refused:** the image's entrypoint has no name check. Rebuild the images and run again; if it still fails, the check in `base/sbx-start-lib.sh` changed.
 - **H-15 fails after a Claude Code pin change:** the format of `/context` may have changed. Compare with what `manual/h19-bundle-behaviour.sh` shows before suspecting the bundle.
 - **H-15 and a login:** H-15 runs Claude without a login, so `state/claude/.claude.json` exists before `h07-login.sh` runs. The login proof in `h07-login.sh` is `.credentials.json` and `claude auth status`.
 - **H-18 fails after a Claude Code pin change:** H-18 follows the wire format of the pinned Claude through a small fake API.
@@ -113,5 +118,6 @@ Paste the `run-all.sh` summary and the lines of any helper you ran.
 - `docker compose version` output:
 - Docker Desktop version:
 - H-10 observation (what `up` printed, whether the folder existed afterwards):
+- H-03 observation (what the uppercase `up` printed):
 
 Any failure becomes input for gap-closure planning.

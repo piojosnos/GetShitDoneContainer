@@ -4,6 +4,8 @@
 # - Builds sbx-base:local and sbx-claude:local (the real tags). Images are never removed.
 # - Creates a throwaway sandbox named sbx-hosttest in a fresh temp folder. Real sandboxes
 #   are never touched, whatever SBX_NAME, SBX_DIR or COMPOSE_* hold in your terminal.
+# - Uses the Docker your terminal points at (DOCKER_HOST or the current Docker context) and
+#   prints which one first.
 # - Deletes nothing. At the end, pass or fail, it prints the cleanup command for you to run
 #   and where the diagnostic helpers are.
 # - SBXTEST_NO_CACHE=1 (optional) makes the rebuild check rebuild without the cache; slow.
@@ -25,9 +27,9 @@ unset SBXTEST_DIR
 #   create a missing folder), and it leaves the sandbox up either way.
 # - Then Coexistence, which compares against the state at the start of the run.
 fatalCheck="h00-compose-v2.sh"
-noSandboxCheckList="h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh h17-start-offline-and-failing-hook.sh"
+noSandboxCheckList="h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh h17-start-offline-and-failing-hook.sh h21-bad-name-refused.sh"
 sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h14-bundle-in-image.sh h15-bundle-synced-and-visible.sh h18-scope-and-deny.sh"
-chainCheckList="h08-history-survives-recreate.sh h16-sync-refreshes-and-spares.sh h11-stop-is-quick-and-safe.sh h09-rebuild-keeps-files-no-volumes.sh h10-missing-folder-refused.sh"
+chainCheckList="h08-history-survives-recreate.sh h16-sync-refreshes-and-spares.sh h11-stop-is-quick-and-safe.sh h09-rebuild-keeps-files-no-volumes.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
 finalCheckList="coexistence.sh"
 
 remainingList="$fatalCheck $noSandboxCheckList $sandboxCheckList $chainCheckList $finalCheckList"
@@ -44,6 +46,7 @@ drop_remaining() {
   local keptList=""
 
   script=$1
+
   for item in $remainingList; do
     if [ "$item" != "$script" ]; then
       keptList="$keptList $item"
@@ -59,6 +62,7 @@ run_check() {
   local script=$1
 
   drop_remaining "$script"
+
   if bash "$HOST_DIR/$script" </dev/null; then
     passedCount=$((passedCount + 1))
     return 0
@@ -125,6 +129,7 @@ record_setup_failure() {
 finish() {
   mark_not_run "$remainingList" "$1"
   printf '\nSummary: %s passed, %s failed, %s not run\n' "$passedCount" "$failedCount" "$notRunCount"
+
   if [ -n "$failedList" ]; then
     printf 'Failed:%s\n' "$failedList"
   fi
@@ -168,6 +173,19 @@ install_traps() {
 }
 
 # --------------------------------------------------------------------------------
+# print_docker_target: prints the Docker context and DOCKER_HOST this run talks to.
+# --------------------------------------------------------------------------------
+print_docker_target() {
+  local contextName
+
+  if ! contextName=$(docker context show 2>/dev/null </dev/null) || [ -z "$contextName" ]; then
+    contextName=unknown
+  fi
+
+  info "docker context: $contextName, DOCKER_HOST: ${DOCKER_HOST:-not set}"
+}
+
+# --------------------------------------------------------------------------------
 # check_docker_reachable: stops the run when the Docker daemon does not answer.
 # --------------------------------------------------------------------------------
 check_docker_reachable() {
@@ -185,6 +203,26 @@ create_run_folder() {
   fi
 
   info "run folder: $RUN"
+}
+
+# --------------------------------------------------------------------------------
+# record_old_layout: writes the old containers and the old folders to the run folder's logs, for Coexistence to compare at the end.
+# --------------------------------------------------------------------------------
+# Each snapshot is captured first and written after, so a failed one never leaves a partial baseline.
+record_old_layout() {
+  local containerSnapshot folderSnapshot
+
+  if ! containerSnapshot=$(snapshot_old_containers); then
+    fatal "docker ps failed; the old containers cannot be recorded"
+  fi
+
+  printf '%s\n' "$containerSnapshot" >"$RUN/logs/old-containers.before"
+
+  if folderSnapshot=$(snapshot_old_folders); then
+    printf '%s\n' "$folderSnapshot" >"$RUN/logs/old-folders.before"
+  else
+    info "git could not read ClaudeCode/ and OpenCode/; Coexistence will report it"
+  fi
 }
 
 # --------------------------------------------------------------------------------
@@ -224,6 +262,7 @@ run_compose_check() {
 # --------------------------------------------------------------------------------
 build_all_images() {
   info "building the images (logs in $RUN/logs)"
+
   if ! build_images build; then
     fatal "the image build failed"
   fi
@@ -247,9 +286,10 @@ run_sandbox_checks() {
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 install_traps
+print_docker_target
 check_docker_reachable
 create_run_folder
-snapshot_old_containers >"$RUN/logs/old-containers.before"
+record_old_layout
 remove_leftover_test_container
 run_compose_check
 build_all_images

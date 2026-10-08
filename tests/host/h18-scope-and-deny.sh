@@ -4,6 +4,8 @@
 #   are needed. The scripts and assertions are the same as tests/selftest/bundle/fake-api.sh.
 # - It is tied to the wire format of the pinned Claude. After a pin bump, run
 #   bash tests/selftest/bundle/run-all.sh in the dev sandbox first.
+# - Claude runs in the project folder (docker exec -w), so its project settings are the same
+#   whichever folder shells start in.
 # - No other check depends on it: remove this script and its entry in run-all.sh to drop it.
 # Depends on: nothing
 # Needs: test sandbox running
@@ -37,7 +39,7 @@ ANTHROPIC_BASE_URL=http://127.0.0.1:8799 ANTHROPIC_API_KEY=sk-ant-dummy claude -
 kill \$serverPid"
 
   : >"$RUN/logs/h18-$scenarioName.log"
-  run_timeout 120 docker exec "$CONTAINER" env H18_SCRIPT="$containerRoot/logs/$scriptFile" H18_LOG="$containerRoot/logs/h18-$scenarioName.log" H18_MARK_ALWAYS="$markAlways" H18_MARK_SCOPED="$markScoped" sh -c "$runnerScript" </dev/null >"$RUN/logs/h18-$scenarioName-run.log" 2>&1
+  run_timeout 120 docker exec -w "$PROJECT_DIR" "$CONTAINER" env H18_SCRIPT="$containerRoot/logs/$scriptFile" H18_LOG="$containerRoot/logs/h18-$scenarioName.log" H18_MARK_ALWAYS="$markAlways" H18_MARK_SCOPED="$markScoped" sh -c "$runnerScript" </dev/null >"$RUN/logs/h18-$scenarioName-run.log" 2>&1
 }
 
 # --------------------------------------------------------------------------------

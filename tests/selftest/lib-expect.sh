@@ -36,9 +36,23 @@ equals() { [ "$1" = "$2" ]; }
 has_text() { grep -Fq -- "$2" "$1"; }
 
 # --------------------------------------------------------------------------------
-# lacks_text FILE TEXT: true if FILE does not contain TEXT.
+# lacks_text FILE TEXT: true if FILE is a readable file that does not contain TEXT.
 # --------------------------------------------------------------------------------
-lacks_text() { ! grep -Fq -- "$2" "$1"; }
+# A missing or unreadable file is never a pass, so a negative check cannot succeed on input it never read.
+lacks_text() { [ -f "$1" ] && [ -r "$1" ] && ! grep -Fq -- "$2" "$1"; }
+
+# --------------------------------------------------------------------------------
+# fails COMMAND...: true if COMMAND ran and exited non-zero; its stderr is discarded.
+# --------------------------------------------------------------------------------
+# A command that could not run (status 126 or 127) is not the failure a case asked for.
+fails() {
+  local commandStatus
+
+  "$@" 2>/dev/null
+  commandStatus=$?
+
+  [ "$commandStatus" -ne 0 ] && [ "$commandStatus" -ne 126 ] && [ "$commandStatus" -ne 127 ]
+}
 
 # --------------------------------------------------------------------------------
 # finish_cases: ends a group program; exits 0 when every case passed, else 1, and prints nothing.

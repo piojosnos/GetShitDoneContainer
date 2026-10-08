@@ -23,6 +23,7 @@ fail() {
 
   printf 'FAIL: %s %s\n' "$checkId" "$text"
   shift 2
+
   while [ "$#" -gt 0 ]; do
     printf '      %s\n' "$1"
     shift
