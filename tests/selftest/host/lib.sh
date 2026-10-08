@@ -59,10 +59,10 @@ failed_with() {
 string_matches() { printf '%s\n' "$2" | grep -Eq -- "$1"; }
 
 # --------------------------------------------------------------------------------
-# reset_state: empty fake container state, log and run folders.
+# reset_state: empties the fake container state, the log and the run folders; stops when WORK is empty, so nothing outside the work folder is removed.
 # --------------------------------------------------------------------------------
 reset_state() {
-  rm -rf "$WORK/state" "$WORK/tmp"
+  rm -rf "${WORK:?}/state" "${WORK:?}/tmp"
   mkdir -p "$WORK/state" "$WORK/tmp"
   : >"$FAKE_LOG"
 }
