@@ -22,6 +22,7 @@ Requirements for this milestone (ClaudeCode sandbox made solid). Each maps to ro
 - [ ] **IMG-04**: Adding a new tool means editing one line (Dockerfile or `versions.env`) and rebuilding
 - [x] **IMG-05**: Images build and run natively on Apple Silicon (arm64) with Docker Desktop
 - [x] **IMG-06**: The agent runs as the non-root `sandbox` user, and git works on mounted repos without "dubious ownership" errors
+- [ ] **IMG-07**: The Maven, npm and uv caches survive a container recreate (and so a rebuild or upgrade); they live in the sandbox's `state/` folder on the Mac, not in a Docker volume
 
 ### Agent Tools
 
@@ -132,6 +133,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IMG-04 | Phase 2 | Pending |
 | IMG-05 | Phase 1 | Complete |
 | IMG-06 | Phase 1 | Complete |
+| IMG-07 | Phase 2 | Pending |
 | TOOL-01 | Phase 2 | Pending |
 | TOOL-02 | Phase 2 | Pending |
 | TOOL-03 | Phase 2 | Pending |
@@ -161,10 +163,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CI-01 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 37 total
-- Mapped to phases: 37
+- v1 requirements: 38 total
+- Mapped to phases: 38
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-30*
-*Last updated: 2026-10-06 after Phase 1.4 (guard command, diagnostic helpers)*
+*Last updated: 2026-10-08 after Phase 2 planning (IMG-07, tool caches)*

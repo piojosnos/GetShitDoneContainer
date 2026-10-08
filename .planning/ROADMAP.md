@@ -247,7 +247,7 @@ Gap closure, from the 01.5-11 Mac run (H-03 failed: Compose lowercases an upperc
 **Goal**: The sandbox has the full development toolchain plus Claude Code, GSD, and ccusage baked into the image at versions pinned in one `versions.env`. Rebuilding with changed pins delivers the new versions into the sandbox while login and history persist.
 **Mode:** mvp
 **Depends on**: Phase 1.2 (reuses its start-time sync into `~/.claude` for GSD)
-**Requirements**: IMG-01, IMG-03, IMG-04, TOOL-01, TOOL-02, TOOL-03, USE-01
+**Requirements**: IMG-01, IMG-03, IMG-04, IMG-07, TOOL-01, TOOL-02, TOOL-03, USE-01
 **Success Criteria** (what must be TRUE):
   1. In the container shell, `git`, `gh`, `node -v` (24.x), `python3`, `uv`, `java -version` (Temurin 21), and `mvn -v` all work as native arm64 binaries. They come from the shared base image, not the Claude image.
   2. Every version (base OS tag, toolchains, Claude Code, GSD, ccusage) is set in `versions.env`, and no Dockerfile uses a floating `latest`. Bumping a pin, or adding a new tool with a one-line change, then rebuilding and recreating puts that version in use.
@@ -255,7 +255,35 @@ Gap closure, from the 01.5-11 Mac run (H-03 failed: Compose lowercases an upperc
   4. After the GSD pin is bumped and the image rebuilt, starting the container syncs the image's `@opengsd/gsd-core` into the persisted `~/.claude`. The GSD version matches the new pin, the Claude login and session history are unchanged, and start-up works with networking disabled, with no `npx` or `@latest` installs in the start logs.
   5. `ccusage daily`, `ccusage monthly`, and `ccusage session` run in the container shell and report this project's real Claude usage from `<sandbox>/state/claude`.
 
-**Plans**: TBD
+**Plans:** 9 plans
+
+Plans:
+**Wave 1**
+- [ ] 02-01-PLAN.md: Tracer: every existing pin moves into versions.env and travels through build.sh into both Dockerfiles and the host tests
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 02-02-PLAN.md: Supply-chain approval of every pin (versions, digests, checksums, GSD pin and bump target), blocking human checkpoint
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 02-03-PLAN.md: Base toolchain (Temurin, Maven, uv, Python, Linux tools) pinned by digest; host check H-22
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 02-04-PLAN.md: npm, uv and Maven caches in state/ (IMG-07); host check H-23
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 02-05-PLAN.md: GSD baked and synced at every start by the 05-gsd hook, fail closed and offline; H-17 and H-14 extended
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 02-06-PLAN.md: The image's GSD wins and user files stay (H-16); compose_up waits for the start hooks; attended GSD bump helper
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 02-07-PLAN.md: ccusage baked and executable for the sandbox user; host check H-24
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 02-08-PLAN.md: Host check H-25 (images match versions.env, a build without build.sh stops); H-13 refuses a Claude copy in ~/.local/bin
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 02-09-PLAN.md: Final gate, the Mac run and the attended GSD bump (checkpoint), Phase 1 WR-03 and IN-03 dispositions
 
 ### Phase 02.1: Best-practices from git, editable from any sandbox (INSERTED)
 
@@ -344,7 +372,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 1.3. Shell script layout | 6/6 | Complete    | 2026-10-05 |
 | 1.4. Test suite refactor | 8/8 | Complete    | 2026-10-06 |
 | 1.5. Host test fixes | 16/16 | Complete    | 2026-10-08 |
-| 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
+| 2. Pinned Toolchain, GSD, and ccusage | 0/9 | Planned | - |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
 | 4. Jump-In and Sandbox Housekeeping | 0/TBD | Not started | - |
