@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of the sandbox rules: the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder, and fail when the name-check service is gone or can run a container; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build, and fails when a doc's name pattern differs from the code, a doc states the old name rule or the fake docker invents a Compose refusal.
+# Self-test of the sandbox rules: the supply chain and bundle wiring rules pass on a clean copy and name each planted pin or COPY problem; the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder, and fail when the name-check service is gone or can run a container; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build, and fails when a doc's name pattern differs from the code, a doc states the old name rule or the fake docker invents a Compose refusal.
 # - Run by run-all.sh; runs alone too.
 # - Runs the real tests/guard/start.sh and tests/guard/docs.sh inside a scratch copy of the tree, so a planted problem never touches the real files.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
@@ -15,6 +15,65 @@ edit_scratch_file() {
 
   sed "$2" "$editFile" >"$editFile.edited" || return 1
   mv "$editFile.edited" "$editFile"
+}
+
+# --------------------------------------------------------------------------------
+# Cases of the supply chain and bundle wiring rules: a clean copy and one planted problem each
+# --------------------------------------------------------------------------------
+case_supply_chain_rules() {
+  echo "--- supply chain and bundle wiring rules"
+
+  make_scratch_repo || return 1
+  run_scratch_guard "$WORK/supply-clean.out" supply-chain.sh
+  expect "supply chain: a clean copy passes" equals "$GUARD_RC" 0
+
+  make_scratch_repo || return 1
+  run_scratch_guard "$WORK/bundle-clean.out" bundle-wiring.sh
+  expect "bundle wiring: a clean copy passes" equals "$GUARD_RC" 0
+
+  make_scratch_repo || return 1
+  edit_scratch_file base/Dockerfile 's/^ARG NODE_VERSION$/ARG NODE_VERSION=1.2.3/' || return 1
+  run_scratch_guard "$WORK/supply-default.out" supply-chain.sh
+  expect "supply chain: a pin default in a Dockerfile fails" has_text "$WORK/supply-default.out" "FAIL: versions_are_pinned"
+  expect "supply chain: the pin default line is named" has_text "$WORK/supply-default.out" "ARG NODE_VERSION=1.2.3"
+
+  make_scratch_repo || return 1
+  printf 'DEAD_VERSION=1.0.0\n' >>"$WORK/repo/versions.env"
+  run_scratch_guard "$WORK/supply-dead.out" supply-chain.sh
+  expect "supply chain: a pin no Dockerfile declares fails" has_text "$WORK/supply-dead.out" "FAIL: versions_are_pinned"
+  expect "supply chain: the dead pin is named" has_text "$WORK/supply-dead.out" "DEAD_VERSION"
+
+  make_scratch_repo || return 1
+  printf 'NODE_VERSION=24.21.0\n' >>"$WORK/repo/versions.env"
+  run_scratch_guard "$WORK/supply-twice.out" supply-chain.sh
+  expect "supply chain: a pin set twice fails" has_text "$WORK/supply-twice.out" "is set on more than one line"
+
+  make_scratch_repo || return 1
+  edit_scratch_file versions.env '/^GH_VERSION=/d' || return 1
+  run_scratch_guard "$WORK/supply-missing.out" supply-chain.sh
+  expect "supply chain: a declared pin missing from versions.env fails" has_text "$WORK/supply-missing.out" "GH_VERSION, which versions.env does not set"
+
+  make_scratch_repo || return 1
+  edit_scratch_file versions.env 's/^NODE_VERSION=.*/NODE_VERSION=24/' || return 1
+  run_scratch_guard "$WORK/supply-short.out" supply-chain.sh
+  expect "supply chain: a version that is not x.y.z fails" has_text "$WORK/supply-short.out" "is not an exact x.y.z version"
+
+  make_scratch_repo || return 1
+  edit_scratch_file versions.env 's/^UBUNTU_IMAGE=.*/UBUNTU_IMAGE=ubuntu:latest/' || return 1
+  run_scratch_guard "$WORK/supply-floating.out" supply-chain.sh
+  expect "supply chain: a floating image tag fails" has_text "$WORK/supply-floating.out" "FAIL: no_floating_latest_versions"
+
+  make_scratch_repo || return 1
+  printf 'COPY outside.txt /etc/outside.txt\n' >>"$WORK/repo/claude/Dockerfile"
+  : >"$WORK/repo/outside.txt"
+  run_scratch_guard "$WORK/bundle-outside.out" bundle-wiring.sh
+  expect "bundle wiring: a COPY source outside the allowlist fails" has_text "$WORK/bundle-outside.out" "FAIL: bundle_reaches_build_context"
+  expect "bundle wiring: the outside COPY message names the allowlist" has_text "$WORK/bundle-outside.out" "outside base, claude, best-practices and versions.env"
+
+  make_scratch_repo || return 1
+  printf 'COPY --from=planted /opt/x /opt/x\n' >>"$WORK/repo/base/Dockerfile"
+  run_scratch_guard "$WORK/bundle-from.out" bundle-wiring.sh
+  expect "bundle wiring: a COPY from a build stage is not a build-context source" equals "$GUARD_RC" 0
 }
 
 # --------------------------------------------------------------------------------
@@ -94,6 +153,7 @@ case_docs_rule() {
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 start_group || exit 1
+case_supply_chain_rules
 case_start_rules
 case_docs_rule
 finish_cases

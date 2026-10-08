@@ -197,6 +197,18 @@ case_finding_id() {
 }
 
 # --------------------------------------------------------------------------------
+# Cases of the portability rule on build.sh, which also runs on the Mac
+# --------------------------------------------------------------------------------
+case_build_script_portable() {
+  echo "--- build.sh portability"
+
+  make_scratch_repo || return 1
+  plant_lines "$WORK/repo/build.sh" "sed -i s/a/b/ planted"
+  run_scratch_guard "$WORK/build-script.out" host-tests.sh
+  expect "host rules: the portability rule also reads build.sh" has_text "$WORK/build-script.out" "sed -i s/a/b/ planted"
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -208,4 +220,5 @@ case_pgrep_is_not_grep
 case_env_file
 case_blank_lines
 case_finding_id
+case_build_script_portable
 finish_cases

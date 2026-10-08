@@ -15,7 +15,7 @@ CLAUDE=claude/Dockerfile
 COMPOSE=compose.yml
 ENTRY="base/sbx-entrypoint base/sbx-start-lib.sh"
 DOCKERFILES="$BASE $CLAUDE"
-SANDBOX_FILES="$BASE $CLAUDE $COMPOSE $ENTRY"
+SANDBOX_FILES="$BASE $CLAUDE $COMPOSE $ENTRY versions.env build.sh"
 
 # The Mac host tests: every script, and the ones that must run unattended.
 HOST_FILES="tests/host/*.sh tests/host/manual/*.sh"

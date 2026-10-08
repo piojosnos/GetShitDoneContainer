@@ -22,6 +22,7 @@
 #   message are claims that the Mac run of H-03 confirms.
 # - Compose config turns the project name into lowercase and never refuses a name for its case, as real
 #   Compose 2.40 does (measured on the Mac).
+# - A build writes its build args and its context folder to FAKE_STATE/build-args.log.
 #
 # Knobs, one line each:
 # FAKE_STATE: the folder that holds the fake container state (set by lib.sh)
@@ -595,13 +596,32 @@ fake_run() {
 fake_build() {
   shift
   imageTag=""
+  buildArgText=""
   while [ "$#" -gt 0 ]; do
     case "$1" in
       -t) imageTag=$2; shift 2 ;;
       -f) shift 2 ;;
+      --build-arg)
+        buildArgName=$2
+        case "$buildArgName" in
+          *=*) buildArgPair=$buildArgName ;;
+          *) buildArgPair="$buildArgName=${!buildArgName}" ;;
+        esac
+        buildArgText="$buildArgText$buildArgPair
+"
+        shift 2
+        ;;
       *) shift ;;
     esac
   done
+  while IFS= read -r buildArgPair; do
+    if [ -n "$buildArgPair" ]; then
+      printf '%s %s\n' "$imageTag" "$buildArgPair" >>"$FAKE_STATE/build-args.log"
+    fi
+  done <<EOF
+$buildArgText
+EOF
+  printf '%s context=%s\n' "$imageTag" "$(pwd -P)" >>"$FAKE_STATE/build-args.log"
   if [ -n "$imageTag" ] && [ "$imageTag" = "${FAKE_BUILD_FAIL:-}" ]; then
     echo "ERROR: failed to solve: fake build failure for $imageTag" >&2
     return 1
