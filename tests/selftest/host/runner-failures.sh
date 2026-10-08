@@ -15,7 +15,7 @@ case_failing_check() {
   run_runner "$WORK/out.badid" FAKE_ID="uid=0(root) gid=0(root)"
   expect "runner: a wrong id exits 1" equals "$RUNNER_RC" "1"
   expect "runner: a wrong id prints FAIL: H-04" has_text "$WORK/out.badid" "FAIL: H-04"
-  expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 19 passed, 1 failed, 0 not run"
+  expect "runner: a wrong id still prints the summary" has_text "$WORK/out.badid" "Summary: 20 passed, 1 failed, 0 not run"
   expect "runner: a wrong id still prints the Next block" has_text "$WORK/out.badid" "If something looks wrong, see tests/host/manual/"
 }
 
@@ -107,7 +107,7 @@ case_h18_failure_continues() {
   expect "runner: an H-18 failure prints FAIL: H-18" has_text "$WORK/out.h18keep" "FAIL: H-18"
   expect "runner: an H-18 failure marks no check not run" lacks_text "$WORK/out.h18keep" "NOT RUN"
   expect "runner: an H-18 failure still runs the chain" has_text "$WORK/out.h18keep" "PASS: H-16"
-  expect "runner: an H-18 failure is in the summary" has_text "$WORK/out.h18keep" "Summary: 19 passed, 1 failed, 0 not run"
+  expect "runner: an H-18 failure is in the summary" has_text "$WORK/out.h18keep" "Summary: 20 passed, 1 failed, 0 not run"
   expect "runner: an H-18 failure is listed" has_text "$WORK/out.h18keep" "Failed: h18-scope-and-deny.sh"
 }
 

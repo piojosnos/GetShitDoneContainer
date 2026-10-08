@@ -7,6 +7,7 @@
 # - Only the container sbx-hosttest exists; any other name gets "No such container".
 # - Compose up and a run with --network none execute the real claude/start.d/10-best-practices,
 #   as the real entrypoint does (FAKE_REPO points at the repo).
+# - A run with --network none first runs a copy of the real entrypoint with only the run's -e values (no hooks; the fake runs those below), as the real container does.
 # - A run that mounts its own folder over /etc/sbx/start.d runs the real start library on that folder
 #   instead of the bundle sync.
 # - Runs without set -u, as it always has, so an absent knob reads as empty.
@@ -45,6 +46,7 @@
 # FAKE_EXTRA_MOUNT: 1 adds a volume mount to the container inspect answer
 # FAKE_PLAIN_OK: 1 lets a plain docker run start instead of refusing it
 # FAKE_OFFLINE_FAIL: 1 makes a run with --network none fail to start
+# FAKE_ENTRY_NAME_CHECK_OFF: 1 makes a docker run start as an entrypoint without the name check would
 # FAKE_HOOK_IGNORED: 1 makes a run whose hook fails still run its command
 # FAKE_HOOK_DIR_IGNORED: 1 makes a run with its own folder over /etc/sbx/start.d skip the hook step
 # FAKE_PS: the docker ps answer (default: one old cc_oldbox container, running)
@@ -412,7 +414,35 @@ fake_image_inspect() {
 }
 
 # --------------------------------------------------------------------------------
-# run_network_none ARG...: a run with --network none: runs the real start hook, then the command.
+# run_entrypoint_copy MOUNT NAME_ARG: runs a copy of the real entrypoint on MOUNT with a clean environment, then the command true; returns 1 and prints its output if it refuses.
+# --------------------------------------------------------------------------------
+# NAME_ARG is SBX_NAME=VALUE, or empty when the run gave no SBX_NAME. The library copy gets the
+# paths of the run, an empty hook folder (the fake runs the hooks itself) and a mount test that says yes.
+run_entrypoint_copy() {
+  entryDir=$FAKE_STATE/entry
+  rm -rf "$entryDir"
+  mkdir -p "$entryDir/hooks"
+  cp "$FAKE_REPO/base/sbx-entrypoint" "$FAKE_REPO/base/sbx-start-lib.sh" "$entryDir"
+  {
+    echo "ws=$1"
+    echo "state=$1/state"
+    echo "hookDir=$entryDir/hooks"
+    echo "is_mount() { return 0; }"
+    if [ "${FAKE_ENTRY_NAME_CHECK_OFF:-0}" = 1 ]; then
+      echo "check_sandbox_name() { return 0; }"
+    fi
+  } >>"$entryDir/sbx-start-lib.sh"
+  env -i PATH="$PATH" ${2:+"$2"} bash "$entryDir/sbx-entrypoint" true >"$entryDir/entry.out" 2>&1 </dev/null
+  entryStatus=$?
+  if [ "$entryStatus" -ne 0 ]; then
+    cat "$entryDir/entry.out" >&2
+    return 1
+  fi
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# run_network_none ARG...: a run with --network none: runs a copy of the real entrypoint, then the real start hook, then the command.
 # --------------------------------------------------------------------------------
 run_network_none() {
   hookBroken=0
@@ -430,7 +460,15 @@ run_network_none() {
   mountSource=""
   hookSource=""
   lastArg=""
+  nameArg=""
+  previousArg=""
   for runArg in "$@"; do
+    if [ "$previousArg" = "-e" ]; then
+      case "$runArg" in
+        SBX_NAME=*) nameArg=$runArg ;;
+      esac
+    fi
+    previousArg=$runArg
     case "$runArg" in
       type=bind,source=*)
         mountTarget=${runArg#*,target=}
@@ -446,6 +484,9 @@ run_network_none() {
     esac
     lastArg=$runArg
   done
+  if ! run_entrypoint_copy "$mountSource" "$nameArg"; then
+    return 1
+  fi
   if [ -n "$hookSource" ]; then
     if [ "${FAKE_HOOK_DIR_IGNORED:-0}" != 1 ]; then
       hookOutput=$( ( . "$FAKE_REPO/base/sbx-start-lib.sh"; hookDir=$hookSource; run_start_hooks ) 2>&1 </dev/null )

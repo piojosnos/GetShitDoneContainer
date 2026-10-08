@@ -14,7 +14,7 @@ set -u
 # --------------------------------------------------------------------------------
 # Group programs, in run order
 # --------------------------------------------------------------------------------
-groupList="units.sh assertions.sh run-timeout.sh sandbox-identity.sh runner-healthy.sh runner-failures.sh h00-compose-v2.sh h02-claude-on-base.sh h03-variable-interpolation.sh h04-nonroot-user.sh h12-plain-run-refused-pin-installed.sh h01-native-arch.sh h05-workspace-and-home.sh h13-env-and-no-self-update.sh h06-git-and-identity.sh h08-history-survives-recreate.sh h14-bundle-in-image.sh h16-sync-refreshes-and-spares.sh h15-bundle-synced-and-visible.sh h17-start-offline-and-failing-hook.sh h18-scope-and-deny.sh coexistence.sh h11-stop-is-quick-and-safe.sh h09-rebuild-keeps-files-no-volumes.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
+groupList="units.sh assertions.sh run-timeout.sh sandbox-identity.sh runner-healthy.sh runner-failures.sh h00-compose-v2.sh h02-claude-on-base.sh h03-variable-interpolation.sh h04-nonroot-user.sh h12-plain-run-refused-pin-installed.sh h01-native-arch.sh h05-workspace-and-home.sh h13-env-and-no-self-update.sh h06-git-and-identity.sh h08-history-survives-recreate.sh h14-bundle-in-image.sh h16-sync-refreshes-and-spares.sh h15-bundle-synced-and-visible.sh h17-start-offline-and-failing-hook.sh h21-bad-name-refused.sh h18-scope-and-deny.sh coexistence.sh h11-stop-is-quick-and-safe.sh h09-rebuild-keeps-files-no-volumes.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
 
 # --------------------------------------------------------------------------------
 # Main / Entry Point
