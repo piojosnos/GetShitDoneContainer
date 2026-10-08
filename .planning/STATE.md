@@ -2,17 +2,17 @@
 gsd_state_version: "1.0"
 current_phase: "01.5"
 current_phase_name: Host test fixes (INSERTED)
-status: executing
-stopped_at: Completed 01.5-15-PLAN.md
-last_updated: "2026-10-08T05:22:57.134Z"
+status: verifying
+stopped_at: Completed 01.5-16-PLAN.md
+last_updated: "2026-10-08T05:31:26.856Z"
 last_activity: 2026-10-08
 last_activity_desc: Phase 01.5 execution started
-state_head: 38d161a210ad014e86a268c966c612087afbed5f
+state_head: 7ef3c6b1ff128efe3b0fad1e15e85160eee97585
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 44
-  completed_plans: 43
+  completed_plans: 44
   percent: 42
 ---
 
@@ -29,15 +29,15 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 
 Phase: 01.5 (Host test fixes (INSERTED)) — EXECUTING
 Plan: 16 of 16
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-08 — Phase 01.5 execution started
 
-Progress: [████████████████████] 28/28 plans ([████░░░░░░] 42%)
+Progress: [████████████████████] 44/44 plans ([████░░░░░░] 42%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 28
+- Total plans completed: 44
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -103,6 +103,7 @@ Progress: [████████████████████] 28/28 p
 | Phase 01.5 P13 | 6 min | 3 tasks | 7 files |
 | Phase 01.5 P14 | 10 min | 2 tasks | 7 files |
 | Phase 01.5 P15 | 15 min | 2 tasks | 6 files |
+| Phase 01.5 P16 | 30 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -186,6 +187,7 @@ Recent decisions affecting current work:
 - [Phase 01.5]: Plan 14: compose.yml gets a name-check service (scale 0, pull_policy never, image sbx-${SBX_NAME}-name-check) so up refuses an uppercase SBX_NAME at the image check; H-03 asserts it with a real up on a nonexistent folder (Mac assumptions M1, M2)
 - [Phase 01.5]: Plan 15: the docs guard reads sandboxNamePattern and sandboxNameRuleText from base/sbx-start-lib.sh, so SANDBOX.md and compose.yml cannot drift from the check
 - [Phase 01.5]: Plan 15: the fake docker config answers as real Compose does (lowercase project name, exit 0, never a case refusal); the missing-variable messages are read from compose.yml
+- [Phase 01.5]: 01.5-16: the Mac run passed (21 checks, 36 guard rules); 1.1 WR-03 and 01.5 WR-01 to WR-04 recorded fixed, IN-01 to IN-07 stay open
 
 ### Pending Todos
 
@@ -203,7 +205,7 @@ None yet.
 - [Phase 1.3]: Code review left 4 findings open (WR-02: run_timeout does not stop a shell function it wraps, same as the Phase 1.1 CR-01 and planned for Phase 1.5; IN-01..03 style and self-test coverage). See 01.3-REVIEW-DISPOSITION.md
 - [Phase 1.4]: Code review left 11 findings open (see 01.4-REVIEW-DISPOSITION.md). Follow-ups for Phase 1.5 or a quick task: WR-01 a group program missing from a run-all list never runs; WR-02 and WR-06 `nowhere_matches` and the `lacks_*` helpers fail open when a file is missing or unreadable; WR-05 SANDBOX.md overclaims what a passing `run-all.sh` proves
 - [Phase 1.4]: Open note: the user's Mac `git status` listed 10 files as modified in the code worktree while the sandbox shows it clean; cause pending
-- [Phase 1.5]: H-03 uppercase SBX_NAME is not refused by real Compose 2.40 (Mac run 19/20). Gap-closure plan needed: enforce lowercase in the sandbox, or drop the assertion and correct SANDBOX.md lines 17 and 208, the checklist H-03 row and compose.yml line 12. See 01.5-11-SUMMARY.md
+- [Phase 1.5]: The H-03 gap is closed: plans 12 to 15 added the entrypoint name rule and the Compose name check, and the Mac run of 01.5-16 passed 21 of 21 checks. 01.5 IN-01 to IN-07 stay open. See 01.5-16-SUMMARY.md
 
 ### Quick Tasks Completed
 
@@ -230,6 +232,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-08T05:22:56.991Z
-Stopped at: Completed 01.5-15-PLAN.md
+Last session: 2026-10-08T05:31:26.717Z
+Stopped at: Completed 01.5-16-PLAN.md
 Resume file: None

@@ -189,7 +189,7 @@ Plans:
   2. Each fix has a test that fails before the fix and passes after it, run on the Mac where the bug needs Docker.
   3. `tests/host/run-all.sh` passes on the Mac.
 
-**Plans:** 15/16 plans executed
+**Plans:** 16/16 plans executed
 
 Plans:
 **Wave 1**
@@ -240,7 +240,7 @@ Gap closure, from the 01.5-11 Mac run (H-03 failed: Compose lowercases an upperc
 - [x] 01.5-15-PLAN.md: SANDBOX.md, compose.yml and the checklist state the name rule; the fake docker models only real Compose; two guard rules
 
 **Wave 16** *(blocked on Wave 15 completion)*
-- [ ] 01.5-16-PLAN.md: Final gate with the new red commits re-proven, the Mac run (checkpoint, 21 checks), then the dispositions
+- [x] 01.5-16-PLAN.md: Final gate with the new red commits re-proven, the Mac run (checkpoint, 21 checks), then the dispositions
 
 ### Phase 2: Pinned Toolchain, GSD, and ccusage
 
@@ -343,7 +343,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 1.2. Best-practices bundle baked into the image (stopgap) | 6/6 | Complete    | 2026-10-05 |
 | 1.3. Shell script layout | 6/6 | Complete    | 2026-10-05 |
 | 1.4. Test suite refactor | 8/8 | Complete    | 2026-10-06 |
-| 1.5. Host test fixes | 15/16 | In Progress|  |
+| 1.5. Host test fixes | 16/16 | In Progress|  |
 | 2. Pinned Toolchain, GSD, and ccusage | 0/TBD | Not started | - |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
