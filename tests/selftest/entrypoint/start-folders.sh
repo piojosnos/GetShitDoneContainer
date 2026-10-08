@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Self-test of the start folders: the real entrypoint runs end to end, and the folder steps of base/sbx-start-lib.sh are called one by one.
-# - Proves that the command starts in the project folder and that a folder that cannot be entered stops the start.
+# Self-test of the start folders and the sandbox name: the real entrypoint runs end to end, and the folder steps of base/sbx-start-lib.sh are called one by one.
+# - Proves that the command starts in the project folder, that a folder that cannot be entered stops the start, and that a name that breaks the sandbox name rule stops the start.
 # - Runs a copy of the real entrypoint and library; only the paths and the mount test are overridden.
 # - Run by run-all.sh; runs alone too.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
@@ -52,6 +52,26 @@ started_in() {
 # --------------------------------------------------------------------------------
 stopped_before_command() {
   [ "$1" -eq 1 ] && has_text "$2" "(the project folder) is missing." && lacks_text "$2" "command-ran"
+}
+
+# --------------------------------------------------------------------------------
+# start_with_name NAME OUTFILE: runs the entrypoint copy with SBX_NAME=NAME on a project folder of that name; sets NAME_RC.
+# --------------------------------------------------------------------------------
+# The command prints command-ran and then its folder, so the last output line is the folder it ran in.
+# A name such as ../x makes its folder next to the workspace, under WORK.
+start_with_name() {
+  make_entry_copy
+  mkdir -p "$WORK/ws/$1" "$WORK/name"
+
+  ( cd "$WORK" && SBX_NAME=$1 bash "$WORK/entry/sbx-entrypoint" sh -c 'echo command-ran; pwd -P' ) >"$2" 2>&1 </dev/null
+  NAME_RC=$?
+}
+
+# --------------------------------------------------------------------------------
+# refused_by_name_rule RC OUTFILE: true when the start exited 1, printed the SBX_NAME error and never ran the command.
+# --------------------------------------------------------------------------------
+refused_by_name_rule() {
+  [ "$1" -eq 1 ] && has_text "$2" "[sbx] ERROR: SBX_NAME" && lacks_text "$2" "command-ran"
 }
 
 # --------------------------------------------------------------------------------
@@ -174,6 +194,68 @@ case_literal_state_names() {
 }
 
 # --------------------------------------------------------------------------------
+# Case: the sandbox name rule decides whether the start goes on
+# --------------------------------------------------------------------------------
+case_name_rule() {
+  local longName
+  local tooLongName
+  local nonAsciiName
+  local ruleText
+
+  echo '--- the sandbox name rule decides whether the start goes on'
+  ruleText='starts with a lowercase letter, then lowercase letters, digits or hyphens, 31 characters at most'
+  longName=a$(printf 'b%.0s' $(seq 1 30))
+  tooLongName=a$(printf 'b%.0s' $(seq 1 31))
+  nonAsciiName=$(printf 'caf\303\251')
+
+  start_with_name a "$WORK/name/one-letter.out"
+  expect "entrypoint: one letter starts (a)" started_in "$NAME_RC" "$WORK/name/one-letter.out" "$WORK/ws/a"
+
+  start_with_name a1-b2 "$WORK/name/mixed.out"
+  expect "entrypoint: letters, digits and hyphens start (a1-b2)" started_in "$NAME_RC" "$WORK/name/mixed.out" "$WORK/ws/a1-b2"
+
+  start_with_name my-project "$WORK/name/my-project.out"
+  expect "entrypoint: my-project starts" started_in "$NAME_RC" "$WORK/name/my-project.out" "$WORK/ws/my-project"
+
+  start_with_name "$longName" "$WORK/name/long.out"
+  expect "entrypoint: 31 characters start" started_in "$NAME_RC" "$WORK/name/long.out" "$WORK/ws/$longName"
+
+  start_with_name HostTest "$WORK/name/upper.out"
+  expect "entrypoint: an uppercase letter is refused (HostTest)" refused_by_name_rule "$NAME_RC" "$WORK/name/upper.out"
+
+  start_with_name myProject "$WORK/name/upper-later.out"
+  expect "entrypoint: an uppercase letter later in the name is refused (myProject)" refused_by_name_rule "$NAME_RC" "$WORK/name/upper-later.out"
+
+  start_with_name my_project "$WORK/name/underscore.out"
+  expect "entrypoint: an underscore is refused (my_project)" refused_by_name_rule "$NAME_RC" "$WORK/name/underscore.out"
+
+  start_with_name my.project "$WORK/name/dot.out"
+  expect "entrypoint: a dot is refused (my.project)" refused_by_name_rule "$NAME_RC" "$WORK/name/dot.out"
+
+  start_with_name 1abc "$WORK/name/digit.out"
+  expect "entrypoint: a leading digit is refused (1abc)" refused_by_name_rule "$NAME_RC" "$WORK/name/digit.out"
+
+  start_with_name -abc "$WORK/name/hyphen.out"
+  expect "entrypoint: a leading hyphen is refused (-abc)" refused_by_name_rule "$NAME_RC" "$WORK/name/hyphen.out"
+
+  start_with_name "a b" "$WORK/name/space.out"
+  expect "entrypoint: a space is refused" refused_by_name_rule "$NAME_RC" "$WORK/name/space.out"
+
+  start_with_name ../x "$WORK/name/path.out"
+  expect "entrypoint: a path is refused (../x)" refused_by_name_rule "$NAME_RC" "$WORK/name/path.out"
+
+  start_with_name "$nonAsciiName" "$WORK/name/non-ascii.out"
+  expect "entrypoint: a non-ASCII lowercase letter is refused" refused_by_name_rule "$NAME_RC" "$WORK/name/non-ascii.out"
+
+  start_with_name "$tooLongName" "$WORK/name/too-long.out"
+  expect "entrypoint: a name of 32 characters is refused" refused_by_name_rule "$NAME_RC" "$WORK/name/too-long.out"
+
+  expect "entrypoint: the name error names SBX_NAME and the value" has_text "$WORK/name/upper.out" 'SBX_NAME "HostTest"'
+  expect "entrypoint: the name error states the rule in plain words" has_text "$WORK/name/upper.out" "$ruleText"
+  expect "entrypoint: the name error gives a valid example" has_text "$WORK/name/upper.out" "Example: my-project."
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -181,6 +263,7 @@ start_group || exit 1
 case_copy_is_real
 case_command_starts_in_project
 case_missing_project_stops_start
+case_name_rule
 case_cannot_enter_project
 case_mount_wording
 case_runs_as_non_root
