@@ -5,6 +5,9 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 
+# Old texts no doc, script or fake may state: the old name rule, its "rejected" claim, and a refusal of the project name.
+OLD_NAME_RULE_REGEX='lowercase letters, digits, - and _|is rejected; .myproject. works|Invalid project name'
+
 # --------------------------------------------------------------------------------
 # docs_promise_only_what_happens: The docs and image comments promise only what happens: Compose may still create a missing sandbox folder, a green run does not prove the build is good, and a shell starts where "-w" says, not in the project folder.
 # --------------------------------------------------------------------------------
@@ -131,6 +134,43 @@ checklist_lists_every_host_check() {
 }
 
 # --------------------------------------------------------------------------------
+# docs_state_the_sandbox_name_rule: SANDBOX.md and compose.yml state the sandbox name rule exactly as base/sbx-start-lib.sh enforces it, and no doc or script states the old rule or a refusal of the project name.
+# --------------------------------------------------------------------------------
+# The pattern and the words come from the two constants in the start library, so a doc cannot drift from the check.
+docs_state_the_sandbox_name_rule() {
+  local namePattern
+  local ruleText
+  local docFile
+  local ok=0
+
+  namePattern=$(sed -n "s/^sandboxNamePattern='\(.*\)'\$/\1/p" base/sbx-start-lib.sh)
+  ruleText=$(sed -n "s/^sandboxNameRuleText='\(.*\)'\$/\1/p" base/sbx-start-lib.sh)
+
+  if [ -z "$namePattern" ] || [ -z "$ruleText" ]; then
+    echo "    base/sbx-start-lib.sh has no sandboxNamePattern or sandboxNameRuleText line"
+    return 1
+  fi
+
+  for docFile in SANDBOX.md compose.yml; do
+    if ! grep -Fq -- "$namePattern" "$docFile"; then
+      echo "    $docFile does not state the name pattern $namePattern"
+      ok=1
+    fi
+
+    if ! grep -Fq -- "$ruleText" "$docFile"; then
+      echo "    $docFile does not state the name rule: $ruleText"
+      ok=1
+    fi
+  done
+
+  if ! nowhere_matches "$OLD_NAME_RULE_REGEX" SANDBOX.md compose.yml tests/host-checklist.md base/sbx-start-lib.sh base/sbx-entrypoint tests/host/*.sh; then
+    ok=1
+  fi
+
+  return "$ok"
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -140,4 +180,5 @@ run_rules \
   sandbox_doc_checks_the_folder_first \
   sandbox_doc_shells_pass_w \
   sandbox_doc_names_what_only_the_helpers_check \
-  checklist_lists_every_host_check || exit 1
+  checklist_lists_every_host_check \
+  docs_state_the_sandbox_name_rule || exit 1

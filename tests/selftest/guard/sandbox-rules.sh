@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of the sandbox rules: the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder, and fail when the name-check service is gone or can run a container; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build.
+# Self-test of the sandbox rules: the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder, and fail when the name-check service is gone or can run a container; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build, and fails when a doc's name pattern differs from the code or a doc states the old name rule.
 # - Run by run-all.sh; runs alone too.
 # - Runs the real tests/guard/start.sh and tests/guard/docs.sh inside a scratch copy of the tree, so a planted problem never touches the real files.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
@@ -47,7 +47,7 @@ case_start_rules() {
 }
 
 # --------------------------------------------------------------------------------
-# Cases of the docs rules: a clean copy, an image comment that promises nothing is created, and a doc that promises a good build
+# Cases of the docs rules: a clean copy, an image comment that promises nothing is created, a doc that promises a good build, a drifted name pattern and the old name rule
 # --------------------------------------------------------------------------------
 case_docs_rule() {
   echo "--- docs rule"
@@ -69,6 +69,18 @@ case_docs_rule() {
   expect "sandbox rules: a doc that promises a good build fails" has_text "$WORK/docs-good-build.out" "FAIL: docs_promise_only_what_happens"
   expect "sandbox rules: the good-build line is named" has_text "$WORK/docs-good-build.out" "When it passes, the build is good."
   expect "sandbox rules: a doc that promises a good build exits non-zero" test "$GUARD_RC" -ne 0
+
+  make_scratch_repo || return 1
+  edit_scratch_file SANDBOX.md 's/{0,30}/{0,40}/' || return 1
+  run_scratch_guard "$WORK/docs-pattern.out" docs.sh
+  expect "sandbox rules: a doc whose name pattern differs from the code fails" has_text "$WORK/docs-pattern.out" "FAIL: docs_state_the_sandbox_name_rule"
+  expect "sandbox rules: the differing pattern is reported" has_text "$WORK/docs-pattern.out" "SANDBOX.md does not state the name pattern"
+
+  make_scratch_repo || return 1
+  printf 'SBX_NAME: lowercase letters, digits, - and _.\n' >>"$WORK/repo/SANDBOX.md"
+  run_scratch_guard "$WORK/docs-old-rule.out" docs.sh
+  expect "sandbox rules: the old name rule in a doc fails" has_text "$WORK/docs-old-rule.out" "FAIL: docs_state_the_sandbox_name_rule"
+  expect "sandbox rules: the old rule line is named" has_text "$WORK/docs-old-rule.out" "SBX_NAME: lowercase letters, digits, - and _."
 }
 
 # --------------------------------------------------------------------------------
