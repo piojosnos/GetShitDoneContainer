@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Guard rules on the container start: nothing is installed at start, start hooks have orderly names, Compose checks the sandbox name before it acts, and the Claude image keeps the base's state folders.
+# Guard rules on the container start: nothing is installed at start, start hooks have orderly names, the GSD hook runs before the bundle hook, Compose checks the sandbox name before it acts, and the Claude image keeps the base's state folders.
 # - Run by tests/guard/run-all.sh; runs alone too.
 # - Usage, from anywhere: bash tests/guard/start.sh   (exit 0 = every rule holds)
 set -u
@@ -36,6 +36,39 @@ start_hooks_have_two_digit_names() {
 
   if [ "$found" -eq 0 ]; then
     echo "    claude/start.d holds no start hook"
+    ok=1
+  fi
+
+  return "$ok"
+}
+
+# --------------------------------------------------------------------------------
+# gsd_sync_runs_before_the_bundle: The start hook that syncs GSD runs before the bundle hook, so a bundle skill wins a name clash.
+# --------------------------------------------------------------------------------
+# Every file in claude/start.d that holds the GSD installer call must sort before 10-best-practices.
+gsd_sync_runs_before_the_bundle() {
+  local hook
+  local found=0
+  local ok=0
+
+  for hook in claude/start.d/*; do
+    if [ ! -f "$hook" ]; then
+      continue
+    fi
+
+    if ! grep -Fq 'gsd-core --claude' "$hook"; then
+      continue
+    fi
+
+    found=1
+    if ! [[ "$(basename "$hook")" < "10-best-practices" ]]; then
+      echo "    $hook sorts after 10-best-practices"
+      ok=1
+    fi
+  done
+
+  if [ "$found" -eq 0 ]; then
+    echo "    no start hook runs the GSD installer"
     ok=1
   fi
 
@@ -141,6 +174,7 @@ enter_repo_root || exit 1
 run_rules \
   no_installs_at_container_start \
   start_hooks_have_two_digit_names \
+  gsd_sync_runs_before_the_bundle \
   compose_starts_in_the_workspace \
   compose_checks_the_name_before_it_acts \
   agent_image_keeps_base_state_folders || exit 1

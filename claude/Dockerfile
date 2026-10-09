@@ -24,6 +24,18 @@ RUN : "${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION is not set; build with ./build
     && ln -s /home/sandbox/workspace/state/claude /home/sandbox/.claude \
     && chown -h sandbox:sandbox /home/sandbox/.claude
 
+# --- GSD ---
+# - Installed from npm at the exact version in versions.env, and only from @opengsd/gsd-core,
+#   as root into /usr/local, outside the mount.
+# - The start hook 05-gsd runs its installer at every start, so the image's GSD wins over
+#   what state/claude holds.
+# - The package brings a second Claude binary for its agent SDK under /usr/local/lib, not on
+#   PATH, which never updates itself.
+ARG GSD_CORE_VERSION
+RUN : "${GSD_CORE_VERSION:?GSD_CORE_VERSION is not set; build with ./build.sh}" \
+    && NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g "@opengsd/gsd-core@${GSD_CORE_VERSION}" \
+    && rm -rf /tmp/npm-cache
+
 # --- Claude settings ---
 # - Image ENV, so every docker exec shell gets them too.
 # - CLAUDE_CONFIG_DIR: login, settings and sessions, in state/claude on the Mac.
@@ -37,8 +49,9 @@ ENV CLAUDE_CONFIG_DIR=/home/sandbox/workspace/state/claude \
 # --- Best-practices bundle ---
 # - Copied from best-practices/ in this repo, so the build context is the repo root.
 # - Lives in /opt/sbx, outside the mounted folder; root-owned and read-only to sandbox.
-# - The start hook in /etc/sbx/start.d copies it into CLAUDE_CONFIG_DIR at every start,
-#   so the image version wins.
+# - The start hooks in /etc/sbx/start.d run in name order: 05-gsd syncs GSD, then
+#   10-best-practices syncs the bundle into CLAUDE_CONFIG_DIR at every start, so the image
+#   version wins.
 # - Needs no network.
 # - Managed settings deny Claude's own edit tools on the synced copies and on the skill list.
 #   This guards against accidental edits; it is not a security boundary, because a script
@@ -54,8 +67,9 @@ RUN chmod -R u=rwX,go=rX /opt/sbx/best-practices \
 
 USER sandbox
 
-# Build-time smoke test, as the runtime user: the installed version must equal the pin.
-RUN test "$(claude --version)" = "${CLAUDE_CODE_VERSION} (Claude Code)"
+# Build-time smoke test, as the runtime user: the installed versions must equal the pins.
+RUN test "$(claude --version)" = "${CLAUDE_CODE_VERSION} (Claude Code)" \
+    && test "$(gsd-tools runtime-identity --raw)" = "{\"packageName\":\"@opengsd/gsd-core\",\"version\":\"${GSD_CORE_VERSION}\"}"
 
 # --- Pin record ---
 # - A copy of versions.env: the pins this image was built with.

@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+set -eu
+
+# Syncs the image's GSD into the Claude config folder.
+# - Runs at every container start, as sandbox, and reads nothing from the network: it runs the
+#   installer baked into the image (gsd-core) against CLAUDE_CONFIG_DIR.
+# - Runs before 10-best-practices, so a bundle skill wins a name clash.
+# - GSD owns gsd-core/, agents/, hooks/ and every skills/gsd-* folder, merges its hooks into
+#   settings.json and keeps your own keys. A hand edit to a GSD file is saved to
+#   gsd-local-patches/ and replaced, so the image wins.
+# - The installer output goes to a temporary file and is printed only when the sync fails.
+#   A failed sync stops the start.
+
+configDir=${CLAUDE_CONFIG_DIR:-}
+
+# --------------------------------------------------------------------------------
+# Stops the start when the config folder variable is empty
+# --------------------------------------------------------------------------------
+check_inputs() {
+  if [ -z "$configDir" ]; then
+    echo "[sbx] ERROR: CLAUDE_CONFIG_DIR is not set." >&2
+    exit 1
+  fi
+}
+
+# --------------------------------------------------------------------------------
+# Makes the config folder, or stops the start when it cannot be made
+# --------------------------------------------------------------------------------
+# The installer waits forever on a folder it cannot create, so the folder is made first
+# and a path such as one under /proc fails here at once.
+make_config_folder() {
+  if ! mkdir -p "$configDir" 2>/dev/null; then
+    echo "[sbx] ERROR: cannot create the Claude config folder $configDir." >&2
+    exit 1
+  fi
+}
+
+# --------------------------------------------------------------------------------
+# Prints the GSD version the image holds
+# --------------------------------------------------------------------------------
+image_gsd_version() {
+  gsd-tools runtime-identity --raw </dev/null | sed -n 's/.*"version" *: *"\([^"]*\)".*/\1/p'
+}
+
+# --------------------------------------------------------------------------------
+# Runs the image's installer into the config folder, or stops the start with its output
+# --------------------------------------------------------------------------------
+# The time limit stops a stuck installer instead of hanging the start.
+run_installer() {
+  local logFile
+
+  logFile=$(mktemp)
+
+  if ! timeout 300 gsd-core --claude --global --config-dir "$configDir" </dev/null >"$logFile" 2>&1; then
+    cat "$logFile" >&2
+    rm -f "$logFile"
+    echo "[sbx] ERROR: the GSD sync into $configDir failed; the installer output is above." >&2
+    exit 1
+  fi
+
+  rm -f "$logFile"
+}
+
+# --------------------------------------------------------------------------------
+# Stops the start when the synced GSD is not the image's version; else prints the success line
+# --------------------------------------------------------------------------------
+check_synced_version() {
+  local syncedVersion=""
+  local expectedVersion
+
+  if [ -f "$configDir/gsd-core/VERSION" ]; then
+    syncedVersion=$(cat "$configDir/gsd-core/VERSION")
+  fi
+
+  expectedVersion=$(image_gsd_version)
+
+  if [ -z "$expectedVersion" ] || [ "$syncedVersion" != "$expectedVersion" ]; then
+    echo "[sbx] ERROR: GSD in $configDir is version '$syncedVersion'; the image has '$expectedVersion'." >&2
+    exit 1
+  fi
+
+  echo "[sbx] GSD $syncedVersion synced"
+}
+
+# --------------------------------------------------------------------------------
+# Main / Entry Point
+# --------------------------------------------------------------------------------
+check_inputs
+make_config_folder
+run_installer
+check_synced_version
