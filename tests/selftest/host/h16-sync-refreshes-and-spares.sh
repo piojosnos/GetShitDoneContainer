@@ -56,6 +56,12 @@ case_h16_alone() {
   reset_state
   make_fixture_run
   fake_start_sync "$FIXTURE"
+  run_standalone "$WORK/out.h16.gsdgone" h16-sync-refreshes-and-spares.sh FAKE_SYNC_DROPS_GSD_SKILL=1
+  expect "H-16: a restart that removes the GSD skill fails" equals "$CHECK_RC" "1"
+  expect "H-16: the missing GSD skill file is named" has_text "$WORK/out.h16.gsdgone" "state/claude/skills/gsd-fake-skill/SKILL.md is missing after the restart"
+  reset_state
+  make_fixture_run
+  fake_start_sync "$FIXTURE"
   run_standalone "$WORK/out.h16.clobber" h16-sync-refreshes-and-spares.sh FAKE_SYNC_CLOBBERS=1
   expect "H-16: a restart that deletes user skills fails" equals "$CHECK_RC" "1"
   expect "H-16: the lost user skill is named" has_text "$WORK/out.h16.clobber" "h16-user-skill"

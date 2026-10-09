@@ -67,6 +67,7 @@
 # FAKE_H10: what compose up does when the sandbox folder is missing: honored, ignored, started, or other (it fails for a reason that is not the folder)
 # FAKE_NO_SYNC: 1 makes compose up skip the start hooks
 # FAKE_SYNC_CLOBBERS: 1 makes compose up delete state/claude/skills and projects before the hook
+# FAKE_SYNC_DROPS_GSD_SKILL: 1 makes compose up delete the state/claude/skills/gsd-* folders after the hook, as a restart that removes a GSD skill instead of restoring it would
 # FAKE_DOWN_KEEPS: 1 makes compose down leave the container in place
 # FAKE_DOWN_LOSES_HISTORY: 1 makes compose down delete the shell history file
 # FAKE_LABEL: the sbx.name label of the container (default hosttest)
@@ -386,6 +387,9 @@ compose_up() {
     if ! run_image_hooks "$SBX_DIR/state/claude"; then
       return 1
     fi
+  fi
+  if [ "${FAKE_SYNC_DROPS_GSD_SKILL:-0}" = 1 ]; then
+    rm -rf "$SBX_DIR"/state/claude/skills/gsd-*
   fi
   if [ "${FAKE_STOPS_AT_START:-0}" = 1 ]; then
     : >"$FAKE_STATE/container.exited"

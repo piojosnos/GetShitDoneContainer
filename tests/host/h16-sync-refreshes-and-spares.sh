@@ -112,7 +112,9 @@ check_gsd_refreshed() {
     add_problem "state/claude/gsd-core/VERSION is '$syncedVersion' after the restart; the image has GSD $pinnedVersion"
   fi
 
-  if grep -Fq "h16 hand edit" "$syncedDir/skills/$firstGsdSkill/SKILL.md" 2>/dev/null; then
+  if [ ! -f "$syncedDir/skills/$firstGsdSkill/SKILL.md" ]; then
+    add_problem "state/claude/skills/$firstGsdSkill/SKILL.md is missing after the restart"
+  elif grep -Fq "h16 hand edit" "$syncedDir/skills/$firstGsdSkill/SKILL.md"; then
     add_problem "state/claude/skills/$firstGsdSkill still has the hand edit after the restart"
   fi
 }
