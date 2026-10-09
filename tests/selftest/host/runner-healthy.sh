@@ -40,7 +40,7 @@ case_healthy_run() {
   expect "runner: healthy run prints PASS: H-21" has_text "$WORK/out.healthy" "PASS: H-21"
   expect "runner: healthy run prints PASS: H-11" has_text "$WORK/out.healthy" "PASS: H-11"
   expect "runner: healthy run prints PASS: H-12" has_text "$WORK/out.healthy" "PASS: H-12"
-  expect "runner: healthy run has 24 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "24"
+  expect "runner: healthy run has 25 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "25"
   expect "runner: healthy run prints PASS: Coexistence" has_text "$WORK/out.healthy" "PASS: Coexistence"
   expect "runner: healthy run prints PASS: H-13" has_text "$WORK/out.healthy" "PASS: H-13"
   expect "runner: healthy run prints PASS: H-14" has_text "$WORK/out.healthy" "PASS: H-14"
@@ -49,7 +49,8 @@ case_healthy_run() {
   expect "runner: healthy run prints PASS: H-18" has_text "$WORK/out.healthy" "PASS: H-18"
   expect "runner: healthy run prints PASS: H-22" has_text "$WORK/out.healthy" "PASS: H-22"
   expect "runner: healthy run prints PASS: H-24" has_text "$WORK/out.healthy" "PASS: H-24"
-  expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 24 passed, 0 failed, 0 not run"
+  expect "runner: healthy run prints PASS: H-25" has_text "$WORK/out.healthy" "PASS: H-25"
+  expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 25 passed, 0 failed, 0 not run"
   expect "runner: healthy run points at tests/host/manual/ for diagnosis" has_text "$WORK/out.healthy" "If something looks wrong, see tests/host/manual/"
   expect "runner: healthy run no longer lists the helpers as a pass to run" lacks_text "$WORK/out.healthy" "h19-bundle-behaviour.sh"
   expect "runner: the cleanup line has docker compose down and the run folder" \

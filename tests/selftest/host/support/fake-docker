@@ -36,6 +36,11 @@
 # - An exec of ccusage answers daily, monthly and session reports (and the daily table) of the transcript
 #   h24-usage.jsonl in state/claude/projects/-home-sandbox-workspace-hosttest of the mounted folder: 100 input,
 #   200 output and 300 total tokens when the file exists (for session, when it holds the asked ID), else empty answers.
+# - A run with --entrypoint cat, gsd-tools, ccusage or ls on the Claude image answers the image checks of H-25:
+#   the /etc/sbx/versions.env record (FAKE_REPO/versions.env), the GSD identity line, the ccusage version and the
+#   listing of /home/sandbox/workspace.
+# - A build with neither a build arg nor a tag is a bare build, as a build without build.sh is: it stops with the
+#   message of the Dockerfile and touches no state (FAKE_STATE/built stays as it was).
 #
 # Knobs, one line each:
 # FAKE_STATE: the folder that holds the fake container state (set by lib.sh)
@@ -112,6 +117,11 @@
 # FAKE_STOPS_AT_START: 1 makes the container exit once compose up has run the hooks, and pgrep -x sleep answer 1
 # FAKE_CCUSAGE_EMPTY: 1 makes every ccusage report empty, as if no transcript were planted
 # FAKE_CCUSAGE_RC: a non-zero value makes every ccusage call print "ccusage: native binary is not executable" on stderr and exit with that status
+# FAKE_RECORD_STALE: 1 makes the /etc/sbx/versions.env record of the Claude image hold GSD_CORE_VERSION=0.0.0
+# FAKE_GSD_IDENTITY: the version in the identity line gsd-tools runtime-identity prints in the Claude image (default: the pin)
+# FAKE_CCUSAGE_VERSION: the version ccusage --version prints in the Claude image (default: the pin)
+# FAKE_WORKSPACE_BAKED: a file name that the listing of /home/sandbox/workspace in the Claude image shows (default: empty folder)
+# FAKE_BARE_BUILD_OK: 1 lets a build without build args and without a tag succeed, as Dockerfiles without the missing-pin guards would
 
 # --------------------------------------------------------------------------------
 # log_call ARG...: appends one line for the call to FAKE_LOG, in the format the safety cases parse.
@@ -733,15 +743,86 @@ run_toolchain_probe() {
 }
 
 # --------------------------------------------------------------------------------
+# run_image_record: a run with --entrypoint cat on the Claude image: prints the versions.env record; FAKE_RECORD_STALE=1 changes the GSD pin in it.
+# --------------------------------------------------------------------------------
+run_image_record() {
+  if [ "${FAKE_RECORD_STALE:-0}" = 1 ]; then
+    sed 's/^GSD_CORE_VERSION=.*/GSD_CORE_VERSION=0.0.0/' "$FAKE_REPO/versions.env"
+
+    return 0
+  fi
+
+  cat "$FAKE_REPO/versions.env"
+}
+
+# --------------------------------------------------------------------------------
+# run_gsd_identity: a run with --entrypoint gsd-tools: prints the identity line of the installed GSD.
+# --------------------------------------------------------------------------------
+run_gsd_identity() {
+  local gsdPin
+
+  gsdPin=$(sed -n 's/^GSD_CORE_VERSION=//p' "$FAKE_REPO/versions.env")
+  printf '{"packageName":"@opengsd/gsd-core","version":"%s"}\n' "${FAKE_GSD_IDENTITY:-$gsdPin}"
+}
+
+# --------------------------------------------------------------------------------
+# run_ccusage_version: a run with --entrypoint ccusage: prints the installed ccusage version.
+# --------------------------------------------------------------------------------
+run_ccusage_version() {
+  local ccusagePin
+
+  ccusagePin=$(sed -n 's/^CCUSAGE_VERSION=//p' "$FAKE_REPO/versions.env")
+  printf 'ccusage %s\n' "${FAKE_CCUSAGE_VERSION:-$ccusagePin}"
+}
+
+# --------------------------------------------------------------------------------
+# run_workspace_listing: a run with --entrypoint ls: lists /home/sandbox/workspace of the image, empty unless FAKE_WORKSPACE_BAKED names a file.
+# --------------------------------------------------------------------------------
+run_workspace_listing() {
+  if [ -n "${FAKE_WORKSPACE_BAKED:-}" ]; then
+    printf '%s\n' "$FAKE_WORKSPACE_BAKED"
+  fi
+}
+
+# --------------------------------------------------------------------------------
 # fake_run ARG...: answers docker run, by the kind of run.
 # --------------------------------------------------------------------------------
 fake_run() {
   case "$*" in
     *"--network none"*) run_network_none "$@" ;;
     *"--entrypoint claude"*) run_claude_version "$@" ;;
+    *"--entrypoint cat"*) run_image_record ;;
+    *"--entrypoint gsd-tools"*) run_gsd_identity ;;
+    *"--entrypoint ccusage"*) run_ccusage_version ;;
+    *"--entrypoint ls"*) run_workspace_listing ;;
     *"--entrypoint bash"*) run_toolchain_probe "$@" ;;
     *) run_plain "$@" ;;
   esac
+}
+
+# --------------------------------------------------------------------------------
+# fake_bare_build DOCKERFILE: a build without build args and without a tag: stops with the message of that Dockerfile, as the real build does, and touches no state; FAKE_BARE_BUILD_OK=1 lets it succeed.
+# --------------------------------------------------------------------------------
+fake_bare_build() {
+  if [ "${FAKE_BARE_BUILD_OK:-0}" = 1 ]; then
+    echo "built without a tag"
+
+    return 0
+  fi
+
+  case "$1" in
+    */base/Dockerfile)
+      echo 'ERROR: failed to solve: base name (${TEMURIN_IMAGE}) should not be blank' >&2
+      ;;
+    */claude/Dockerfile)
+      echo '/bin/bash: line 1: CLAUDE_CODE_VERSION: CLAUDE_CODE_VERSION is not set; build with ./build.sh' >&2
+      ;;
+    *)
+      echo "fake docker: bare build of an unknown Dockerfile: $1" >&2
+      ;;
+  esac
+
+  return 1
 }
 
 # --------------------------------------------------------------------------------
@@ -751,10 +832,11 @@ fake_build() {
   shift
   imageTag=""
   buildArgText=""
+  dockerfilePath=""
   while [ "$#" -gt 0 ]; do
     case "$1" in
       -t) imageTag=$2; shift 2 ;;
-      -f) shift 2 ;;
+      -f) dockerfilePath=$2; shift 2 ;;
       --build-arg)
         buildArgName=$2
         case "$buildArgName" in
@@ -775,6 +857,10 @@ fake_build() {
   done <<EOF
 $buildArgText
 EOF
+  if [ -z "$imageTag" ] && [ -z "$buildArgText" ]; then
+    fake_bare_build "$dockerfilePath"
+    return $?
+  fi
   printf '%s context=%s\n' "$imageTag" "$(pwd -P)" >>"$FAKE_STATE/build-args.log"
   if [ -n "$imageTag" ] && [ "$imageTag" = "${FAKE_BUILD_FAIL:-}" ]; then
     echo "ERROR: failed to solve: fake build failure for $imageTag" >&2
