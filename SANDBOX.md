@@ -88,10 +88,16 @@ What lives where:
 
 ## Start, enter, stop
 
-Start, from the repo root. `--wait` reports a container that fails to start instead of returning early.
+Start, from the repo root. `up` returns before the start hooks (the bundle and GSD sync) finish, so it does not report a failing hook: the container exits afterwards.
 
 ```bash
 docker compose up -d --wait
+```
+
+The hooks are done when the container runs its command. This succeeds then, and fails when the container has exited (`docker logs "sbx-$SBX_NAME"` shows why):
+
+```bash
+docker exec "sbx-$SBX_NAME" pgrep -x sleep
 ```
 
 Open a shell. Open as many as you like:
