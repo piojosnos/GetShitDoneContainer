@@ -108,11 +108,12 @@ npm_builds_keep_their_cache_out_of_the_mount() {
 # --------------------------------------------------------------------------------
 # images_leave_the_mount_point_empty: The mount hides whatever an image holds under /home/sandbox/workspace, so each image must hold nothing there.
 # --------------------------------------------------------------------------------
-# The last RUN of each Dockerfile must end with the emptiness check, so no later step can write there.
+# The last RUN of each Dockerfile must end with the emptiness check, and no COPY, ADD or RUN after it may name the mount point.
 images_leave_the_mount_point_empty() {
   local dockerfile
   local last_run_line
   local check_line
+  local late_hits
   local failed=0
 
   for dockerfile in $DOCKERFILES; do
@@ -128,6 +129,26 @@ images_leave_the_mount_point_empty() {
     elif sed -n "$((last_run_line + 1)),${check_line}p" "$dockerfile" | grep -Eq '^[A-Z]+[[:space:]]'; then
       echo "    $dockerfile: the emptiness check is not in the last RUN"
       failed=1
+    else
+      late_hits=$(awk -v start="$check_line" '
+        function check_step() {
+          if (step != "" && index(step, "/home/sandbox/workspace") > 0) {
+            print step_line ": " step
+          }
+          step = ""
+        }
+        NR < start { next }
+        NR == start { continuing = /\\$/; next }
+        continuing { if (step == "") { step_line = NR } step = step " " $0; continuing = /\\$/; next }
+        /^(COPY|ADD|RUN)[[:space:]]/ { check_step(); step_line = NR; step = $0; continuing = /\\$/; next }
+        { check_step() }
+        END { check_step() }
+      ' "$dockerfile")
+
+      if [ -n "$late_hits" ]; then
+        echo "$late_hits" | sed "s|^|    $dockerfile: after the emptiness check, a step names the mount point: |"
+        failed=1
+      fi
     fi
   done
 

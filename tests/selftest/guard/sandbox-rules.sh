@@ -161,6 +161,17 @@ case_state_and_cache_rules() {
   run_scratch_guard "$WORK/empty-late.out" isolation.sh
   expect "mount point: a RUN after the emptiness check fails" has_text "$WORK/empty-late.out" "FAIL: images_leave_the_mount_point_empty"
   expect "mount point: the late RUN is reported" has_text "$WORK/empty-late.out" "base/Dockerfile: the emptiness check is not in the last RUN"
+
+  make_scratch_repo || return 1
+  printf 'COPY versions.env /home/sandbox/workspace/versions.env\n' >>"$WORK/repo/claude/Dockerfile"
+  run_scratch_guard "$WORK/empty-late-copy.out" isolation.sh
+  expect "mount point: a COPY into the mount point after the emptiness check fails" has_text "$WORK/empty-late-copy.out" "FAIL: images_leave_the_mount_point_empty"
+  expect "mount point: the late COPY is reported" has_text "$WORK/empty-late-copy.out" "claude/Dockerfile: after the emptiness check, a step names the mount point"
+
+  make_scratch_repo || return 1
+  printf 'ADD https://example.invalid/x.tgz /home/sandbox/workspace/x.tgz\n' >>"$WORK/repo/base/Dockerfile"
+  run_scratch_guard "$WORK/empty-late-add.out" isolation.sh
+  expect "mount point: an ADD into the mount point after the emptiness check fails" has_text "$WORK/empty-late-add.out" "base/Dockerfile: after the emptiness check, a step names the mount point"
 }
 
 # --------------------------------------------------------------------------------
