@@ -77,7 +77,7 @@ bash tests/host/manual/h19-bundle-behaviour.sh
 
 | Helper | You do | What it proves |
 |---|---|---|
-| `h07-login.sh` | Log in with a claude.ai account, then `/exit` | A Claude login lands in the run folder's `state/claude`, `claude auth status` shows `"loggedIn": true`, and there is no `~/.claude.json` in the container home |
+| `h07-login.sh` | Log in with a claude.ai account, send one message, then `/exit` | A Claude login lands in the run folder's `state/claude`, `claude auth status` shows `"loggedIn": true`, and there is no `~/.claude.json` in the container home |
 | `h09-rebuild-resume.sh` | Confirm the earlier session resumes in `claude --continue`, then `/exit` | After a rebuild and a recreate the login survives and `claude --continue` resumes the earlier session |
 | `h13-doctor.sh` | Confirm `claude doctor` shows auto-updates disabled | `claude doctor` reports auto-updates disabled; the wording is for you to judge |
 | `h16-gsd-bump.sh` | Set `GSD_CORE_VERSION` in `versions.env` to the approved bump target when asked, confirm the session resumes in `claude --continue`, then put the pin back | After a GSD pin bump and a rebuild the new GSD is synced into `state/claude`, the login survives and `claude --continue` resumes |
