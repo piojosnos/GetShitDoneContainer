@@ -54,6 +54,25 @@ nowhere_matches() {
 }
 
 # --------------------------------------------------------------------------------
+# run_steps_of DOCKERFILE: prints one line per RUN step as "LINE: text", with its continuation lines joined by a space and their trailing backslashes dropped.
+# --------------------------------------------------------------------------------
+# A rule that reads a step as one line cannot be dodged by a line break inside the step.
+run_steps_of() {
+  awk '
+    function flush() {
+      if (step != "") {
+        print step_line ": " step
+      }
+      step = ""
+    }
+    /^RUN[[:space:]]/ { flush(); step_line = NR; step = $0; continuing = /\\$/; sub(/[[:space:]]*\\$/, "", step); next }
+    continuing { piece = $0; continuing = /\\$/; sub(/[[:space:]]*\\$/, "", piece); step = step " " piece; next }
+    { flush() }
+    END { flush() }
+  ' "$1"
+}
+
+# --------------------------------------------------------------------------------
 # has_line FILE LINE: true if FILE has a line exactly equal to LINE.
 # --------------------------------------------------------------------------------
 has_line() { grep -Fxq -- "$2" "$1"; }

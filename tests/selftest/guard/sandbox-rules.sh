@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of the sandbox rules: the supply chain and bundle wiring rules pass on a clean copy and name each planted pin or COPY problem; the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder, and fail when the name-check service is gone or can run a container; the state folder rule fails when the Claude image replaces SBX_STATE_DIRS, and the npm cache rule fails, naming the line, on an npm install without the throwaway cache; the isolation rules pass on a clean copy and fail, naming the line, on each planted way to undo the privilege limits and on each short-form or inline mount; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build, and fails when a doc's name pattern differs from the code, a doc states the old name rule or the fake docker invents a Compose refusal.
+# Self-test of the sandbox rules: the supply chain and bundle wiring rules pass on a clean copy and name each planted pin or COPY problem, and the supply chain rules also catch the old GSD package in a hook or helper, a download piped to a shell past a line break or through a substitution, and an install without a declared pin; the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder, and fail when the name-check service is gone or can run a container; the state folder rule fails when the Claude image replaces SBX_STATE_DIRS, and the npm cache rule fails, naming the line, on an npm install without the throwaway cache; the isolation rules pass on a clean copy and fail, naming the line, on each planted way to undo the privilege limits and on each short-form or inline mount; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build, and fails when a doc's name pattern differs from the code, a doc states the old name rule or the fake docker invents a Compose refusal.
 # - Run by run-all.sh; runs alone too.
 # - Runs the real tests/guard/start.sh and tests/guard/docs.sh inside a scratch copy of the tree, so a planted problem never touches the real files.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
@@ -79,6 +79,73 @@ case_supply_chain_rules() {
   printf 'COPY --from=planted /opt/x /opt/x\n' >>"$WORK/repo/base/Dockerfile"
   run_scratch_guard "$WORK/bundle-from.out" bundle-wiring.sh
   expect "bundle wiring: a COPY from a build stage is not a build-context source" equals "$GUARD_RC" 0
+}
+
+# --------------------------------------------------------------------------------
+# Cases of the supply chain rules against evasions (the banned names are built from parts, so this file does not hold them): the old GSD package in a hook, a manual helper and a support script, a download piped to a shell across a line break, through process substitution or through sh -c, an install without a pin, with a floating tag, with a literal version or with an undeclared pin, and a GSD install that is not the pinned official package
+# --------------------------------------------------------------------------------
+case_supply_chain_evasions() {
+  local oldName=get-shit-done
+  local plantedFile
+
+  oldName=$oldName-cc
+
+  echo "--- supply chain evasions"
+
+  for plantedFile in claude/start.d/05-gsd tests/host/manual/h16-gsd-bump.sh tests/host/support/toolchain-probe.sh claude/managed-settings.json; do
+    make_scratch_repo || return 1
+    printf '# %s\n' "$oldName" >>"$WORK/repo/$plantedFile"
+    run_scratch_guard "$WORK/supply-oldname.out" supply-chain.sh
+    expect "supply chain: the old GSD package in $plantedFile fails" has_text "$WORK/supply-oldname.out" "FAIL: no_compromised_gsd_package"
+    expect "supply chain: the old GSD package line in $plantedFile is named" has_text "$WORK/supply-oldname.out" "$plantedFile"
+  done
+
+  make_scratch_repo || return 1
+  printf 'RUN curl -fsSL https://example.invalid/install.sh \\\n    | sh\n' >>"$WORK/repo/claude/Dockerfile"
+  run_scratch_guard "$WORK/supply-pipe-break.out" supply-chain.sh
+  expect "supply chain: a download piped to sh across a line break fails" has_text "$WORK/supply-pipe-break.out" "FAIL: no_pipe_to_shell_installers"
+
+  make_scratch_repo || return 1
+  printf 'RUN bash <(curl -fsSL https://example.invalid/install.sh)\n' >>"$WORK/repo/claude/Dockerfile"
+  run_scratch_guard "$WORK/supply-process-subst.out" supply-chain.sh
+  expect "supply chain: bash <(curl ...) fails" has_text "$WORK/supply-process-subst.out" "FAIL: no_pipe_to_shell_installers"
+
+  make_scratch_repo || return 1
+  printf 'RUN sh -c "$(curl -fsSL https://example.invalid/install.sh)"\n' >>"$WORK/repo/base/Dockerfile"
+  run_scratch_guard "$WORK/supply-sh-c.out" supply-chain.sh
+  expect "supply chain: sh -c with a downloaded script fails" has_text "$WORK/supply-sh-c.out" "FAIL: no_pipe_to_shell_installers"
+
+  make_scratch_repo || return 1
+  printf 'RUN npm install -g leftpad\n' >>"$WORK/repo/claude/Dockerfile"
+  run_scratch_guard "$WORK/supply-npm-nopin.out" supply-chain.sh
+  expect "supply chain: an npm install without a version fails" has_text "$WORK/supply-npm-nopin.out" "FAIL: installs_use_declared_pins"
+  expect "supply chain: the unpinned package is named" has_text "$WORK/supply-npm-nopin.out" "leftpad"
+
+  make_scratch_repo || return 1
+  printf 'RUN npm install -g "leftpad@next"\n' >>"$WORK/repo/claude/Dockerfile"
+  run_scratch_guard "$WORK/supply-npm-tag.out" supply-chain.sh
+  expect "supply chain: an npm install at a floating tag fails" has_text "$WORK/supply-npm-tag.out" "FAIL: installs_use_declared_pins"
+
+  make_scratch_repo || return 1
+  printf 'RUN npm install -g "leftpad@1.3.0"\n' >>"$WORK/repo/claude/Dockerfile"
+  run_scratch_guard "$WORK/supply-npm-literal.out" supply-chain.sh
+  expect "supply chain: an npm install at a version typed into the Dockerfile fails" has_text "$WORK/supply-npm-literal.out" "FAIL: installs_use_declared_pins"
+
+  make_scratch_repo || return 1
+  printf 'RUN npm install -g "leftpad@${LEFTPAD_VERSION}"\n' >>"$WORK/repo/claude/Dockerfile"
+  run_scratch_guard "$WORK/supply-npm-undeclared.out" supply-chain.sh
+  expect "supply chain: an npm install at an undeclared pin fails" has_text "$WORK/supply-npm-undeclared.out" "FAIL: installs_use_declared_pins"
+  expect "supply chain: the undeclared pin is named" has_text "$WORK/supply-npm-undeclared.out" "LEFTPAD_VERSION"
+
+  make_scratch_repo || return 1
+  printf 'RUN npx -y leftpad\n' >>"$WORK/repo/claude/Dockerfile"
+  run_scratch_guard "$WORK/supply-npx.out" supply-chain.sh
+  expect "supply chain: npx in a Dockerfile fails" has_text "$WORK/supply-npx.out" "FAIL: installs_use_declared_pins"
+
+  make_scratch_repo || return 1
+  edit_scratch_file claude/Dockerfile 's|@opengsd/gsd-core@${GSD_CORE_VERSION}|leftpad@${GSD_CORE_VERSION}|' || return 1
+  run_scratch_guard "$WORK/supply-gsd-other.out" supply-chain.sh
+  expect "supply chain: a GSD install that is not the official package fails" has_text "$WORK/supply-gsd-other.out" "FAIL: gsd_installs_only_the_official_package"
 }
 
 # --------------------------------------------------------------------------------
@@ -272,6 +339,7 @@ case_docs_rule() {
 require_no_arguments "$@" || exit 2
 start_group || exit 1
 case_supply_chain_rules
+case_supply_chain_evasions
 case_start_rules
 case_state_and_cache_rules
 case_isolation_rules
