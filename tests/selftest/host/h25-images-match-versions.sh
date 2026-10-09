@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of H-25 (tests/host/h25-images-match-versions.sh) against the fake docker: images that match versions.env pass; a stale record, a GSD or ccusage that is not the pin, files under the mount point, a build that does not stop without build.sh and a missing run folder each fail.
+# Self-test of H-25 (tests/host/h25-images-match-versions.sh) against the fake docker: images that match versions.env pass; a stale record, a GSD or ccusage that is not the pin, files under the mount point, a build that does not stop without build.sh (also one that stops for another reason while the log only echoes the guard text) and a missing run folder each fail.
 # - Run by run-all.sh; runs alone too.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
 # - Usage, from anywhere: bash tests/selftest/host/h25-images-match-versions.sh   (exit 0 = every case passes)
@@ -37,6 +37,10 @@ case_h25_alone() {
   expect "H-25: files under the mount point fail" failed_with "$CHECK_RC" "$WORK/out.h25.baked" "/home/sandbox/workspace"
   run_standalone "$WORK/out.h25.bare" h25-images-match-versions.sh FAKE_BARE_BUILD_OK=1
   expect "H-25: a build that does not stop without build.sh fails" failed_with "$CHECK_RC" "$WORK/out.h25.bare" "without build.sh did not stop"
+  run_standalone "$WORK/out.h25.echo" h25-images-match-versions.sh FAKE_BARE_BUILD_ECHO=1
+  expect "H-25: a bare build that stops for another reason while echoing the guard text fails" failed_with "$CHECK_RC" "$WORK/out.h25.echo" "without build.sh did not stop"
+  expect "H-25: the base build that only echoes the guard text is reported" has_text "$WORK/out.h25.echo" "base/Dockerfile without build.sh did not stop"
+  expect "H-25: the Claude build that only echoes the guard text is reported" has_text "$WORK/out.h25.echo" "claude/Dockerfile without build.sh did not stop"
   reset_state
   FIXTURE=""
   run_standalone "$WORK/out.h25.none" h25-images-match-versions.sh

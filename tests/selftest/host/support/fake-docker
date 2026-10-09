@@ -127,6 +127,7 @@
 # FAKE_CCUSAGE_VERSION: the version ccusage --version prints in the Claude image (default: the pin)
 # FAKE_WORKSPACE_BAKED: a file name that the listing of /home/sandbox/workspace in the Claude image shows (default: empty folder)
 # FAKE_BARE_BUILD_OK: 1 lets a build without build args and without a tag succeed, as Dockerfiles without the missing-pin guards would
+# FAKE_BARE_BUILD_ECHO: 1 makes a build without build args and without a tag stop for another reason (a network error) while BuildKit still echoes the guard text of the RUN or FROM line, as --progress=plain does
 
 # --------------------------------------------------------------------------------
 # log_call ARG...: appends one line for the call to FAKE_LOG, in the format the safety cases parse.
@@ -813,6 +814,26 @@ fake_bare_build() {
     echo "built without a tag"
 
     return 0
+  fi
+
+  if [ "${FAKE_BARE_BUILD_ECHO:-0}" = 1 ]; then
+    case "$1" in
+      */base/Dockerfile)
+        echo '#3 [internal] load metadata for docker.io/library/ubuntu:24.04' >&2
+        echo 'ERROR: failed to solve: failed to resolve source metadata: dial tcp: lookup registry-1.docker.io: no such host' >&2
+        echo '  > FROM ${TEMURIN_IMAGE} AS jdk' >&2
+        ;;
+      */claude/Dockerfile)
+        echo '#7 [3/9] RUN : "${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION is not set; build with ./build.sh}" && npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"' >&2
+        echo '#7 3.2 npm error network request failed' >&2
+        echo 'ERROR: failed to solve: process "/bin/bash -o pipefail -c : \"${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION is not set; build with ./build.sh}\" && npm install -g" did not complete successfully: exit code: 1' >&2
+        ;;
+      *)
+        echo "fake docker: bare build of an unknown Dockerfile: $1" >&2
+        ;;
+    esac
+
+    return 1
   fi
 
   case "$1" in
