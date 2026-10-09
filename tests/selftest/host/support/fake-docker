@@ -93,7 +93,8 @@
 # FAKE_ENV_MISSING: the name of one variable left out of the container environment
 # FAKE_UPDATE_ON: 1 makes claude update run instead of saying updates are disabled
 # FAKE_SHARE_EXISTS: 1 makes ~/.local/share/claude exist in the container home
-# FAKE_EXEC_RC: a non-zero value makes the exec of the share folder test return that status, as a docker exec that could not run does
+# FAKE_EXEC_RC: a non-zero value makes the exec of both folder tests (~/.local/share/claude and ~/.local/bin/claude) return that status, as a docker exec that could not run does
+# FAKE_LOCAL_BIN_EXISTS: 1 makes ~/.local/bin/claude exist in the container home
 # FAKE_GIT_DUBIOUS: 1 makes git status fail with a dubious ownership message (git status works only in the project folder)
 # FAKE_SAFE_DIR: the safe.directory values git config lists (default *)
 # FAKE_NO_GIT_WRITE: 1 makes the git identity write never reach the state folder
@@ -1272,9 +1273,18 @@ fake_exec() {
       if [ "${FAKE_EXEC_RC:-0}" != 0 ]; then
         return "$FAKE_EXEC_RC"
       fi
-      if [ "${FAKE_SHARE_EXISTS:-0}" = 1 ]; then
-        return 1
-      fi
+      case "$*" in
+        *".local/bin/claude"*)
+          if [ "${FAKE_LOCAL_BIN_EXISTS:-0}" = 1 ]; then
+            return 1
+          fi
+          ;;
+        *)
+          if [ "${FAKE_SHARE_EXISTS:-0}" = 1 ]; then
+            return 1
+          fi
+          ;;
+      esac
       ;;
     *"claude -p /context") exec_context ;;
     *) unhandled "exec $execName $*" ;;

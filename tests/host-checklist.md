@@ -48,7 +48,7 @@ What each check proves:
 | H-10 | A missing folder is refused | `h10-missing-folder-refused.sh` | automatic |
 | H-11 | Stopping is quick and keeps everything | `h11-stop-is-quick-and-safe.sh` | automatic |
 | H-12 | A plain `docker run` is refused; the pinned Claude is installed | `h12-plain-run-refused-pin-installed.sh` | automatic |
-| H-13 | Environment is visible and self-update is off; `claude doctor` agrees | `h13-env-and-no-self-update.sh`, `manual/h13-doctor.sh` | automatic; helper for the rest |
+| H-13 | Environment is visible, self-update is off and no Claude copy sits in `~/.local`; `claude doctor` agrees | `h13-env-and-no-self-update.sh`, `manual/h13-doctor.sh` | automatic; helper for the rest |
 | H-14 | The image holds the bundle, equal to the repo; owners, modes and no mount are right; the managed settings parse | `h14-bundle-in-image.sh` | automatic |
 | H-15 | Rules and skills are synced and equal to the repo; Claude lists the always-on rules and the skills, not the path-scoped rules | `h15-bundle-synced-and-visible.sh` | automatic |
 | H-16 | A restart refreshes the bundle and GSD from the image (a stale GSD version and a hand-edited GSD skill are replaced) and keeps your own skills, memories, sessions, settings keys and `CLAUDE.md`; the helper bumps the GSD pin for real with a logged-in sandbox | `h16-sync-refreshes-and-spares.sh`, `manual/h16-gsd-bump.sh` | automatic; helper for the rest |
