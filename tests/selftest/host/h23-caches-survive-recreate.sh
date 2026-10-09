@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of H-23 (tests/host/h23-caches-survive-recreate.sh) against the fake docker: caches in the state folder that survive the recreate pass; folders the entrypoint did not make, an npm cache outside state, a ~/.m2 that is not the state link, a cache that never reaches the Mac and a cache lost on recreate each fail and are named.
+# Self-test of H-23 (tests/host/h23-caches-survive-recreate.sh) against the fake docker: caches in the state folder that survive the recreate pass, with a real Maven download; folders the entrypoint did not make, an npm cache outside state, a ~/.m2 that is not the state link, a cache that never reaches the Mac, a cache lost on recreate, a failing Maven download and a downloaded jar that never reaches the Mac each fail and are named.
 # - Run by run-all.sh; runs alone too.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
 # - Usage, from anywhere: bash tests/selftest/host/h23-caches-survive-recreate.sh   (exit 0 = every case passes)
@@ -41,6 +41,9 @@ case_h23_alone() {
   expect "H-23: prints PASS: H-23" has_text "$WORK/out.h23" "PASS: H-23"
   expect "H-23: the sandbox is down and up once" equals "$(grep -c 'ARGS: compose .* \(up\|down\)' "$FAKE_LOG")" "2"
   expect "H-23: the marker files are on the host afterwards" marker_files_in_all_caches
+  expect "H-23: the PASS line mentions the Maven download" has_text "$WORK/out.h23" "Maven download"
+  expect "H-23: Maven is asked for junit 4.13.2 in the project folder" has_text "$FAKE_LOG" "exec -w /home/sandbox/workspace/hosttest sbx-hosttest mvn -q dependency:get -Dartifact=junit:junit:4.13.2"
+  expect "H-23: the downloaded jar is on the host afterwards" test -f "$FIXTURE/state/m2/repository/junit/junit/4.13.2/junit-4.13.2.jar"
   expect "H-23: the sandbox is up at the end" test -f "$WORK/state/container"
 
   reset_state
@@ -71,6 +74,18 @@ case_h23_alone() {
   expect "H-23: a cache lost on recreate fails" equals "$CHECK_RC" "1"
   expect "H-23: the lost cache says it was missing after the recreate" has_text "$WORK/out.h23.lost" "after the recreate"
   expect "H-23: a cache lost on recreate was still there before it" lacks_text "$WORK/out.h23.lost" "before the recreate"
+
+  make_cache_fixture
+  run_standalone "$WORK/out.h23.mvn" h23-caches-survive-recreate.sh FAKE_MVN_IO_ERROR=1
+  expect "H-23: a failing Maven download fails" equals "$CHECK_RC" "1"
+  expect "H-23: the Maven problem names the exit status" has_text "$WORK/out.h23.mvn" "exited with status 1"
+  expect "H-23: the Maven problem names the Input/output error" has_text "$WORK/out.h23.mvn" "Input/output error"
+
+  make_cache_fixture
+  run_standalone "$WORK/out.h23.nojar" h23-caches-survive-recreate.sh FAKE_NO_MAVEN_JAR=1
+  expect "H-23: a downloaded jar that never reaches the Mac fails" equals "$CHECK_RC" "1"
+  expect "H-23: the missing jar is named" has_text "$WORK/out.h23.nojar" "junit-4.13.2.jar"
+  expect "H-23: the missing jar says it was missing before the recreate" has_text "$WORK/out.h23.nojar" "before the recreate"
 
   reset_state
   FIXTURE=""

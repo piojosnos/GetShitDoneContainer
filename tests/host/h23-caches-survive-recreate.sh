@@ -4,14 +4,17 @@
 # - The entrypoint makes state/cache/npm, state/cache/uv and state/m2 at start.
 # - A run-unique file is written into each cache from inside the container. It must be on the Mac,
 #   and still be there after the sandbox is taken down and started again.
+# - A real Maven download (junit 4.13.2) is run in the project folder as the sandbox user. The jar must be on the Mac,
+#   and still be there after the recreate. Maven 3.9.12 and later fail here on the Docker Desktop for Mac mount.
 # - The files are left in the run folder for the printed cleanup.
 # Depends on: nothing
-# Needs: test sandbox running; stops and restarts it
+# Needs: test sandbox running with network access to Maven Central; stops and restarts it
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 
 marker="h23-$$-$(date +%s)"
+mavenJar="$RUN/state/m2/repository/junit/junit/4.13.2/junit-4.13.2.jar"
 
 # --------------------------------------------------------------------------------
 # container_stdout CMD...: runs CMD in the test container; stdin closed, stderr discarded, so a tool notice never reaches a compared value.
@@ -67,7 +70,21 @@ plant_cache_files() {
 }
 
 # --------------------------------------------------------------------------------
-# check_files_on_host WHEN: checks each cache folder on the Mac holds the marker file; WHEN says which moment goes in the message.
+# Downloads junit 4.13.2 with Maven as the sandbox user, in the project folder
+# --------------------------------------------------------------------------------
+download_maven_artifact() {
+  local mvnOutput mvnStatus
+
+  mvnOutput=$(run_timeout 300 in_project mvn -q dependency:get -Dartifact=junit:junit:4.13.2)
+  mvnStatus=$?
+
+  if [ "$mvnStatus" -ne 0 ]; then
+    add_problem "mvn dependency:get exited with status $mvnStatus; an 'Input/output error' or 'Failed to delete tracking file' means this Maven cannot keep its local repository on the Mac mount (see SANDBOX.md troubleshooting); last lines: $(printf '%s\n' "$mvnOutput" | tail -n 5 | tr '\n' ' ')"
+  fi
+}
+
+# --------------------------------------------------------------------------------
+# check_files_on_host WHEN: checks each cache folder on the Mac holds the marker file and the Maven jar; WHEN says which moment goes in the message.
 # --------------------------------------------------------------------------------
 check_files_on_host() {
   local folderName
@@ -77,6 +94,10 @@ check_files_on_host() {
       add_problem "state/$folderName/$marker is missing on the Mac $1"
     fi
   done
+
+  if [ ! -f "$mavenJar" ]; then
+    add_problem "state/m2/repository/junit/junit/4.13.2/junit-4.13.2.jar is missing on the Mac $1"
+  fi
 }
 
 # --------------------------------------------------------------------------------
@@ -87,8 +108,9 @@ require_test_sandbox H-23 || exit 1
 check_state_folders
 check_cache_locations
 plant_cache_files
+download_maven_artifact
 check_files_on_host "before the recreate"
 restart_test_sandbox H-23 h23-down.log || exit 1
 check_files_on_host "after the recreate"
 report_check H-23 "a cache is not in the state folder or did not survive the recreate" \
-  "npm, uv and Maven use state/cache/npm, state/cache/uv and state/m2, and a file in each survived the recreate"
+  "npm, uv and Maven use state/cache/npm, state/cache/uv and state/m2, a file in each survived the recreate, and a Maven download of junit 4.13.2 reached state/m2 and survived it"

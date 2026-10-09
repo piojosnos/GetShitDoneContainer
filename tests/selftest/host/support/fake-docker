@@ -30,6 +30,8 @@
 #   from SBX_STATE_DIRS, unless FAKE_NO_CACHE_DIRS is 1.
 # - An exec answers npm config get cache, uv cache dir and readlink of ~/.m2 from the state folder paths, and a
 #   command holding ": h23-plant" writes its last argument into a file of that name in the three cache folders.
+# - An exec of mvn -q dependency:get answers the Maven download of H-23: it makes the junit 4.13.2 jar under
+#   state/m2/repository of the mounted folder, unless a knob below says otherwise.
 # - An exec of pgrep -x sleep answers 0 (the start hooks have finished) unless a knob below says otherwise.
 # - An exec of node -e runs that command on the host with CLAUDE_CONFIG_DIR set to the state/claude folder of the
 #   mounted folder.
@@ -114,6 +116,8 @@
 # FAKE_M2_LINK: what readlink of ~/.m2 prints (default: the state/m2 path)
 # FAKE_CACHE_NOT_SHARED: 1 makes a file written into a cache never reach the host
 # FAKE_DOWN_LOSES_CACHES: 1 makes compose down delete state/cache and state/m2 of the mounted folder
+# FAKE_MVN_IO_ERROR: 1 makes the Maven download fail with an Input/output error and status 1
+# FAKE_NO_MAVEN_JAR: 1 makes the Maven download succeed without the jar ever reaching the host
 # FAKE_START_POLLS: the number of pgrep -x sleep calls after each compose up that answer 1 before it answers 0
 # FAKE_STOPS_AT_START: 1 makes the container exit once compose up has run the hooks, and pgrep -x sleep answer 1
 # FAKE_CCUSAGE_EMPTY: 1 makes every ccusage report empty, as if no transcript were planted
@@ -1065,6 +1069,28 @@ exec_h23_plant() {
 }
 
 # --------------------------------------------------------------------------------
+# exec_mvn_download: answers mvn -q dependency:get of junit 4.13.2: makes the jar in state/m2 of the mounted folder; FAKE_MVN_IO_ERROR makes it fail, FAKE_NO_MAVEN_JAR leaves the jar out.
+# --------------------------------------------------------------------------------
+exec_mvn_download() {
+  local jarDir
+
+  if [ "${FAKE_MVN_IO_ERROR:-0}" = 1 ]; then
+    echo "[ERROR] Failed to execute goal on project hosttest: java.io.IOException: Input/output error" >&2
+    echo "[ERROR] Failed to delete tracking file /home/sandbox/.m2/repository/junit/junit/4.13.2/junit-4.13.2.jar.lastUpdated" >&2
+
+    return 1
+  fi
+
+  if [ "${FAKE_NO_MAVEN_JAR:-0}" = 1 ]; then
+    return 0
+  fi
+
+  jarDir=$(cat "$FAKE_STATE/container.dir")/state/m2/repository/junit/junit/4.13.2
+  mkdir -p "$jarDir"
+  printf 'fake jar\n' >"$jarDir/junit-4.13.2.jar"
+}
+
+# --------------------------------------------------------------------------------
 # exec_pgrep_sleep: answers pgrep -x sleep: 1 while the container has exited or while FAKE_START_POLLS calls since the last compose up have not yet been made; else 0.
 # --------------------------------------------------------------------------------
 exec_pgrep_sleep() {
@@ -1262,6 +1288,7 @@ fake_exec() {
     "env H18_SCRIPT="*) exec_h18_run "$@" ;;
     "sh -c : h14-probe"*) exec_h14_probe ;;
     "sh -c : h23-plant"*) exec_h23_plant "${!#}" ;;
+    "mvn -q dependency:get -Dartifact=junit:junit:4.13.2") exec_mvn_download; return $? ;;
     "pgrep -x sleep") exec_pgrep_sleep; return $? ;;
     "node -e "*) exec_node_script "$@"; return $? ;;
     "ccusage "*) exec_ccusage "$@"; return $? ;;
