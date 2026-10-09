@@ -64,6 +64,11 @@ case_supply_chain_rules() {
   expect "supply chain: a floating image tag fails" has_text "$WORK/supply-floating.out" "FAIL: no_floating_latest_versions"
 
   make_scratch_repo || return 1
+  edit_scratch_file versions.env 's/^\(TEMURIN_IMAGE=[^@]*\)@.*/\1/' || return 1
+  run_scratch_guard "$WORK/supply-nodigest.out" supply-chain.sh
+  expect "supply chain: an image pin without a digest fails" has_text "$WORK/supply-nodigest.out" "is not an image tag with its @sha256 digest"
+
+  make_scratch_repo || return 1
   printf 'COPY outside.txt /etc/outside.txt\n' >>"$WORK/repo/claude/Dockerfile"
   : >"$WORK/repo/outside.txt"
   run_scratch_guard "$WORK/bundle-outside.out" bundle-wiring.sh

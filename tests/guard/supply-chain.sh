@@ -72,8 +72,8 @@ versions_are_pinned() {
         fi
         ;;
       *_IMAGE)
-        if ! printf '%s\n' "$pinValue" | grep -Eq '^[a-z0-9][a-z0-9./-]*:[A-Za-z0-9._-]+(@sha256:[0-9a-f]{64})?$'; then
-          echo "    versions.env: $pinName=$pinValue is not an image reference"
+        if ! printf '%s\n' "$pinValue" | grep -Eq '^[a-z0-9][a-z0-9./-]*:[A-Za-z0-9._-]+@sha256:[0-9a-f]{64}$'; then
+          echo "    versions.env: $pinName=$pinValue is not an image tag with its @sha256 digest"
           ok=1
         fi
         ;;

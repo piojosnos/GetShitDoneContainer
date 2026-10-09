@@ -1,13 +1,21 @@
 # check=skip=InvalidDefaultArgInFrom
 # Shared base for every sbx agent image.
-# - Holds nothing agent-specific.
+# - Holds the Linux tools and the toolchains (git, gh, Node.js, Python with uv, Temurin JDK, Maven)
+#   and nothing agent-specific.
 # - Build with ./build.sh from the repo root.
 #
 # Versions live only in versions.env and reach this file through build.sh.
 # - No ARG has a default, so a build without build.sh stops and names the missing pin.
-# - The FROM image is a pin too; the directive on line 1 silences the build check
+# - The FROM images are pins too; the directive on line 1 silences the build check
 #   that warns about an ARG without a default in FROM.
+#
+# The JDK and uv come from their official images, each pinned by tag and digest.
+# - The two stages below only hold files; the final stage copies them out.
+ARG TEMURIN_IMAGE
+ARG UV_IMAGE
 ARG UBUNTU_IMAGE
+FROM ${TEMURIN_IMAGE} AS jdk
+FROM ${UV_IMAGE} AS uv
 FROM ${UBUNTU_IMAGE}
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -15,8 +23,16 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # --- OS packages ---
 # - One layer, no recommended extras.
 # - apt lists are removed in the same layer, so the cache never lands in the image.
+# - Plain apt packages are not pinned: they follow the pinned Ubuntu release and pick up
+#   security fixes at each rebuild.
+# - DEBIAN_FRONTEND is set on this command only, so tzdata never asks a question.
+# - Python comes from apt (3.12 on noble); uv handles projects and other Python versions.
+# - No ARG above this RUN, so a pin bump never invalidates this layer.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl git less procps xz-utils \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       ca-certificates curl git less procps xz-utils \
+       jq ripgrep unzip zip openssh-client make build-essential tzdata \
+       python3 python3-venv python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
 # --- Node.js ---
@@ -47,6 +63,31 @@ RUN : "${GH_VERSION:?GH_VERSION is not set; build with ./build.sh}" \
     && tar -xzf "${d}.tar.gz" -C /usr/local/bin --strip-components=2 --no-same-owner "${d}/bin/gh" \
     && rm "${d}.tar.gz"
 
+# --- JDK (Temurin) ---
+# - Copied from the pinned Temurin image.
+# - Linked into /usr/local/bin because a login shell may reset PATH and /usr/local/bin is in every PATH.
+COPY --from=jdk /opt/java/openjdk /opt/java/openjdk
+RUN for tool in /opt/java/openjdk/bin/*; do ln -s "$tool" "/usr/local/bin/$(basename "$tool")"; done
+
+# --- Maven ---
+# - Release tarball from Maven Central, checked against the .sha512 file published next to it.
+# - Maven Central keeps every release, so an old pin stays buildable.
+# - The checksum file holds only the hash; the file name is appended for sha512sum.
+ARG MAVEN_VERSION
+RUN : "${MAVEN_VERSION:?MAVEN_VERSION is not set; build with ./build.sh}" \
+    && file="apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
+    && maven_url="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}" \
+    && curl -fsSLO "${maven_url}/${file}" \
+    && echo "$(curl -fsSL "${maven_url}/${file}.sha512")  ${file}" | sha512sum -c - \
+    && mkdir -p /opt/maven \
+    && tar -xzf "$file" -C /opt/maven --strip-components=1 --no-same-owner \
+    && rm "$file" \
+    && ln -s /opt/maven/bin/mvn /usr/local/bin/mvn
+
+# --- uv ---
+# - Copied from the pinned uv image.
+COPY --from=uv /uv /uvx /usr/local/bin/
+
 # --- The sandbox user ---
 # - ubuntu:24.04 ships an "ubuntu" user at UID/GID 1000; it is removed first.
 # - The build fails unless sandbox ends up as 1000:1000.
@@ -67,10 +108,12 @@ RUN git config --system safe.directory '*'
 # - gh: login and config in state/gh.
 # - git: global config in state/git. git writes the file itself (lock file plus rename),
 #   which is why the folder is mounted, never the single file.
+# - JAVA_HOME: where the JDK was copied; Maven and other Java tools read it.
 ENV HISTFILE=/home/sandbox/workspace/state/shell/bash_history \
     PROMPT_COMMAND="history -a" \
     GH_CONFIG_DIR=/home/sandbox/workspace/state/gh \
     GIT_CONFIG_GLOBAL=/home/sandbox/workspace/state/git/config \
+    JAVA_HOME=/opt/java/openjdk \
     LANG=C.UTF-8
 
 # --- Entrypoint ---
@@ -98,6 +141,17 @@ RUN mkdir -p /etc/sbx/start.d
 # - Compose is asked not to create a missing $SBX_DIR on the Mac, but some versions ignore that; the entrypoint then refuses to start.
 USER sandbox
 RUN mkdir -p /home/sandbox/workspace /home/sandbox/.local/state
+
+# --- Build-time smoke test ---
+# - Runs as the runtime user, so a tool the sandbox user cannot run stops the build.
+# - Each version must match its pin in versions.env.
+# - grep -F writes to /dev/null instead of using -q, which can end the pipe early under pipefail.
+RUN test "$(node -v)" = "v${NODE_VERSION}" \
+    && gh --version | grep -F "gh version ${GH_VERSION} " >/dev/null \
+    && mvn -v | grep -F "Apache Maven ${MAVEN_VERSION} " >/dev/null \
+    && java -version 2>&1 | grep -F "Temurin" >/dev/null \
+    && uv --version \
+    && python3 --version
 
 WORKDIR /home/sandbox/workspace
 ENTRYPOINT ["/usr/local/bin/sbx-entrypoint"]

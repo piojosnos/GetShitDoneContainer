@@ -10,6 +10,16 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 - Nothing is mounted over the container's home directory, so everything the image provides stays visible.
 - It runs side by side with the old `ClaudeCode/` layout, which keeps working and stays documented in `README.md`.
 
+## What the images hold
+
+| Image | Holds |
+|---|---|
+| `sbx-base:local` | Ubuntu 24.04, git, gh, Node.js 24, Python 3 (pip, venv) and uv, the Temurin JDK 21, Maven, jq, ripgrep, zip and unzip, the ssh client, make and a C compiler |
+| `sbx-claude:local` | `sbx-base` plus Claude Code and the best-practices bundle |
+
+- Python projects use uv or a venv, because Ubuntu blocks plain pip installs into the system Python.
+- Every version is in `versions.env` (see "Build the images").
+
 ## Requirements
 
 - Docker Desktop on the Mac.
