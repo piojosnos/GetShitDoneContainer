@@ -158,12 +158,14 @@ RUN mkdir -p /home/sandbox/workspace /home/sandbox/.local/state \
 # - Runs as the runtime user, so a tool the sandbox user cannot run stops the build.
 # - Each version must match its pin in versions.env.
 # - grep -F writes to /dev/null instead of using -q, which can end the pipe early under pipefail.
+# - Last RUN: the mount point must still be empty, because the mount hides whatever the image holds there.
 RUN test "$(node -v)" = "v${NODE_VERSION}" \
     && gh --version | grep -F "gh version ${GH_VERSION} " >/dev/null \
     && mvn -v | grep -F "Apache Maven ${MAVEN_VERSION} " >/dev/null \
     && java -version 2>&1 | grep -F "Temurin" >/dev/null \
     && uv --version \
-    && python3 --version
+    && python3 --version \
+    && test -z "$(ls -A /home/sandbox/workspace)"
 
 WORKDIR /home/sandbox/workspace
 ENTRYPOINT ["/usr/local/bin/sbx-entrypoint"]

@@ -80,10 +80,16 @@ RUN chmod -R u=rwX,go=rX /opt/sbx/best-practices \
 
 USER sandbox
 
-# Build-time smoke test, as the runtime user: the installed versions must equal the pins.
-RUN test "$(claude --version)" = "${CLAUDE_CODE_VERSION} (Claude Code)" \
+# --- Build-time smoke test ---
+# - Runs as the runtime user: the installed versions must equal the pins.
+# - These tools call npm, which writes a log into its cache; the throwaway cache keeps it out
+#   of the mount point.
+# - Last RUN: the mount point must still be empty, because the mount hides whatever the image holds there.
+RUN export NPM_CONFIG_CACHE=/tmp/npm-cache \
+    && test "$(claude --version)" = "${CLAUDE_CODE_VERSION} (Claude Code)" \
     && test "$(gsd-tools runtime-identity --raw)" = "{\"packageName\":\"@opengsd/gsd-core\",\"version\":\"${GSD_CORE_VERSION}\"}" \
-    && test "$(ccusage --version)" = "ccusage ${CCUSAGE_VERSION}"
+    && test "$(ccusage --version)" = "ccusage ${CCUSAGE_VERSION}" \
+    && test -z "$(ls -A /home/sandbox/workspace)"
 
 # --- Pin record ---
 # - A copy of versions.env: the pins this image was built with.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Guard rules on isolation: no Docker socket or sudo, one mount, no privileges, no npm cache baked under the mount point, the old layout untouched.
+# Guard rules on isolation: no Docker socket or sudo, one mount, no privileges, no npm cache and nothing else baked under the mount point, the old layout untouched.
 # - Run by tests/guard/run-all.sh; runs alone too.
 # - Usage, from anywhere: bash tests/guard/isolation.sh   (exit 0 = every rule holds)
 set -u
@@ -59,6 +59,35 @@ npm_builds_keep_their_cache_out_of_the_mount() {
 }
 
 # --------------------------------------------------------------------------------
+# images_leave_the_mount_point_empty: The mount hides whatever an image holds under /home/sandbox/workspace, so each image must hold nothing there.
+# --------------------------------------------------------------------------------
+# The last RUN of each Dockerfile must end with the emptiness check, so no later step can write there.
+images_leave_the_mount_point_empty() {
+  local dockerfile
+  local last_run_line
+  local check_line
+  local failed=0
+
+  for dockerfile in $DOCKERFILES; do
+    last_run_line=$(grep -n '^RUN' "$dockerfile" | tail -n 1 | cut -d: -f1)
+    check_line=$(grep -nF 'test -z "$(ls -A /home/sandbox/workspace)"' "$dockerfile" | tail -n 1 | cut -d: -f1)
+
+    if [ -z "$check_line" ]; then
+      echo "    $dockerfile: no emptiness check of /home/sandbox/workspace"
+      failed=1
+    elif [ -z "$last_run_line" ] || [ "$check_line" -lt "$last_run_line" ]; then
+      echo "    $dockerfile: the emptiness check is not in the last RUN"
+      failed=1
+    elif sed -n "$((last_run_line + 1)),${check_line}p" "$dockerfile" | grep -Eq '^[A-Z]+[[:space:]]'; then
+      echo "    $dockerfile: the emptiness check is not in the last RUN"
+      failed=1
+    fi
+  done
+
+  return $failed
+}
+
+# --------------------------------------------------------------------------------
 # old_layout_untouched: The old layout keeps working until it is retired: no change to its files.
 # --------------------------------------------------------------------------------
 old_layout_untouched() {
@@ -76,4 +105,5 @@ run_rules \
   exactly_one_mount_and_not_over_home \
   runs_without_privileges \
   npm_builds_keep_their_cache_out_of_the_mount \
+  images_leave_the_mount_point_empty \
   old_layout_untouched || exit 1

@@ -117,7 +117,7 @@ case_start_rules() {
 }
 
 # --------------------------------------------------------------------------------
-# Cases of the state folder and npm cache rules (the scratch copy has no .git, so only the named rule line is read from the isolation output): a clean copy, a Claude image that replaces SBX_STATE_DIRS and an npm install without the throwaway cache
+# Cases of the state folder and npm cache rules (the scratch copy has no .git, so only the named rule line is read from the isolation output): a clean copy, a Claude image that replaces SBX_STATE_DIRS, an npm install without the throwaway cache, and a Dockerfile that can leave files under the mount point
 # --------------------------------------------------------------------------------
 case_state_and_cache_rules() {
   echo "--- state folder and npm cache rules"
@@ -139,6 +139,22 @@ case_state_and_cache_rules() {
   run_scratch_guard "$WORK/cache-planted.out" isolation.sh
   expect "npm cache: an npm install without the throwaway cache fails" has_text "$WORK/cache-planted.out" "FAIL: npm_builds_keep_their_cache_out_of_the_mount"
   expect "npm cache: the planted install line is named" has_text "$WORK/cache-planted.out" "npm install -g planted-package"
+
+  make_scratch_repo || return 1
+  run_scratch_guard "$WORK/empty-clean.out" isolation.sh
+  expect "mount point: a clean copy passes the emptiness rule" has_text "$WORK/empty-clean.out" "PASS: images_leave_the_mount_point_empty"
+
+  make_scratch_repo || return 1
+  edit_scratch_file claude/Dockerfile '/test -z "$(ls -A \/home\/sandbox\/workspace)"/d' || return 1
+  run_scratch_guard "$WORK/empty-missing.out" isolation.sh
+  expect "mount point: a Dockerfile without the emptiness check fails" has_text "$WORK/empty-missing.out" "FAIL: images_leave_the_mount_point_empty"
+  expect "mount point: the Dockerfile without the check is named" has_text "$WORK/empty-missing.out" "claude/Dockerfile: no emptiness check"
+
+  make_scratch_repo || return 1
+  printf 'RUN mkdir -p /home/sandbox/workspace/state\n' >>"$WORK/repo/base/Dockerfile"
+  run_scratch_guard "$WORK/empty-late.out" isolation.sh
+  expect "mount point: a RUN after the emptiness check fails" has_text "$WORK/empty-late.out" "FAIL: images_leave_the_mount_point_empty"
+  expect "mount point: the late RUN is reported" has_text "$WORK/empty-late.out" "base/Dockerfile: the emptiness check is not in the last RUN"
 }
 
 # --------------------------------------------------------------------------------
