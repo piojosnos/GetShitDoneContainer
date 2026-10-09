@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Pinned Toolchain, GSD, and ccusage
 status: executing
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-10-09T03:30:57.368Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-10-09T03:40:57.318Z"
 last_activity: 2026-10-08
 last_activity_desc: Phase 02 execution started
-state_head: ddbfb0f03e5032ae4e79a9b754b661077b86545e
+state_head: ef27b56f4e56063f1404ff3aa58483f055db6fb3
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 53
-  completed_plans: 46
+  completed_plans: 47
   percent: 50
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-08)
 ## Current Position
 
 Phase: 02 (Pinned Toolchain, GSD, and ccusage) — EXECUTING
-Plan: 3 of 9
+Plan: 4 of 9
 Status: Ready to execute
 Last activity: 2026-10-08 — Phase 02 execution started
 
@@ -107,6 +107,7 @@ Progress: [████████████████████] 44/44 p
 | Phase 01.5 P16 | 30 min | 3 tasks | 4 files |
 | Phase 02 P01 | 9 min | 3 tasks | 22 files |
 | Phase 02 P02 | n/a | 2 tasks | 1 files |
+| Phase 02 P03 | not recorded | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -193,6 +194,8 @@ Recent decisions affecting current work:
 - [Phase 01.5]: 01.5-16: the Mac run passed (21 checks, 36 guard rules); 1.1 WR-03 and 01.5 WR-01 to WR-04 recorded fixed, IN-01 to IN-07 stay open
 - [Phase 02]: versions.env is the only place versions live; build.sh sources ./versions.env and passes every name as a bare --build-arg to both builds — Adding or bumping a pin never changes build.sh; Dockerfiles carry no version defaults so a build that skips build.sh stops and names the missing pin
 - [Phase 02]: UBUNTU_IMAGE stays on the 24.04 tag until the plan 02 approval adds the digest; BASE_IMAGE=sbx-base:local is the only ARG default — A local tag is not a version; the digest needs human approval
+- [Phase 02]: Plan 03: the three base image pins are tag plus index digest (copied from approved 02-PINS.md rows); versions_are_pinned now refuses an image pin without a 64 hex digest
+- [Phase 02]: Plan 03: copied Temurin tree may keep a dangling cacerts link; check Maven TLS on the Mac in plan 09 (fix: ca-certificates-java or relink to the bundled cacerts)
 
 ### Pending Todos
 
@@ -237,6 +240,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-09T03:30:57.224Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-10-09T03:40:57.171Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None
