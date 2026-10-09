@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of the sandbox rules: the supply chain and bundle wiring rules pass on a clean copy and name each planted pin or COPY problem; the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder, and fail when the name-check service is gone or can run a container; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build, and fails when a doc's name pattern differs from the code, a doc states the old name rule or the fake docker invents a Compose refusal.
+# Self-test of the sandbox rules: the supply chain and bundle wiring rules pass on a clean copy and name each planted pin or COPY problem; the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder, and fail when the name-check service is gone or can run a container; the state folder rule fails when the Claude image replaces SBX_STATE_DIRS, and the npm cache rule fails, naming the line, on an npm install without the throwaway cache; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build, and fails when a doc's name pattern differs from the code, a doc states the old name rule or the fake docker invents a Compose refusal.
 # - Run by run-all.sh; runs alone too.
 # - Runs the real tests/guard/start.sh and tests/guard/docs.sh inside a scratch copy of the tree, so a planted problem never touches the real files.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
@@ -111,6 +111,31 @@ case_start_rules() {
 }
 
 # --------------------------------------------------------------------------------
+# Cases of the state folder and npm cache rules (the scratch copy has no .git, so only the named rule line is read from the isolation output): a clean copy, a Claude image that replaces SBX_STATE_DIRS and an npm install without the throwaway cache
+# --------------------------------------------------------------------------------
+case_state_and_cache_rules() {
+  echo "--- state folder and npm cache rules"
+
+  make_scratch_repo || return 1
+  run_scratch_guard "$WORK/state-clean.out" start.sh
+  expect "state folders: a clean copy passes the start rules" equals "$GUARD_RC" 0
+  run_scratch_guard "$WORK/cache-clean.out" isolation.sh
+  expect "npm cache: a clean copy passes the npm cache rule" has_text "$WORK/cache-clean.out" "PASS: npm_builds_keep_their_cache_out_of_the_mount"
+
+  make_scratch_repo || return 1
+  edit_scratch_file claude/Dockerfile 's|^\( *SBX_STATE_DIRS=\).*$|\1claude \\|' || return 1
+  run_scratch_guard "$WORK/state-replace.out" start.sh
+  expect "state folders: a Claude image that replaces SBX_STATE_DIRS fails" has_text "$WORK/state-replace.out" "FAIL: agent_image_keeps_base_state_folders"
+  expect "state folders: the replacing line is named" has_text "$WORK/state-replace.out" "replaces SBX_STATE_DIRS"
+
+  make_scratch_repo || return 1
+  printf 'RUN npm install -g planted-package\n' >>"$WORK/repo/claude/Dockerfile"
+  run_scratch_guard "$WORK/cache-planted.out" isolation.sh
+  expect "npm cache: an npm install without the throwaway cache fails" has_text "$WORK/cache-planted.out" "FAIL: npm_builds_keep_their_cache_out_of_the_mount"
+  expect "npm cache: the planted install line is named" has_text "$WORK/cache-planted.out" "npm install -g planted-package"
+}
+
+# --------------------------------------------------------------------------------
 # Cases of the docs rules: a clean copy, an image comment that promises nothing is created, a doc that promises a good build, a drifted name pattern, the old name rule and an invented Compose refusal in the fake docker
 # --------------------------------------------------------------------------------
 case_docs_rule() {
@@ -160,5 +185,6 @@ require_no_arguments "$@" || exit 2
 start_group || exit 1
 case_supply_chain_rules
 case_start_rules
+case_state_and_cache_rules
 case_docs_rule
 finish_cases

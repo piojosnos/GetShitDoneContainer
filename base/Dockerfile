@@ -109,11 +109,19 @@ RUN git config --system safe.directory '*'
 # - git: global config in state/git. git writes the file itself (lock file plus rename),
 #   which is why the folder is mounted, never the single file.
 # - JAVA_HOME: where the JDK was copied; Maven and other Java tools read it.
+# - The npm, uv and Maven caches live in state/ on the Mac, so they survive a recreate and a rebuild.
+# - uv copies files instead of hardlinking, because a link between the cache and a project over
+#   the Mac file sharing is not reliable.
+# - SBX_STATE_DIRS asks the entrypoint to create these folders at start; agent images append to it.
 ENV HISTFILE=/home/sandbox/workspace/state/shell/bash_history \
     PROMPT_COMMAND="history -a" \
     GH_CONFIG_DIR=/home/sandbox/workspace/state/gh \
     GIT_CONFIG_GLOBAL=/home/sandbox/workspace/state/git/config \
     JAVA_HOME=/opt/java/openjdk \
+    NPM_CONFIG_CACHE=/home/sandbox/workspace/state/cache/npm \
+    UV_CACHE_DIR=/home/sandbox/workspace/state/cache/uv \
+    UV_LINK_MODE=copy \
+    SBX_STATE_DIRS="cache/npm cache/uv m2" \
     LANG=C.UTF-8
 
 # --- Entrypoint ---
@@ -139,8 +147,12 @@ RUN mkdir -p /etc/sbx/start.d
 # - Created as sandbox, so every level, including ~/.local, is owned by sandbox.
 # - At container start, compose mounts $SBX_DIR from the Mac over workspace.
 # - Compose is asked not to create a missing $SBX_DIR on the Mac, but some versions ignore that; the entrypoint then refuses to start.
+# - ~/.m2 is a link into state/m2, because Maven has no clean variable for its local repository.
+#   A settings.xml kept there lives in state/m2 too. The link points nowhere until the
+#   entrypoint creates state/m2 at start.
 USER sandbox
-RUN mkdir -p /home/sandbox/workspace /home/sandbox/.local/state
+RUN mkdir -p /home/sandbox/workspace /home/sandbox/.local/state \
+    && ln -s /home/sandbox/workspace/state/m2 /home/sandbox/.m2
 
 # --- Build-time smoke test ---
 # - Runs as the runtime user, so a tool the sandbox user cannot run stops the build.

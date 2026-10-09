@@ -194,6 +194,35 @@ case_literal_state_names() {
 }
 
 # --------------------------------------------------------------------------------
+# Case: nested state folders from SBX_STATE_DIRS are created by the real entrypoint
+# --------------------------------------------------------------------------------
+case_nested_state_folders() {
+  local nestedRc
+  local folder
+  local missing=""
+  local nestedMade=1
+
+  echo '--- nested state folders from SBX_STATE_DIRS are created'
+  make_entry_copy
+  mkdir -p "$WORK/nested"
+
+  ( cd "$WORK" && SBX_NAME=demo SBX_STATE_DIRS="cache/npm cache/uv m2 claude" bash "$WORK/entry/sbx-entrypoint" true ) >"$WORK/nested/out" 2>&1 </dev/null
+  nestedRc=$?
+
+  for folder in cache/npm cache/uv m2 claude shell gh git; do
+    if [ ! -d "$WORK/ws/state/$folder" ]; then
+      missing="$missing $folder"
+    fi
+  done
+
+  if [ "$nestedRc" -eq 0 ] && [ -z "$missing" ]; then
+    nestedMade=0
+  fi
+
+  expect "entrypoint: nested state folders from SBX_STATE_DIRS are created" equals "$nestedMade" 0
+}
+
+# --------------------------------------------------------------------------------
 # Case: the sandbox name rule decides whether the start goes on
 # --------------------------------------------------------------------------------
 case_name_rule() {
@@ -269,4 +298,5 @@ case_mount_wording
 case_runs_as_non_root
 case_unwritable_state
 case_literal_state_names
+case_nested_state_folders
 finish_cases

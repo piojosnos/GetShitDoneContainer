@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Guard rules on the container start: nothing is installed at start, start hooks have orderly names, and Compose checks the sandbox name before it acts.
+# Guard rules on the container start: nothing is installed at start, start hooks have orderly names, Compose checks the sandbox name before it acts, and the Claude image keeps the base's state folders.
 # - Run by tests/guard/run-all.sh; runs alone too.
 # - Usage, from anywhere: bash tests/guard/start.sh   (exit 0 = every rule holds)
 set -u
@@ -99,6 +99,41 @@ compose_checks_the_name_before_it_acts() {
 }
 
 # --------------------------------------------------------------------------------
+# agent_image_keeps_base_state_folders: The Claude image appends to the base's SBX_STATE_DIRS instead of replacing it, so the entrypoint still makes the base's cache folders.
+# --------------------------------------------------------------------------------
+# The base list must name cache/npm, cache/uv and m2; every assignment in the Claude image must start from ${SBX_STATE_DIRS}.
+agent_image_keeps_base_state_folders() {
+  local ok=0
+  local folder
+  local assignmentLine
+  local baseAssignment
+
+  baseAssignment=$(grep -E 'SBX_STATE_DIRS=' $BASE)
+
+  for folder in cache/npm cache/uv m2; do
+    if ! printf '%s\n' "$baseAssignment" | grep -Eq "SBX_STATE_DIRS=.*(^|[\" ])${folder}([\" ]|\$)"; then
+      echo "    $BASE has no SBX_STATE_DIRS assignment holding $folder"
+      ok=1
+    fi
+  done
+
+  while IFS= read -r assignmentLine; do
+    if [ -z "$assignmentLine" ]; then
+      continue
+    fi
+
+    if ! printf '%s\n' "$assignmentLine" | grep -Fq '${SBX_STATE_DIRS}'; then
+      echo "    $CLAUDE replaces SBX_STATE_DIRS instead of appending to it: $assignmentLine"
+      ok=1
+    fi
+  done <<EOF_ASSIGNMENTS
+$(grep -E 'SBX_STATE_DIRS=' $CLAUDE)
+EOF_ASSIGNMENTS
+
+  return "$ok"
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -107,4 +142,5 @@ run_rules \
   no_installs_at_container_start \
   start_hooks_have_two_digit_names \
   compose_starts_in_the_workspace \
-  compose_checks_the_name_before_it_acts || exit 1
+  compose_checks_the_name_before_it_acts \
+  agent_image_keeps_base_state_folders || exit 1

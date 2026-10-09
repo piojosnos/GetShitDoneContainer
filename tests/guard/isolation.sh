@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Guard rules on isolation: no Docker socket or sudo, one mount, no privileges, the old layout untouched.
+# Guard rules on isolation: no Docker socket or sudo, one mount, no privileges, no npm cache baked under the mount point, the old layout untouched.
 # - Run by tests/guard/run-all.sh; runs alone too.
 # - Usage, from anywhere: bash tests/guard/isolation.sh   (exit 0 = every rule holds)
 set -u
@@ -42,6 +42,23 @@ runs_without_privileges() {
 }
 
 # --------------------------------------------------------------------------------
+# npm_builds_keep_their_cache_out_of_the_mount: A build-time npm install inherits the image's NPM_CONFIG_CACHE, which points under the mount point; the image must hold nothing there.
+# --------------------------------------------------------------------------------
+# Every line with npm install must also set NPM_CONFIG_CACHE=/tmp/npm-cache.
+npm_builds_keep_their_cache_out_of_the_mount() {
+  local hits
+
+  hits=$(grep -En 'npm install' $DOCKERFILES | grep -Fv 'NPM_CONFIG_CACHE=/tmp/npm-cache')
+
+  if [ -n "$hits" ]; then
+    echo "$hits" | sed 's/^/    /'
+    return 1
+  fi
+
+  return 0
+}
+
+# --------------------------------------------------------------------------------
 # old_layout_untouched: The old layout keeps working until it is retired: no change to its files.
 # --------------------------------------------------------------------------------
 old_layout_untouched() {
@@ -58,4 +75,5 @@ run_rules \
   no_docker_socket_or_sudo \
   exactly_one_mount_and_not_over_home \
   runs_without_privileges \
+  npm_builds_keep_their_cache_out_of_the_mount \
   old_layout_untouched || exit 1

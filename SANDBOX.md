@@ -5,7 +5,7 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 | On the Mac | Holds |
 |---|---|
 | `$SBX_DIR/<name>/` | your code |
-| `$SBX_DIR/state/` | Claude login, settings and sessions; bash history; gh login; git identity |
+| `$SBX_DIR/state/` | Claude login, settings and sessions; bash history; gh login; git identity; npm, uv and Maven caches |
 
 - Nothing is mounted over the container's home directory, so everything the image provides stays visible.
 - It runs side by side with the old `ClaudeCode/` layout, which keeps working and stays documented in `README.md`.
@@ -67,7 +67,13 @@ What lives where:
 | `$SBX_DIR/state/shell` (holds `bash_history`) | `/home/sandbox/workspace/state/shell` | `HISTFILE` |
 | `$SBX_DIR/state/gh` (holds `hosts.yml`) | `/home/sandbox/workspace/state/gh` | `GH_CONFIG_DIR` |
 | `$SBX_DIR/state/git` (holds `config`) | `/home/sandbox/workspace/state/git` | `GIT_CONFIG_GLOBAL` |
+| `$SBX_DIR/state/cache/npm` | `/home/sandbox/workspace/state/cache/npm` | `NPM_CONFIG_CACHE` |
+| `$SBX_DIR/state/cache/uv` | `/home/sandbox/workspace/state/cache/uv` | `UV_CACHE_DIR` |
+| `$SBX_DIR/state/m2` | `/home/sandbox/workspace/state/m2` (also `~/.m2`) | |
 
+- The caches survive recreate and rebuild, so an upgrade does not download everything again.
+- Many small files over the Mac file sharing are slower than the container's own disk, and the caches can grow to several GB per sandbox.
+- Deleting `state/cache` or `state/m2` is always safe; the tools download again.
 - Everything else in `/home/sandbox` (`.bashrc`, `.local`, ...) comes from the image.
 - On the Mac, open `$SBX_DIR/$SBX_NAME` in your IDE, not `$SBX_DIR`: `state/` holds credentials.
 - Bash history is written right after each command, not when the shell exits. It is on the Mac at once and survives `docker compose down` and a fresh `up`. Other shells that are already open see it only after they restart.

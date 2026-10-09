@@ -12,13 +12,15 @@ FROM ${BASE_IMAGE}
 # - The package postinstall links the native arm64/x64 binary.
 # - --allow-scripts allows that one package's scripts if npm blocks unlisted ones.
 # - Nothing is installed when the container starts.
+# - The build uses a throwaway npm cache in /tmp, because the image's NPM_CONFIG_CACHE points
+#   under the mount point, where the image must hold nothing.
 # - ~/.claude is a symlink to state/claude, only as a fallback for tools that
 #   ignore CLAUDE_CONFIG_DIR. Claude itself uses CLAUDE_CONFIG_DIR.
 USER root
 ARG CLAUDE_CODE_VERSION
 RUN : "${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION is not set; build with ./build.sh}" \
-    && npm install -g --allow-scripts=@anthropic-ai/claude-code "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
-    && rm -rf /root/.npm \
+    && NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g --allow-scripts=@anthropic-ai/claude-code "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
+    && rm -rf /tmp/npm-cache \
     && ln -s /home/sandbox/workspace/state/claude /home/sandbox/.claude \
     && chown -h sandbox:sandbox /home/sandbox/.claude
 
@@ -26,10 +28,10 @@ RUN : "${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION is not set; build with ./build
 # - Image ENV, so every docker exec shell gets them too.
 # - CLAUDE_CONFIG_DIR: login, settings and sessions, in state/claude on the Mac.
 # - SBX_STATE_DIRS: tells the base entrypoint to create state/claude; the base image
-#   never needs to know about Claude.
+#   never needs to know about Claude. The base list is kept and claude is appended.
 # - DISABLE_UPDATES: Claude never updates itself.
 ENV CLAUDE_CONFIG_DIR=/home/sandbox/workspace/state/claude \
-    SBX_STATE_DIRS=claude \
+    SBX_STATE_DIRS="${SBX_STATE_DIRS} claude" \
     DISABLE_UPDATES=1
 
 # --- Best-practices bundle ---
