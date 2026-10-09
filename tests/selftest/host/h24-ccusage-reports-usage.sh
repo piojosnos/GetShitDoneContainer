@@ -46,6 +46,18 @@ case_h24_alone() {
   expect "H-24: a ccusage that cannot run fails" failed_with "$CHECK_RC" "$WORK/out.h24.rc" "exited 1"
 
   reset_state
+  make_fixture_run
+  run_standalone "$WORK/out.h24.scaled" h24-ccusage-reports-usage.sh FAKE_CCUSAGE_SCALE=10
+  expect "H-24: token counts ten times too large fail" failed_with "$CHECK_RC" "$WORK/out.h24.scaled" "ccusage daily lacks"
+  expect "H-24: the inflated session count fails too" has_text "$WORK/out.h24.scaled" "ccusage session lacks"
+  expect "H-24: the inflated table fails too" has_text "$WORK/out.h24.scaled" "ccusage daily (table) lacks"
+
+  reset_state
+  make_fixture_run
+  run_standalone "$WORK/out.h24.noise" h24-ccusage-reports-usage.sh FAKE_CCUSAGE_TABLE_NOISE=1
+  expect "H-24: a table with 300 only inside a larger number and no Total row fails" failed_with "$CHECK_RC" "$WORK/out.h24.noise" "ccusage daily (table) lacks"
+
+  reset_state
   FIXTURE=""
   run_standalone "$WORK/out.h24.none" h24-ccusage-reports-usage.sh
   expect "H-24: no test sandbox fails" equals "$CHECK_RC" "1"

@@ -2,7 +2,8 @@
 # H-24: ccusage in a docker exec shell reports this sandbox's Claude usage from state/claude.
 # - A one-message transcript (100 input and 200 output tokens on 2020-01-07, under a run-unique session ID) is written
 #   from the Mac into state/claude/projects/-home-sandbox-workspace-hosttest/h24-usage.jsonl, the same file every run.
-# - ccusage daily and monthly, limited to that day, and ccusage session for that ID must report 100, 200 and 300 tokens.
+# - ccusage daily and monthly, limited to that day, and ccusage session for that ID must report 100, 200 and 300 tokens, as whole numbers (1000 is not 100).
+# - The table report must show a Total row and a 300 that is a whole number.
 # - --offline keeps the price lookup off the network, so the result is the same every run.
 # - ccusage runs as the sandbox user in the project folder, so the check also proves its native binary is executable for that user.
 # Depends on: nothing
@@ -46,13 +47,13 @@ run_reports() {
 }
 
 # --------------------------------------------------------------------------------
-# check_report LABEL STATUS OUTPUT TEXT...: a problem when STATUS is not 0, and one for each TEXT that OUTPUT does not hold
+# check_report LABEL STATUS OUTPUT REGEX...: a problem when STATUS is not 0, and one for each REGEX that no line of OUTPUT matches
 # --------------------------------------------------------------------------------
 check_report() {
   local label=$1
   local reportStatus=$2
   local reportOutput=$3
-  local expectedText
+  local expectedRegex
 
   shift 3
 
@@ -60,9 +61,9 @@ check_report() {
     add_problem "$label exited $reportStatus"
   fi
 
-  for expectedText in "$@"; do
-    if ! printf '%s\n' "$reportOutput" | grep -qF -- "$expectedText"; then
-      add_problem "$label lacks $expectedText; got: $(first_lines "$reportOutput")"
+  for expectedRegex in "$@"; do
+    if ! printf '%s\n' "$reportOutput" | grep -Eq -- "$expectedRegex"; then
+      add_problem "$label lacks $expectedRegex; got: $(first_lines "$reportOutput")"
     fi
   done
 }
@@ -74,9 +75,10 @@ require_no_arguments "$@" || exit 2
 require_test_sandbox H-24 || exit 1
 write_transcript
 run_reports
-check_report "ccusage daily" "$dailyStatus" "$dailyOutput" '"period": "2020-01-07"' '"inputTokens": 100' '"outputTokens": 200' '"totalTokens": 300'
-check_report "ccusage monthly" "$monthlyStatus" "$monthlyOutput" '"period": "2020-01"' '"inputTokens": 100' '"outputTokens": 200' '"totalTokens": 300'
-check_report "ccusage session" "$sessionStatus" "$sessionOutput" '"sessionId": "'"$sessionId"'"' '"totalTokens": 300'
-check_report "ccusage daily (table)" "$tableStatus" "$tableOutput" '300'
+# A count ends at the next non-digit, so 1000 never satisfies 100.
+check_report "ccusage daily" "$dailyStatus" "$dailyOutput" '"period": "2020-01-07"' '"inputTokens": 100([^0-9]|$)' '"outputTokens": 200([^0-9]|$)' '"totalTokens": 300([^0-9]|$)'
+check_report "ccusage monthly" "$monthlyStatus" "$monthlyOutput" '"period": "2020-01"' '"inputTokens": 100([^0-9]|$)' '"outputTokens": 200([^0-9]|$)' '"totalTokens": 300([^0-9]|$)'
+check_report "ccusage session" "$sessionStatus" "$sessionOutput" '"sessionId": "'"$sessionId"'"' '"totalTokens": 300([^0-9]|$)'
+check_report "ccusage daily (table)" "$tableStatus" "$tableOutput" 'Total' '(^|[^0-9.,])300([^0-9.,]|$)'
 report_check H-24 "ccusage does not report this sandbox's usage" \
   "ccusage daily, monthly and session report the planted transcript from state/claude (100, 200, 300 tokens) as the sandbox user"

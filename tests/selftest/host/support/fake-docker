@@ -122,6 +122,8 @@
 # FAKE_START_POLLS: the number of pgrep -x sleep calls after each compose up that answer 1 before it answers 0
 # FAKE_STOPS_AT_START: 1 makes the container exit once compose up has run the hooks, and pgrep -x sleep answer 1
 # FAKE_CCUSAGE_EMPTY: 1 makes every ccusage report empty, as if no transcript were planted
+# FAKE_CCUSAGE_SCALE: a number that multiplies every token count a report shows (100 becomes 1000 for 10), as a double count would
+# FAKE_CCUSAGE_TABLE_NOISE: 1 makes the table report show a row with no Total and the digits 300 inside a larger number (1300), with no token count of 300
 # FAKE_CCUSAGE_RC: a non-zero value makes every ccusage call print "ccusage: native binary is not executable" on stderr and exit with that status
 # FAKE_RECORD_STALE: 1 makes the /etc/sbx/versions.env record of the Claude image hold GSD_CORE_VERSION=0.0.0
 # FAKE_GSD_IDENTITY: the version in the identity line gsd-tools runtime-identity prints in the Claude image (default: the pin)
@@ -1188,9 +1190,9 @@ exec_ccusage() {
   fi
 
   if [ "$planted" = 1 ]; then
-    inputTokens=100
-    outputTokens=200
-    totalTokens=300
+    inputTokens=$((100 * ${FAKE_CCUSAGE_SCALE:-1}))
+    outputTokens=$((200 * ${FAKE_CCUSAGE_SCALE:-1}))
+    totalTokens=$((300 * ${FAKE_CCUSAGE_SCALE:-1}))
   fi
 
   case "$reportKind" in
@@ -1199,6 +1201,12 @@ exec_ccusage() {
     session) reportPeriod="" ;;
     *) unhandled "exec ccusage $reportKind" ;;
   esac
+
+  if [ "$askedJson" != 1 ] && [ "${FAKE_CCUSAGE_TABLE_NOISE:-0}" = 1 ]; then
+    printf '| 2020-01-07 | 7 | 1300 | 0.01 |\n'
+
+    return 0
+  fi
 
   if [ "$askedJson" != 1 ]; then
     printf '| Total | %s | %s | %s |\n' "$inputTokens" "$outputTokens" "$totalTokens"
