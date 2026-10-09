@@ -42,12 +42,12 @@ RUN apt-get update \
 ARG NODE_VERSION
 RUN : "${NODE_VERSION:?NODE_VERSION is not set; build with ./build.sh}" \
     && arch="$(dpkg --print-architecture)" \
-    && case "$arch" in amd64) node_arch=x64 ;; arm64) node_arch=arm64 ;; *) echo "unsupported arch: $arch" >&2; exit 1 ;; esac \
-    && f="node-v${NODE_VERSION}-linux-${node_arch}.tar.xz" \
-    && curl -fsSLO "https://nodejs.org/dist/v${NODE_VERSION}/${f}" \
-    && curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/SHASUMS256.txt" | grep " ${f}\$" | sha256sum -c - \
-    && tar -xJf "$f" -C /usr/local --strip-components=1 --no-same-owner \
-    && rm "$f"
+    && case "$arch" in amd64) nodeArch=x64 ;; arm64) nodeArch=arm64 ;; *) echo "unsupported arch: $arch" >&2; exit 1 ;; esac \
+    && nodeArchive="node-v${NODE_VERSION}-linux-${nodeArch}.tar.xz" \
+    && curl -fsSLO "https://nodejs.org/dist/v${NODE_VERSION}/${nodeArchive}" \
+    && curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/SHASUMS256.txt" | grep " ${nodeArchive}\$" | sha256sum -c - \
+    && tar -xJf "$nodeArchive" -C /usr/local --strip-components=1 --no-same-owner \
+    && rm "$nodeArchive"
 
 # --- GitHub CLI ---
 # - Release tarball, checked against the release's checksums file.
@@ -57,11 +57,12 @@ RUN : "${NODE_VERSION:?NODE_VERSION is not set; build with ./build.sh}" \
 ARG GH_VERSION
 RUN : "${GH_VERSION:?GH_VERSION is not set; build with ./build.sh}" \
     && arch="$(dpkg --print-architecture)" \
-    && d="gh_${GH_VERSION}_linux_${arch}" \
-    && curl -fsSLO "https://github.com/cli/cli/releases/download/v${GH_VERSION}/${d}.tar.gz" \
-    && curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_checksums.txt" | grep " ${d}.tar.gz\$" | sha256sum -c - \
-    && tar -xzf "${d}.tar.gz" -C /usr/local/bin --strip-components=2 --no-same-owner "${d}/bin/gh" \
-    && rm "${d}.tar.gz"
+    && ghArchiveDir="gh_${GH_VERSION}_linux_${arch}" \
+    && ghArchive="${ghArchiveDir}.tar.gz" \
+    && curl -fsSLO "https://github.com/cli/cli/releases/download/v${GH_VERSION}/${ghArchive}" \
+    && curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_checksums.txt" | grep " ${ghArchive}\$" | sha256sum -c - \
+    && tar -xzf "$ghArchive" -C /usr/local/bin --strip-components=2 --no-same-owner "${ghArchiveDir}/bin/gh" \
+    && rm "$ghArchive"
 
 # --- JDK (Temurin) ---
 # - Copied from the pinned Temurin image.
@@ -75,13 +76,13 @@ RUN for tool in /opt/java/openjdk/bin/*; do ln -s "$tool" "/usr/local/bin/$(base
 # - The checksum file holds only the hash; the file name is appended for sha512sum.
 ARG MAVEN_VERSION
 RUN : "${MAVEN_VERSION:?MAVEN_VERSION is not set; build with ./build.sh}" \
-    && file="apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
-    && maven_url="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}" \
-    && curl -fsSLO "${maven_url}/${file}" \
-    && echo "$(curl -fsSL "${maven_url}/${file}.sha512")  ${file}" | sha512sum -c - \
+    && mavenArchive="apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
+    && mavenUrl="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}" \
+    && curl -fsSLO "${mavenUrl}/${mavenArchive}" \
+    && echo "$(curl -fsSL "${mavenUrl}/${mavenArchive}.sha512")  ${mavenArchive}" | sha512sum -c - \
     && mkdir -p /opt/maven \
-    && tar -xzf "$file" -C /opt/maven --strip-components=1 --no-same-owner \
-    && rm "$file" \
+    && tar -xzf "$mavenArchive" -C /opt/maven --strip-components=1 --no-same-owner \
+    && rm "$mavenArchive" \
     && ln -s /opt/maven/bin/mvn /usr/local/bin/mvn
 
 # --- uv ---
