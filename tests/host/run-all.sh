@@ -29,7 +29,7 @@ unset SBXTEST_DIR
 # - Then Coexistence, which compares against the state at the start of the run.
 fatalCheck="h00-compose-v2.sh"
 noSandboxCheckList="h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh h17-start-offline-and-failing-hook.sh h21-bad-name-refused.sh"
-sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h14-bundle-in-image.sh h15-bundle-synced-and-visible.sh h18-scope-and-deny.sh h22-toolchain-in-base.sh"
+sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h14-bundle-in-image.sh h15-bundle-synced-and-visible.sh h18-scope-and-deny.sh h22-toolchain-in-base.sh h24-ccusage-reports-usage.sh"
 chainCheckList="h08-history-survives-recreate.sh h16-sync-refreshes-and-spares.sh h23-caches-survive-recreate.sh h11-stop-is-quick-and-safe.sh h09-rebuild-keeps-files-no-volumes.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
 finalCheckList="coexistence.sh"
 

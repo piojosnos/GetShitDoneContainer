@@ -33,6 +33,9 @@
 # - An exec of pgrep -x sleep answers 0 (the start hooks have finished) unless a knob below says otherwise.
 # - An exec of node -e runs that command on the host with CLAUDE_CONFIG_DIR set to the state/claude folder of the
 #   mounted folder.
+# - An exec of ccusage answers daily, monthly and session reports (and the daily table) of the transcript
+#   h24-usage.jsonl in state/claude/projects/-home-sandbox-workspace-hosttest of the mounted folder: 100 input,
+#   200 output and 300 total tokens when the file exists (for session, when it holds the asked ID), else empty answers.
 #
 # Knobs, one line each:
 # FAKE_STATE: the folder that holds the fake container state (set by lib.sh)
@@ -107,6 +110,8 @@
 # FAKE_DOWN_LOSES_CACHES: 1 makes compose down delete state/cache and state/m2 of the mounted folder
 # FAKE_START_POLLS: the number of pgrep -x sleep calls after each compose up that answer 1 before it answers 0
 # FAKE_STOPS_AT_START: 1 makes the container exit once compose up has run the hooks, and pgrep -x sleep answer 1
+# FAKE_CCUSAGE_EMPTY: 1 makes every ccusage report empty, as if no transcript were planted
+# FAKE_CCUSAGE_RC: a non-zero value makes every ccusage call print "ccusage: native binary is not executable" on stderr and exit with that status
 
 # --------------------------------------------------------------------------------
 # log_call ARG...: appends one line for the call to FAKE_LOG, in the format the safety cases parse.
@@ -1004,6 +1009,89 @@ exec_node_script() {
 }
 
 # --------------------------------------------------------------------------------
+# exec_ccusage ARG...: answers ccusage daily, monthly and session reports from the planted transcript h24-usage.jsonl, unless FAKE_CCUSAGE_EMPTY is 1; FAKE_CCUSAGE_RC makes the call fail.
+# --------------------------------------------------------------------------------
+exec_ccusage() {
+  local transcriptFile
+  local reportKind
+  local reportPeriod
+  local askedJson=0
+  local askedId=""
+  local planted=0
+  local inputTokens=0
+  local outputTokens=0
+  local totalTokens=0
+
+  if [ "${FAKE_CCUSAGE_RC:-0}" != 0 ]; then
+    echo "ccusage: native binary is not executable" >&2
+
+    return "$FAKE_CCUSAGE_RC"
+  fi
+
+  transcriptFile="$(cat "$FAKE_STATE/container.dir")/state/claude/projects/-home-sandbox-workspace-hosttest/h24-usage.jsonl"
+  reportKind=$2
+  shift 2
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --json) askedJson=1 ;;
+      --id)
+        askedId=$2
+        shift
+        ;;
+    esac
+    shift
+  done
+
+  if [ "${FAKE_CCUSAGE_EMPTY:-0}" != 1 ] && [ -f "$transcriptFile" ]; then
+    planted=1
+  fi
+
+  if [ "$planted" = 1 ] && [ "$reportKind" = session ] && ! grep -Fq "\"sessionId\":\"$askedId\"" "$transcriptFile"; then
+    planted=0
+  fi
+
+  if [ "$planted" = 1 ]; then
+    inputTokens=100
+    outputTokens=200
+    totalTokens=300
+  fi
+
+  case "$reportKind" in
+    daily) reportPeriod=2020-01-07 ;;
+    monthly) reportPeriod=2020-01 ;;
+    session) reportPeriod="" ;;
+    *) unhandled "exec ccusage $reportKind" ;;
+  esac
+
+  if [ "$askedJson" != 1 ]; then
+    printf '| Total | %s | %s | %s |\n' "$inputTokens" "$outputTokens" "$totalTokens"
+
+    return 0
+  fi
+
+  if [ "$reportKind" = session ]; then
+    if [ "$planted" = 1 ]; then
+      printf '{\n  "sessionId": "%s",\n  "totalTokens": %s\n}\n' "$askedId" "$totalTokens"
+    else
+      printf '{}\n'
+    fi
+
+    return 0
+  fi
+
+  printf '{\n  "%s": [\n' "$reportKind"
+
+  if [ "$planted" = 1 ]; then
+    printf '    {\n      "period": "%s",\n      "inputTokens": %s,\n      "outputTokens": %s,\n      "totalTokens": %s\n    }\n' \
+      "$reportPeriod" "$inputTokens" "$outputTokens" "$totalTokens"
+  fi
+
+  printf '  ],\n  "totals": {\n    "inputTokens": %s,\n    "outputTokens": %s,\n    "totalTokens": %s\n  }\n}\n' \
+    "$inputTokens" "$outputTokens" "$totalTokens"
+}
+
+# --------------------------------------------------------------------------------
 # fake_exec ARG...: answers docker exec for the test container only, by the command it is given.
 # --------------------------------------------------------------------------------
 fake_exec() {
@@ -1089,6 +1177,7 @@ fake_exec() {
     "sh -c : h23-plant"*) exec_h23_plant "${!#}" ;;
     "pgrep -x sleep") exec_pgrep_sleep; return $? ;;
     "node -e "*) exec_node_script "$@"; return $? ;;
+    "ccusage "*) exec_ccusage "$@"; return $? ;;
     "npm config get cache") printf '%s\n' "${FAKE_NPM_CACHE:-/home/sandbox/workspace/state/cache/npm}" ;;
     "uv cache dir") printf '%s\n' "/home/sandbox/workspace/state/cache/uv" ;;
     "readlink /home/sandbox/.m2") printf '%s\n' "${FAKE_M2_LINK:-/home/sandbox/workspace/state/m2}" ;;
