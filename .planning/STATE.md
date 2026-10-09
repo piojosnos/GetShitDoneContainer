@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Pinned Toolchain, GSD, and ccusage
 status: executing
-stopped_at: Completed 02-05-PLAN.md
-last_updated: "2026-10-09T03:55:57.736Z"
+stopped_at: Completed 02-06-PLAN.md
+last_updated: "2026-10-09T04:15:40.844Z"
 last_activity: 2026-10-08
 last_activity_desc: Phase 02 execution started
-state_head: 73856b2facde254c647280e92542147e7659b71c
+state_head: ae3f53a820c91c4870f9553f2d46d16220768888
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 53
-  completed_plans: 49
+  completed_plans: 50
   percent: 50
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-08)
 ## Current Position
 
 Phase: 02 (Pinned Toolchain, GSD, and ccusage) — EXECUTING
-Plan: 6 of 9
+Plan: 7 of 9
 Status: Ready to execute
 Last activity: 2026-10-08 — Phase 02 execution started
 
@@ -110,6 +110,7 @@ Progress: [████████████████████] 44/44 p
 | Phase 02 P03 | not recorded | 2 tasks | 14 files |
 | Phase 02 P04 | not recorded | 2 tasks | 15 files |
 | Phase 02 P05 | not recorded | 2 tasks | 13 files |
+| Phase 02 P06 | not recorded | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -201,6 +202,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Plan 04: npm, uv and Maven caches live in the sandbox state folder (image ENV plus a ~/.m2 link); the Claude image appends to SBX_STATE_DIRS and builds with a throwaway npm cache in /tmp
 - [Phase 02]: GSD hook 05-gsd sorts before 10-best-practices so a bundle skill wins a name clash; a guard rule enforces it
 - [Phase 02]: 05-gsd compares gsd-core/VERSION with gsd-tools runtime-identity and makes the config folder first, so a stale GSD or an uncreatable folder stops the start instead of hanging it
+- [Phase 02]: Plan 02-06: compose_up waits for the start hooks by polling pgrep -x sleep in the container (no compose healthcheck, which would touch Phase 1 files)
+- [Phase 02]: Plan 02-06: H-16 no longer plants a gsd-* user skill; GSD owns that prefix and SANDBOX.md tells users to name their own skills otherwise
 
 ### Pending Todos
 
@@ -245,6 +248,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-09T03:55:57.567Z
-Stopped at: Completed 02-05-PLAN.md
+Last session: 2026-10-09T04:15:40.679Z
+Stopped at: Completed 02-06-PLAN.md
 Resume file: None
