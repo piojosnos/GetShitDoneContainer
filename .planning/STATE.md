@@ -2,17 +2,17 @@
 gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Pinned Toolchain, GSD, and ccusage
-status: executing
-stopped_at: Completed 02-08-PLAN.md
-last_updated: "2026-10-09T04:30:38.881Z"
+status: verifying
+stopped_at: Completed 02-09-PLAN.md
+last_updated: "2026-10-09T17:06:41.674Z"
 last_activity: 2026-10-08
 last_activity_desc: Phase 02 execution started
-state_head: 44f998aef6a23da1011e273b0c84830c2d2350cf
+state_head: 26fd13e826eedffca79a38128d3fd25d70dda4ec
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 53
-  completed_plans: 52
+  completed_plans: 53
   percent: 50
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-10-08)
 
 Phase: 02 (Pinned Toolchain, GSD, and ccusage) — EXECUTING
 Plan: 9 of 9
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-08 — Phase 02 execution started
 
 Progress: [████████████████████] 44/44 plans ([█████░░░░░] 50%)
@@ -113,6 +113,7 @@ Progress: [████████████████████] 44/44 p
 | Phase 02 P06 | not recorded | 2 tasks | 9 files |
 | Phase 02 P07 | 15 min | 2 tasks | 11 files |
 | Phase 02 P08 | 25 min | 2 tasks | 10 files |
+| Phase 02 P09 | not recorded | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -210,6 +211,8 @@ Recent decisions affecting current work:
 - [Phase 02]: H-24 always runs ccusage with --offline and compares stdout only; the default price lookup stays for users
 - [Phase 02]: H-25 accepts any of TEMURIN_IMAGE, UV_IMAGE or UBUNTU_IMAGE in the bare base build log, since BuildKit's order for blank FROM pins is undocumented (Mac assumption for plan 09)
 - [Phase 02]: H-25 bare builds use --progress=plain and log to h25-bare-*.log so H-01's platform scan and the runner's build counts ignore them
+- [Phase 02]: Plan 09: MAVEN_VERSION 3.9.11 after the Mac run showed 3.9.12 and later fail to download into a local repository on the Docker Desktop mount; H-23 now downloads a real artifact into state/m2
+- [Phase 02]: Plan 09: the Mac run passed 25 of 25 checks and the attended GSD bump to 1.16.0 kept login and session; Phase 1 WR-03 and IN-03 recorded fixed
 
 ### Pending Todos
 
@@ -218,9 +221,8 @@ None yet.
 ### Blockers/Concerns
 
 - [Phase 1]: Until Phase 3 there are no scripts, so the sandbox runs from a documented `docker compose` command
-- [Phase 2]: Confirm that ccusage's native binary is executable (chmod) on arm64 (DISABLE_UPDATES was confirmed by `claude doctor` in the Phase 1.1 Mac run)
 - [Phase 5]: Decide whether SCR-08 ("remove whole-home-mount layout") also covers the out-of-scope `OpenCode/` directory, or whether it stays for the next milestone
-- [Phase 1]: Review findings: 0 open, 2 deferred with reasons (WR-03: Claude Code has no integrity hash). See 01-REVIEW-DISPOSITION.md
+- [Phase 1]: Review findings: 0 open; WR-03 and IN-03 were fixed in Phase 2 (proven by H-22 and H-25 on the Mac). See 01-REVIEW-DISPOSITION.md
 - [Phase 1]: SC3 says rebuild with `--no-cache`; the Mac run did not record it. One run of `bash tests/host/manual/h09-rebuild-resume.sh --no-cache` would confirm
 - [Phase 1.1]: Review findings: 0 open (13 fixed, 1 deferred); WR-03 was closed by the Phase 1.5 Mac run. See 01.1-REVIEW-DISPOSITION.md
 - [Phase 1.2]: Code review left 13 findings open (WR-01..03 are bugs in the ported pr-reply and merged skills; WR-04 was fixed in Phase 1.3; WR-05 deny negative control fits Phase 1.4). See 01.2-REVIEW-DISPOSITION.md
@@ -254,6 +256,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-09T04:30:38.699Z
-Stopped at: Completed 02-08-PLAN.md
+Last session: 2026-10-09T17:06:41.522Z
+Stopped at: Completed 02-09-PLAN.md
 Resume file: None

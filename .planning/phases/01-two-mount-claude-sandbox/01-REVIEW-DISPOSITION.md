@@ -13,7 +13,7 @@ findings:
     title: "`create_host_path: false` is known to be ignored, and `base/Dockerfile` says the opposite"
   - id: WR-03
     severity: warning
-    disposition: deferred
+    disposition: fixed
     title: "Claude Code install has no integrity verification; Node and gh checksums share an origin with the artifacts"
   - id: IN-01
     severity: info
@@ -25,7 +25,7 @@ findings:
     title: "`compose.yml` does not enforce an absolute `SBX_DIR`"
   - id: IN-03
     severity: info
-    disposition: deferred
+    disposition: fixed
     title: "Base image and apt packages are not pinned by digest"
   - id: IN-04
     severity: info
@@ -42,10 +42,10 @@ recorded: 2026-10-04T02:22:33.919Z
 |---------|----------|-------------|--------|
 | WR-01 | warning | fixed | 01.5-07, 01.5-09, 01.5-10; proven on the Mac by H-20 |
 | WR-02 | warning | fixed | 01.5-09 |
-| WR-03 | warning | deferred | Phase 2 pins every tool in versions.env; doing it now means doing it twice, and it needs a human supply-chain approval |
+| WR-03 | warning | fixed | 02-02 to 02-08; every pin in versions.env was approved one by one (02-PINS.md); Claude Code, GSD and ccusage are installed at exact npm versions (npm checks each tarball against the registry's integrity hash); Node, gh and Maven are checked against upstream checksum files, which share an origin with the tarballs (kept as decided; per-arch hashes in versions.env remain an additive option); proven on the Mac by H-22 and H-25 |
 | IN-01 | info | fixed | 01.5-07; proven on the Mac by H-12 |
 | IN-02 | info | fixed | 01.5-10 |
-| IN-03 | info | deferred | Phase 2, same reason as WR-03 |
+| IN-03 | info | fixed | 02-02, 02-03; ubuntu, Temurin and uv are pinned by tag plus digest in versions.env, approved in 02-PINS.md; apt packages stay unpinned by decision and follow the pinned Ubuntu release; proven on the Mac by H-25 |
 | IN-04 | info | fixed | 01.5-07 |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
