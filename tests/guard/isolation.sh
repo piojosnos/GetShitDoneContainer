@@ -20,11 +20,41 @@ no_docker_socket_or_sudo() {
 }
 
 # --------------------------------------------------------------------------------
+# no_other_mount_form: Every item of a service's volumes list is a long-form bind (- type: bind); anything else, or an inline list, is a mount the count below cannot see.
+# --------------------------------------------------------------------------------
+# A short-form item such as "- /etc:/hostetc:rw" and a volumes_from line are printed with their line numbers.
+no_other_mount_form() {
+  local hits
+
+  hits=$(awk '
+    /^[[:space:]]+volumes:[[:space:]]*(#.*)?$/ { match($0, /[^[:space:]]/); keyIndent = RSTART; inBlock = 1; itemIndent = 0; next }
+    /^[[:space:]]+volumes:/ { print NR ": " $0; inBlock = 0; next }
+    /^[[:space:]]+volumes_from:/ { print NR ": " $0; inBlock = 0; next }
+    inBlock {
+      if ($0 ~ /^[[:space:]]*(#.*)?$/) { next }
+      match($0, /[^[:space:]]/)
+      indent = RSTART
+      if (indent < keyIndent || (indent == keyIndent && $0 !~ /^[[:space:]]*-/)) { inBlock = 0; next }
+      if (itemIndent == 0 && $0 ~ /^[[:space:]]*-/) { itemIndent = indent }
+      if (indent == itemIndent && $0 !~ /^[[:space:]]*- type: bind[[:space:]]*$/) { print NR ": " $0 }
+    }
+  ' $COMPOSE)
+
+  if [ -n "$hits" ]; then
+    echo "$hits" | sed "s/^/    $COMPOSE:/"
+    return 1
+  fi
+
+  return 0
+}
+
+# --------------------------------------------------------------------------------
 # exactly_one_mount_and_not_over_home: Exactly one mount: the sandbox folder, at /home/sandbox/workspace.
 # --------------------------------------------------------------------------------
 # Never over /home/sandbox itself, and no Docker volumes (they can be deleted with the container).
 exactly_one_mount_and_not_over_home() {
   [ "$(grep -Ec '^[[:space:]]*- type: bind$' $COMPOSE)" -eq 1 ] \
+    && no_other_mount_form \
     && grep -Eq '^[[:space:]]*target: /home/sandbox/workspace$' $COMPOSE \
     && nowhere_matches 'target:[[:space:]]*"?/home/sandbox"?[[:space:]]*$' $COMPOSE \
     && nowhere_matches '^volumes:|type: volume' $COMPOSE \
@@ -34,11 +64,13 @@ exactly_one_mount_and_not_over_home() {
 # --------------------------------------------------------------------------------
 # runs_without_privileges: The agent runs as the non-root sandbox user, with no extra privileges.
 # --------------------------------------------------------------------------------
+# The limits must be present and nothing may undo them: no privileged mode, added capability, device, shared host namespace or unconfined profile.
 runs_without_privileges() {
   [ "$(grep -E '^USER' $BASE | tail -n 1)" = "USER sandbox" ] \
     && [ "$(grep -E '^USER' $CLAUDE | tail -n 1)" = "USER sandbox" ] \
     && grep -Fq 'no-new-privileges:true' $COMPOSE \
-    && grep -A1 'cap_drop:' $COMPOSE | grep -Fq -- '- ALL'
+    && grep -A1 'cap_drop:' $COMPOSE | grep -Fq -- '- ALL' \
+    && nowhere_matches '^[[:space:]]*(privileged|cap_add|devices|device_cgroup_rules|pid|ipc|uts|userns_mode|network_mode|cgroup_parent|group_add|sysctls)[[:space:]]*:|(seccomp|apparmor)[=:][[:space:]]*unconfined' $COMPOSE
 }
 
 # --------------------------------------------------------------------------------

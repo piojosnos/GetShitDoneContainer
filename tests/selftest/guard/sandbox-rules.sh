@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of the sandbox rules: the supply chain and bundle wiring rules pass on a clean copy and name each planted pin or COPY problem; the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder, and fail when the name-check service is gone or can run a container; the state folder rule fails when the Claude image replaces SBX_STATE_DIRS, and the npm cache rule fails, naming the line, on an npm install without the throwaway cache; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build, and fails when a doc's name pattern differs from the code, a doc states the old name rule or the fake docker invents a Compose refusal.
+# Self-test of the sandbox rules: the supply chain and bundle wiring rules pass on a clean copy and name each planted pin or COPY problem; the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder, and fail when the name-check service is gone or can run a container; the state folder rule fails when the Claude image replaces SBX_STATE_DIRS, and the npm cache rule fails, naming the line, on an npm install without the throwaway cache; the isolation rules pass on a clean copy and fail, naming the line, on each planted way to undo the privilege limits and on each short-form or inline mount; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build, and fails when a doc's name pattern differs from the code, a doc states the old name rule or the fake docker invents a Compose refusal.
 # - Run by run-all.sh; runs alone too.
 # - Runs the real tests/guard/start.sh and tests/guard/docs.sh inside a scratch copy of the tree, so a planted problem never touches the real files.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
@@ -164,6 +164,55 @@ case_state_and_cache_rules() {
 }
 
 # --------------------------------------------------------------------------------
+# Cases of the isolation rules (the scratch copy has no .git, so only the named rule line is read from the output): a clean copy, each way to undo the privilege limits and each short-form mount
+# --------------------------------------------------------------------------------
+case_isolation_rules() {
+  local planted
+  local plantedName
+
+  echo "--- isolation rules"
+
+  make_scratch_repo || return 1
+  run_scratch_guard "$WORK/isolation-clean.out" isolation.sh
+  expect "isolation: a clean copy passes the privilege rule" has_text "$WORK/isolation-clean.out" "PASS: runs_without_privileges"
+  expect "isolation: a clean copy passes the mount rule" has_text "$WORK/isolation-clean.out" "PASS: exactly_one_mount_and_not_over_home"
+
+  for planted in "privileged: true" "network_mode: host" "cap_add: [SYS_ADMIN]" "pid: host" "userns_mode: host" "security_opt: [seccomp=unconfined]"; do
+    plantedName=${planted%%:*}
+
+    make_scratch_repo || return 1
+    edit_scratch_file compose.yml "/^    init: true/a\
+    $planted" || return 1
+    run_scratch_guard "$WORK/isolation-$plantedName.out" isolation.sh
+    expect "isolation: $plantedName in the sandbox service fails the privilege rule" has_text "$WORK/isolation-$plantedName.out" "FAIL: runs_without_privileges"
+    expect "isolation: the $plantedName line is named" has_text "$WORK/isolation-$plantedName.out" "$planted"
+  done
+
+  make_scratch_repo || return 1
+  edit_scratch_file compose.yml '/^      - no-new-privileges:true/a\
+      - seccomp=unconfined' || return 1
+  run_scratch_guard "$WORK/isolation-seccomp.out" isolation.sh
+  expect "isolation: an unconfined security option fails the privilege rule" has_text "$WORK/isolation-seccomp.out" "FAIL: runs_without_privileges"
+
+  make_scratch_repo || return 1
+  edit_scratch_file compose.yml '/^    volumes:/a\
+      - /etc:/hostetc:rw' || return 1
+  run_scratch_guard "$WORK/isolation-short-mount.out" isolation.sh
+  expect "isolation: a short-form mount fails the mount rule" has_text "$WORK/isolation-short-mount.out" "FAIL: exactly_one_mount_and_not_over_home"
+  expect "isolation: the short-form mount line is named" has_text "$WORK/isolation-short-mount.out" "- /etc:/hostetc:rw"
+
+  make_scratch_repo || return 1
+  edit_scratch_file compose.yml 's|^    volumes:$|    volumes: ["/Users/me:/home/sandbox/host-home"]|' || return 1
+  run_scratch_guard "$WORK/isolation-inline-mount.out" isolation.sh
+  expect "isolation: an inline volumes list fails the mount rule" has_text "$WORK/isolation-inline-mount.out" "FAIL: exactly_one_mount_and_not_over_home"
+
+  make_scratch_repo || return 1
+  printf '    volumes_from:\n      - other\n' >>"$WORK/repo/compose.yml"
+  run_scratch_guard "$WORK/isolation-volumes-from.out" isolation.sh
+  expect "isolation: volumes_from fails the mount rule" has_text "$WORK/isolation-volumes-from.out" "FAIL: exactly_one_mount_and_not_over_home"
+}
+
+# --------------------------------------------------------------------------------
 # Cases of the docs rules: a clean copy, an image comment that promises nothing is created, a doc that promises a good build, a drifted name pattern, the old name rule and an invented Compose refusal in the fake docker
 # --------------------------------------------------------------------------------
 case_docs_rule() {
@@ -214,5 +263,6 @@ start_group || exit 1
 case_supply_chain_rules
 case_start_rules
 case_state_and_cache_rules
+case_isolation_rules
 case_docs_rule
 finish_cases
