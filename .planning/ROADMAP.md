@@ -24,6 +24,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4: Jump-In and Sandbox Housekeeping** - One command drops you into a sandbox shell or Claude, and you can list and clean up sandboxes safely
 - [ ] **Phase 5: Migration, Docs, and Old-Layout Retirement** - Existing sandboxes move over with history intact, the old `cc-*` layout is gone, and the README matches the repo
 - [ ] **Phase 6: Automated checks (CI)** - GitHub runs the guard on every PR push and shows it as a PR check
+- [ ] **Phase 7: Start readiness** - `up --wait` returns only once every start hook has finished, and a failing hook fails `up`
 
 ## Phase Details
 
@@ -362,7 +363,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -378,6 +379,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 4. Jump-In and Sandbox Housekeeping | 0/TBD | Not started | - |
 | 5. Migration, Docs, and Old-Layout Retirement | 0/TBD | Not started | - |
 | 6. Automated checks (CI) | 0/TBD | Not started | - |
+| 7. Start readiness | 0/TBD | Not started | - |
 
 ## Backlog
 
@@ -389,3 +391,16 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 **Options:**
 - [ ] Docker-in-Docker in the dev sandbox, accepting the isolation trade-off and changing only that container.
 - [ ] GitHub Actions on each PR, which ties in with Phase 6.
+
+### Phase 7: Start readiness
+
+**Goal:** `docker compose up -d --wait` returns only when the sandbox is ready: every start hook has finished, and a failing hook fails `up`.
+**Requirements**: TBD
+**Depends on:** Phase 6
+**Plans:** 0 plans
+
+**TODO** (from the Phase 2 code review, finding WR-04):
+- [ ] `up --wait` returns before the start hooks finish, so a shell opened during the GSD sync can see a half-synced `state/claude`, and a failing hook does not fail `up`. Candidate fix: a compose healthcheck that turns healthy only once the start hooks are done (the host tests already poll `pgrep -x sleep` for this), so `--wait` means ready. Then drop the host tests' own wait in `compose_up`.
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 7 to break down)
