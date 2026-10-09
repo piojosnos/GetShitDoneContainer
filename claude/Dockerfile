@@ -41,8 +41,8 @@ RUN : "${GSD_CORE_VERSION:?GSD_CORE_VERSION is not set; build with ./build.sh}" 
 # --- ccusage ---
 # - Usage reports for Claude: ccusage daily, monthly and session.
 # - Installed from npm at the exact version in versions.env, as root into /usr/local.
-# - Its native binary comes from a per-platform optional dependency, so optional dependencies
-#   are never skipped.
+# - Its native binary comes from a per-platform optional dependency. npm installs those by default;
+#   a build that omits optional dependencies stops at the chmod below.
 # - The package ships that binary without the execute bit, and only its owner could add it at
 #   run time, so it is added here as root. The glob fails the build if the binary is missing.
 ARG CCUSAGE_VERSION
