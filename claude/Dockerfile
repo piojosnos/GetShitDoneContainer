@@ -36,6 +36,19 @@ RUN : "${GSD_CORE_VERSION:?GSD_CORE_VERSION is not set; build with ./build.sh}" 
     && NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g "@opengsd/gsd-core@${GSD_CORE_VERSION}" \
     && rm -rf /tmp/npm-cache
 
+# --- ccusage ---
+# - Usage reports for Claude: ccusage daily, monthly and session.
+# - Installed from npm at the exact version in versions.env, as root into /usr/local.
+# - Its native binary comes from a per-platform optional dependency, so optional dependencies
+#   are never skipped.
+# - The package ships that binary without the execute bit, and only its owner could add it at
+#   run time, so it is added here as root. The glob fails the build if the binary is missing.
+ARG CCUSAGE_VERSION
+RUN : "${CCUSAGE_VERSION:?CCUSAGE_VERSION is not set; build with ./build.sh}" \
+    && NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g "ccusage@${CCUSAGE_VERSION}" \
+    && chmod 755 "$(npm root -g)"/ccusage/node_modules/@ccusage/*/bin/ccusage \
+    && rm -rf /tmp/npm-cache
+
 # --- Claude settings ---
 # - Image ENV, so every docker exec shell gets them too.
 # - CLAUDE_CONFIG_DIR: login, settings and sessions, in state/claude on the Mac.
@@ -69,7 +82,8 @@ USER sandbox
 
 # Build-time smoke test, as the runtime user: the installed versions must equal the pins.
 RUN test "$(claude --version)" = "${CLAUDE_CODE_VERSION} (Claude Code)" \
-    && test "$(gsd-tools runtime-identity --raw)" = "{\"packageName\":\"@opengsd/gsd-core\",\"version\":\"${GSD_CORE_VERSION}\"}"
+    && test "$(gsd-tools runtime-identity --raw)" = "{\"packageName\":\"@opengsd/gsd-core\",\"version\":\"${GSD_CORE_VERSION}\"}" \
+    && test "$(ccusage --version)" = "ccusage ${CCUSAGE_VERSION}"
 
 # --- Pin record ---
 # - A copy of versions.env: the pins this image was built with.

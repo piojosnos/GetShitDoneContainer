@@ -15,7 +15,7 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 | Image | Holds |
 |---|---|
 | `sbx-base:local` | Ubuntu 24.04, git, gh, Node.js 24, Python 3 (pip, venv) and uv, the Temurin JDK 21, Maven, jq, ripgrep, zip and unzip, the ssh client, make and a C compiler |
-| `sbx-claude:local` | `sbx-base` plus Claude Code and the best-practices bundle |
+| `sbx-claude:local` | `sbx-base` plus Claude Code, GSD, ccusage and the best-practices bundle |
 
 - Python projects use uv or a venv, because Ubuntu blocks plain pip installs into the system Python.
 - Every version is in `versions.env` (see "Build the images").
@@ -199,6 +199,14 @@ GSD comes baked into the Claude image at the version in `versions.env`, from `@o
 - A failed sync stops the start with an `[sbx] ERROR` line and the installer output above it.
 - GSD's own update notice in a session does not apply here. To upgrade GSD, change `GSD_CORE_VERSION` in `versions.env` and rebuild (see "Bump a version or add a tool").
 - The GSD package brings a second Claude binary for its agent SDK under `/usr/local/lib`. It is not on `PATH` and never updates itself.
+
+## Usage reports (ccusage)
+
+In a sandbox shell, run `ccusage daily`, `ccusage monthly` or `ccusage session`. Add `--json` for JSON.
+
+- It reads `CLAUDE_CONFIG_DIR`, which is this sandbox's `state/claude`, so it reports this project only.
+- By default it fetches the current price table from the network when it runs. `--offline` uses the table it ships with.
+- Starting the sandbox needs no network either way.
 
 ## Safety checks
 
