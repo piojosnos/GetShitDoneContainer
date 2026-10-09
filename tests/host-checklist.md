@@ -1,8 +1,8 @@
-# Host checklist (H-00..H-22)
+# Host checklist (H-00..H-23)
 
 The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them. Four short helpers in `tests/host/manual/` check what the script cannot: Claude's login, Claude's own behaviour and `claude doctor`. Run them after a change the script cannot see, or when a check fails and you want to look closer.
 
-- **IDs:** each check has an ID, H-00 to H-22 (H for host), so results can be reported by ID ("H-10 failed").
+- **IDs:** each check has an ID, H-00 to H-23 (H for host), so results can be reported by ID ("H-10 failed").
 - **When:** once after building a new version of the images or `compose.yml`.
 - **Setup and daily use:** see [`SANDBOX.md`](../SANDBOX.md).
 - Commands run from the repo root.
@@ -58,6 +58,7 @@ What each check proves:
 | H-20 | A sandbox folder without the project folder (a mistyped name) is refused, and nothing is created | `h20-mistyped-name-refused.sh` | automatic |
 | H-21 | An `SBX_NAME` that breaks the sandbox name rule is refused at start; the command never runs | `h21-bad-name-refused.sh` | automatic |
 | H-22 | The base image holds git, gh, Node 24, Python 3, uv, Temurin 21 and Maven at their pins as native binaries, plus the common Linux tools; a login shell in the sandbox finds them | `h22-toolchain-in-base.sh` | automatic |
+| H-23 | The npm, uv and Maven caches live in the state folder and a file in each survives a recreate | `h23-caches-survive-recreate.sh` | automatic |
 | Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |
 
 ## Manual helpers (when something looks wrong)
@@ -86,7 +87,7 @@ bash tests/host/manual/h19-bundle-behaviour.sh
 ## Reading a failure
 
 - **FAIL line:** shows the check ID and what went wrong, with detail lines under it.
-- **NOT RUN:** an earlier step failed: the setup, or an earlier link of the chain H-08, H-16, H-11, H-09, H-20, H-10. Fix that one first.
+- **NOT RUN:** an earlier step failed: the setup, or an earlier link of the chain H-08, H-16, H-23, H-11, H-09, H-20, H-10. Fix that one first.
 - **Build failure:** the output names the log path, inside the run folder's `logs/`.
 - **"Mounts denied" during setup:** Docker Desktop does not share `$TMPDIR`. Add it in Settings, Resources, File sharing.
 - **H-10 says Docker created the missing folder:** Compose ignored `create_host_path: false`. That is a real finding, not a script bug.
