@@ -2,9 +2,9 @@
 # H-14: the image holds the bundle at /opt/sbx/best-practices, equal to the repo, root-owned, outside every mount; the hook and the managed settings are in place.
 # - The bundle is copied out of the container with docker cp into a fresh folder in the run folder's
 #   logs/ (the printed cleanup removes it) and compared with best-practices/ in the repo.
-# - One probe inside the container reports the owner and mode of the bundle, the hook folder, the hook
-#   and the managed settings; anything the sandbox user can write under those folders; any mount point
-#   under them; and whether the managed settings parse.
+# - One probe inside the container reports the owner and mode of the bundle, the hook folder, the hooks
+#   (05-gsd and 10-best-practices) and the managed settings; anything the sandbox user can write
+#   under those folders; any mount point under them; and whether the managed settings parse.
 # Depends on: nothing
 # Needs: test sandbox running
 set -u
@@ -38,7 +38,7 @@ probe_container() {
 
   probeScript=$(cat <<'PROBE'
 : h14-probe;
-for probePath in /opt/sbx/best-practices /etc/sbx/start.d /etc/sbx/start.d/10-best-practices /etc/claude-code/managed-settings.json; do
+for probePath in /opt/sbx/best-practices /etc/sbx/start.d /etc/sbx/start.d/05-gsd /etc/sbx/start.d/10-best-practices /etc/claude-code/managed-settings.json; do
   find "$probePath" -maxdepth 0 -printf 'OWNER %p %u:%g %m\n';
 done;
 find /opt/sbx/best-practices /etc/sbx/start.d /etc/claude-code -writable | sed 's/^/WRITABLE /';
@@ -54,12 +54,12 @@ PROBE
 }
 
 # --------------------------------------------------------------------------------
-# Checks the owner and mode of the bundle, the hook folder, the hook and the managed settings
+# Checks the owner and mode of the bundle, the hook folder, the hooks and the managed settings
 # --------------------------------------------------------------------------------
 check_owners_and_modes() {
   local expected expectedPath expectedMode ownerLine
 
-  for expected in "/opt/sbx/best-practices 755" "/etc/sbx/start.d 755" "/etc/sbx/start.d/10-best-practices 755" "/etc/claude-code/managed-settings.json 644"; do
+  for expected in "/opt/sbx/best-practices 755" "/etc/sbx/start.d 755" "/etc/sbx/start.d/05-gsd 755" "/etc/sbx/start.d/10-best-practices 755" "/etc/claude-code/managed-settings.json 644"; do
     expectedPath=${expected% *}
     expectedMode=${expected#* }
     ownerLine=$(printf '%s\n' "$probeOutput" | grep -F "OWNER $expectedPath ")

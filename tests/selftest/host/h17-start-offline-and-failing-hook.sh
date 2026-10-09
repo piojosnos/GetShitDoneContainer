@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of H-17 (tests/host/h17-start-offline-and-failing-hook.sh) against the fake docker: an offline start that syncs and a failing hook that stops pass; an offline start that fails, a hook that does not stop the start and bad hook folders fail.
+# Self-test of H-17 (tests/host/h17-start-offline-and-failing-hook.sh) against the fake docker: an offline start that syncs the bundle and GSD and a failing hook that stops pass; an offline start that fails, an offline start whose GSD sync fails, an output that names npx, a failing hook that does not stop in time, a hook that does not stop the start and bad hook folders fail.
 # - Run by run-all.sh; runs alone too.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
 # - Usage, from anywhere: bash tests/selftest/host/h17-start-offline-and-failing-hook.sh   (exit 0 = every case passes)
@@ -17,6 +17,7 @@ case_h17_alone() {
   expect "H-17: an offline start that syncs and a failing hook that stops pass" equals "$CHECK_RC" "0"
   expect "H-17: prints PASS: H-17" has_text "$WORK/out.h17" "PASS: H-17"
   expect "H-17: the offline start synced the rules into its own folder"   diff -r -q "$REPO/best-practices/rules" "$FIXTURE/h17/state/claude/rules"
+  expect "H-17: the offline start synced GSD at the pinned version" equals "$(cat "$FIXTURE/h17/state/claude/gsd-core/VERSION" 2>/dev/null)" "$(pin_of GSD_CORE_VERSION)"
   expect "H-17: the test sandbox state was not touched" test ! -e "$FIXTURE/state/claude"
   sed 's/^.*ARGS: //' "$FAKE_LOG" >"$WORK/args.h17"
   expect "H-17: all four containers run with --rm, no network, no capabilities, no new privileges"   equals "$(grep -c '^run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true ' "$WORK/args.h17")" "4"
@@ -31,6 +32,15 @@ case_h17_alone() {
   run_standalone "$WORK/out.h17.offline" h17-start-offline-and-failing-hook.sh FAKE_OFFLINE_FAIL=1
   expect "H-17: an offline start that fails fails the check" equals "$CHECK_RC" "1"
   expect "H-17: the offline start is named" has_text "$WORK/out.h17.offline" "offline start"
+  run_standalone "$WORK/out.h17.gsd" h17-start-offline-and-failing-hook.sh FAKE_GSD_FAIL=1
+  expect "H-17: an offline start whose GSD sync fails fails the check" equals "$CHECK_RC" "1"
+  expect "H-17: the failed GSD sync is reported as the offline start" has_text "$WORK/out.h17.gsd" "offline start"
+  run_standalone "$WORK/out.h17.npx" h17-start-offline-and-failing-hook.sh "FAKE_START_SAYS=npx -y @opengsd/gsd-core@latest --claude --global"
+  expect "H-17: a start that names npx fails the check" equals "$CHECK_RC" "1"
+  expect "H-17: the npx or @latest output is reported" has_text "$WORK/out.h17.npx" "npx or @latest"
+  run_standalone "$WORK/out.h17.slow" h17-start-offline-and-failing-hook.sh FAKE_BROKEN_RC=143
+  expect "H-17: a failing hook that does not stop in time fails the check" equals "$CHECK_RC" "1"
+  expect "H-17: the late stop is reported" has_text "$WORK/out.h17.slow" "within 60 s"
   run_standalone "$WORK/out.h17.ignored" h17-start-offline-and-failing-hook.sh FAKE_HOOK_IGNORED=1
   expect "H-17: a failing hook that does not stop the start fails the check" equals "$CHECK_RC" "1"
   expect "H-17: the command that ran is reported" has_text "$WORK/out.h17.ignored" "command ran"

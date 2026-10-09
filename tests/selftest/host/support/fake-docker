@@ -5,8 +5,9 @@
 # - Answers from the state folder FAKE_STATE and the knobs below.
 # - Exits 99 on any call it does not know.
 # - Only the container sbx-hosttest exists; any other name gets "No such container".
-# - Compose up and a run with --network none execute the real claude/start.d/10-best-practices,
-#   as the real entrypoint does (FAKE_REPO points at the repo).
+# - Compose up and a run with --network none run every hook in FAKE_REPO/claude/start.d in name order, as the
+#   real entrypoint does (FAKE_REPO points at the repo). The GSD hook finds the fake GSD of
+#   tests/selftest/host/support/fake-gsd on PATH.
 # - A run with --network none first runs a copy of the real entrypoint with only the run's -e values (no hooks; the fake runs those below), as the real container does.
 # - A run that mounts its own folder over /etc/sbx/start.d runs the real start library on that folder
 #   instead of the bundle sync.
@@ -50,7 +51,7 @@
 # FAKE_FOLDER_CHECK_OFF: 1 makes compose up skip the project and state folder check, as an entrypoint that does not check would
 # FAKE_IMAGE_NAME_CHECK_OFF: 1 makes compose up skip that image name check, as a Compose that never inspects the image of a service without containers would
 # FAKE_H10: what compose up does when the sandbox folder is missing: honored, ignored, started, or other (it fails for a reason that is not the folder)
-# FAKE_NO_SYNC: 1 makes compose up skip the start hook
+# FAKE_NO_SYNC: 1 makes compose up skip the start hooks
 # FAKE_SYNC_CLOBBERS: 1 makes compose up delete state/claude/skills and projects before the hook
 # FAKE_DOWN_KEEPS: 1 makes compose down leave the container in place
 # FAKE_DOWN_LOSES_HISTORY: 1 makes compose down delete the shell history file
@@ -60,6 +61,8 @@
 # FAKE_OFFLINE_FAIL: 1 makes a run with --network none fail to start
 # FAKE_ENTRY_NAME_CHECK_OFF: 1 makes a docker run start as an entrypoint without the name check would
 # FAKE_HOOK_IGNORED: 1 makes a run whose hook fails still run its command
+# FAKE_START_SAYS: a line a run with --network none prints after its hooks, before its command
+# FAKE_BROKEN_RC: a status a run with --network none returns, without output, when its config folder is under /proc/, as a failing hook that hangs and is stopped by the time limit would
 # FAKE_HOOK_DIR_IGNORED: 1 makes a run with its own folder over /etc/sbx/start.d skip the hook step
 # FAKE_PS: the docker ps answer (default: one old cc_oldbox container, running)
 # FAKE_PS_FAIL: 1 makes docker ps fail as if the daemon were unreachable
@@ -265,7 +268,29 @@ run_folder_check() {
 }
 
 # --------------------------------------------------------------------------------
-# compose_up: starts the fake container and runs the real start hook, as the real entrypoint does.
+# run_image_hooks CONFIG_DIR: runs every hook in FAKE_REPO/claude/start.d in name order, as the entrypoint does; returns 1 at the first hook that fails.
+# --------------------------------------------------------------------------------
+run_image_hooks() {
+  local hookFile
+  local hookName
+
+  for hookFile in "$FAKE_REPO"/claude/start.d/*; do
+    if [ ! -f "$hookFile" ]; then
+      continue
+    fi
+
+    hookName=$(basename "$hookFile")
+    if ! SBX_BUNDLE_DIR="$FAKE_REPO/best-practices" CLAUDE_CONFIG_DIR="$1" bash "$hookFile" </dev/null; then
+      echo "[sbx] ERROR: start hook /etc/sbx/start.d/$hookName failed; the container was not started." >&2
+      return 1
+    fi
+  done
+
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# compose_up: starts the fake container and runs the real start hooks, as the real entrypoint does.
 # --------------------------------------------------------------------------------
 compose_up() {
   local imageName
@@ -329,9 +354,7 @@ compose_up() {
     rm -rf "$SBX_DIR/state/claude/skills" "$SBX_DIR/state/claude/projects"
   fi
   if [ "${FAKE_NO_SYNC:-0}" != 1 ]; then
-    if ! SBX_BUNDLE_DIR="$FAKE_REPO/best-practices" CLAUDE_CONFIG_DIR="$SBX_DIR/state/claude" \
-      bash "$FAKE_REPO/claude/start.d/10-best-practices"; then
-      echo "[sbx] ERROR: start hook /etc/sbx/start.d/10-best-practices failed; the container was not started." >&2
+    if ! run_image_hooks "$SBX_DIR/state/claude"; then
       return 1
     fi
   fi
@@ -514,30 +537,20 @@ run_entrypoint_copy() {
 }
 
 # --------------------------------------------------------------------------------
-# run_network_none ARG...: a run with --network none: runs a copy of the real entrypoint, then the real start hook, then the command.
+# run_network_none ARG...: a run with --network none: runs a copy of the real entrypoint, then every real start hook in name order, then the command.
 # --------------------------------------------------------------------------------
 run_network_none() {
-  hookBroken=0
-  case "$*" in
-    *"CLAUDE_CONFIG_DIR=/proc/"*) hookBroken=1 ;;
-  esac
-  if [ "$hookBroken" = 1 ] && [ "${FAKE_HOOK_IGNORED:-0}" != 1 ]; then
-    echo "[sbx] ERROR: start hook /etc/sbx/start.d/10-best-practices failed; the container was not started." >&2
-    return 1
-  fi
-  if [ "$hookBroken" = 0 ] && [ "${FAKE_OFFLINE_FAIL:-0}" = 1 ]; then
-    echo "fake docker: the container could not start with networking disabled" >&2
-    return 1
-  fi
   mountSource=""
   hookSource=""
   lastArg=""
   nameArg=""
+  configValue=""
   previousArg=""
   for runArg in "$@"; do
     if [ "$previousArg" = "-e" ]; then
       case "$runArg" in
         SBX_NAME=*) nameArg=$runArg ;;
+        CLAUDE_CONFIG_DIR=*) configValue=${runArg#CLAUDE_CONFIG_DIR=} ;;
       esac
     fi
     previousArg=$runArg
@@ -556,6 +569,15 @@ run_network_none() {
     esac
     lastArg=$runArg
   done
+  case "$configValue" in
+    /proc/*) ;;
+    *)
+      if [ "${FAKE_OFFLINE_FAIL:-0}" = 1 ]; then
+        echo "fake docker: the container could not start with networking disabled" >&2
+        return 1
+      fi
+      ;;
+  esac
   if ! run_entrypoint_copy "$mountSource" "$nameArg"; then
     return 1
   fi
@@ -568,13 +590,24 @@ run_network_none() {
         return 1
       fi
     fi
-  elif [ "$hookBroken" = 0 ]; then
-    mkdir -p "$mountSource/state/claude"
-    if ! SBX_BUNDLE_DIR="$FAKE_REPO/best-practices" CLAUDE_CONFIG_DIR="$mountSource/state/claude" \
-      bash "$FAKE_REPO/claude/start.d/10-best-practices"; then
-      echo "[sbx] ERROR: start hook /etc/sbx/start.d/10-best-practices failed; the container was not started." >&2
+  else
+    case "$configValue" in
+      /proc/*)
+        if [ -n "${FAKE_BROKEN_RC:-}" ]; then
+          return "$FAKE_BROKEN_RC"
+        fi
+        ;;
+    esac
+    if [ -z "$configValue" ]; then
+      configValue=$mountSource/state/claude
+      mkdir -p "$configValue"
+    fi
+    if ! run_image_hooks "$configValue" && [ "${FAKE_HOOK_IGNORED:-0}" != 1 ]; then
       return 1
     fi
+  fi
+  if [ -n "${FAKE_START_SAYS:-}" ]; then
+    echo "$FAKE_START_SAYS"
   fi
   sh -c "$lastArg"
   return $?
@@ -871,6 +904,7 @@ exec_h18_run() {
 exec_h14_probe() {
   printf 'OWNER /opt/sbx/best-practices %s:%s 755\n' "${FAKE_BUNDLE_OWNER:-root}" "${FAKE_BUNDLE_OWNER:-root}"
   printf 'OWNER /etc/sbx/start.d root:root 755\n'
+  printf 'OWNER /etc/sbx/start.d/05-gsd root:root 755\n'
   printf 'OWNER /etc/sbx/start.d/10-best-practices root:root 755\n'
   printf 'OWNER /etc/claude-code/managed-settings.json root:root 644\n'
   if [ "${FAKE_BUNDLE_WRITABLE:-0}" = 1 ]; then

@@ -82,7 +82,7 @@ case_supply_chain_rules() {
 }
 
 # --------------------------------------------------------------------------------
-# Cases of the start rules: a clean copy and a working_dir under the project folder
+# Cases of the start rules: a clean copy, a working_dir under the project folder and a GSD hook that sorts after the bundle hook
 # --------------------------------------------------------------------------------
 case_start_rules() {
   echo "--- start rules"
@@ -108,6 +108,12 @@ case_start_rules() {
   run_scratch_guard "$WORK/start-nocheck.out" start.sh
   expect "sandbox rules: a compose.yml without the name check fails" has_text "$WORK/start-nocheck.out" "FAIL: compose_checks_the_name_before_it_acts"
   expect "sandbox rules: a missing name check exits non-zero" test "$GUARD_RC" -ne 0
+
+  make_scratch_repo || return 1
+  mv "$WORK/repo/claude/start.d/05-gsd" "$WORK/repo/claude/start.d/20-gsd" || return 1
+  run_scratch_guard "$WORK/start-gsd-late.out" start.sh
+  expect "start hooks: a GSD hook that sorts after the bundle hook fails" has_text "$WORK/start-gsd-late.out" "FAIL: gsd_sync_runs_before_the_bundle"
+  expect "start hooks: the late GSD hook is named" has_text "$WORK/start-gsd-late.out" "20-gsd"
 }
 
 # --------------------------------------------------------------------------------
