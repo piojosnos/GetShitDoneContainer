@@ -64,10 +64,10 @@ no_host_code_matches() {
 # --------------------------------------------------------------------------------
 # host_tests_are_portable: The host tests run on a Mac with stock bash 3.2 and BSD tools: no bash 4 features, no GNU-only options.
 # --------------------------------------------------------------------------------
-# GNU tools are fine only inside the container (in_container, docker exec). build.sh is read too: it also runs on the Mac.
+# GNU tools are fine only inside the container (in_container, docker exec). build.sh and clean.sh are read too: they also run on the Mac.
 host_tests_are_portable() {
-  no_host_code_matches 'declare -A|mapfile|readarray|\$\{[A-Za-z_]+(,,|\^\^)\}|sed -i|\bgrep -P|readlink -f|date -d|\btimeout\b|sha256sum|echo -e|&>>|\|&|\bjq\b|\bpython3?\b|\bcoproc\b|wait -n|EPOCHSECONDS|local -n|sed -r|sort -V|xargs -r|\brealpath\b|date --date|mktemp --tmpdir' '' $HOST_FILES build.sh \
-    && no_host_code_matches 'stat -c' 'in_container|docker exec' $HOST_FILES build.sh
+  no_host_code_matches 'declare -A|mapfile|readarray|\$\{[A-Za-z_]+(,,|\^\^)\}|sed -i|\bgrep -P|readlink -f|date -d|\btimeout\b|sha256sum|echo -e|&>>|\|&|\bjq\b|\bpython3?\b|\bcoproc\b|wait -n|EPOCHSECONDS|local -n|sed -r|sort -V|xargs -r|\brealpath\b|date --date|mktemp --tmpdir' '' $HOST_FILES build.sh clean.sh \
+    && no_host_code_matches 'stat -c' 'in_container|docker exec' $HOST_FILES build.sh clean.sh
 }
 
 # --------------------------------------------------------------------------------

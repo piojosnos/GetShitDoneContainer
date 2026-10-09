@@ -259,6 +259,25 @@ After building, or after changing anything under `base/`, `claude/`, `best-pract
 
 It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
 
+## Free disk space
+
+Rebuilds and host-test runs pile up images, build cache and run folders. From the repo root:
+
+```bash
+./clean.sh          # shows disk use, containers and host-test run folders; removes nothing
+./clean.sh --yes    # removes them
+```
+
+| Removed | Kept |
+|---|---|
+| The test sandbox `sbx-hosttest` and its network | Every other container, running or stopped, old sandboxes included |
+| Every host-test run folder (`sbx-hosttest-*` in the macOS temp folder; each may hold a test Claude login) | The images those containers use |
+| The Docker build cache | All volumes |
+| Every image no container uses | Every sandbox folder and its `state/` |
+
+- `sbx-base:local` and `sbx-claude:local` go too when no container uses them. `./build.sh` rebuilds them; the first build after a clean takes a few minutes.
+- A build that fails with `No space left on device` usually means the Docker Desktop disk is full: run `./clean.sh --yes`, or raise the disk limit in Docker Desktop, Settings, Resources.
+
 ## Troubleshooting and known limits
 
 | Symptom | Fix |
