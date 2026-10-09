@@ -30,6 +30,9 @@
 #   from SBX_STATE_DIRS, unless FAKE_NO_CACHE_DIRS is 1.
 # - An exec answers npm config get cache, uv cache dir and readlink of ~/.m2 from the state folder paths, and a
 #   command holding ": h23-plant" writes its last argument into a file of that name in the three cache folders.
+# - An exec of pgrep -x sleep answers 0 (the start hooks have finished) unless a knob below says otherwise.
+# - An exec of node -e runs that command on the host with CLAUDE_CONFIG_DIR set to the state/claude folder of the
+#   mounted folder.
 #
 # Knobs, one line each:
 # FAKE_STATE: the folder that holds the fake container state (set by lib.sh)
@@ -102,6 +105,8 @@
 # FAKE_M2_LINK: what readlink of ~/.m2 prints (default: the state/m2 path)
 # FAKE_CACHE_NOT_SHARED: 1 makes a file written into a cache never reach the host
 # FAKE_DOWN_LOSES_CACHES: 1 makes compose down delete state/cache and state/m2 of the mounted folder
+# FAKE_START_POLLS: the number of pgrep -x sleep calls after each compose up that answer 1 before it answers 0
+# FAKE_STOPS_AT_START: 1 makes the container exit once compose up has run the hooks, and pgrep -x sleep answer 1
 
 # --------------------------------------------------------------------------------
 # log_call ARG...: appends one line for the call to FAKE_LOG, in the format the safety cases parse.
@@ -344,7 +349,7 @@ compose_up() {
     echo "fake compose: container sbx-hosttest exited (1)" >&2
     return 1
   fi
-  rm -f "$FAKE_STATE/container.exited" "$FAKE_STATE/container.log"
+  rm -f "$FAKE_STATE/container.exited" "$FAKE_STATE/container.log" "$FAKE_STATE/pgrep.count"
   : >"$FAKE_STATE/container"
   mkdir -p "$SBX_DIR/state/claude"
   if [ "${FAKE_NO_CACHE_DIRS:-0}" != 1 ]; then
@@ -357,6 +362,9 @@ compose_up() {
     if ! run_image_hooks "$SBX_DIR/state/claude"; then
       return 1
     fi
+  fi
+  if [ "${FAKE_STOPS_AT_START:-0}" = 1 ]; then
+    : >"$FAKE_STATE/container.exited"
   fi
   return 0
 }
@@ -372,7 +380,7 @@ compose_down() {
     rm -rf "$(cat "$FAKE_STATE/container.dir")/state/cache" "$(cat "$FAKE_STATE/container.dir")/state/m2"
   fi
   if [ "${FAKE_DOWN_KEEPS:-0}" != 1 ]; then
-    rm -f "$FAKE_STATE/container" "$FAKE_STATE/container.dir" "$FAKE_STATE/container.exited" "$FAKE_STATE/container.log"
+    rm -f "$FAKE_STATE/container" "$FAKE_STATE/container.dir" "$FAKE_STATE/container.exited" "$FAKE_STATE/container.log" "$FAKE_STATE/pgrep.count"
   fi
   return 0
 }
@@ -965,6 +973,37 @@ exec_h23_plant() {
 }
 
 # --------------------------------------------------------------------------------
+# exec_pgrep_sleep: answers pgrep -x sleep: 1 while the container has exited or while FAKE_START_POLLS calls since the last compose up have not yet been made; else 0.
+# --------------------------------------------------------------------------------
+exec_pgrep_sleep() {
+  local polledCount=0
+
+  if [ -f "$FAKE_STATE/container.exited" ]; then
+    return 1
+  fi
+
+  if [ -f "$FAKE_STATE/pgrep.count" ]; then
+    polledCount=$(cat "$FAKE_STATE/pgrep.count")
+  fi
+
+  polledCount=$((polledCount + 1))
+  printf '%s\n' "$polledCount" >"$FAKE_STATE/pgrep.count"
+
+  if [ "$polledCount" -le "${FAKE_START_POLLS:-0}" ]; then
+    return 1
+  fi
+
+  printf '1\n'
+}
+
+# --------------------------------------------------------------------------------
+# exec_node_script ARG...: runs the node command on the host with CLAUDE_CONFIG_DIR set to the state/claude folder of the mounted folder.
+# --------------------------------------------------------------------------------
+exec_node_script() {
+  CLAUDE_CONFIG_DIR="$(cat "$FAKE_STATE/container.dir")/state/claude" "$@"
+}
+
+# --------------------------------------------------------------------------------
 # fake_exec ARG...: answers docker exec for the test container only, by the command it is given.
 # --------------------------------------------------------------------------------
 fake_exec() {
@@ -1048,6 +1087,8 @@ fake_exec() {
     "env H18_SCRIPT="*) exec_h18_run "$@" ;;
     "sh -c : h14-probe"*) exec_h14_probe ;;
     "sh -c : h23-plant"*) exec_h23_plant "${!#}" ;;
+    "pgrep -x sleep") exec_pgrep_sleep; return $? ;;
+    "node -e "*) exec_node_script "$@"; return $? ;;
     "npm config get cache") printf '%s\n' "${FAKE_NPM_CACHE:-/home/sandbox/workspace/state/cache/npm}" ;;
     "uv cache dir") printf '%s\n' "/home/sandbox/workspace/state/cache/uv" ;;
     "readlink /home/sandbox/.m2") printf '%s\n' "${FAKE_M2_LINK:-/home/sandbox/workspace/state/m2}" ;;

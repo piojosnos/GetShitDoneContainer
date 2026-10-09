@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
-# H-16: a restart refreshes the bundle from the image and leaves the user's skills, memories and CLAUDE.md alone.
+# H-16: a restart refreshes the bundle and GSD from the image and leaves the user's skills, memories, sessions, settings key and CLAUDE.md alone.
 # - Before the restart the check plants files in state/claude: a stale rule, a skill an older image
-#   installed (simulated by a name in the list file with no bundle folder), a user skill, a GSD-style
-#   skill, a memory and a CLAUDE.md. It also edits one synced rule and one synced bundle skill.
-# - The restart is the same down and up as H-08, and runs the start hook in the real image.
-# - After it, the stale rule and the old skill must be gone, the edits undone, and every user file
+#   installed (simulated by a name in the list file with no bundle folder), a user skill, a memory, a
+#   session transcript under projects/ and a CLAUDE.md. It also edits one synced rule and one synced
+#   bundle skill.
+# - It also plants a stale GSD (gsd-core/VERSION set to 0.0.0 and a hand edit in the first skills/gsd-*
+#   skill) and a user key in settings.json, written by node inside the container. It does not plant a
+#   gsd-* skill as a user file, because GSD owns that name.
+# - The restart is the same down and up as H-08, and runs the start hooks in the real image.
+# - After it, the stale rule and the old skill must be gone, GSD must be at the pin in versions.env with
+#   the edit undone, the bundle edits must be undone, and every user file and the settings key must be
 #   unchanged. Planted files are left in the run folder for the printed cleanup.
 # Depends on: nothing
 # Needs: test sandbox running; stops and restarts it
@@ -17,12 +22,14 @@ bundleDir=$REPO_DIR/best-practices
 syncedDir=$RUN/state/claude
 memoryDir=$syncedDir/projects/-home-sandbox-workspace-hosttest/memory
 sentinelText="h16-$$-$(date +%s)"
+sessionFile=$syncedDir/projects/-home-sandbox-workspace-hosttest/h16-session.jsonl
+settingsScript='const fs = require("fs"); const file = process.env.CLAUDE_CONFIG_DIR + "/settings.json"; let settings = {}; if (fs.existsSync(file)) { settings = JSON.parse(fs.readFileSync(file, "utf8")); } settings.h16Sentinel = process.argv[1]; fs.writeFileSync(file, JSON.stringify(settings, null, 2) + "\n");'
 
 # --------------------------------------------------------------------------------
-# Picks the first bundle skill and the first always-on rule to edit; FAIL and return 1 if there is none
+# Picks the first bundle skill, the first always-on rule and the first GSD skill to edit; FAIL and return 1 if there is none
 # --------------------------------------------------------------------------------
 pick_samples() {
-  local ruleFileList ruleFile
+  local ruleFileList ruleFile gsdSkillPath
 
   firstSkill=$(bundle_skill_names | sed -n 1p)
 
@@ -39,24 +46,41 @@ pick_samples() {
     fail H-16 "the repo bundle has no always-on rule or no skill to edit" "looked in $bundleDir"
     return 1
   fi
+
+  gsdSkillPath=$(find "$syncedDir/skills" -maxdepth 1 -type d -name 'gsd-*' 2>/dev/null | sort | sed -n 1p)
+
+  if [ -z "$gsdSkillPath" ]; then
+    fail H-16 "state/claude has no skills/gsd-* folder; GSD never synced" "looked in $syncedDir/skills"
+    return 1
+  fi
+
+  firstGsdSkill=$(basename "$gsdSkillPath")
 }
 
 # --------------------------------------------------------------------------------
-# Plants the stale and user files in state/claude and edits one synced rule and skill
+# Plants the stale and user files in state/claude, edits one synced rule and skill, and makes GSD stale
 # --------------------------------------------------------------------------------
 plant_files() {
+  local plantOutput
+
   mkdir -p "$syncedDir/rules" "$syncedDir/skills/h16-old-bundle-skill" "$syncedDir/skills/h16-user-skill" \
-    "$syncedDir/skills/gsd-h16-sample" "$syncedDir/skills/$firstSkill" "$memoryDir"
+    "$syncedDir/skills/$firstSkill" "$syncedDir/gsd-core" "$memoryDir"
 
   printf '%s\n' "$sentinelText" >"$syncedDir/rules/h16-stale.md"
   printf '%s\n' "$sentinelText" >"$syncedDir/skills/h16-old-bundle-skill/SKILL.md"
   printf '%s\n' "h16-old-bundle-skill" >>"$syncedDir/.best-practices-skills"
   printf '%s\n' "$sentinelText" >"$syncedDir/skills/h16-user-skill/SKILL.md"
-  printf '%s\n' "$sentinelText" >"$syncedDir/skills/gsd-h16-sample/SKILL.md"
   printf '%s\n' "$sentinelText" >"$memoryDir/h16-memory.md"
   printf '# %s\n' "$sentinelText" >"$syncedDir/CLAUDE.md"
   printf 'h16 hand edit\n' >>"$syncedDir/rules/$firstRule"
   printf 'h16 hand edit\n' >>"$syncedDir/skills/$firstSkill/SKILL.md"
+  printf '%s\n' "$sentinelText" >"$sessionFile"
+  printf '0.0.0' >"$syncedDir/gsd-core/VERSION"
+  printf 'h16 hand edit\n' >>"$syncedDir/skills/$firstGsdSkill/SKILL.md"
+
+  if ! plantOutput=$(in_container node -e "$settingsScript" "$sentinelText"); then
+    add_problem "could not plant the settings key: $(first_lines "$plantOutput")"
+  fi
 }
 
 # --------------------------------------------------------------------------------
@@ -73,13 +97,34 @@ check_stale_files_gone() {
 }
 
 # --------------------------------------------------------------------------------
+# Checks GSD is back at the pin and the hand edit in the GSD skill is undone
+# --------------------------------------------------------------------------------
+check_gsd_refreshed() {
+  local pinnedVersion syncedVersion=""
+
+  pinnedVersion=$(pin_of GSD_CORE_VERSION)
+
+  if [ -f "$syncedDir/gsd-core/VERSION" ]; then
+    syncedVersion=$(cat "$syncedDir/gsd-core/VERSION")
+  fi
+
+  if [ "$syncedVersion" != "$pinnedVersion" ]; then
+    add_problem "state/claude/gsd-core/VERSION is '$syncedVersion' after the restart; the image has GSD $pinnedVersion"
+  fi
+
+  if grep -Fq "h16 hand edit" "$syncedDir/skills/$firstGsdSkill/SKILL.md" 2>/dev/null; then
+    add_problem "state/claude/skills/$firstGsdSkill still has the hand edit after the restart"
+  fi
+}
+
+# --------------------------------------------------------------------------------
 # Checks every planted user file still holds its sentinel
 # --------------------------------------------------------------------------------
 check_user_files_spared() {
   local userFile
 
-  for userFile in "$syncedDir/skills/h16-user-skill/SKILL.md" "$syncedDir/skills/gsd-h16-sample/SKILL.md" \
-    "$memoryDir/h16-memory.md" "$syncedDir/CLAUDE.md"; do
+  for userFile in "$syncedDir/skills/h16-user-skill/SKILL.md" "$memoryDir/h16-memory.md" "$sessionFile" \
+    "$syncedDir/settings.json" "$syncedDir/CLAUDE.md"; do
     if ! grep -Fq "$sentinelText" "$userFile" 2>/dev/null; then
       add_problem "${userFile#"$RUN"/} is missing or changed after the restart"
     fi
@@ -95,9 +140,10 @@ pick_samples || exit 1
 plant_files
 restart_test_sandbox H-16 h16-down.log || exit 1
 check_stale_files_gone
+check_gsd_refreshed
 check_bundle_skill_list "$syncedDir"
 check_user_files_spared
 check_bundle_rules_synced "$syncedDir"
 check_bundle_skills_synced "$syncedDir"
-report_check H-16 "the restart did not refresh the bundle or did not spare the user's files" \
-  "a restart removed the stale rule and skill, restored edited copies, and kept user skills, GSD skills, memories and CLAUDE.md"
+report_check H-16 "the restart did not refresh the bundle and GSD or did not spare the user's files" \
+  "a restart removed the stale rule and skill, restored edited copies and GSD at the pin, and kept the user's skills, memories, sessions, settings key and CLAUDE.md"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of the host library units: claude_pin, pin_of, expected_arch, make_run_dir and the scrub in host_init.
+# Self-test of the host library units: claude_pin, pin_of, expected_arch, make_run_dir, the scrub in host_init and compose_up waiting for the start hooks.
 # - Run by run-all.sh; runs alone too.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
 # - Usage, from anywhere: bash tests/selftest/host/units.sh   (exit 0 = every case passes)
@@ -53,9 +53,39 @@ case_lib_units() {
 }
 
 # --------------------------------------------------------------------------------
+# Cases of compose_up, which waits until the start hooks have finished
+# --------------------------------------------------------------------------------
+case_compose_up_waits() {
+  echo "--- compose_up waits for the start hooks"
+  reset_state
+  make_fixture_run
+  upStatus=0
+  ( export SBXTEST_DIR="$FIXTURE" FAKE_START_POLLS=2; lib_eval 'compose_up' ) >"$WORK/out.up.ok" 2>&1 || upStatus=$?
+  expect "lib: compose_up returns once the start hooks finished" equals "$upStatus" "0"
+  expect "lib: compose_up asked pgrep three times" \
+    equals "$(grep -c 'ARGS: exec sbx-hosttest pgrep -x sleep' "$FAKE_LOG")" "3"
+
+  reset_state
+  make_fixture_run
+  upStatus=0
+  ( export SBXTEST_DIR="$FIXTURE" FAKE_START_POLLS=99 SBXTEST_START_SECONDS=2; lib_eval 'compose_up' ) >"$WORK/out.up.slow" 2>&1 || upStatus=$?
+  expect "lib: compose_up fails when the start hooks never finish" failed_with "$upStatus" "$WORK/out.up.slow" "did not finish within 2 s"
+
+  reset_state
+  make_fixture_run
+  upStatus=0
+  ( export SBXTEST_DIR="$FIXTURE" FAKE_STOPS_AT_START=1; lib_eval 'compose_up' ) >"$WORK/out.up.stop" 2>&1 || upStatus=$?
+  expect "lib: compose_up fails at once when the sandbox stops during its start" \
+    failed_with "$upStatus" "$WORK/out.up.stop" "stopped during its start"
+  expect "lib: compose_up asked pgrep once before it gave up on the stopped sandbox" \
+    equals "$(grep -c 'ARGS: exec sbx-hosttest pgrep -x sleep' "$FAKE_LOG")" "1"
+}
+
+# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 start_group || exit 1
 case_lib_units
+case_compose_up_waits
 finish_cases
