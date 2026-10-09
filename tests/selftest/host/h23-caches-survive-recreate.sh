@@ -31,6 +31,13 @@ marker_files_in_all_caches() {
 }
 
 # --------------------------------------------------------------------------------
+# jar_in_unique_repository: true when state/m2 of FIXTURE holds the junit jar under a repository-h23-... folder.
+# --------------------------------------------------------------------------------
+jar_in_unique_repository() {
+  ls "$FIXTURE"/state/m2/repository-h23-*/junit/junit/4.13.2/junit-4.13.2.jar >/dev/null 2>&1
+}
+
+# --------------------------------------------------------------------------------
 # Cases of H-23, each run alone against the fake docker
 # --------------------------------------------------------------------------------
 case_h23_alone() {
@@ -42,8 +49,9 @@ case_h23_alone() {
   expect "H-23: the sandbox is down and up once" equals "$(grep -c 'ARGS: compose .* \(up\|down\)' "$FAKE_LOG")" "2"
   expect "H-23: the marker files are on the host afterwards" marker_files_in_all_caches
   expect "H-23: the PASS line mentions the Maven download" has_text "$WORK/out.h23" "Maven download"
-  expect "H-23: Maven is asked for junit 4.13.2 in the project folder" has_text "$FAKE_LOG" "exec -w /home/sandbox/workspace/hosttest sbx-hosttest mvn -q dependency:get -Dartifact=junit:junit:4.13.2"
-  expect "H-23: the downloaded jar is on the host afterwards" test -f "$FIXTURE/state/m2/repository/junit/junit/4.13.2/junit-4.13.2.jar"
+  expect "H-23: Maven is asked for junit 4.13.2 in the project folder, with a pinned plugin and a run-unique local repository" \
+    has_match "$FAKE_LOG" "exec -w /home/sandbox/workspace/hosttest sbx-hosttest mvn -q org.apache.maven.plugins:maven-dependency-plugin:[0-9.]+:get -Dartifact=junit:junit:4.13.2 -Dmaven.repo.local=/home/sandbox/.m2/repository-h23-[0-9]+-[0-9]+\$"
+  expect "H-23: the downloaded jar is in the run-unique repository on the host afterwards" jar_in_unique_repository
   expect "H-23: the sandbox is up at the end" test -f "$WORK/state/container"
 
   reset_state
@@ -86,6 +94,13 @@ case_h23_alone() {
   expect "H-23: a downloaded jar that never reaches the Mac fails" equals "$CHECK_RC" "1"
   expect "H-23: the missing jar is named" has_text "$WORK/out.h23.nojar" "junit-4.13.2.jar"
   expect "H-23: the missing jar says it was missing before the recreate" has_text "$WORK/out.h23.nojar" "before the recreate"
+
+  make_cache_fixture
+  mkdir -p "$FIXTURE/state/m2/repository/junit/junit/4.13.2"
+  : >"$FIXTURE/state/m2/repository/junit/junit/4.13.2/junit-4.13.2.jar"
+  run_standalone "$WORK/out.h23.leftover" h23-caches-survive-recreate.sh FAKE_NO_MAVEN_JAR=1
+  expect "H-23: a jar left by an earlier run does not satisfy a download that wrote nothing" equals "$CHECK_RC" "1"
+  expect "H-23: the leftover case names the missing jar" has_text "$WORK/out.h23.leftover" "junit-4.13.2.jar is missing on the Mac before the recreate"
 
   reset_state
   FIXTURE=""

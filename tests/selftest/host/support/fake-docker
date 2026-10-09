@@ -30,8 +30,9 @@
 #   from SBX_STATE_DIRS, unless FAKE_NO_CACHE_DIRS is 1.
 # - An exec answers npm config get cache, uv cache dir and readlink of ~/.m2 from the state folder paths, and a
 #   command holding ": h23-plant" writes its last argument into a file of that name in the three cache folders.
-# - An exec of mvn -q dependency:get answers the Maven download of H-23: it makes the junit 4.13.2 jar under
-#   state/m2/repository of the mounted folder, unless a knob below says otherwise.
+# - An exec of mvn -q with the pinned dependency plugin's get goal answers the Maven download of H-23: it makes the
+#   junit 4.13.2 jar under the local repository named by -Dmaven.repo.local (a folder of ~/.m2, so of state/m2 of
+#   the mounted folder), unless a knob below says otherwise.
 # - An exec of pgrep -x sleep answers 0 (the start hooks have finished) unless a knob below says otherwise.
 # - An exec of node -e runs that command on the host with CLAUDE_CONFIG_DIR set to the state/claude folder of the
 #   mounted folder.
@@ -1090,14 +1091,15 @@ exec_h23_plant() {
 }
 
 # --------------------------------------------------------------------------------
-# exec_mvn_download: answers mvn -q dependency:get of junit 4.13.2: makes the jar in state/m2 of the mounted folder; FAKE_MVN_IO_ERROR makes it fail, FAKE_NO_MAVEN_JAR leaves the jar out.
+# exec_mvn_download LOCAL_REPO_ARG: answers the mvn -q get goal for junit 4.13.2 with -Dmaven.repo.local=/home/sandbox/.m2/NAME: makes the jar in NAME under state/m2 of the mounted folder; FAKE_MVN_IO_ERROR makes it fail, FAKE_NO_MAVEN_JAR leaves the jar out.
 # --------------------------------------------------------------------------------
 exec_mvn_download() {
   local jarDir
+  local repoName=${1#-Dmaven.repo.local=/home/sandbox/.m2/}
 
   if [ "${FAKE_MVN_IO_ERROR:-0}" = 1 ]; then
     echo "[ERROR] Failed to execute goal on project hosttest: java.io.IOException: Input/output error" >&2
-    echo "[ERROR] Failed to delete tracking file /home/sandbox/.m2/repository/junit/junit/4.13.2/junit-4.13.2.jar.lastUpdated" >&2
+    echo "[ERROR] Failed to delete tracking file /home/sandbox/.m2/repository-h23/junit/junit/4.13.2/junit-4.13.2.jar.lastUpdated" >&2
 
     return 1
   fi
@@ -1106,7 +1108,7 @@ exec_mvn_download() {
     return 0
   fi
 
-  jarDir=$(cat "$FAKE_STATE/container.dir")/state/m2/repository/junit/junit/4.13.2
+  jarDir=$(cat "$FAKE_STATE/container.dir")/state/m2/$repoName/junit/junit/4.13.2
   mkdir -p "$jarDir"
   printf 'fake jar\n' >"$jarDir/junit-4.13.2.jar"
 }
@@ -1309,7 +1311,7 @@ fake_exec() {
     "env H18_SCRIPT="*) exec_h18_run "$@" ;;
     "sh -c : h14-probe"*) exec_h14_probe ;;
     "sh -c : h23-plant"*) exec_h23_plant "${!#}" ;;
-    "mvn -q dependency:get -Dartifact=junit:junit:4.13.2") exec_mvn_download; return $? ;;
+    "mvn -q org.apache.maven.plugins:maven-dependency-plugin:"*":get -Dartifact=junit:junit:4.13.2 -Dmaven.repo.local=/home/sandbox/.m2/"*) exec_mvn_download "${!#}"; return $? ;;
     "pgrep -x sleep") exec_pgrep_sleep; return $? ;;
     "node -e "*) exec_node_script "$@"; return $? ;;
     "ccusage "*) exec_ccusage "$@"; return $? ;;

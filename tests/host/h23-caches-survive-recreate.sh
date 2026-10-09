@@ -4,8 +4,10 @@
 # - The entrypoint makes state/cache/npm, state/cache/uv and state/m2 at start.
 # - A run-unique file is written into each cache from inside the container. It must be on the Mac,
 #   and still be there after the sandbox is taken down and started again.
-# - A real Maven download (junit 4.13.2) is run in the project folder as the sandbox user. The jar must be on the Mac,
-#   and still be there after the recreate. Maven 3.9.12 and later fail here on the Docker Desktop for Mac mount.
+# - A real Maven download (junit 4.13.2, with the dependency plugin at a pinned version) is run in the project folder as the sandbox user.
+#   - It uses a local repository folder in ~/.m2 that is new on every run, so Maven has nothing cached and must write to the mount.
+#   - The jar must be on the Mac, and still be there after the recreate.
+#   - Maven 3.9.12 and later fail here on the Docker Desktop for Mac mount.
 # - The files are left in the run folder for the printed cleanup.
 # Depends on: nothing
 # Needs: test sandbox running with network access to Maven Central; stops and restarts it
@@ -14,7 +16,9 @@ set -u
 host_init
 
 marker="h23-$$-$(date +%s)"
-mavenJar="$RUN/state/m2/repository/junit/junit/4.13.2/junit-4.13.2.jar"
+mavenPlugin="org.apache.maven.plugins:maven-dependency-plugin:3.8.1"
+mavenRepoName="repository-$marker"
+mavenJar="$RUN/state/m2/$mavenRepoName/junit/junit/4.13.2/junit-4.13.2.jar"
 
 # --------------------------------------------------------------------------------
 # container_stdout CMD...: runs CMD in the test container; stdin closed, stderr discarded, so a tool notice never reaches a compared value.
@@ -70,16 +74,20 @@ plant_cache_files() {
 }
 
 # --------------------------------------------------------------------------------
-# Downloads junit 4.13.2 with Maven as the sandbox user, in the project folder
+# Downloads junit 4.13.2 with Maven as the sandbox user, in the project folder, into a local repository that did not exist before
 # --------------------------------------------------------------------------------
 download_maven_artifact() {
   local mvnOutput mvnStatus
 
-  mvnOutput=$(run_timeout 300 in_project mvn -q dependency:get -Dartifact=junit:junit:4.13.2)
+  if [ -e "$mavenJar" ]; then
+    add_problem "state/m2/$mavenRepoName/junit/junit/4.13.2/junit-4.13.2.jar was already on the Mac before the download"
+  fi
+
+  mvnOutput=$(run_timeout 300 in_project mvn -q "$mavenPlugin:get" -Dartifact=junit:junit:4.13.2 "-Dmaven.repo.local=/home/sandbox/.m2/$mavenRepoName")
   mvnStatus=$?
 
   if [ "$mvnStatus" -ne 0 ]; then
-    add_problem "mvn dependency:get exited with status $mvnStatus; an 'Input/output error' or 'Failed to delete tracking file' means this Maven cannot keep its local repository on the Mac mount (see SANDBOX.md troubleshooting); last lines: $(printf '%s\n' "$mvnOutput" | tail -n 5 | tr '\n' ' ')"
+    add_problem "mvn $mavenPlugin:get exited with status $mvnStatus; an 'Input/output error' or 'Failed to delete tracking file' means this Maven cannot keep its local repository on the Mac mount (see SANDBOX.md troubleshooting); last lines: $(printf '%s\n' "$mvnOutput" | tail -n 5 | tr '\n' ' ')"
   fi
 }
 
@@ -96,7 +104,7 @@ check_files_on_host() {
   done
 
   if [ ! -f "$mavenJar" ]; then
-    add_problem "state/m2/repository/junit/junit/4.13.2/junit-4.13.2.jar is missing on the Mac $1"
+    add_problem "state/m2/$mavenRepoName/junit/junit/4.13.2/junit-4.13.2.jar is missing on the Mac $1"
   fi
 }
 

@@ -58,7 +58,7 @@ What each check proves:
 | H-20 | A sandbox folder without the project folder (a mistyped name) is refused, and nothing is created | `h20-mistyped-name-refused.sh` | automatic |
 | H-21 | An `SBX_NAME` that breaks the sandbox name rule is refused at start; the command never runs | `h21-bad-name-refused.sh` | automatic |
 | H-22 | The base image holds git, gh, Node 24, Python 3, uv, Temurin 21 and Maven at their pins as native binaries, plus the common Linux tools; a login shell in the sandbox finds them | `h22-toolchain-in-base.sh` | automatic |
-| H-23 | The npm, uv and Maven caches live in the state folder and a file in each survives a recreate; a real Maven download (junit 4.13.2, needs network) reaches `state/m2` and survives it | `h23-caches-survive-recreate.sh` | automatic |
+| H-23 | The npm, uv and Maven caches live in the state folder and a file in each survives a recreate; a real Maven download (junit 4.13.2 with a pinned plugin, into a new local repository under `state/m2`, needs network) reaches the Mac and survives it | `h23-caches-survive-recreate.sh` | automatic |
 | H-24 | `ccusage daily`, `monthly` and `session` in a sandbox shell report a planted transcript from `state/claude`, as the sandbox user, offline | `h24-ccusage-reports-usage.sh` | automatic |
 | H-25 | The images match versions.env (the record in the Claude image, GSD and ccusage at their pins, nothing under the mount point), and a build without build.sh stops naming the missing pin | `h25-images-match-versions.sh` | automatic |
 | Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |
