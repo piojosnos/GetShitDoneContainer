@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Pinned Toolchain, GSD, and ccusage
 status: executing
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-10-09T03:40:57.318Z"
+stopped_at: Completed 02-04-PLAN.md
+last_updated: "2026-10-09T03:48:19.728Z"
 last_activity: 2026-10-08
 last_activity_desc: Phase 02 execution started
-state_head: ef27b56f4e56063f1404ff3aa58483f055db6fb3
+state_head: fe8016bac2d1748b0ace949be5f073af2e555272
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 53
-  completed_plans: 47
+  completed_plans: 48
   percent: 50
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-08)
 ## Current Position
 
 Phase: 02 (Pinned Toolchain, GSD, and ccusage) — EXECUTING
-Plan: 4 of 9
+Plan: 5 of 9
 Status: Ready to execute
 Last activity: 2026-10-08 — Phase 02 execution started
 
@@ -108,6 +108,7 @@ Progress: [████████████████████] 44/44 p
 | Phase 02 P01 | 9 min | 3 tasks | 22 files |
 | Phase 02 P02 | n/a | 2 tasks | 1 files |
 | Phase 02 P03 | not recorded | 2 tasks | 14 files |
+| Phase 02 P04 | not recorded | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -196,6 +197,7 @@ Recent decisions affecting current work:
 - [Phase 02]: UBUNTU_IMAGE stays on the 24.04 tag until the plan 02 approval adds the digest; BASE_IMAGE=sbx-base:local is the only ARG default — A local tag is not a version; the digest needs human approval
 - [Phase 02]: Plan 03: the three base image pins are tag plus index digest (copied from approved 02-PINS.md rows); versions_are_pinned now refuses an image pin without a 64 hex digest
 - [Phase 02]: Plan 03: copied Temurin tree may keep a dangling cacerts link; check Maven TLS on the Mac in plan 09 (fix: ca-certificates-java or relink to the bundled cacerts)
+- [Phase 02]: Plan 04: npm, uv and Maven caches live in the sandbox state folder (image ENV plus a ~/.m2 link); the Claude image appends to SBX_STATE_DIRS and builds with a throwaway npm cache in /tmp
 
 ### Pending Todos
 
@@ -240,6 +242,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-09T03:40:57.171Z
-Stopped at: Completed 02-03-PLAN.md
+Last session: 2026-10-09T03:48:19.579Z
+Stopped at: Completed 02-04-PLAN.md
 Resume file: None
