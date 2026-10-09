@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 02
 current_phase_name: Pinned Toolchain, GSD, and ccusage
 status: executing
-stopped_at: Completed 02-04-PLAN.md
-last_updated: "2026-10-09T03:48:19.728Z"
+stopped_at: Completed 02-05-PLAN.md
+last_updated: "2026-10-09T03:55:57.736Z"
 last_activity: 2026-10-08
 last_activity_desc: Phase 02 execution started
-state_head: fe8016bac2d1748b0ace949be5f073af2e555272
+state_head: 73856b2facde254c647280e92542147e7659b71c
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 53
-  completed_plans: 48
+  completed_plans: 49
   percent: 50
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-08)
 ## Current Position
 
 Phase: 02 (Pinned Toolchain, GSD, and ccusage) — EXECUTING
-Plan: 5 of 9
+Plan: 6 of 9
 Status: Ready to execute
 Last activity: 2026-10-08 — Phase 02 execution started
 
@@ -109,6 +109,7 @@ Progress: [████████████████████] 44/44 p
 | Phase 02 P02 | n/a | 2 tasks | 1 files |
 | Phase 02 P03 | not recorded | 2 tasks | 14 files |
 | Phase 02 P04 | not recorded | 2 tasks | 15 files |
+| Phase 02 P05 | not recorded | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -198,6 +199,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Plan 03: the three base image pins are tag plus index digest (copied from approved 02-PINS.md rows); versions_are_pinned now refuses an image pin without a 64 hex digest
 - [Phase 02]: Plan 03: copied Temurin tree may keep a dangling cacerts link; check Maven TLS on the Mac in plan 09 (fix: ca-certificates-java or relink to the bundled cacerts)
 - [Phase 02]: Plan 04: npm, uv and Maven caches live in the sandbox state folder (image ENV plus a ~/.m2 link); the Claude image appends to SBX_STATE_DIRS and builds with a throwaway npm cache in /tmp
+- [Phase 02]: GSD hook 05-gsd sorts before 10-best-practices so a bundle skill wins a name clash; a guard rule enforces it
+- [Phase 02]: 05-gsd compares gsd-core/VERSION with gsd-tools runtime-identity and makes the config folder first, so a stale GSD or an uncreatable folder stops the start instead of hanging it
 
 ### Pending Todos
 
@@ -242,6 +245,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-09T03:48:19.579Z
-Stopped at: Completed 02-04-PLAN.md
+Last session: 2026-10-09T03:55:57.567Z
+Stopped at: Completed 02-05-PLAN.md
 Resume file: None

@@ -255,7 +255,7 @@ Gap closure, from the 01.5-11 Mac run (H-03 failed: Compose lowercases an upperc
   4. After the GSD pin is bumped and the image rebuilt, starting the container syncs the image's `@opengsd/gsd-core` into the persisted `~/.claude`. The GSD version matches the new pin, the Claude login and session history are unchanged, and start-up works with networking disabled, with no `npx` or `@latest` installs in the start logs.
   5. `ccusage daily`, `ccusage monthly`, and `ccusage session` run in the container shell and report this project's real Claude usage from `<sandbox>/state/claude`.
 
-**Plans:** 4/9 plans executed
+**Plans:** 5/9 plans executed
 
 Plans:
 **Wave 1**
@@ -271,7 +271,7 @@ Plans:
 - [x] 02-04-PLAN.md: npm, uv and Maven caches in state/ (IMG-07); host check H-23
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 02-05-PLAN.md: GSD baked and synced at every start by the 05-gsd hook, fail closed and offline; H-17 and H-14 extended
+- [x] 02-05-PLAN.md: GSD baked and synced at every start by the 05-gsd hook, fail closed and offline; H-17 and H-14 extended
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 02-06-PLAN.md: The image's GSD wins and user files stay (H-16); compose_up waits for the start hooks; attended GSD bump helper
@@ -372,7 +372,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 1.3. Shell script layout | 6/6 | Complete    | 2026-10-05 |
 | 1.4. Test suite refactor | 8/8 | Complete    | 2026-10-06 |
 | 1.5. Host test fixes | 16/16 | Complete    | 2026-10-08 |
-| 2. Pinned Toolchain, GSD, and ccusage | 4/9 | In Progress|  |
+| 2. Pinned Toolchain, GSD, and ccusage | 5/9 | In Progress|  |
 | 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
 | 4. Jump-In and Sandbox Housekeeping | 0/TBD | Not started | - |
