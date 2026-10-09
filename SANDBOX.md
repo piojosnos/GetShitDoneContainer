@@ -155,7 +155,7 @@ A start needs no network. What it does in `state/claude`:
 |---|---|
 | `rules/` | Replaced by the image's rules. A hand edit or a stray file is lost. |
 | Each bundle skill folder in `skills/` | Replaced by the image's copy. Its name is recorded in `.best-practices-skills`. |
-| Other skills (GSD's, your own) | Never touched. |
+| Other skills (your own) | Never touched by the bundle sync. GSD's skills are synced by GSD, see below. |
 | `projects/` (memories), `CLAUDE.md`, `settings.json`, the login | Never touched. |
 
 How a rule loads:
@@ -183,6 +183,22 @@ Edit protection:
 Memories are not shipped. They belong to each project. A memory that proves general becomes a bundle rule by PR.
 
 Moving an existing project into a sandbox: its old memories and `CLAUDE.md` may repeat bundle rules. Paste the prompt in [`prompts/consolidate-memories.md`](prompts/consolidate-memories.md) into Claude once; it sorts them and removes duplicates only after you approve.
+
+## GSD
+
+GSD comes baked into the Claude image at the version in `versions.env`, from `@opengsd/gsd-core` only. At every start, before the bundle sync, the image's GSD is synced into `state/claude`. It needs no network.
+
+| In `state/claude` | What a start does |
+|---|---|
+| `gsd-core/`, `agents/`, `hooks/`, every `skills/gsd-*` folder | Replaced by the image's GSD. A hand edit is first saved to `gsd-local-patches/`. |
+| `settings.json` | GSD adds its hooks and permissions. Your own keys stay. |
+| Your own skills, `projects/` (sessions and memories), `CLAUDE.md`, the login | Never touched. |
+
+- GSD owns every skill whose name starts with `gsd-`. Give your own skills another name: a start removes a `gsd-*` skill that GSD does not ship.
+- GSD runs before the bundle, so a bundle skill wins a name clash.
+- A failed sync stops the start with an `[sbx] ERROR` line and the installer output above it.
+- GSD's own update notice in a session does not apply here. To upgrade GSD, change `GSD_CORE_VERSION` in `versions.env` and rebuild (see "Bump a version or add a tool").
+- The GSD package brings a second Claude binary for its agent SDK under `/usr/local/lib`. It is not on `PATH` and never updates itself.
 
 ## Safety checks
 
@@ -231,7 +247,7 @@ If `up` fails, `docker compose logs` shows the `[sbx] ERROR` line that says what
 
 ## Verify a new build
 
-After building, or after changing anything under `base/`, `claude/`, `best-practices/` or `compose.yml`, run `bash tests/host/run-all.sh` on the Mac. When it passes, the automated checks hold. Claude's login and Claude's own behaviour are checked only by the helpers in `tests/host/manual/`: H-07 (login), the second half of H-09 (login and session survive a rebuild), the `claude doctor` part of H-13, and H-19 (the bundle as Claude uses it). Run them after a Claude Code pin change, a change to the managed settings, or a change to login handling. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers.
+After building, or after changing anything under `base/`, `claude/`, `best-practices/` or `compose.yml`, run `bash tests/host/run-all.sh` on the Mac. When it passes, the automated checks hold. Claude's login and Claude's own behaviour are checked only by the helpers in `tests/host/manual/`: H-07 (login), the second half of H-09 (login and session survive a rebuild), the `claude doctor` part of H-13, the GSD bump part of H-16 (`manual/h16-gsd-bump.sh`), and H-19 (the bundle as Claude uses it). Run them after a Claude Code or GSD pin change, a change to the managed settings, or a change to login handling. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers.
 
 It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
 
@@ -250,6 +266,8 @@ It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
 | `claude --resume` shows nothing | Sessions are keyed by directory; start it from the same directory as before. |
 | A plain `docker run` is refused | Intended. Bypass the entrypoint, as in "Image-only smoke tests". |
 | The container stops right after `up` | Run `docker logs sbx-<name>`. The `[sbx] ERROR: start hook ... failed` line and the hook's own error above it say what broke. If the line says `is not executable`, the image lost the hook's execute bit; rebuild the image. If it says `is not a regular file`, a hook link in the image points nowhere (or something that is not a file sits in the hook folder); rebuild the image. |
+| `[sbx] ERROR: the GSD sync into ... failed` | The installer output above the line says why. Rebuild the image. A hand edit of a GSD file is kept in `state/claude/gsd-local-patches/`. |
+| A skill of yours named `gsd-...` is gone after a start | GSD owns that prefix. Rename the skill. |
 | Claude refuses to edit a file under `~/.claude/rules` or a bundle skill | Intended. Edit `best-practices/` in this repo (see "Best-practices bundle"). |
 | A sandbox migrated from the old layout loads the same rules twice | Remove the `@AGENTS.md` and `@code-conventions.md` imports from `state/claude/CLAUDE.md`. |
 | Host check H-10 showed Docker creating the missing folder | Report it. An `env_file` sentinel at the root of `SBX_DIR` would make Compose itself refuse a missing folder; it is not planned while H-10 passes, and the container refuses to start either way. |

@@ -9,6 +9,7 @@
 # - Deletes nothing. At the end, pass or fail, it prints the cleanup command for you to run
 #   and where the diagnostic helpers are.
 # - SBXTEST_NO_CACHE=1 (optional) makes the rebuild check rebuild without the cache; slow.
+# - SBXTEST_START_SECONDS (optional) changes how long a start may take before its hooks count as stuck (default 120 s).
 # - Usage, from anywhere: bash tests/host/run-all.sh   (exit 0 = every check passed)
 set -u
 . "$(dirname "$0")/lib.sh"

@@ -1,6 +1,6 @@
 # Host checklist (H-00..H-23)
 
-The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them. Four short helpers in `tests/host/manual/` check what the script cannot: Claude's login, Claude's own behaviour and `claude doctor`. Run them after a change the script cannot see, or when a check fails and you want to look closer.
+The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them. Five short helpers in `tests/host/manual/` check what the script cannot: Claude's login, Claude's own behaviour, `claude doctor` and a real GSD pin bump. Run them after a change the script cannot see, or when a check fails and you want to look closer.
 
 - **IDs:** each check has an ID, H-00 to H-23 (H for host), so results can be reported by ID ("H-10 failed").
 - **When:** once after building a new version of the images or `compose.yml`.
@@ -51,7 +51,7 @@ What each check proves:
 | H-13 | Environment is visible and self-update is off; `claude doctor` agrees | `h13-env-and-no-self-update.sh`, `manual/h13-doctor.sh` | automatic; helper for the rest |
 | H-14 | The image holds the bundle, equal to the repo; owners, modes and no mount are right; the managed settings parse | `h14-bundle-in-image.sh` | automatic |
 | H-15 | Rules and skills are synced and equal to the repo; Claude lists the always-on rules and the skills, not the path-scoped rules | `h15-bundle-synced-and-visible.sh` | automatic |
-| H-16 | A restart refreshes the bundle and keeps user skills, GSD skills, memories and `CLAUDE.md` | `h16-sync-refreshes-and-spares.sh` | automatic |
+| H-16 | A restart refreshes the bundle and GSD from the image (a stale GSD version and a hand-edited GSD skill are replaced) and keeps your own skills, memories, sessions, settings keys and `CLAUDE.md`; the helper bumps the GSD pin for real with a logged-in sandbox | `h16-sync-refreshes-and-spares.sh`, `manual/h16-gsd-bump.sh` | automatic; helper for the rest |
 | H-17 | A start works with networking off; a failing hook, a hook file that is not executable and a dangling hook link each stop the start | `h17-start-offline-and-failing-hook.sh` | automatic |
 | H-18 | In the real image, a path-scoped rule loads only after Claude reads a matching file, and the managed deny refuses edits to synced files under `bypassPermissions`; no login or network needed | `h18-scope-and-deny.sh` | automatic |
 | H-19 | Skills in Claude, a rule followed, a language rule on demand, a refused edit, the managed settings source | `manual/h19-bundle-behaviour.sh` | helper only |
@@ -63,12 +63,13 @@ What each check proves:
 
 ## Manual helpers (when something looks wrong)
 
-Run them after a change the script cannot see (a Claude Code pin bump, a change to the managed settings or to login handling), or when a check fails and you want to look closer. Each needs a real terminal and the running test sandbox from `run-all.sh`.
+Run them after a change the script cannot see (a Claude Code or GSD pin bump, a change to the managed settings or to login handling), or when a check fails and you want to look closer. Each needs a real terminal and the running test sandbox from `run-all.sh`.
 
 ```bash
 bash tests/host/manual/h07-login.sh
 bash tests/host/manual/h09-rebuild-resume.sh
 bash tests/host/manual/h13-doctor.sh
+bash tests/host/manual/h16-gsd-bump.sh
 bash tests/host/manual/h19-bundle-behaviour.sh
 ```
 
@@ -77,9 +78,10 @@ bash tests/host/manual/h19-bundle-behaviour.sh
 | `h07-login.sh` | Log in with a claude.ai account, then `/exit` | A Claude login lands in the run folder's `state/claude`, `claude auth status` shows `"loggedIn": true`, and there is no `~/.claude.json` in the container home |
 | `h09-rebuild-resume.sh` | Confirm the earlier session resumes in `claude --continue`, then `/exit` | After a rebuild and a recreate the login survives and `claude --continue` resumes the earlier session |
 | `h13-doctor.sh` | Confirm `claude doctor` shows auto-updates disabled | `claude doctor` reports auto-updates disabled; the wording is for you to judge |
+| `h16-gsd-bump.sh` | Set `GSD_CORE_VERSION` in `versions.env` to the approved bump target when asked, confirm the session resumes in `claude --continue`, then put the pin back | After a GSD pin bump and a rebuild the new GSD is synced into `state/claude`, the login survives and `claude --continue` resumes |
 | `h19-bundle-behaviour.sh` | Follow five steps in Claude: the skills are listed, an always-on rule is followed, a language rule loads on a matching file, an edit of a synced rule is refused, `/status` shows the managed settings | The skills are listed, an always-on rule is followed, a language rule loads on demand, an edit of a synced rule is refused, and `/status` shows the managed settings |
 
-- `h09-rebuild-resume.sh` and `h19-bundle-behaviour.sh` need a Claude login in the test sandbox. `h07-login.sh` makes one.
+- `h09-rebuild-resume.sh`, `h16-gsd-bump.sh` and `h19-bundle-behaviour.sh` need a Claude login in the test sandbox. `h07-login.sh` makes one.
 - Add `--no-cache` to `h09-rebuild-resume.sh` for a clean rebuild: `bash tests/host/manual/h09-rebuild-resume.sh --no-cache`. It is slow.
 - Each helper prints `PASS` or `FAIL` lines and exits 0 only when every line is `PASS`.
 - A helper run without a terminal, or when the test sandbox is not running, stops before it does anything.
