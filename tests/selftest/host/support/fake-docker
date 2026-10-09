@@ -23,6 +23,8 @@
 # - Compose config turns the project name into lowercase and never refuses a name for its case, as real
 #   Compose 2.40 does (measured on the Mac).
 # - A build writes its build args and its context folder to FAKE_STATE/build-args.log.
+# - A run with --entrypoint bash, and an exec of bash -lc whose command holds the toolchain probe marker,
+#   answer the toolchain probe from the pins in FAKE_REPO/versions.env.
 #
 # Knobs, one line each:
 # FAKE_STATE: the folder that holds the fake container state (set by lib.sh)
@@ -83,6 +85,11 @@
 # FAKE_SCOPE_EAGER: 1 makes the fake scope run show the path-scoped rule in the first request
 # FAKE_DENY_BROKEN: 1 makes the fake deny run change the first always-on rule and plant a file
 # FAKE_H18_TOOLS_OFF: 1 makes the fake deny run never edit the project file
+# FAKE_TOOL_ELF: the ELF machine bytes of every binary in the toolchain probe answer (default b700)
+# FAKE_TOOL_MISSING: the name of one tool the toolchain probe answer reports as missing
+# FAKE_TOOL_STALE: the name of one tool the toolchain probe answer reports at version 0.0.0
+# FAKE_JAVA_VENDOR: replaces the JAVA_VENDOR text of the toolchain probe answer
+# FAKE_LOGIN_MISSING: the name of one tool missing only in the login shell answer of the toolchain probe
 
 # --------------------------------------------------------------------------------
 # log_call ARG...: appends one line for the call to FAKE_LOG, in the format the safety cases parse.
@@ -580,12 +587,98 @@ run_plain() {
 }
 
 # --------------------------------------------------------------------------------
+# toolchain_probe_answer WHERE: the lines of the toolchain probe, built from the pins in FAKE_REPO/versions.env; WHERE is base or login.
+# --------------------------------------------------------------------------------
+# A tool named in FAKE_TOOL_MISSING prints MISSING instead of its lines; one named in FAKE_LOGIN_MISSING does so only for login.
+toolchain_probe_answer() {
+  probeWhere=$1
+  nodePin=$(sed -n 's/^NODE_VERSION=//p' "$FAKE_REPO/versions.env")
+  ghPin=$(sed -n 's/^GH_VERSION=//p' "$FAKE_REPO/versions.env")
+  mavenPin=$(sed -n 's/^MAVEN_VERSION=//p' "$FAKE_REPO/versions.env")
+  uvTag=$(sed -n 's/^UV_IMAGE=[^:]*://p' "$FAKE_REPO/versions.env" | sed 's/@.*$//')
+  javaTag=$(sed -n 's/^TEMURIN_IMAGE=[^:]*://p' "$FAKE_REPO/versions.env" | sed 's/@.*$//')
+  javaPin=${javaTag%%_*}
+  probeElf=${FAKE_TOOL_ELF:-b700}
+  for probeTool in git gh node python3 uv java; do
+    probeLeft=0
+    if [ "$probeTool" = "${FAKE_TOOL_MISSING:-}" ]; then
+      probeLeft=1
+    fi
+    if [ "$probeWhere" = login ] && [ "$probeTool" = "${FAKE_LOGIN_MISSING:-}" ]; then
+      probeLeft=1
+    fi
+    if [ "$probeLeft" = 1 ]; then
+      printf 'MISSING %s\n' "$probeTool"
+      continue
+    fi
+    probeStale=0
+    if [ "$probeTool" = "${FAKE_TOOL_STALE:-}" ]; then
+      probeStale=1
+    fi
+    case "$probeTool" in
+      git) probeText="git version 2.43.0" ;;
+      gh) probeText="gh version $ghPin (fake)" ;;
+      node) probeText="v$nodePin" ;;
+      python3) probeText="Python 3.12.3" ;;
+      uv) probeText="uv $uvTag (fake)" ;;
+      java) probeText="openjdk version \"$javaPin\" 2026-07-21 LTS" ;;
+    esac
+    if [ "$probeStale" = 1 ]; then
+      case "$probeTool" in
+        node) probeText="v0.0.0" ;;
+        gh) probeText="gh version 0.0.0 (fake)" ;;
+        uv) probeText="uv 0.0.0 (fake)" ;;
+        java) probeText="openjdk version \"0.0.0\" 2026-07-21 LTS" ;;
+        *) probeText="$probeTool version 0.0.0" ;;
+      esac
+    fi
+    printf 'TOOL %s %s %s\n' "$probeTool" "$probeElf" "$probeText"
+  done
+  if [ "${FAKE_TOOL_MISSING:-}" = mvn ] || { [ "$probeWhere" = login ] && [ "${FAKE_LOGIN_MISSING:-}" = mvn ]; }; then
+    printf 'MISSING mvn\n'
+  else
+    mavenText=$mavenPin
+    if [ "${FAKE_TOOL_STALE:-}" = mvn ]; then
+      mavenText=0.0.0
+    fi
+    printf 'MAVEN Apache Maven %s (fake)\n' "$mavenText"
+    printf 'MAVEN_JAVA Java version: %s, vendor: Eclipse Adoptium, runtime: /opt/java/openjdk\n' "$javaPin"
+  fi
+  if [ -n "${FAKE_JAVA_VENDOR:-}" ]; then
+    printf 'JAVA_VENDOR %s\n' "$FAKE_JAVA_VENDOR"
+  else
+    printf 'JAVA_VENDOR OpenJDK Runtime Environment Temurin-%s+8 (build fake)\n' "$javaPin"
+  fi
+  printf 'JAVA_HOME /opt/java/openjdk\n'
+  for probeCommand in jq rg unzip zip ssh make gcc tzdata; do
+    if [ "$probeCommand" = "${FAKE_TOOL_MISSING:-}" ] || { [ "$probeWhere" = login ] && [ "$probeCommand" = "${FAKE_LOGIN_MISSING:-}" ]; }; then
+      printf 'MISSING %s\n' "$probeCommand"
+    else
+      printf 'CMD %s\n' "$probeCommand"
+    fi
+  done
+  printf 'PROBE-END\n'
+}
+
+# --------------------------------------------------------------------------------
+# run_toolchain_probe ARG...: a run with --entrypoint bash: the toolchain probe in a throwaway base image container.
+# --------------------------------------------------------------------------------
+run_toolchain_probe() {
+  case "$*" in
+    *"sbx-base:local -c "*": toolchain-probe"*) toolchain_probe_answer base ;;
+    *) unhandled "run $*" ;;
+  esac
+  return 0
+}
+
+# --------------------------------------------------------------------------------
 # fake_run ARG...: answers docker run, by the kind of run.
 # --------------------------------------------------------------------------------
 fake_run() {
   case "$*" in
     *"--network none"*) run_network_none "$@" ;;
     *"--entrypoint claude"*) run_claude_version "$@" ;;
+    *"--entrypoint bash"*) run_toolchain_probe "$@" ;;
     *) run_plain "$@" ;;
   esac
 }
@@ -885,6 +978,7 @@ fake_exec() {
     "bash -i") exec_history_shell ;;
     "env H18_SCRIPT="*) exec_h18_run "$@" ;;
     "sh -c : h14-probe"*) exec_h14_probe ;;
+    "bash -lc "*": toolchain-probe"*) toolchain_probe_answer login ;;
     "sh -c test ! -e"*)
       if [ "${FAKE_EXEC_RC:-0}" != 0 ]; then
         return "$FAKE_EXEC_RC"

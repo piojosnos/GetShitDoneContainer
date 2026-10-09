@@ -1,8 +1,8 @@
-# Host checklist (H-00..H-21)
+# Host checklist (H-00..H-22)
 
 The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them. Four short helpers in `tests/host/manual/` check what the script cannot: Claude's login, Claude's own behaviour and `claude doctor`. Run them after a change the script cannot see, or when a check fails and you want to look closer.
 
-- **IDs:** each check has an ID, H-00 to H-21 (H for host), so results can be reported by ID ("H-10 failed").
+- **IDs:** each check has an ID, H-00 to H-22 (H for host), so results can be reported by ID ("H-10 failed").
 - **When:** once after building a new version of the images or `compose.yml`.
 - **Setup and daily use:** see [`SANDBOX.md`](../SANDBOX.md).
 - Commands run from the repo root.
@@ -57,6 +57,7 @@ What each check proves:
 | H-19 | Skills in Claude, a rule followed, a language rule on demand, a refused edit, the managed settings source | `manual/h19-bundle-behaviour.sh` | helper only |
 | H-20 | A sandbox folder without the project folder (a mistyped name) is refused, and nothing is created | `h20-mistyped-name-refused.sh` | automatic |
 | H-21 | An `SBX_NAME` that breaks the sandbox name rule is refused at start; the command never runs | `h21-bad-name-refused.sh` | automatic |
+| H-22 | The base image holds git, gh, Node 24, Python 3, uv, Temurin 21 and Maven at their pins as native binaries, plus the common Linux tools; a login shell in the sandbox finds them | `h22-toolchain-in-base.sh` | automatic |
 | Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |
 
 ## Manual helpers (when something looks wrong)
