@@ -6,7 +6,8 @@
 #   Then it rebuilds sbx-base:local and sbx-claude:local, takes the sandbox down and up, and checks
 #   state/claude, the start log and claude auth status. Then it opens claude --continue and asks
 #   whether the earlier session resumed.
-# - It never edits a file. At the end it prints how to put the pin back.
+# - It never edits a file. Once the pin has changed, it prints how to put the pin back whenever it
+#   ends, also after a failed rebuild or restart.
 # - Usage: bash tests/host/manual/h16-gsd-bump.sh   (exit 0 = PASS)
 set -u
 
@@ -127,12 +128,12 @@ resume_session() {
 }
 
 # --------------------------------------------------------------------------------
-# Prints how to put the old pin back
+# Prints how to put the old pin back; runs when the script ends, once the pin change was seen
 # --------------------------------------------------------------------------------
+# It names the recorded old pin instead of discarding the file's changes, so any other edit to versions.env stays.
 print_restore_steps() {
-  printf '\nThe images now hold GSD %s.\n' "$newPin"
-  printf 'Before your own sandboxes start again, put the pin back and rebuild:\n'
-  printf '  git checkout -- versions.env\n'
+  printf '\nThe images may now hold GSD %s.\n' "$newPin"
+  printf 'Before your own sandboxes start again, set GSD_CORE_VERSION in %s/versions.env back to %s and rebuild:\n' "$REPO_DIR" "$oldPin"
   printf '  ./build.sh\n'
 }
 
@@ -143,11 +144,11 @@ require_no_arguments "$@" || exit 2
 require_test_sandbox H-16 || exit 1
 check_logged_in || exit 1
 wait_for_pin_change || exit 1
+trap print_restore_steps EXIT
 rebuild_images || exit 1
 restart_test_sandbox H-16 manual-gsd-down.log || exit 1
 require_test_sandbox H-16 || exit 1
 check_bumped_gsd
 check_still_logged_in
 resume_session
-print_restore_steps
 exit_with_result
