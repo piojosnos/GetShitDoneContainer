@@ -165,7 +165,7 @@ RUN test "$(node -v)" = "v${NODE_VERSION}" \
     && java -version 2>&1 | grep -F "Temurin" >/dev/null \
     && uv --version \
     && python3 --version \
-    && test -z "$(ls -A /home/sandbox/workspace)"
+    && { test -z "$(ls -A /home/sandbox/workspace)" || { echo "Files under the mount point:"; find /home/sandbox/workspace; exit 1; }; }
 
 WORKDIR /home/sandbox/workspace
 ENTRYPOINT ["/usr/local/bin/sbx-entrypoint"]

@@ -19,7 +19,8 @@ FROM ${BASE_IMAGE}
 USER root
 ARG CLAUDE_CODE_VERSION
 RUN : "${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION is not set; build with ./build.sh}" \
-    && NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g --allow-scripts=@anthropic-ai/claude-code "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
+    && export NPM_CONFIG_CACHE=/tmp/npm-cache \
+    && npm install -g --allow-scripts=@anthropic-ai/claude-code "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
     && rm -rf /tmp/npm-cache \
     && ln -s /home/sandbox/workspace/state/claude /home/sandbox/.claude \
     && chown -h sandbox:sandbox /home/sandbox/.claude
@@ -33,7 +34,8 @@ RUN : "${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION is not set; build with ./build
 #   PATH, which never updates itself.
 ARG GSD_CORE_VERSION
 RUN : "${GSD_CORE_VERSION:?GSD_CORE_VERSION is not set; build with ./build.sh}" \
-    && NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g "@opengsd/gsd-core@${GSD_CORE_VERSION}" \
+    && export NPM_CONFIG_CACHE=/tmp/npm-cache \
+    && npm install -g "@opengsd/gsd-core@${GSD_CORE_VERSION}" \
     && rm -rf /tmp/npm-cache
 
 # --- ccusage ---
@@ -45,7 +47,8 @@ RUN : "${GSD_CORE_VERSION:?GSD_CORE_VERSION is not set; build with ./build.sh}" 
 #   run time, so it is added here as root. The glob fails the build if the binary is missing.
 ARG CCUSAGE_VERSION
 RUN : "${CCUSAGE_VERSION:?CCUSAGE_VERSION is not set; build with ./build.sh}" \
-    && NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g "ccusage@${CCUSAGE_VERSION}" \
+    && export NPM_CONFIG_CACHE=/tmp/npm-cache \
+    && npm install -g "ccusage@${CCUSAGE_VERSION}" \
     && chmod 755 "$(npm root -g)"/ccusage/node_modules/@ccusage/*/bin/ccusage \
     && rm -rf /tmp/npm-cache
 
@@ -82,14 +85,11 @@ USER sandbox
 
 # --- Build-time smoke test ---
 # - Runs as the runtime user: the installed versions must equal the pins.
-# - These tools call npm, which writes a log into its cache; the throwaway cache keeps it out
-#   of the mount point.
 # - Last RUN: the mount point must still be empty, because the mount hides whatever the image holds there.
-RUN export NPM_CONFIG_CACHE=/tmp/npm-cache \
-    && test "$(claude --version)" = "${CLAUDE_CODE_VERSION} (Claude Code)" \
+RUN test "$(claude --version)" = "${CLAUDE_CODE_VERSION} (Claude Code)" \
     && test "$(gsd-tools runtime-identity --raw)" = "{\"packageName\":\"@opengsd/gsd-core\",\"version\":\"${GSD_CORE_VERSION}\"}" \
     && test "$(ccusage --version)" = "ccusage ${CCUSAGE_VERSION}" \
-    && test -z "$(ls -A /home/sandbox/workspace)"
+    && { test -z "$(ls -A /home/sandbox/workspace)" || { echo "Files under the mount point:"; find /home/sandbox/workspace; exit 1; }; }
 
 # --- Pin record ---
 # - A copy of versions.env: the pins this image was built with.

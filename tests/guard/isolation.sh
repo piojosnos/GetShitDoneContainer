@@ -42,13 +42,28 @@ runs_without_privileges() {
 }
 
 # --------------------------------------------------------------------------------
-# npm_builds_keep_their_cache_out_of_the_mount: A build-time npm install inherits the image's NPM_CONFIG_CACHE, which points under the mount point; the image must hold nothing there.
+# npm_builds_keep_their_cache_out_of_the_mount: A build-time npm call inherits the image's NPM_CONFIG_CACHE, which points under the mount point; the image must hold nothing there.
 # --------------------------------------------------------------------------------
-# Every line with npm install must also set NPM_CONFIG_CACHE=/tmp/npm-cache.
+# Every RUN step that calls npm must export NPM_CONFIG_CACHE=/tmp/npm-cache, so every npm call in it,
+# not only the first, writes its cache and its logs to /tmp.
 npm_builds_keep_their_cache_out_of_the_mount() {
-  local hits
+  local dockerfile
+  local hits=""
 
-  hits=$(grep -En 'npm install' $DOCKERFILES | grep -Fv 'NPM_CONFIG_CACHE=/tmp/npm-cache')
+  for dockerfile in $DOCKERFILES; do
+    hits="$hits$(awk -v file="$dockerfile" '
+      function check_step() {
+        if (step != "" && step ~ /(^|[^A-Za-z_])npm[[:space:]]/ && index(step, "export NPM_CONFIG_CACHE=/tmp/npm-cache") == 0) {
+          print file ":" step_line ": " step
+        }
+        step = ""
+      }
+      /^RUN[[:space:]]/ { check_step(); step_line = NR; step = $0; continuing = /\\$/; next }
+      continuing { step = step " " $0; continuing = /\\$/; next }
+      { check_step() }
+      END { check_step() }
+    ' "$dockerfile")"
+  done
 
   if [ -n "$hits" ]; then
     echo "$hits" | sed 's/^/    /'

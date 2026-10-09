@@ -117,7 +117,7 @@ case_start_rules() {
 }
 
 # --------------------------------------------------------------------------------
-# Cases of the state folder and npm cache rules (the scratch copy has no .git, so only the named rule line is read from the isolation output): a clean copy, a Claude image that replaces SBX_STATE_DIRS, an npm install without the throwaway cache, and a Dockerfile that can leave files under the mount point
+# Cases of the state folder and npm cache rules (the scratch copy has no .git, so only the named rule line is read from the isolation output): a clean copy, a Claude image that replaces SBX_STATE_DIRS, an npm install without the throwaway cache, a second npm call in the same step, and a Dockerfile that can leave files under the mount point
 # --------------------------------------------------------------------------------
 case_state_and_cache_rules() {
   echo "--- state folder and npm cache rules"
@@ -139,6 +139,12 @@ case_state_and_cache_rules() {
   run_scratch_guard "$WORK/cache-planted.out" isolation.sh
   expect "npm cache: an npm install without the throwaway cache fails" has_text "$WORK/cache-planted.out" "FAIL: npm_builds_keep_their_cache_out_of_the_mount"
   expect "npm cache: the planted install line is named" has_text "$WORK/cache-planted.out" "npm install -g planted-package"
+
+  make_scratch_repo || return 1
+  printf 'RUN NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g planted-package \\\n    && ls "$(npm root -g)"\n' >>"$WORK/repo/claude/Dockerfile"
+  run_scratch_guard "$WORK/cache-second-call.out" isolation.sh
+  expect "npm cache: a second npm call that misses a one-command cache prefix fails" has_text "$WORK/cache-second-call.out" "FAIL: npm_builds_keep_their_cache_out_of_the_mount"
+  expect "npm cache: the step with the second npm call is named" has_text "$WORK/cache-second-call.out" "npm root -g"
 
   make_scratch_repo || return 1
   run_scratch_guard "$WORK/empty-clean.out" isolation.sh
