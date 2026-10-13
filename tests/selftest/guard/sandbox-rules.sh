@@ -34,13 +34,13 @@ case_supply_chain_rules() {
   make_scratch_repo || return 1
   edit_scratch_file base/Dockerfile 's/^ARG NODE_VERSION$/ARG NODE_VERSION=1.2.3/' || return 1
   run_scratch_guard "$WORK/supply-default.out" supply-chain.sh
-  expect "supply chain: a pin default in a Dockerfile fails" has_text "$WORK/supply-default.out" "FAIL: versions_are_pinned"
+  expect "supply chain: a pin default in a Dockerfile fails" has_text "$WORK/supply-default.out" "FAIL: dockerfile_args_have_no_defaults"
   expect "supply chain: the pin default line is named" has_text "$WORK/supply-default.out" "ARG NODE_VERSION=1.2.3"
 
   make_scratch_repo || return 1
   printf 'DEAD_VERSION=1.0.0\n' >>"$WORK/repo/versions.env"
   run_scratch_guard "$WORK/supply-dead.out" supply-chain.sh
-  expect "supply chain: a pin no Dockerfile declares fails" has_text "$WORK/supply-dead.out" "FAIL: versions_are_pinned"
+  expect "supply chain: a pin no Dockerfile declares fails" has_text "$WORK/supply-dead.out" "FAIL: every_dockerfile_arg_is_pinned"
   expect "supply chain: the dead pin is named" has_text "$WORK/supply-dead.out" "DEAD_VERSION"
 
   make_scratch_repo || return 1
