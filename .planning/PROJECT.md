@@ -26,22 +26,19 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 - ✓ Every new sandbox starts with the best-practices bundle (standing rules, path-scoped language rules, `/pr-reply` and `/merged`), synced from the image at each start; the image version wins and user skills, memories and `CLAUDE.md` are never touched — Phase 1.2
 - ✓ The test suite is small enough to read and change: guard, host, bundle and entrypoint self-tests are each a folder with a `run-all.sh`, and the fake docker is its own file used only for failure paths (Phase 1.4)
 - ✓ A sandbox name must follow one rule, `^[a-z][a-z0-9-]{0,30}$`: `up` refuses an uppercase name before it creates anything, and the entrypoint refuses any other bad name before it uses it as a folder; the host checks are proven against real Docker with 21 of 21 passing (Phase 1.5)
+- ✓ All tools (Claude Code, GSD, ccusage, JDK 21, Maven, Node.js, Python) are baked into the image. Nothing is installed into the mounted folder at runtime. (Phase 2)
+- ✓ The image version always wins: after a rebuild, the new GSD/tool versions are the ones in use, even though `~/.claude` state persists on the host. (Phase 2)
+- ✓ Adding a new tool means editing one file (a Dockerfile line or build arg) and rebuilding. (Phase 2)
+- ✓ Tool versions are controlled explicitly (pinned base image, build args) instead of floating `latest`. (Phase 2)
+- ✓ Tools that every agent image needs (Linux utilities, git, gh, Node.js, Python, JDK 21, Maven) are defined in one shared base image. Agent images (ClaudeCode, later OpenCode) build on top of it. (Phase 2)
+- ✓ `ccusage` (e.g. `ccusage`, `ccusage daily`) runs from the container shell and reports real usage for that project's Claude sessions. (Phase 2)
+- ✓ Every pin lives in `versions.env` and `build.sh` passes it to both builds; a build without `build.sh` stops and names the missing pin; the npm, uv and Maven caches live in `<sandbox>/state` and survive recreate; host checks are proven with 25 of 25 passing (Phase 2)
 
 ### Active
 
 
 **Upgrade flow (problem 2)**
-- [ ] All tools (Claude Code, GSD, ccusage, JDK 21, Maven, Node.js, Python) are baked into the image. Nothing is installed into the mounted folder at runtime.
-- [ ] The image version always wins: after a rebuild, the new GSD/tool versions are the ones in use, even though `~/.claude` state persists on the host.
 - [ ] One command does the whole upgrade: rebuild the image with fresh tool versions, then restart the container. Login and history survive.
-- [ ] Adding a new tool means editing one file (a Dockerfile line or build arg) and rebuilding.
-- [ ] Tool versions are controlled explicitly (pinned base image, build args) instead of floating `latest`.
-
-**Shared base (problem 4, groundwork)**
-- [ ] Tools that every agent image needs (Linux utilities, git, gh, Node.js, Python, JDK 21, Maven) are defined in one shared base image. Agent images (ClaudeCode, later OpenCode) build on top of it.
-
-**ccusage (problem 3)**
-- [ ] `ccusage` (e.g. `ccusage`, `ccusage daily`) runs from the container shell and reports real usage for that project's Claude sessions.
 
 **Helper scripts (problem 5), in priority order and kept small**
 - [ ] Scripts remember a project's arguments (name → host path), so you don't have to pass them on every call.
@@ -90,9 +87,9 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 |----------|-----------|---------|
 | Stop mounting over `/home/sandbox`. Mount one sandbox folder at `/home/sandbox/workspace`; image ENV points agent state into `<sandbox>/state` | Fixes the hidden home directory and lets image-provided home content stay visible | Good: Phase 1 verified on the Mac (14 of 14 host checks) |
 | Persist agent state (login, settings, history) in a host folder | Rebuilds must never log the user out, and the state stays inspectable on the laptop | Good: login and history survived recreate and rebuild on the Mac (Phase 1) |
-| Bake all tools into the image. The image version wins over persisted state | "Upgrade = rebuild" becomes true, and runtime installs into the mount go away | — Pending |
+| Bake all tools into the image. The image version wins over persisted state | "Upgrade = rebuild" becomes true, and runtime installs into the mount go away | Good: the attended GSD 1.15.0 to 1.16.0 bump synced the new GSD, kept the login and resumed the session; H-16 restores a stale GSD (Phase 2) |
 | One container per project | Matches the current `cc-up.sh` model and the isolation goal | — Pending |
-| Shared base image for common tools, with thin per-agent images on top | One place for Linux tools, JDK, Maven, etc. Sets up OpenCode and future agents | — Pending |
+| Shared base image for common tools, with thin per-agent images on top | One place for Linux tools, JDK, Maven, etc. Sets up OpenCode and future agents | Good: H-22 proves the toolchain sits in `sbx-base:local`; the Claude image adds only Claude Code, GSD and ccusage (Phase 2) |
 | ClaudeCode first, OpenCode next, pluggable later | Get one sandbox solid before generalizing | — Pending |
 | Migration is documented, not scripted | Only about 4 existing sandboxes. Script only if it proves painful | — Pending |
 | One unattended host test run (`tests/host/run-all.sh`) plus a short manual pass verifies every image change on the Mac | The manual checklist was too slow, and Docker cannot run in the dev sandbox | Good: 14 of 14 checks and the 3 helpers passed on the Mac (2026-10-03) |
@@ -103,6 +100,8 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 | Split each suite into a folder with a short `run-all.sh`, shared libraries and one file per check group | A suite of single 1000-line scripts was too big to read; the largest group file is now 182 lines and `prove.sh` shows case-for-case equality with the old scripts | Good: 23 guard, 25 entrypoint, 111 bundle and 295 host self-test cases identical to the baseline (Phase 1.4) |
 | The fake docker lives in its own file (`tests/selftest/host/support/fake-docker`) and covers failure paths only | The Mac run covers the success paths, so the fake can stay slim and its knobs sit in one header table | Good: the file answers like the old heredoc across 1922 transcript lines (Phase 1.4) |
 | One sandbox name rule, `^[a-z][a-z0-9-]{0,30}$`, defined once in `base/sbx-start-lib.sh`; a `name-check` service in `compose.yml` makes `up` refuse an uppercase name, and the entrypoint refuses the rest | Compose lowercases the project name instead of refusing it, so a mixed-case name could collide with another sandbox; docs and a guard rule read the rule from the code so they cannot drift | Good: H-03 and H-21 pass on the Mac, 21 passed, 0 failed (Phase 1.5) |
+| One `versions.env` holds every pin; `build.sh` is the only build path and the Dockerfiles have no defaults; every pin gets a human supply-chain review | One place to bump; a stale default can never be built by accident | Good: H-25 proves the images match `versions.env` and a bare build stops (Phase 2) |
+| Hold Maven at 3.9.11 | Maven 3.9.12 and later fail with an Input/output error when the local repository is on the Docker Desktop for Mac mount | Good: H-23 downloads into `state/m2` on the Mac; lift the hold once a release passes H-23 (Phase 2) |
 
 ## Evolution
 
@@ -122,4 +121,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-08 after Phase 1.5*
+*Last updated: 2026-10-13 after Phase 2*
