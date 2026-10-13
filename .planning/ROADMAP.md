@@ -315,6 +315,8 @@ Plans:
 - [ ] `suite_groups_are_listed` (suites.sh): each `run-all.sh` runs every group file in its folder (a glob), so the rule goes.
 - [ ] `docs.sh`: delete the file; docs are reviewed in PRs.
 - [ ] `bundle-content.sh`: delete the file; the bundle leaves this repo in Phase 2.2.
+- [ ] `no_other_mount_form` (isolation.sh): delete with the mount and privilege rules; the `docker inspect` host check sees every mount form without parsing YAML.
+- [ ] Last step: once the cuts above are done, scan the remaining shell again (guard, host checks, shipped scripts) for more of the same: hand-written parsers, checks that guard other checks, rules a standard tool or the Mac run already covers, functions too long to read. Post each finding as a proposal with what it does and the simplification, and cut only what the user approves.
 
 **Plans**: TBD
 
