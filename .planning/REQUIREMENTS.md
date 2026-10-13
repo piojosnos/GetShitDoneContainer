@@ -16,22 +16,23 @@ Requirements for this milestone (ClaudeCode sandbox made solid). Each maps to ro
 
 ### Image
 
-- [ ] **IMG-01**: A single shared base image provides common Linux tools, git, gh, Node.js 24, Python 3 + uv, JDK 21 (Temurin), and Maven
+- [x] **IMG-01**: A single shared base image provides common Linux tools, git, gh, Node.js 24, Python 3 + uv, JDK 21 (Temurin), and Maven
 - [x] **IMG-02**: The Claude image builds `FROM` the shared base and adds only agent-specific tools
-- [ ] **IMG-03**: Every version (base OS tag, toolchains, Claude Code, GSD, ccusage) is pinned in one `versions.env`. No floating `latest` and no runtime installs
-- [ ] **IMG-04**: Adding a new tool means editing one line (Dockerfile or `versions.env`) and rebuilding
+- [x] **IMG-03**: Every version (base OS tag, toolchains, Claude Code, GSD, ccusage) is pinned in one `versions.env`. No floating `latest` and no runtime installs
+- [x] **IMG-04**: Adding a new tool means editing one line (Dockerfile or `versions.env`) and rebuilding
 - [x] **IMG-05**: Images build and run natively on Apple Silicon (arm64) with Docker Desktop
 - [x] **IMG-06**: The agent runs as the non-root `sandbox` user, and git works on mounted repos without "dubious ownership" errors
+- [x] **IMG-07**: The Maven, npm and uv caches survive a container recreate (and so a rebuild or upgrade); they live in the sandbox's `state/` folder on the Mac, not in a Docker volume
 
 ### Agent Tools
 
-- [ ] **TOOL-01**: Claude Code is installed at the pinned version with self-updating disabled. After a rebuild, `claude --version` matches the pin and there's no stray copy in `~/.local`
-- [ ] **TOOL-02**: GSD comes only from `@opengsd/gsd-core` at the pinned version. On every container start, the image's GSD is synced into the persisted `~/.claude`, so the image version wins, and login and history are untouched
-- [ ] **TOOL-03**: Container start needs no network access and runs no `npx`/`@latest` installs
+- [x] **TOOL-01**: Claude Code is installed at the pinned version with self-updating disabled. After a rebuild, `claude --version` matches the pin and there's no stray copy in `~/.local`
+- [x] **TOOL-02**: GSD comes only from `@opengsd/gsd-core` at the pinned version. On every container start, the image's GSD is synced into the persisted `~/.claude`, so the image version wins, and login and history are untouched
+- [x] **TOOL-03**: Container start needs no network access and runs no `npx`/`@latest` installs
 
 ### Usage Monitoring
 
-- [ ] **USE-01**: The user can run `ccusage` (`daily`, `monthly`, `session`, …) in the container shell and see this project's real Claude usage
+- [x] **USE-01**: The user can run `ccusage` (`daily`, `monthly`, `session`, …) in the container shell and see this project's real Claude usage
 
 ### Host Tests
 
@@ -126,16 +127,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LAY-02 | Phase 1 | Complete |
 | LAY-03 | Phase 1 | Complete |
 | LAY-04 | Phase 1 | Complete |
-| IMG-01 | Phase 2 | Pending |
+| IMG-01 | Phase 2 | Complete |
 | IMG-02 | Phase 1 | Complete |
-| IMG-03 | Phase 2 | Pending |
-| IMG-04 | Phase 2 | Pending |
+| IMG-03 | Phase 2 | Complete |
+| IMG-04 | Phase 2 | Complete |
 | IMG-05 | Phase 1 | Complete |
 | IMG-06 | Phase 1 | Complete |
-| TOOL-01 | Phase 2 | Pending |
-| TOOL-02 | Phase 2 | Pending |
-| TOOL-03 | Phase 2 | Pending |
-| USE-01 | Phase 2 | Pending |
+| IMG-07 | Phase 2 | Complete |
+| TOOL-01 | Phase 2 | Complete |
+| TOOL-02 | Phase 2 | Complete |
+| TOOL-03 | Phase 2 | Complete |
+| USE-01 | Phase 2 | Complete |
 | HT-01 | Phase 1.1 | Complete |
 | HT-02 | Phase 1.1 | Complete |
 | HT-03 | Phase 1.1 | Complete |
@@ -143,9 +145,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HT-05 | Phase 1.1 | Complete |
 | BP-01 | Phase 1.2 | Complete |
 | BP-02 | Phase 1.2 | Complete |
-| BP-03 | Phase 2.1 | Pending |
-| BP-04 | Phase 2.1 | Pending |
-| BP-05 | Phase 2.1 | Pending |
+| BP-03 | Phase 2.2 | Pending |
+| BP-04 | Phase 2.2 | Pending |
+| BP-05 | Phase 2.2 | Pending |
 | SCR-01 | Phase 3 | Pending |
 | SCR-02 | Phase 3 | Pending |
 | SCR-03 | Phase 3 | Pending |
@@ -161,10 +163,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CI-01 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 37 total
-- Mapped to phases: 37
+- v1 requirements: 38 total
+- Mapped to phases: 38
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-30*
-*Last updated: 2026-10-06 after Phase 1.4 (guard command, diagnostic helpers)*
+*Last updated: 2026-10-08 after Phase 2 planning (IMG-07, tool caches)*

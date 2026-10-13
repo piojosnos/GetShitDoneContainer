@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 2
-current_phase_name: Pinned Toolchain, GSD, and ccusage
+current_phase: "02.1"
+current_phase_name: Best-practices from git, editable from any sandbox
 status: planning
-stopped_at: Phase 2 context gathered
-last_updated: "2026-10-08T06:20:58.915Z"
-last_activity: 2026-10-08
-last_activity_desc: Phase 01.5 complete, transitioned to Phase 2
-state_head: 3da4f4d1cdb65573d528b03ebd6aef2c830d9fb9
+stopped_at: Phase 02 complete, ready to plan Phase 02.1
+last_updated: "2026-10-13T03:44:01.286Z"
+last_activity: 2026-10-13
+last_activity_desc: Phase 02 complete, transitioned to Phase 02.1
+state_head: f8ec3c242784d1b8c4e64031c60391c9c8dd4cab
 progress:
-  total_phases: 12
-  completed_phases: 6
-  total_plans: 44
-  completed_plans: 44
-  percent: 50
+  total_phases: 13
+  completed_phases: 7
+  total_plans: 53
+  completed_plans: 53
+  percent: 54
 ---
 
 # Project State
@@ -23,21 +23,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-08)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 2: Pinned Toolchain, GSD, and ccusage
+**Current focus:** Phase 02 — Pinned Toolchain, GSD, and ccusage
 
 ## Current Position
 
-Phase: 2 — Pinned Toolchain, GSD, and ccusage
+Phase: 02.1 — Shell diet
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-08 — Phase 01.5 complete, transitioned to Phase 2
+Last activity: 2026-10-13 — Phase 02 complete, transitioned to Phase 02.1
 
-Progress: [████████████████████] 44/44 plans ([█████░░░░░] 50%)
+Progress: [████████████████████] 44/44 plans ([█████░░░░░] 54%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 44
+- Total plans completed: 53
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -51,6 +51,7 @@ Progress: [████████████████████] 44/44 p
 | 01.3 | 6 | - | - |
 | 01.4 | 8 | - | - |
 | 01.5 | 16 | - | - |
+| 02 | 9 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -105,6 +106,15 @@ Progress: [████████████████████] 44/44 p
 | Phase 01.5 P14 | 10 min | 2 tasks | 7 files |
 | Phase 01.5 P15 | 15 min | 2 tasks | 6 files |
 | Phase 01.5 P16 | 30 min | 3 tasks | 4 files |
+| Phase 02 P01 | 9 min | 3 tasks | 22 files |
+| Phase 02 P02 | n/a | 2 tasks | 1 files |
+| Phase 02 P03 | not recorded | 2 tasks | 14 files |
+| Phase 02 P04 | not recorded | 2 tasks | 15 files |
+| Phase 02 P05 | not recorded | 2 tasks | 13 files |
+| Phase 02 P06 | not recorded | 2 tasks | 9 files |
+| Phase 02 P07 | 15 min | 2 tasks | 11 files |
+| Phase 02 P08 | 25 min | 2 tasks | 10 files |
+| Phase 02 P09 | not recorded | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -189,6 +199,21 @@ Recent decisions affecting current work:
 - [Phase 01.5]: Plan 15: the docs guard reads sandboxNamePattern and sandboxNameRuleText from base/sbx-start-lib.sh, so SANDBOX.md and compose.yml cannot drift from the check
 - [Phase 01.5]: Plan 15: the fake docker config answers as real Compose does (lowercase project name, exit 0, never a case refusal); the missing-variable messages are read from compose.yml
 - [Phase 01.5]: 01.5-16: the Mac run passed (21 checks, 36 guard rules); 1.1 WR-03 and 01.5 WR-01 to WR-04 recorded fixed, IN-01 to IN-07 stay open
+- [Phase 02]: versions.env is the only place versions live; build.sh sources ./versions.env and passes every name as a bare --build-arg to both builds — Adding or bumping a pin never changes build.sh; Dockerfiles carry no version defaults so a build that skips build.sh stops and names the missing pin
+- [Phase 02]: UBUNTU_IMAGE stays on the 24.04 tag until the plan 02 approval adds the digest; BASE_IMAGE=sbx-base:local is the only ARG default — A local tag is not a version; the digest needs human approval
+- [Phase 02]: Plan 03: the three base image pins are tag plus index digest (copied from approved 02-PINS.md rows); versions_are_pinned now refuses an image pin without a 64 hex digest
+- [Phase 02]: Plan 03: copied Temurin tree may keep a dangling cacerts link; check Maven TLS on the Mac in plan 09 (fix: ca-certificates-java or relink to the bundled cacerts)
+- [Phase 02]: Plan 04: npm, uv and Maven caches live in the sandbox state folder (image ENV plus a ~/.m2 link); the Claude image appends to SBX_STATE_DIRS and builds with a throwaway npm cache in /tmp
+- [Phase 02]: GSD hook 05-gsd sorts before 10-best-practices so a bundle skill wins a name clash; a guard rule enforces it
+- [Phase 02]: 05-gsd compares gsd-core/VERSION with gsd-tools runtime-identity and makes the config folder first, so a stale GSD or an uncreatable folder stops the start instead of hanging it
+- [Phase 02]: Plan 02-06: compose_up waits for the start hooks by polling pgrep -x sleep in the container (no compose healthcheck, which would touch Phase 1 files)
+- [Phase 02]: Plan 02-06: H-16 no longer plants a gsd-* user skill; GSD owns that prefix and SANDBOX.md tells users to name their own skills otherwise
+- [Phase 02]: ccusage native binary gets its execute bit at build time as root through a glob, so a missing platform package fails the build
+- [Phase 02]: H-24 always runs ccusage with --offline and compares stdout only; the default price lookup stays for users
+- [Phase 02]: H-25 accepts any of TEMURIN_IMAGE, UV_IMAGE or UBUNTU_IMAGE in the bare base build log, since BuildKit's order for blank FROM pins is undocumented (Mac assumption for plan 09)
+- [Phase 02]: H-25 bare builds use --progress=plain and log to h25-bare-*.log so H-01's platform scan and the runner's build counts ignore them
+- [Phase 02]: Plan 09: MAVEN_VERSION 3.9.11 after the Mac run showed 3.9.12 and later fail to download into a local repository on the Docker Desktop mount; H-23 now downloads a real artifact into state/m2
+- [Phase 02]: Plan 09: the Mac run passed 25 of 25 checks and the attended GSD bump to 1.16.0 kept login and session; Phase 1 WR-03 and IN-03 recorded fixed
 
 ### Pending Todos
 
@@ -197,9 +222,8 @@ None yet.
 ### Blockers/Concerns
 
 - [Phase 1]: Until Phase 3 there are no scripts, so the sandbox runs from a documented `docker compose` command
-- [Phase 2]: Confirm that ccusage's native binary is executable (chmod) on arm64 (DISABLE_UPDATES was confirmed by `claude doctor` in the Phase 1.1 Mac run)
 - [Phase 5]: Decide whether SCR-08 ("remove whole-home-mount layout") also covers the out-of-scope `OpenCode/` directory, or whether it stays for the next milestone
-- [Phase 1]: Review findings: 0 open, 2 deferred with reasons (WR-03: Claude Code has no integrity hash). See 01-REVIEW-DISPOSITION.md
+- [Phase 1]: Review findings: 0 open; WR-03 and IN-03 were fixed in Phase 2 (proven by H-22 and H-25 on the Mac). See 01-REVIEW-DISPOSITION.md
 - [Phase 1]: SC3 says rebuild with `--no-cache`; the Mac run did not record it. One run of `bash tests/host/manual/h09-rebuild-resume.sh --no-cache` would confirm
 - [Phase 1.1]: Review findings: 0 open (13 fixed, 1 deferred); WR-03 was closed by the Phase 1.5 Mac run. See 01.1-REVIEW-DISPOSITION.md
 - [Phase 1.2]: Code review left 13 findings open (WR-01..03 are bugs in the ported pr-reply and merged skills; WR-04 was fixed in Phase 1.3; WR-05 deny negative control fits Phase 1.4). See 01.2-REVIEW-DISPOSITION.md
@@ -222,6 +246,8 @@ None yet.
 - Phase 01.3 inserted after Phase 1.2: Shell script layout (banners, functions, entry point in every script), from the PR #9 review
 - Phase 01.4 inserted after Phase 1.3: Test suite refactor (real Docker instead of the fake, simplify, split into units), from the PR #9 review; Phase 1.3 narrowed to the non-test scripts
 - Phase 01.5 inserted after Phase 1.4: Host test fixes (open Phase 1 and 1.1 review findings, proven with real Docker), from the Phase 1.3 discussion
+- Phase 02.1 inserted after Phase 2: Shell diet (cut the guard to its security rules, retire the fake docker and host self-tests, schematic comments), from the PR #17 review; the best-practices phase moves from 02.1 to 02.2
+- Phase 7 added: Start readiness (`up --wait` waits for the start hooks), from the Phase 2 code review
 
 ## Deferred Items
 
@@ -233,6 +259,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-08T06:20:58.727Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-pinned-toolchain-gsd-and-ccusage/02-CONTEXT.md
+Last session: 2026-10-09T17:06:41.522Z
+Stopped at: Phase 02 complete, ready to plan Phase 02.1
+Resume file: None
