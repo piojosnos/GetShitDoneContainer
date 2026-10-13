@@ -298,9 +298,23 @@ Plans:
   1. The guard keeps only the rules that protect the images and the sandbox (about 17: pins, no `latest`, supply chain, one mount, no privilege, mount point empty, start hook order). The rules that police the tests and the docs (blank lines, planning IDs, checklist rows, doc wording, test portability) are gone, with their self-test cases. Guard plus its self-tests drop from about 2500 to about 800 lines.
   2. The fake docker and the host self-tests are retired (backlog 999.2): the Mac run against real Docker is the gate. About 4000 lines gone.
   3. Every comment is schematic: a section header plus at most one or two lines, only the "why".
-  4. The guard functions that stay are short and named for what they check: `versions_are_pinned` is split into small rules, and `installs_use_declared_pins` is a few greps instead of an awk parser (PR #17 inline comments).
-  5. Rule of thumb, written down where checks live: a new check needs a real failure it would have caught, not a hypothetical one.
-  6. `tests/host/run-all.sh` still passes on the Mac, and `tests/guard/run-all.sh` still holds.
+  4. No hand-written parsers: no awk program parses Dockerfiles, YAML or scripts. Every rule that stays is a few plain greps, short and named for what it checks.
+  5. Standard tools instead of hand-written style checks: `shellcheck` for the scripts and `hadolint` for the Dockerfiles run as part of the guard (pulled forward from Phase 6).
+  6. Rule of thumb, written down where checks live: a new check needs a real failure it would have caught, not a hypothetical one.
+  7. `tests/host/run-all.sh` still passes on the Mac, and `tests/guard/run-all.sh` still holds.
+
+**Approved cuts** (PR #17 review, 2026-10-13; each approved in its own thread):
+- [ ] `installs_use_declared_pins` (supply-chain.sh): replace the awk parser with two greps (every `npm install` names `NAME@${PIN}`; no `npx`, `npm exec`, `pip install`, `uv tool install`).
+- [ ] `host-tests.sh`: delete the whole file (blank-line formatter, dependency headers, portability, unattended, never-delete, test-sandbox-only, planning-ID rules); `shellcheck` covers style.
+- [ ] `exactly_one_mount_and_not_over_home`, `runs_without_privileges` (isolation.sh): stop parsing compose YAML; one host check runs `docker inspect` on the test sandbox (one bind mount at `/home/sandbox/workspace`, `Privileged=false`, `CapDrop=[ALL]`, `no-new-privileges`, user 1000). The guard keeps two plain greps (`docker.sock`, `privileged: true`).
+- [ ] `npm_builds_keep_their_cache_out_of_the_mount`, `images_leave_the_mount_point_empty` (isolation.sh): delete; the Dockerfiles' own `test -z` and H-25 catch it.
+- [ ] `run_steps_of` (lib.sh): delete once its callers go; the pipe-to-shell rule greps each line plus the next.
+- [ ] `managed_settings_cover_bundle` (bundle-wiring.sh): one wildcard deny per folder (`skills/**`, `rules/**`) in `managed-settings.json`; the rule goes; prove with H-18 on the Mac.
+- [ ] `bundle_reaches_build_context` (bundle-wiring.sh): delete; `docker build` fails on a missing COPY source.
+- [ ] `compose_checks_the_name_before_it_acts` (start.sh): delete; H-03 proves it on the Mac.
+- [ ] `suite_groups_are_listed` (suites.sh): each `run-all.sh` runs every group file in its folder (a glob), so the rule goes.
+- [ ] `docs.sh`: delete the file; docs are reviewed in PRs.
+- [ ] `bundle-content.sh`: delete the file; the bundle leaves this repo in Phase 2.2.
 
 **Plans**: TBD
 
