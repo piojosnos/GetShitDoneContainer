@@ -7,7 +7,7 @@
 #   2. every host-test run folder in the macOS temp folder (sbx-hosttest-*); each may hold a test Claude login,
 #   3. the Docker build cache,
 #   4. every image that no container uses, running or stopped.
-# - The dry run lists those images, so you see them before --yes removes them.
+# - The dry run lists all images; docker image prune -a decides which of them go.
 # - It keeps every other container (old sandboxes included), the images they use, and all volumes.
 # - sbx-base:local and sbx-claude:local go too when no container uses them; ./build.sh rebuilds them.
 # - Stock bash 3.2 (macOS).
@@ -22,29 +22,6 @@ test_container_mount_source() {
 }
 
 # --------------------------------------------------------------------------------
-# is_host_test_path PATH: true if PATH is a host-test run folder, or a folder inside one, in the temp folder.
-# --------------------------------------------------------------------------------
-# Docker Desktop may report the temp folder with a /private prefix; it is dropped on both sides.
-is_host_test_path() {
-  local pathText=$1
-  local tempText=${tempFolder%/}
-
-  case "$pathText" in
-    /private/*) pathText=${pathText#/private} ;;
-  esac
-
-  case "$tempText" in
-    /private/*) tempText=${tempText#/private} ;;
-  esac
-
-  case "$pathText" in
-    "$tempText"/sbx-hosttest-*) return 0 ;;
-  esac
-
-  return 1
-}
-
-# --------------------------------------------------------------------------------
 # test_container_verdict: prints absent (no sbx-hosttest container), remove (it mounts a host-test run folder) or keep (it does not).
 # --------------------------------------------------------------------------------
 test_container_verdict() {
@@ -54,56 +31,15 @@ test_container_verdict() {
     return 0
   fi
 
-  if is_host_test_path "$(test_container_mount_source)"; then
-    echo "remove"
-  else
-    echo "keep"
-  fi
+  # Docker Desktop may report the temp folder with a /private prefix; the leading * covers it.
+  case "$(test_container_mount_source)" in
+    *"${tempFolder%/}"/sbx-hosttest-*) echo "remove" ;;
+    *) echo "keep" ;;
+  esac
 }
 
 # --------------------------------------------------------------------------------
-# show_unused_images: lists the images that no container uses, as docker image prune -a would remove them.
-# --------------------------------------------------------------------------------
-# - sbx-hosttest does not count as a user when it is going to be removed.
-# - An image counts as used when a container names it by repository:tag or by ID.
-# - This is the list the prune works from; the prune has the last word.
-show_unused_images() {
-  local usedText
-  local containerName
-  local containerImage
-  local imageName
-  local imageId
-  local imageSize
-  local unusedCount=0
-
-  usedText=$(docker ps -a --no-trunc --format '{{.Names}} {{.Image}}' | while read -r containerName containerImage; do
-    if [ "$containerName" != "sbx-hosttest" ] || [ "$testVerdict" != "remove" ]; then
-      echo "$containerImage"
-    fi
-  done)
-
-  while IFS='|' read -r imageName imageId imageSize; do
-    if [ -z "$imageName" ]; then
-      continue
-    fi
-
-    if printf '%s\n' "$usedText" | grep -Fxq -e "$imageName" -e "$imageId" -e "${imageId#sha256:}"; then
-      continue
-    fi
-
-    echo "$imageName  $imageSize"
-    unusedCount=$((unusedCount + 1))
-  done <<EOF
-$(docker images --no-trunc --format '{{.Repository}}:{{.Tag}}|{{.ID}}|{{.Size}}')
-EOF
-
-  if [ "$unusedCount" -eq 0 ]; then
-    echo "(none)"
-  fi
-}
-
-# --------------------------------------------------------------------------------
-# show_state: prints disk use, every container, the host-test run folders and the images --yes would remove.
+# show_state: prints disk use, every container, the host-test run folders and every image.
 # --------------------------------------------------------------------------------
 show_state() {
   echo "=== Docker disk use"
@@ -127,8 +63,9 @@ show_state() {
   fi
 
   echo
-  echo "=== Images that no container uses (--yes removes them)"
-  show_unused_images
+  echo "=== Images"
+  docker image ls
+  echo "--yes runs docker image prune -a: it removes every image no container uses"
   echo
 }
 

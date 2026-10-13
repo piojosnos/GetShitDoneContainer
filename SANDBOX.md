@@ -270,7 +270,7 @@ It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
 Rebuilds and host-test runs pile up images, build cache and run folders. From the repo root:
 
 ```bash
-./clean.sh          # shows disk use, containers and host-test run folders; removes nothing
+./clean.sh          # shows disk use, containers, host-test run folders and images; removes nothing
 ./clean.sh --yes    # removes them
 ```
 
