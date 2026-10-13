@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-10-08)
 
 ## Current Position
 
-Phase: 02.1 — Best-practices from git, editable from any sandbox
+Phase: 02.1 — Shell diet
 Plan: Not started
 Status: Ready to plan
 Last activity: 2026-10-13 — Phase 02 complete, transitioned to Phase 02.1
@@ -246,6 +246,7 @@ None yet.
 - Phase 01.3 inserted after Phase 1.2: Shell script layout (banners, functions, entry point in every script), from the PR #9 review
 - Phase 01.4 inserted after Phase 1.3: Test suite refactor (real Docker instead of the fake, simplify, split into units), from the PR #9 review; Phase 1.3 narrowed to the non-test scripts
 - Phase 01.5 inserted after Phase 1.4: Host test fixes (open Phase 1 and 1.1 review findings, proven with real Docker), from the Phase 1.3 discussion
+- Phase 02.1 inserted after Phase 2: Shell diet (cut the guard to its security rules, retire the fake docker and host self-tests, schematic comments), from the PR #17 review; the best-practices phase moves from 02.1 to 02.2
 - Phase 7 added: Start readiness (`up --wait` waits for the start hooks), from the Phase 2 code review
 
 ## Deferred Items

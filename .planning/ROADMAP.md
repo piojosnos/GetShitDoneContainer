@@ -2,7 +2,7 @@
 
 ## Overview
 
-This milestone makes the ClaudeCode sandbox solid. Each phase is a vertical slice that leaves the user with a sandbox they can actually use on the Mac, and each later phase builds on it. Phase 1 replaces the whole-home mount with one sandbox folder mount: code in `<name>/` and all state (Claude, history, gh, git) in `state/`. The home directory is no longer hidden, and login survives recreating the container and rebuilding the image. Phase 1.1 (inserted) automates the Mac host checks, so every later image change is verified by one script run. Phase 1.2 (inserted) ships the user's best-practices bundle (skills, standing rules, memories) in the image, synced into `~/.claude` on every start; Phase 2.1 (inserted) later moves that bundle to its own git repo so any sandbox can update it through a PR. Phase 2 bakes the full pinned toolchain, GSD, and ccusage into the image, so "upgrade = rebuild" becomes true and the image version always wins. Phases 3 and 4 add the small `sbx-*` scripts in the user's priority order: remembered args and one-command upgrade first, then jump-in, then list and cleanup. Phase 5 migrates the roughly four existing sandboxes, retires the old `cc-*` layout, and brings the README in line with reality. Docker doesn't run inside the dev sandbox, so every success criterion below is checked on the Mac.
+This milestone makes the ClaudeCode sandbox solid. Each phase is a vertical slice that leaves the user with a sandbox they can actually use on the Mac, and each later phase builds on it. Phase 1 replaces the whole-home mount with one sandbox folder mount: code in `<name>/` and all state (Claude, history, gh, git) in `state/`. The home directory is no longer hidden, and login survives recreating the container and rebuilding the image. Phase 1.1 (inserted) automates the Mac host checks, so every later image change is verified by one script run. Phase 1.2 (inserted) ships the user's best-practices bundle (skills, standing rules, memories) in the image, synced into `~/.claude` on every start; Phase 2.2 (inserted) later moves that bundle to its own git repo so any sandbox can update it through a PR. Phase 2 bakes the full pinned toolchain, GSD, and ccusage into the image, so "upgrade = rebuild" becomes true and the image version always wins. Phases 3 and 4 add the small `sbx-*` scripts in the user's priority order: remembered args and one-command upgrade first, then jump-in, then list and cleanup. Phase 5 migrates the roughly four existing sandboxes, retires the old `cc-*` layout, and brings the README in line with reality. Docker doesn't run inside the dev sandbox, so every success criterion below is checked on the Mac.
 
 ## Phases
 
@@ -19,7 +19,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1.4: Test suite refactor** (INSERTED) - Every test suite is a folder run by its own `run-all.sh`, the fake docker is slim and in its own file, and the Mac run covers the success paths (completed 2026-10-06)
 - [x] **Phase 1.5: Host test fixes** (INSERTED) - The known bugs in the host tests and entrypoint from earlier reviews are fixed, each proven on the Mac (completed 2026-10-08)
 - [x] **Phase 2: Pinned Toolchain, GSD, and ccusage** - Every tool is baked in at a version pinned in `versions.env`, the image's GSD wins over persisted state, and `ccusage` reports real usage (completed 2026-10-13)
-- [ ] **Phase 2.1: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs
+- [ ] **Phase 2.1: Shell diet** (INSERTED) - The guard keeps only the rules that protect the images and the sandbox, the fake docker and host self-tests are gone, and comments are schematic
+- [ ] **Phase 2.2: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs
 - [ ] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login
 - [ ] **Phase 4: Jump-In and Sandbox Housekeeping** - One command drops you into a sandbox shell or Claude, and you can list and clean up sandboxes safely
 - [ ] **Phase 5: Migration, Docs, and Old-Layout Retirement** - Existing sandboxes move over with history intact, the old `cc-*` layout is gone, and the README matches the repo
@@ -84,7 +85,7 @@ Plans:
 
 ### Phase 01.2: Best-practices bundle baked into the image (stopgap) (INSERTED)
 
-**Goal**: Every new sandbox starts with the user's best-practices bundle already installed: the `/pr-reply` and `/merged` skills, and the standing rules (general rules always loaded, language rules loaded when Claude touches a matching file). This is a stopgap: the bundle comes from files committed in this repo (restructured from `claude-best-practices-export.tar.gz`) until Phase 2.1 moves it to its own git repo.
+**Goal**: Every new sandbox starts with the user's best-practices bundle already installed: the `/pr-reply` and `/merged` skills, and the standing rules (general rules always loaded, language rules loaded when Claude touches a matching file). This is a stopgap: the bundle comes from files committed in this repo (restructured from `claude-best-practices-export.tar.gz`) until Phase 2.2 moves it to its own git repo.
 **Mode:** mvp
 **Depends on**: Phase 1.1 (its image change is verified with `tests/host/run-all.sh`)
 **Requirements**: BP-01, BP-02
@@ -286,11 +287,28 @@ Plans:
 **Wave 9** *(blocked on Wave 8 completion)*
 - [x] 02-09-PLAN.md: Final gate, the Mac run and the attended GSD bump (checkpoint), Phase 1 WR-03 and IN-03 dispositions
 
-### Phase 02.1: Best-practices from git, editable from any sandbox (INSERTED)
+### Phase 02.1: Shell diet (INSERTED)
+
+**Goal**: The repo carries only the shell one person can maintain. About 620 lines of shipped scripts do the work; the checks around them shrink to what protects the images and the sandbox.
+**Mode:** mvp
+**Depends on**: Phase 2
+**Requirements**: TBD
+**Source**: PR #17 review (2026-10-13): "too much shell, it is going to be incredibly hard to maintain"
+**Success Criteria** (what must be TRUE):
+  1. The guard keeps only the rules that protect the images and the sandbox (about 17: pins, no `latest`, supply chain, one mount, no privilege, mount point empty, start hook order). The rules that police the tests and the docs (blank lines, planning IDs, checklist rows, doc wording, test portability) are gone, with their self-test cases. Guard plus its self-tests drop from about 2500 to about 800 lines.
+  2. The fake docker and the host self-tests are retired (backlog 999.2): the Mac run against real Docker is the gate. About 4000 lines gone.
+  3. Every comment is schematic: a section header plus at most one or two lines, only the "why".
+  4. The guard functions that stay are short and named for what they check: `versions_are_pinned` is split into small rules, and `installs_use_declared_pins` is a few greps instead of an awk parser (PR #17 inline comments).
+  5. Rule of thumb, written down where checks live: a new check needs a real failure it would have caught, not a hypothetical one.
+  6. `tests/host/run-all.sh` still passes on the Mac, and `tests/guard/run-all.sh` still holds.
+
+**Plans**: TBD
+
+### Phase 02.2: Best-practices from git, editable from any sandbox (INSERTED)
 
 **Goal**: The best-practices bundle lives in its own GitHub repo. Every sandbox keeps its own clone in its sandbox folder, starts with the latest version, and can send improvements back as PRs. Updates survive restarts and rebuilds, and reach other sandboxes only after the user reviews and merges them.
 **Mode:** mvp
-**Depends on**: Phase 2
+**Depends on**: Phase 2.1
 **Requirements**: BP-03, BP-04, BP-05
 **Success Criteria** (what must be TRUE):
   1. The bundle repo exists on GitHub, and this repo no longer carries its own copy of the bundle (one source of truth).
@@ -360,10 +378,23 @@ Plans:
 
 **Plans**: TBD
 
+### Phase 7: Start readiness
+
+**Goal:** `docker compose up -d --wait` returns only when the sandbox is ready: every start hook has finished, and a failing hook fails `up`.
+**Requirements**: TBD
+**Depends on:** Phase 6
+**Plans:** 0 plans
+
+**TODO** (from the Phase 2 code review, finding WR-04):
+- [ ] `up --wait` returns before the start hooks finish, so a shell opened during the GSD sync can see a half-synced `state/claude`, and a failing hook does not fail `up`. Candidate fix: a compose healthcheck that turns healthy only once the start hooks are done (the host tests already poll `pgrep -x sleep` for this), so `--wait` means ready. Then drop the host tests' own wait in `compose_up`.
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 7 to break down)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 2.2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -374,7 +405,8 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 | 1.4. Test suite refactor | 8/8 | Complete    | 2026-10-06 |
 | 1.5. Host test fixes | 16/16 | Complete    | 2026-10-08 |
 | 2. Pinned Toolchain, GSD, and ccusage | 9/9 | Complete    | 2026-10-13 |
-| 2.1. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
+| 2.1. Shell diet | 0/TBD | Not started | - |
+| 2.2. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
 | 4. Jump-In and Sandbox Housekeeping | 0/TBD | Not started | - |
 | 5. Migration, Docs, and Old-Layout Retirement | 0/TBD | Not started | - |
@@ -388,19 +420,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 3 → 4 →
 **Goal:** Run the host checks against real Docker from the agent side, so `tests/selftest/host/support/fake-docker` and its self-test can be deleted. The fake is too complex to own long term.
 **Source phase:** 01.4
 **Deferred at:** 2026-10-06
+**Promoted:** 2026-10-13 into Phase 2.1 (shell diet), success criterion 2
 **Options:**
 - [ ] Docker-in-Docker in the dev sandbox, accepting the isolation trade-off and changing only that container.
 - [ ] GitHub Actions on each PR, which ties in with Phase 6.
-
-### Phase 7: Start readiness
-
-**Goal:** `docker compose up -d --wait` returns only when the sandbox is ready: every start hook has finished, and a failing hook fails `up`.
-**Requirements**: TBD
-**Depends on:** Phase 6
-**Plans:** 0 plans
-
-**TODO** (from the Phase 2 code review, finding WR-04):
-- [ ] `up --wait` returns before the start hooks finish, so a shell opened during the GSD sync can see a half-synced `state/claude`, and a failing hook does not fail `up`. Candidate fix: a compose healthcheck that turns healthy only once the start hooks are done (the host tests already poll `pgrep -x sleep` for this), so `--wait` means ready. Then drop the host tests' own wait in `compose_up`.
-
-Plans:
-- [ ] TBD (run /gsd-plan-phase 7 to break down)

@@ -145,9 +145,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HT-05 | Phase 1.1 | Complete |
 | BP-01 | Phase 1.2 | Complete |
 | BP-02 | Phase 1.2 | Complete |
-| BP-03 | Phase 2.1 | Pending |
-| BP-04 | Phase 2.1 | Pending |
-| BP-05 | Phase 2.1 | Pending |
+| BP-03 | Phase 2.2 | Pending |
+| BP-04 | Phase 2.2 | Pending |
+| BP-05 | Phase 2.2 | Pending |
 | SCR-01 | Phase 3 | Pending |
 | SCR-02 | Phase 3 | Pending |
 | SCR-03 | Phase 3 | Pending |
