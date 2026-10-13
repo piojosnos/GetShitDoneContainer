@@ -303,3 +303,7 @@ None. The test Claude login lives in the Mac run folder; run-all.sh prints the c
 *Completed: 2026-10-09*
 
 ## Self-Check: PASSED
+
+## Post-review Mac run
+
+After the code review fixes (`39da0bc` to `a420956`), the user re-ran `bash tests/host/run-all.sh` on the Mac on 2026-10-12 (Docker Desktop 4.48.0, Compose 2.40.0-desktop.1): `Summary: 25 passed, 0 failed, 0 not run`. This covers the stricter H-16, H-23 (new local repository, pinned dependency plugin), H-24 (whole numbers and a Total row) and H-25 (the guard's own error line), and the renamed download steps in `base/Dockerfile`.
