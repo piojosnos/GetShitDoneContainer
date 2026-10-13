@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared by the host self-test groups: the fake docker on PATH, a work folder per group, and the helpers that run the host checks against the fake.
+# Shared by the host self-test groups: the fake docker and the fake GSD on PATH, a work folder per group, and the helpers that run the host checks against the fake.
 # - Sourced by the groups, never run directly.
 # - Defines functions only.
 # - run_runner and run_standalone export the decoys SBX_NAME=demo, SBX_DIR=/elsewhere and
@@ -20,13 +20,15 @@ start_group() {
 }
 
 # --------------------------------------------------------------------------------
-# prepare_fake_docker: copies the fake docker to WORK/bin/docker and exports the fake's variables, with WORK/bin first on PATH; returns 1 on failure.
+# prepare_fake_docker: copies the fake docker to WORK/bin/docker and the fake GSD to WORK/bin/gsd-core and WORK/bin/gsd-tools, and exports the fake's variables, with WORK/bin first on PATH; returns 1 on failure.
 # --------------------------------------------------------------------------------
-# The fake is copied and made executable, never linked, so it works whatever mode git stores for it.
+# The fakes are copied and made executable, never linked, so they work whatever mode git stores for them.
 prepare_fake_docker() {
   mkdir -p "$WORK/bin" "$WORK/state" "$WORK/tmp" || return 1
   cp "$REPO/tests/selftest/host/support/fake-docker" "$WORK/bin/docker" || return 1
-  chmod +x "$WORK/bin/docker" || return 1
+  cp "$REPO/tests/selftest/host/support/fake-gsd" "$WORK/bin/gsd-core" || return 1
+  cp "$REPO/tests/selftest/host/support/fake-gsd" "$WORK/bin/gsd-tools" || return 1
+  chmod +x "$WORK/bin/docker" "$WORK/bin/gsd-core" "$WORK/bin/gsd-tools" || return 1
 
   export FAKE_STATE="$WORK/state"
   export FAKE_LOG="$WORK/docker.log"
@@ -116,10 +118,19 @@ run_standalone() {
 }
 
 # --------------------------------------------------------------------------------
-# fake_start_sync DIR: runs the real start hook into DIR/state/claude, as a container start would.
+# fake_start_sync DIR: runs the real start hooks of claude/start.d in name order into DIR/state/claude, as a container start would.
 # --------------------------------------------------------------------------------
 fake_start_sync() {
+  local hookFile
+
   mkdir -p "$1/state/claude"
-  SBX_BUNDLE_DIR="$REPO/best-practices" CLAUDE_CONFIG_DIR="$1/state/claude" \
-    bash "$REPO/claude/start.d/10-best-practices"
+
+  for hookFile in "$REPO"/claude/start.d/*; do
+    if [ ! -f "$hookFile" ]; then
+      continue
+    fi
+
+    SBX_BUNDLE_DIR="$REPO/best-practices" CLAUDE_CONFIG_DIR="$1/state/claude" \
+      bash "$hookFile" >/dev/null || return 1
+  done
 }

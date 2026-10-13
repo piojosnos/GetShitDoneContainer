@@ -2,34 +2,32 @@
 # Docker beyond the test sandbox: building the images, facts about them, and the old-layout containers and folders.
 # - Loaded by lib.sh; never run directly. Defines functions only.
 # - Reads RUN and REPO_DIR, set by host_init. Removes no image and no container.
-# - claude_pin and expected_arch stay shared because the self-test of the host tests calls them through lib.sh.
+# - claude_pin, pin_of and expected_arch stay shared because the self-test of the host tests calls them through lib.sh.
 # - Host side code is stock bash 3.2 with BSD tools (macOS).
 
 # --------------------------------------------------------------------------------
-# build_images LOG_PREFIX [--no-cache]: builds sbx-base:local, then sbx-claude:local; logs in the run folder.
+# build_images LOG_PREFIX [--no-cache]: runs build.sh, which builds sbx-base:local, then sbx-claude:local; one log in the run folder.
 # --------------------------------------------------------------------------------
+# The log is RUN/logs/LOG_PREFIX-images.log.
 build_images() {
   local logPrefix=$1
   local cacheFlag=${2:-}
-  local imageName logFile buildStatus
+  local logFile="$RUN/logs/$logPrefix-images.log"
+  local buildStatus
 
-  for imageName in base claude; do
-    logFile="$RUN/logs/$logPrefix-$imageName.log"
+  if [ "$cacheFlag" = "--no-cache" ]; then
+    bash "$REPO_DIR/build.sh" --no-cache >"$logFile" 2>&1 </dev/null
+    buildStatus=$?
+  else
+    bash "$REPO_DIR/build.sh" >"$logFile" 2>&1 </dev/null
+    buildStatus=$?
+  fi
 
-    if [ "$cacheFlag" = "--no-cache" ]; then
-      docker build --no-cache -f "$REPO_DIR/$imageName/Dockerfile" -t "sbx-$imageName:local" "$REPO_DIR" >"$logFile" 2>&1 </dev/null
-      buildStatus=$?
-    else
-      docker build -f "$REPO_DIR/$imageName/Dockerfile" -t "sbx-$imageName:local" "$REPO_DIR" >"$logFile" 2>&1 </dev/null
-      buildStatus=$?
-    fi
-
-    if [ "$buildStatus" -ne 0 ]; then
-      printf 'Build of sbx-%s:local failed. Log: %s\n' "$imageName" "$logFile"
-      print_log_tail "$logFile"
-      return 1
-    fi
-  done
+  if [ "$buildStatus" -ne 0 ]; then
+    printf 'Build of sbx-base:local and sbx-claude:local failed. Log: %s\n' "$logFile"
+    print_log_tail "$logFile"
+    return 1
+  fi
 
   return 0
 }
@@ -46,10 +44,17 @@ expected_arch() {
 }
 
 # --------------------------------------------------------------------------------
-# claude_pin: the pinned Claude Code version, read from claude/Dockerfile.
+# pin_of NAME: the value of NAME in versions.env; empty when NAME is absent.
+# --------------------------------------------------------------------------------
+pin_of() {
+  sed -n "s/^$1=//p" "$REPO_DIR/versions.env" | head -n 1
+}
+
+# --------------------------------------------------------------------------------
+# claude_pin: the pinned Claude Code version, read from versions.env.
 # --------------------------------------------------------------------------------
 claude_pin() {
-  sed -n 's/^ARG CLAUDE_CODE_VERSION=//p' "$REPO_DIR/claude/Dockerfile"
+  pin_of CLAUDE_CODE_VERSION
 }
 
 # --------------------------------------------------------------------------------

@@ -9,6 +9,7 @@
 # - Deletes nothing. At the end, pass or fail, it prints the cleanup command for you to run
 #   and where the diagnostic helpers are.
 # - SBXTEST_NO_CACHE=1 (optional) makes the rebuild check rebuild without the cache; slow.
+# - SBXTEST_START_SECONDS (optional) changes how long a start may take before its hooks count as stuck (default 120 s).
 # - Usage, from anywhere: bash tests/host/run-all.sh   (exit 0 = every check passed)
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -27,9 +28,9 @@ unset SBXTEST_DIR
 #   create a missing folder), and it leaves the sandbox up either way.
 # - Then Coexistence, which compares against the state at the start of the run.
 fatalCheck="h00-compose-v2.sh"
-noSandboxCheckList="h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh h17-start-offline-and-failing-hook.sh h21-bad-name-refused.sh"
-sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h14-bundle-in-image.sh h15-bundle-synced-and-visible.sh h18-scope-and-deny.sh"
-chainCheckList="h08-history-survives-recreate.sh h16-sync-refreshes-and-spares.sh h11-stop-is-quick-and-safe.sh h09-rebuild-keeps-files-no-volumes.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
+noSandboxCheckList="h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh h17-start-offline-and-failing-hook.sh h21-bad-name-refused.sh h25-images-match-versions.sh"
+sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h14-bundle-in-image.sh h15-bundle-synced-and-visible.sh h18-scope-and-deny.sh h22-toolchain-in-base.sh h24-ccusage-reports-usage.sh"
+chainCheckList="h08-history-survives-recreate.sh h16-sync-refreshes-and-spares.sh h23-caches-survive-recreate.sh h11-stop-is-quick-and-safe.sh h09-rebuild-keeps-files-no-volumes.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
 finalCheckList="coexistence.sh"
 
 remainingList="$fatalCheck $noSandboxCheckList $sandboxCheckList $chainCheckList $finalCheckList"

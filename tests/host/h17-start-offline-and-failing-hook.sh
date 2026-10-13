@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 # H-17: the sandbox starts with networking disabled, and a bad or failing start hook stops the start.
 # - Offline start: a container with --network none syncs the bundle and runs its command.
+# - The offline start also syncs GSD: state/claude/gsd-core/VERSION equals GSD_CORE_VERSION in
+#   versions.env, the output holds the line '[sbx] GSD VERSION synced', and the output names no
+#   npx and no @latest.
 # - Failing hook: a container whose config folder cannot be made exits non-zero with
-#   '[sbx] ERROR: start hook' and never runs its command.
+#   '[sbx] ERROR: start hook' and never runs its command. Every failing-hook container must stop
+#   within its 60 s limit; a stop by the limit is a failure of the check.
 # - Bad hook folders: two more containers each mount their own folder under $RUN/h17 over
 #   /etc/sbx/start.d, read-only, so only that folder's entries are seen. One holds a hook file with
 #   mode 644, the other a link that points nowhere. Each must exit non-zero with its
@@ -86,6 +90,32 @@ check_offline_start() {
 }
 
 # --------------------------------------------------------------------------------
+# Checks the offline start synced GSD at the pinned version, printed its line and named no npx and no @latest
+# --------------------------------------------------------------------------------
+check_offline_gsd() {
+  local pin syncedVersion
+
+  pin=$(pin_of GSD_CORE_VERSION)
+  syncedVersion=""
+
+  if [ -f "$RUN/h17/state/claude/gsd-core/VERSION" ]; then
+    syncedVersion=$(cat "$RUN/h17/state/claude/gsd-core/VERSION")
+  fi
+
+  if [ "$syncedVersion" != "$pin" ]; then
+    add_problem "the offline start did not sync GSD $pin; state/claude/gsd-core/VERSION holds '$syncedVersion'"
+  fi
+
+  if [[ "$offlineOutput" != *"[sbx] GSD $pin synced"* ]]; then
+    add_problem "the offline start did not print [sbx] GSD $pin synced; got: $(first_lines "$offlineOutput")"
+  fi
+
+  if [[ "$offlineOutput" == *"npx"* || "$offlineOutput" == *"@latest"* ]]; then
+    add_problem "the offline start output names npx or @latest: $(first_lines "$offlineOutput")"
+  fi
+}
+
+# --------------------------------------------------------------------------------
 # Checks a failing or bad start hook stopped the start with the expected error and never ran the command
 # --------------------------------------------------------------------------------
 check_bad_hook_stop() {
@@ -93,6 +123,11 @@ check_bad_hook_stop() {
 
   if [ "$status" -eq 0 ]; then
     add_problem "$label must exit non-zero; the container exited 0"
+  fi
+
+  # 143 and 137 are the statuses run_timeout returns when it stops a command.
+  if [ "$status" -eq 143 ] || [ "$status" -eq 137 ]; then
+    add_problem "$label did not stop the start within 60 s (exit $status)"
   fi
 
   if [[ "$output" != *"$expectedLine"* ]]; then
@@ -112,6 +147,7 @@ require_run_folder || exit 1
 make_hook_folders
 run_containers
 check_offline_start
+check_offline_gsd
 check_bundle_rules_synced "$RUN/h17/state/claude" "the offline start did not sync the rules"
 check_bad_hook_stop "a failing start hook" "$brokenStatus" "$brokenOutput" "[sbx] ERROR: start hook"
 check_bad_hook_stop "the hook file that is not executable" "$notExecutableStatus" "$notExecutableOutput" \
@@ -119,4 +155,4 @@ check_bad_hook_stop "the hook file that is not executable" "$notExecutableStatus
 check_bad_hook_stop "the dangling hook link" "$danglingStatus" "$danglingOutput" \
   "[sbx] ERROR: start hook /etc/sbx/start.d/10-dangling is not a regular file; the container was not started."
 report_check H-17 "the offline start or a start hook stop is wrong" \
-  "starts and syncs with --network none; a failing hook, a hook file that is not executable and a dangling hook link each stop the start with [sbx] ERROR"
+  "starts and syncs the bundle and GSD $(pin_of GSD_CORE_VERSION) with --network none, naming no npx and no @latest; a failing hook, a hook file that is not executable and a dangling hook link each stop the start with [sbx] ERROR"

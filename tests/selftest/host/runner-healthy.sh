@@ -34,19 +34,23 @@ case_healthy_run() {
   expect "runner: healthy run prints PASS: H-08" has_text "$WORK/out.healthy" "PASS: H-08"
   expect "runner: healthy run prints PASS: H-09" has_text "$WORK/out.healthy" "PASS: H-09"
   expect "runner: healthy run prints PASS: H-16" has_text "$WORK/out.healthy" "PASS: H-16"
+  expect "runner: healthy run prints PASS: H-23" has_text "$WORK/out.healthy" "PASS: H-23"
   expect "runner: healthy run prints PASS: H-10" has_text "$WORK/out.healthy" "PASS: H-10"
   expect "runner: healthy run prints PASS: H-20" has_text "$WORK/out.healthy" "PASS: H-20"
   expect "runner: healthy run prints PASS: H-21" has_text "$WORK/out.healthy" "PASS: H-21"
   expect "runner: healthy run prints PASS: H-11" has_text "$WORK/out.healthy" "PASS: H-11"
   expect "runner: healthy run prints PASS: H-12" has_text "$WORK/out.healthy" "PASS: H-12"
-  expect "runner: healthy run has 21 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "21"
+  expect "runner: healthy run has 25 PASS lines" equals "$(grep -c '^PASS:' "$WORK/out.healthy")" "25"
   expect "runner: healthy run prints PASS: Coexistence" has_text "$WORK/out.healthy" "PASS: Coexistence"
   expect "runner: healthy run prints PASS: H-13" has_text "$WORK/out.healthy" "PASS: H-13"
   expect "runner: healthy run prints PASS: H-14" has_text "$WORK/out.healthy" "PASS: H-14"
   expect "runner: healthy run prints PASS: H-15" has_text "$WORK/out.healthy" "PASS: H-15"
   expect "runner: healthy run prints PASS: H-17" has_text "$WORK/out.healthy" "PASS: H-17"
   expect "runner: healthy run prints PASS: H-18" has_text "$WORK/out.healthy" "PASS: H-18"
-  expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 21 passed, 0 failed, 0 not run"
+  expect "runner: healthy run prints PASS: H-22" has_text "$WORK/out.healthy" "PASS: H-22"
+  expect "runner: healthy run prints PASS: H-24" has_text "$WORK/out.healthy" "PASS: H-24"
+  expect "runner: healthy run prints PASS: H-25" has_text "$WORK/out.healthy" "PASS: H-25"
+  expect "runner: healthy run prints the summary" has_text "$WORK/out.healthy" "Summary: 25 passed, 0 failed, 0 not run"
   expect "runner: healthy run points at tests/host/manual/ for diagnosis" has_text "$WORK/out.healthy" "If something looks wrong, see tests/host/manual/"
   expect "runner: healthy run no longer lists the helpers as a pass to run" lacks_text "$WORK/out.healthy" "h19-bundle-behaviour.sh"
   expect "runner: the cleanup line has docker compose down and the run folder" \
@@ -72,10 +76,10 @@ case_healthy_run() {
   expect "docker log: the SBX_DIR probe runs without SBX_DIR and with the test name" \
     has_match "$FAKE_LOG" 'SBX_NAME=hosttest SBX_DIR=unset COMPOSE_PROJECT_NAME=unset ARGS: compose .* config'
   expect "docker log: the plain docker run uses the real image tag" has_match "$WORK/args.healthy" '^run --rm sbx-claude:local claude --version'
-  expect "docker log: the builds use the real tags" \
-    has_match "$WORK/args.healthy" '^build -f .*/base/Dockerfile -t sbx-base:local /'
+  expect "docker log: build.sh builds the base image with the pins" \
+    has_match "$WORK/args.healthy" '^build -f base/Dockerfile( --build-arg [A-Z_]+)+ -t sbx-base:local \.$'
   expect "docker log: the claude image is built after the base image" \
-    has_match "$WORK/args.healthy" '^build -f .*/claude/Dockerfile -t sbx-claude:local /'
+    has_match "$WORK/args.healthy" '^build -f claude/Dockerfile( --build-arg [A-Z_]+)+ -t sbx-claude:local \.$'
 }
 
 # --------------------------------------------------------------------------------

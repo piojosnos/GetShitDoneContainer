@@ -15,7 +15,7 @@ CLAUDE=claude/Dockerfile
 COMPOSE=compose.yml
 ENTRY="base/sbx-entrypoint base/sbx-start-lib.sh"
 DOCKERFILES="$BASE $CLAUDE"
-SANDBOX_FILES="$BASE $CLAUDE $COMPOSE $ENTRY"
+SANDBOX_FILES="$BASE $CLAUDE $COMPOSE $ENTRY versions.env build.sh clean.sh"
 
 # The Mac host tests: every script, and the ones that must run unattended.
 HOST_FILES="tests/host/*.sh tests/host/manual/*.sh"
@@ -51,6 +51,25 @@ nowhere_matches() {
 
   echo "$hits" | sed 's/^/    /'
   return 1
+}
+
+# --------------------------------------------------------------------------------
+# run_steps_of DOCKERFILE: prints one line per RUN step as "LINE: text", with its continuation lines joined by a space and their trailing backslashes dropped.
+# --------------------------------------------------------------------------------
+# A rule that reads a step as one line cannot be dodged by a line break inside the step.
+run_steps_of() {
+  awk '
+    function flush() {
+      if (step != "") {
+        print step_line ": " step
+      }
+      step = ""
+    }
+    /^RUN[[:space:]]/ { flush(); step_line = NR; step = $0; continuing = /\\$/; sub(/[[:space:]]*\\$/, "", step); next }
+    continuing { piece = $0; continuing = /\\$/; sub(/[[:space:]]*\\$/, "", piece); step = step " " piece; next }
+    { flush() }
+    END { flush() }
+  ' "$1"
 }
 
 # --------------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Self-test of what Claude Code at the pinned version sees after a sync: always-on rules and skills, no path-scoped rule; SKIP off the pin.
 # - Syncs the repo bundle, runs claude -p /context offline with a dummy key and reads the listing.
-# - Prints a SKIP line when claude is not at the pin in claude/Dockerfile.
+# - Prints a SKIP line when claude is not at the pin in versions.env.
 # - Run by run-all.sh; runs alone too.
 # - Makes one work folder under TMPDIR and removes only that folder at exit.
 # - Usage, from anywhere: bash tests/selftest/bundle/claude-probe.sh   (exit 0 = every case passes)

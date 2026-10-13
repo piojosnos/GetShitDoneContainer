@@ -2,8 +2,10 @@
 # H-07 (attended): log in to Claude inside the test sandbox, then check where the login landed.
 # - Needs a terminal. Run it after bash tests/host/run-all.sh, against the same test sandbox
 #   (sbx-hosttest). It finds the run folder from the container's mount; there is no pointer file.
-# - You log in with a claude.ai account, then type /exit. Three lines follow, PASS or FAIL each:
-#   the login files are on the Mac, claude auth status says logged in, no ~/.claude.json at home.
+# - You log in with a claude.ai account, send one message, then type /exit. The message makes a
+#   conversation that the GSD bump helper later resumes with claude --continue.
+# - Three lines follow, PASS or FAIL each: the login files are on the Mac, claude auth status
+#   says logged in, no ~/.claude.json at home.
 # - Usage: bash tests/host/manual/h07-login.sh   (exit 0 = every line is PASS)
 set -u
 
@@ -21,7 +23,9 @@ stateDir="$RUN/state/claude"
 run_login() {
   printf 'Claude opens next, inside the test sandbox.\n'
   printf '  1. Log in with a claude.ai account.\n'
-  printf '  2. Type /exit to come back here.\n\n'
+  printf '  2. Send one message (for example: say hi) and wait for the answer.\n'
+  printf '     Claude saves a conversation only once a message is sent; the GSD bump helper resumes it.\n'
+  printf '  3. Type /exit to come back here.\n\n'
   run_claude
   printf '\n'
 }

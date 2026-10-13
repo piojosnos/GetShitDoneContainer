@@ -5,8 +5,9 @@
 # - Answers from the state folder FAKE_STATE and the knobs below.
 # - Exits 99 on any call it does not know.
 # - Only the container sbx-hosttest exists; any other name gets "No such container".
-# - Compose up and a run with --network none execute the real claude/start.d/10-best-practices,
-#   as the real entrypoint does (FAKE_REPO points at the repo).
+# - Compose up and a run with --network none run every hook in FAKE_REPO/claude/start.d in name order, as the
+#   real entrypoint does (FAKE_REPO points at the repo). The GSD hook finds the fake GSD of
+#   tests/selftest/host/support/fake-gsd on PATH.
 # - A run with --network none first runs a copy of the real entrypoint with only the run's -e values (no hooks; the fake runs those below), as the real container does.
 # - A run that mounts its own folder over /etc/sbx/start.d runs the real start library on that folder
 #   instead of the bundle sync.
@@ -22,6 +23,27 @@
 #   message are claims that the Mac run of H-03 confirms.
 # - Compose config turns the project name into lowercase and never refuses a name for its case, as real
 #   Compose 2.40 does (measured on the Mac).
+# - A build writes its build args and its context folder to FAKE_STATE/build-args.log.
+# - A run with --entrypoint bash, and an exec of bash -lc whose command holds the toolchain probe marker,
+#   answer the toolchain probe from the pins in FAKE_REPO/versions.env.
+# - Compose up also makes state/cache/npm, state/cache/uv and state/m2 under the mount, as the entrypoint does
+#   from SBX_STATE_DIRS, unless FAKE_NO_CACHE_DIRS is 1.
+# - An exec answers npm config get cache, uv cache dir and readlink of ~/.m2 from the state folder paths, and a
+#   command holding ": h23-plant" writes its last argument into a file of that name in the three cache folders.
+# - An exec of mvn -q with the pinned dependency plugin's get goal answers the Maven download of H-23: it makes the
+#   junit 4.13.2 jar under the local repository named by -Dmaven.repo.local (a folder of ~/.m2, so of state/m2 of
+#   the mounted folder), unless a knob below says otherwise.
+# - An exec of pgrep -x sleep answers 0 (the start hooks have finished) unless a knob below says otherwise.
+# - An exec of node -e runs that command on the host with CLAUDE_CONFIG_DIR set to the state/claude folder of the
+#   mounted folder.
+# - An exec of ccusage answers daily, monthly and session reports (and the daily table) of the transcript
+#   h24-usage.jsonl in state/claude/projects/-home-sandbox-workspace-hosttest of the mounted folder: 100 input,
+#   200 output and 300 total tokens when the file exists (for session, when it holds the asked ID), else empty answers.
+# - A run with --entrypoint cat, gsd-tools, ccusage or ls on the Claude image answers the image checks of H-25:
+#   the /etc/sbx/versions.env record (FAKE_REPO/versions.env), the GSD identity line, the ccusage version and the
+#   listing of /home/sandbox/workspace.
+# - A build with neither a build arg nor a tag is a bare build, as a build without build.sh is: it stops with the
+#   message of the Dockerfile and touches no state (FAKE_STATE/built stays as it was).
 #
 # Knobs, one line each:
 # FAKE_STATE: the folder that holds the fake container state (set by lib.sh)
@@ -30,7 +52,7 @@
 # FAKE_ARCH: the architecture docker info reports (default aarch64)
 # FAKE_CLAUDE_ARCH: the architecture of the sbx-claude:local image (default arm64)
 # FAKE_CLAUDE_LAYERS: the layer list of sbx-claude:local (default: the base layers plus two more)
-# FAKE_CLAUDE_VERSION: the version claude --version prints (default: the pin in claude/Dockerfile)
+# FAKE_CLAUDE_VERSION: the version claude --version prints (default: the pin in versions.env)
 # FAKE_COMPOSE_VERSION: what docker compose version prints (default 2.39.1)
 # FAKE_COMPOSE_FAIL: 1 makes docker compose version fail
 # FAKE_CONTEXT: the name docker context show prints (default desktop-linux)
@@ -43,8 +65,9 @@
 # FAKE_FOLDER_CHECK_OFF: 1 makes compose up skip the project and state folder check, as an entrypoint that does not check would
 # FAKE_IMAGE_NAME_CHECK_OFF: 1 makes compose up skip that image name check, as a Compose that never inspects the image of a service without containers would
 # FAKE_H10: what compose up does when the sandbox folder is missing: honored, ignored, started, or other (it fails for a reason that is not the folder)
-# FAKE_NO_SYNC: 1 makes compose up skip the start hook
+# FAKE_NO_SYNC: 1 makes compose up skip the start hooks
 # FAKE_SYNC_CLOBBERS: 1 makes compose up delete state/claude/skills and projects before the hook
+# FAKE_SYNC_DROPS_GSD_SKILL: 1 makes compose up delete the state/claude/skills/gsd-* folders after the hook, as a restart that removes a GSD skill instead of restoring it would
 # FAKE_DOWN_KEEPS: 1 makes compose down leave the container in place
 # FAKE_DOWN_LOSES_HISTORY: 1 makes compose down delete the shell history file
 # FAKE_LABEL: the sbx.name label of the container (default hosttest)
@@ -53,6 +76,8 @@
 # FAKE_OFFLINE_FAIL: 1 makes a run with --network none fail to start
 # FAKE_ENTRY_NAME_CHECK_OFF: 1 makes a docker run start as an entrypoint without the name check would
 # FAKE_HOOK_IGNORED: 1 makes a run whose hook fails still run its command
+# FAKE_START_SAYS: a line a run with --network none prints after its hooks, before its command
+# FAKE_BROKEN_RC: a status a run with --network none returns, without output, when its config folder is under /proc/, as a failing hook that hangs and is stopped by the time limit would
 # FAKE_HOOK_DIR_IGNORED: 1 makes a run with its own folder over /etc/sbx/start.d skip the hook step
 # FAKE_PS: the docker ps answer (default: one old cc_oldbox container, running)
 # FAKE_PS_FAIL: 1 makes docker ps fail as if the daemon were unreachable
@@ -72,7 +97,8 @@
 # FAKE_ENV_MISSING: the name of one variable left out of the container environment
 # FAKE_UPDATE_ON: 1 makes claude update run instead of saying updates are disabled
 # FAKE_SHARE_EXISTS: 1 makes ~/.local/share/claude exist in the container home
-# FAKE_EXEC_RC: a non-zero value makes the exec of the share folder test return that status, as a docker exec that could not run does
+# FAKE_EXEC_RC: a non-zero value makes the exec of both folder tests (~/.local/share/claude and ~/.local/bin/claude) return that status, as a docker exec that could not run does
+# FAKE_LOCAL_BIN_EXISTS: 1 makes ~/.local/bin/claude exist in the container home
 # FAKE_GIT_DUBIOUS: 1 makes git status fail with a dubious ownership message (git status works only in the project folder)
 # FAKE_SAFE_DIR: the safe.directory values git config lists (default *)
 # FAKE_NO_GIT_WRITE: 1 makes the git identity write never reach the state folder
@@ -82,6 +108,30 @@
 # FAKE_SCOPE_EAGER: 1 makes the fake scope run show the path-scoped rule in the first request
 # FAKE_DENY_BROKEN: 1 makes the fake deny run change the first always-on rule and plant a file
 # FAKE_H18_TOOLS_OFF: 1 makes the fake deny run never edit the project file
+# FAKE_TOOL_ELF: the ELF machine bytes of every binary in the toolchain probe answer (default b700)
+# FAKE_TOOL_MISSING: the name of one tool the toolchain probe answer reports as missing
+# FAKE_TOOL_STALE: the name of one tool the toolchain probe answer reports at version 0.0.0
+# FAKE_JAVA_VENDOR: replaces the JAVA_VENDOR text of the toolchain probe answer
+# FAKE_LOGIN_MISSING: the name of one tool missing only in the login shell answer of the toolchain probe
+# FAKE_NO_CACHE_DIRS: 1 makes compose up leave out the cache folders under state
+# FAKE_NPM_CACHE: what npm config get cache prints (default: the state/cache/npm path)
+# FAKE_M2_LINK: what readlink of ~/.m2 prints (default: the state/m2 path)
+# FAKE_CACHE_NOT_SHARED: 1 makes a file written into a cache never reach the host
+# FAKE_DOWN_LOSES_CACHES: 1 makes compose down delete state/cache and state/m2 of the mounted folder
+# FAKE_MVN_IO_ERROR: 1 makes the Maven download fail with an Input/output error and status 1
+# FAKE_NO_MAVEN_JAR: 1 makes the Maven download succeed without the jar ever reaching the host
+# FAKE_START_POLLS: the number of pgrep -x sleep calls after each compose up that answer 1 before it answers 0
+# FAKE_STOPS_AT_START: 1 makes the container exit once compose up has run the hooks, and pgrep -x sleep answer 1
+# FAKE_CCUSAGE_EMPTY: 1 makes every ccusage report empty, as if no transcript were planted
+# FAKE_CCUSAGE_SCALE: a number that multiplies every token count a report shows (100 becomes 1000 for 10), as a double count would
+# FAKE_CCUSAGE_TABLE_NOISE: 1 makes the table report show a row with no Total and the digits 300 inside a larger number (1300), with no token count of 300
+# FAKE_CCUSAGE_RC: a non-zero value makes every ccusage call print "ccusage: native binary is not executable" on stderr and exit with that status
+# FAKE_RECORD_STALE: 1 makes the /etc/sbx/versions.env record of the Claude image hold GSD_CORE_VERSION=0.0.0
+# FAKE_GSD_IDENTITY: the version in the identity line gsd-tools runtime-identity prints in the Claude image (default: the pin)
+# FAKE_CCUSAGE_VERSION: the version ccusage --version prints in the Claude image (default: the pin)
+# FAKE_WORKSPACE_BAKED: a file name that the listing of /home/sandbox/workspace in the Claude image shows (default: empty folder)
+# FAKE_BARE_BUILD_OK: 1 lets a build without build args and without a tag succeed, as Dockerfiles without the missing-pin guards would
+# FAKE_BARE_BUILD_ECHO: 1 makes a build without build args and without a tag stop for another reason (a network error) while BuildKit still echoes the guard text of the RUN or FROM line, as --progress=plain does
 
 # --------------------------------------------------------------------------------
 # log_call ARG...: appends one line for the call to FAKE_LOG, in the format the safety cases parse.
@@ -248,7 +298,29 @@ run_folder_check() {
 }
 
 # --------------------------------------------------------------------------------
-# compose_up: starts the fake container and runs the real start hook, as the real entrypoint does.
+# run_image_hooks CONFIG_DIR: runs every hook in FAKE_REPO/claude/start.d in name order, as the entrypoint does; returns 1 at the first hook that fails.
+# --------------------------------------------------------------------------------
+run_image_hooks() {
+  local hookFile
+  local hookName
+
+  for hookFile in "$FAKE_REPO"/claude/start.d/*; do
+    if [ ! -f "$hookFile" ]; then
+      continue
+    fi
+
+    hookName=$(basename "$hookFile")
+    if ! SBX_BUNDLE_DIR="$FAKE_REPO/best-practices" CLAUDE_CONFIG_DIR="$1" bash "$hookFile" </dev/null; then
+      echo "[sbx] ERROR: start hook /etc/sbx/start.d/$hookName failed; the container was not started." >&2
+      return 1
+    fi
+  done
+
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# compose_up: starts the fake container and runs the real start hooks, as the real entrypoint does.
 # --------------------------------------------------------------------------------
 compose_up() {
   local imageName
@@ -302,18 +374,25 @@ compose_up() {
     echo "fake compose: container sbx-hosttest exited (1)" >&2
     return 1
   fi
-  rm -f "$FAKE_STATE/container.exited" "$FAKE_STATE/container.log"
+  rm -f "$FAKE_STATE/container.exited" "$FAKE_STATE/container.log" "$FAKE_STATE/pgrep.count"
   : >"$FAKE_STATE/container"
   mkdir -p "$SBX_DIR/state/claude"
+  if [ "${FAKE_NO_CACHE_DIRS:-0}" != 1 ]; then
+    mkdir -p "$SBX_DIR/state/cache/npm" "$SBX_DIR/state/cache/uv" "$SBX_DIR/state/m2"
+  fi
   if [ "${FAKE_SYNC_CLOBBERS:-0}" = 1 ]; then
     rm -rf "$SBX_DIR/state/claude/skills" "$SBX_DIR/state/claude/projects"
   fi
   if [ "${FAKE_NO_SYNC:-0}" != 1 ]; then
-    if ! SBX_BUNDLE_DIR="$FAKE_REPO/best-practices" CLAUDE_CONFIG_DIR="$SBX_DIR/state/claude" \
-      bash "$FAKE_REPO/claude/start.d/10-best-practices"; then
-      echo "[sbx] ERROR: start hook /etc/sbx/start.d/10-best-practices failed; the container was not started." >&2
+    if ! run_image_hooks "$SBX_DIR/state/claude"; then
       return 1
     fi
+  fi
+  if [ "${FAKE_SYNC_DROPS_GSD_SKILL:-0}" = 1 ]; then
+    rm -rf "$SBX_DIR"/state/claude/skills/gsd-*
+  fi
+  if [ "${FAKE_STOPS_AT_START:-0}" = 1 ]; then
+    : >"$FAKE_STATE/container.exited"
   fi
   return 0
 }
@@ -325,8 +404,11 @@ compose_down() {
   if [ "${FAKE_DOWN_LOSES_HISTORY:-0}" = 1 ] && [ -f "$FAKE_STATE/container.dir" ]; then
     rm -f "$(cat "$FAKE_STATE/container.dir")/state/shell/bash_history"
   fi
+  if [ "${FAKE_DOWN_LOSES_CACHES:-0}" = 1 ] && [ -f "$FAKE_STATE/container.dir" ]; then
+    rm -rf "$(cat "$FAKE_STATE/container.dir")/state/cache" "$(cat "$FAKE_STATE/container.dir")/state/m2"
+  fi
   if [ "${FAKE_DOWN_KEEPS:-0}" != 1 ]; then
-    rm -f "$FAKE_STATE/container" "$FAKE_STATE/container.dir" "$FAKE_STATE/container.exited" "$FAKE_STATE/container.log"
+    rm -f "$FAKE_STATE/container" "$FAKE_STATE/container.dir" "$FAKE_STATE/container.exited" "$FAKE_STATE/container.log" "$FAKE_STATE/pgrep.count"
   fi
   return 0
 }
@@ -491,30 +573,20 @@ run_entrypoint_copy() {
 }
 
 # --------------------------------------------------------------------------------
-# run_network_none ARG...: a run with --network none: runs a copy of the real entrypoint, then the real start hook, then the command.
+# run_network_none ARG...: a run with --network none: runs a copy of the real entrypoint, then every real start hook in name order, then the command.
 # --------------------------------------------------------------------------------
 run_network_none() {
-  hookBroken=0
-  case "$*" in
-    *"CLAUDE_CONFIG_DIR=/proc/"*) hookBroken=1 ;;
-  esac
-  if [ "$hookBroken" = 1 ] && [ "${FAKE_HOOK_IGNORED:-0}" != 1 ]; then
-    echo "[sbx] ERROR: start hook /etc/sbx/start.d/10-best-practices failed; the container was not started." >&2
-    return 1
-  fi
-  if [ "$hookBroken" = 0 ] && [ "${FAKE_OFFLINE_FAIL:-0}" = 1 ]; then
-    echo "fake docker: the container could not start with networking disabled" >&2
-    return 1
-  fi
   mountSource=""
   hookSource=""
   lastArg=""
   nameArg=""
+  configValue=""
   previousArg=""
   for runArg in "$@"; do
     if [ "$previousArg" = "-e" ]; then
       case "$runArg" in
         SBX_NAME=*) nameArg=$runArg ;;
+        CLAUDE_CONFIG_DIR=*) configValue=${runArg#CLAUDE_CONFIG_DIR=} ;;
       esac
     fi
     previousArg=$runArg
@@ -533,6 +605,15 @@ run_network_none() {
     esac
     lastArg=$runArg
   done
+  case "$configValue" in
+    /proc/*) ;;
+    *)
+      if [ "${FAKE_OFFLINE_FAIL:-0}" = 1 ]; then
+        echo "fake docker: the container could not start with networking disabled" >&2
+        return 1
+      fi
+      ;;
+  esac
   if ! run_entrypoint_copy "$mountSource" "$nameArg"; then
     return 1
   fi
@@ -545,13 +626,24 @@ run_network_none() {
         return 1
       fi
     fi
-  elif [ "$hookBroken" = 0 ]; then
-    mkdir -p "$mountSource/state/claude"
-    if ! SBX_BUNDLE_DIR="$FAKE_REPO/best-practices" CLAUDE_CONFIG_DIR="$mountSource/state/claude" \
-      bash "$FAKE_REPO/claude/start.d/10-best-practices"; then
-      echo "[sbx] ERROR: start hook /etc/sbx/start.d/10-best-practices failed; the container was not started." >&2
+  else
+    case "$configValue" in
+      /proc/*)
+        if [ -n "${FAKE_BROKEN_RC:-}" ]; then
+          return "$FAKE_BROKEN_RC"
+        fi
+        ;;
+    esac
+    if [ -z "$configValue" ]; then
+      configValue=$mountSource/state/claude
+      mkdir -p "$configValue"
+    fi
+    if ! run_image_hooks "$configValue" && [ "${FAKE_HOOK_IGNORED:-0}" != 1 ]; then
       return 1
     fi
+  fi
+  if [ -n "${FAKE_START_SAYS:-}" ]; then
+    echo "$FAKE_START_SAYS"
   fi
   sh -c "$lastArg"
   return $?
@@ -561,7 +653,7 @@ run_network_none() {
 # run_claude_version ARG...: a run with --entrypoint claude: prints the installed Claude Code version.
 # --------------------------------------------------------------------------------
 run_claude_version() {
-  fakePin=$(sed -n 's/^ARG CLAUDE_CODE_VERSION=//p' "$FAKE_REPO/claude/Dockerfile")
+  fakePin=$(sed -n 's/^CLAUDE_CODE_VERSION=//p' "$FAKE_REPO/versions.env")
   printf '%s (Claude Code)\n' "${FAKE_CLAUDE_VERSION:-$fakePin}"
   return 0
 }
@@ -579,14 +671,191 @@ run_plain() {
 }
 
 # --------------------------------------------------------------------------------
+# toolchain_probe_answer WHERE: the lines of the toolchain probe, built from the pins in FAKE_REPO/versions.env; WHERE is base or login.
+# --------------------------------------------------------------------------------
+# A tool named in FAKE_TOOL_MISSING prints MISSING instead of its lines; one named in FAKE_LOGIN_MISSING does so only for login.
+toolchain_probe_answer() {
+  probeWhere=$1
+  nodePin=$(sed -n 's/^NODE_VERSION=//p' "$FAKE_REPO/versions.env")
+  ghPin=$(sed -n 's/^GH_VERSION=//p' "$FAKE_REPO/versions.env")
+  mavenPin=$(sed -n 's/^MAVEN_VERSION=//p' "$FAKE_REPO/versions.env")
+  uvTag=$(sed -n 's/^UV_IMAGE=[^:]*://p' "$FAKE_REPO/versions.env" | sed 's/@.*$//')
+  javaTag=$(sed -n 's/^TEMURIN_IMAGE=[^:]*://p' "$FAKE_REPO/versions.env" | sed 's/@.*$//')
+  javaPin=${javaTag%%_*}
+  probeElf=${FAKE_TOOL_ELF:-b700}
+  for probeTool in git gh node python3 uv java; do
+    probeLeft=0
+    if [ "$probeTool" = "${FAKE_TOOL_MISSING:-}" ]; then
+      probeLeft=1
+    fi
+    if [ "$probeWhere" = login ] && [ "$probeTool" = "${FAKE_LOGIN_MISSING:-}" ]; then
+      probeLeft=1
+    fi
+    if [ "$probeLeft" = 1 ]; then
+      printf 'MISSING %s\n' "$probeTool"
+      continue
+    fi
+    probeStale=0
+    if [ "$probeTool" = "${FAKE_TOOL_STALE:-}" ]; then
+      probeStale=1
+    fi
+    case "$probeTool" in
+      git) probeText="git version 2.43.0" ;;
+      gh) probeText="gh version $ghPin (fake)" ;;
+      node) probeText="v$nodePin" ;;
+      python3) probeText="Python 3.12.3" ;;
+      uv) probeText="uv $uvTag (fake)" ;;
+      java) probeText="openjdk version \"$javaPin\" 2026-07-21 LTS" ;;
+    esac
+    if [ "$probeStale" = 1 ]; then
+      case "$probeTool" in
+        node) probeText="v0.0.0" ;;
+        gh) probeText="gh version 0.0.0 (fake)" ;;
+        uv) probeText="uv 0.0.0 (fake)" ;;
+        java) probeText="openjdk version \"0.0.0\" 2026-07-21 LTS" ;;
+        *) probeText="$probeTool version 0.0.0" ;;
+      esac
+    fi
+    printf 'TOOL %s %s %s\n' "$probeTool" "$probeElf" "$probeText"
+  done
+  if [ "${FAKE_TOOL_MISSING:-}" = mvn ] || { [ "$probeWhere" = login ] && [ "${FAKE_LOGIN_MISSING:-}" = mvn ]; }; then
+    printf 'MISSING mvn\n'
+  else
+    mavenText=$mavenPin
+    if [ "${FAKE_TOOL_STALE:-}" = mvn ]; then
+      mavenText=0.0.0
+    fi
+    printf 'MAVEN Apache Maven %s (fake)\n' "$mavenText"
+    printf 'MAVEN_JAVA Java version: %s, vendor: Eclipse Adoptium, runtime: /opt/java/openjdk\n' "$javaPin"
+  fi
+  if [ -n "${FAKE_JAVA_VENDOR:-}" ]; then
+    printf 'JAVA_VENDOR %s\n' "$FAKE_JAVA_VENDOR"
+  else
+    printf 'JAVA_VENDOR OpenJDK Runtime Environment Temurin-%s+8 (build fake)\n' "$javaPin"
+  fi
+  printf 'JAVA_HOME /opt/java/openjdk\n'
+  for probeCommand in jq rg unzip zip ssh make gcc tzdata; do
+    if [ "$probeCommand" = "${FAKE_TOOL_MISSING:-}" ] || { [ "$probeWhere" = login ] && [ "$probeCommand" = "${FAKE_LOGIN_MISSING:-}" ]; }; then
+      printf 'MISSING %s\n' "$probeCommand"
+    else
+      printf 'CMD %s\n' "$probeCommand"
+    fi
+  done
+  printf 'PROBE-END\n'
+}
+
+# --------------------------------------------------------------------------------
+# run_toolchain_probe ARG...: a run with --entrypoint bash: the toolchain probe in a throwaway base image container.
+# --------------------------------------------------------------------------------
+run_toolchain_probe() {
+  case "$*" in
+    *"sbx-base:local -c "*": toolchain-probe"*) toolchain_probe_answer base ;;
+    *) unhandled "run $*" ;;
+  esac
+  return 0
+}
+
+# --------------------------------------------------------------------------------
+# run_image_record: a run with --entrypoint cat on the Claude image: prints the versions.env record; FAKE_RECORD_STALE=1 changes the GSD pin in it.
+# --------------------------------------------------------------------------------
+run_image_record() {
+  if [ "${FAKE_RECORD_STALE:-0}" = 1 ]; then
+    sed 's/^GSD_CORE_VERSION=.*/GSD_CORE_VERSION=0.0.0/' "$FAKE_REPO/versions.env"
+
+    return 0
+  fi
+
+  cat "$FAKE_REPO/versions.env"
+}
+
+# --------------------------------------------------------------------------------
+# run_gsd_identity: a run with --entrypoint gsd-tools: prints the identity line of the installed GSD.
+# --------------------------------------------------------------------------------
+run_gsd_identity() {
+  local gsdPin
+
+  gsdPin=$(sed -n 's/^GSD_CORE_VERSION=//p' "$FAKE_REPO/versions.env")
+  printf '{"packageName":"@opengsd/gsd-core","version":"%s"}\n' "${FAKE_GSD_IDENTITY:-$gsdPin}"
+}
+
+# --------------------------------------------------------------------------------
+# run_ccusage_version: a run with --entrypoint ccusage: prints the installed ccusage version.
+# --------------------------------------------------------------------------------
+run_ccusage_version() {
+  local ccusagePin
+
+  ccusagePin=$(sed -n 's/^CCUSAGE_VERSION=//p' "$FAKE_REPO/versions.env")
+  printf 'ccusage %s\n' "${FAKE_CCUSAGE_VERSION:-$ccusagePin}"
+}
+
+# --------------------------------------------------------------------------------
+# run_workspace_listing: a run with --entrypoint ls: lists /home/sandbox/workspace of the image, empty unless FAKE_WORKSPACE_BAKED names a file.
+# --------------------------------------------------------------------------------
+run_workspace_listing() {
+  if [ -n "${FAKE_WORKSPACE_BAKED:-}" ]; then
+    printf '%s\n' "$FAKE_WORKSPACE_BAKED"
+  fi
+}
+
+# --------------------------------------------------------------------------------
 # fake_run ARG...: answers docker run, by the kind of run.
 # --------------------------------------------------------------------------------
 fake_run() {
   case "$*" in
     *"--network none"*) run_network_none "$@" ;;
     *"--entrypoint claude"*) run_claude_version "$@" ;;
+    *"--entrypoint cat"*) run_image_record ;;
+    *"--entrypoint gsd-tools"*) run_gsd_identity ;;
+    *"--entrypoint ccusage"*) run_ccusage_version ;;
+    *"--entrypoint ls"*) run_workspace_listing ;;
+    *"--entrypoint bash"*) run_toolchain_probe "$@" ;;
     *) run_plain "$@" ;;
   esac
+}
+
+# --------------------------------------------------------------------------------
+# fake_bare_build DOCKERFILE: a build without build args and without a tag: stops with the message of that Dockerfile, as the real build does, and touches no state; FAKE_BARE_BUILD_OK=1 lets it succeed.
+# --------------------------------------------------------------------------------
+fake_bare_build() {
+  if [ "${FAKE_BARE_BUILD_OK:-0}" = 1 ]; then
+    echo "built without a tag"
+
+    return 0
+  fi
+
+  if [ "${FAKE_BARE_BUILD_ECHO:-0}" = 1 ]; then
+    case "$1" in
+      */base/Dockerfile)
+        echo '#3 [internal] load metadata for docker.io/library/ubuntu:24.04' >&2
+        echo 'ERROR: failed to solve: failed to resolve source metadata: dial tcp: lookup registry-1.docker.io: no such host' >&2
+        echo '  > FROM ${TEMURIN_IMAGE} AS jdk' >&2
+        ;;
+      */claude/Dockerfile)
+        echo '#7 [3/9] RUN : "${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION is not set; build with ./build.sh}" && npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"' >&2
+        echo '#7 3.2 npm error network request failed' >&2
+        echo 'ERROR: failed to solve: process "/bin/bash -o pipefail -c : \"${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION is not set; build with ./build.sh}\" && npm install -g" did not complete successfully: exit code: 1' >&2
+        ;;
+      *)
+        echo "fake docker: bare build of an unknown Dockerfile: $1" >&2
+        ;;
+    esac
+
+    return 1
+  fi
+
+  case "$1" in
+    */base/Dockerfile)
+      echo 'ERROR: failed to solve: base name (${TEMURIN_IMAGE}) should not be blank' >&2
+      ;;
+    */claude/Dockerfile)
+      echo '/bin/bash: line 1: CLAUDE_CODE_VERSION: CLAUDE_CODE_VERSION is not set; build with ./build.sh' >&2
+      ;;
+    *)
+      echo "fake docker: bare build of an unknown Dockerfile: $1" >&2
+      ;;
+  esac
+
+  return 1
 }
 
 # --------------------------------------------------------------------------------
@@ -595,13 +864,37 @@ fake_run() {
 fake_build() {
   shift
   imageTag=""
+  buildArgText=""
+  dockerfilePath=""
   while [ "$#" -gt 0 ]; do
     case "$1" in
       -t) imageTag=$2; shift 2 ;;
-      -f) shift 2 ;;
+      -f) dockerfilePath=$2; shift 2 ;;
+      --build-arg)
+        buildArgName=$2
+        case "$buildArgName" in
+          *=*) buildArgPair=$buildArgName ;;
+          *) buildArgPair="$buildArgName=${!buildArgName}" ;;
+        esac
+        buildArgText="$buildArgText$buildArgPair
+"
+        shift 2
+        ;;
       *) shift ;;
     esac
   done
+  while IFS= read -r buildArgPair; do
+    if [ -n "$buildArgPair" ]; then
+      printf '%s %s\n' "$imageTag" "$buildArgPair" >>"$FAKE_STATE/build-args.log"
+    fi
+  done <<EOF
+$buildArgText
+EOF
+  if [ -z "$imageTag" ] && [ -z "$buildArgText" ]; then
+    fake_bare_build "$dockerfilePath"
+    return $?
+  fi
+  printf '%s context=%s\n' "$imageTag" "$(pwd -P)" >>"$FAKE_STATE/build-args.log"
   if [ -n "$imageTag" ] && [ "$imageTag" = "${FAKE_BUILD_FAIL:-}" ]; then
     echo "ERROR: failed to solve: fake build failure for $imageTag" >&2
     return 1
@@ -743,6 +1036,7 @@ exec_h18_run() {
 exec_h14_probe() {
   printf 'OWNER /opt/sbx/best-practices %s:%s 755\n' "${FAKE_BUNDLE_OWNER:-root}" "${FAKE_BUNDLE_OWNER:-root}"
   printf 'OWNER /etc/sbx/start.d root:root 755\n'
+  printf 'OWNER /etc/sbx/start.d/05-gsd root:root 755\n'
   printf 'OWNER /etc/sbx/start.d/10-best-practices root:root 755\n'
   printf 'OWNER /etc/claude-code/managed-settings.json root:root 644\n'
   if [ "${FAKE_BUNDLE_WRITABLE:-0}" = 1 ]; then
@@ -780,6 +1074,169 @@ exec_context() {
       printf '| %s | User | < 20 |\n' "$(basename "$contextSkill")"
     done
   fi
+}
+
+# --------------------------------------------------------------------------------
+# exec_h23_plant MARKER: writes MARKER into a file of that name in each cache folder that exists on the host, unless FAKE_CACHE_NOT_SHARED is 1.
+# --------------------------------------------------------------------------------
+exec_h23_plant() {
+  local cacheHostDir
+  local stateRoot
+
+  if [ "${FAKE_CACHE_NOT_SHARED:-0}" = 1 ]; then
+    return 0
+  fi
+
+  stateRoot=$(cat "$FAKE_STATE/container.dir")/state
+
+  for cacheHostDir in "$stateRoot/cache/npm" "$stateRoot/cache/uv" "$stateRoot/m2"; do
+    if [ -d "$cacheHostDir" ]; then
+      printf '%s\n' "$1" >"$cacheHostDir/$1"
+    fi
+  done
+}
+
+# --------------------------------------------------------------------------------
+# exec_mvn_download LOCAL_REPO_ARG: answers the mvn -q get goal for junit 4.13.2 with -Dmaven.repo.local=/home/sandbox/.m2/NAME: makes the jar in NAME under state/m2 of the mounted folder; FAKE_MVN_IO_ERROR makes it fail, FAKE_NO_MAVEN_JAR leaves the jar out.
+# --------------------------------------------------------------------------------
+exec_mvn_download() {
+  local jarDir
+  local repoName=${1#-Dmaven.repo.local=/home/sandbox/.m2/}
+
+  if [ "${FAKE_MVN_IO_ERROR:-0}" = 1 ]; then
+    echo "[ERROR] Failed to execute goal on project hosttest: java.io.IOException: Input/output error" >&2
+    echo "[ERROR] Failed to delete tracking file /home/sandbox/.m2/repository-h23/junit/junit/4.13.2/junit-4.13.2.jar.lastUpdated" >&2
+
+    return 1
+  fi
+
+  if [ "${FAKE_NO_MAVEN_JAR:-0}" = 1 ]; then
+    return 0
+  fi
+
+  jarDir=$(cat "$FAKE_STATE/container.dir")/state/m2/$repoName/junit/junit/4.13.2
+  mkdir -p "$jarDir"
+  printf 'fake jar\n' >"$jarDir/junit-4.13.2.jar"
+}
+
+# --------------------------------------------------------------------------------
+# exec_pgrep_sleep: answers pgrep -x sleep: 1 while the container has exited or while FAKE_START_POLLS calls since the last compose up have not yet been made; else 0.
+# --------------------------------------------------------------------------------
+exec_pgrep_sleep() {
+  local polledCount=0
+
+  if [ -f "$FAKE_STATE/container.exited" ]; then
+    return 1
+  fi
+
+  if [ -f "$FAKE_STATE/pgrep.count" ]; then
+    polledCount=$(cat "$FAKE_STATE/pgrep.count")
+  fi
+
+  polledCount=$((polledCount + 1))
+  printf '%s\n' "$polledCount" >"$FAKE_STATE/pgrep.count"
+
+  if [ "$polledCount" -le "${FAKE_START_POLLS:-0}" ]; then
+    return 1
+  fi
+
+  printf '1\n'
+}
+
+# --------------------------------------------------------------------------------
+# exec_node_script ARG...: runs the node command on the host with CLAUDE_CONFIG_DIR set to the state/claude folder of the mounted folder.
+# --------------------------------------------------------------------------------
+exec_node_script() {
+  CLAUDE_CONFIG_DIR="$(cat "$FAKE_STATE/container.dir")/state/claude" "$@"
+}
+
+# --------------------------------------------------------------------------------
+# exec_ccusage ARG...: answers ccusage daily, monthly and session reports from the planted transcript h24-usage.jsonl, unless FAKE_CCUSAGE_EMPTY is 1; FAKE_CCUSAGE_RC makes the call fail.
+# --------------------------------------------------------------------------------
+exec_ccusage() {
+  local transcriptFile
+  local reportKind
+  local reportPeriod
+  local askedJson=0
+  local askedId=""
+  local planted=0
+  local inputTokens=0
+  local outputTokens=0
+  local totalTokens=0
+
+  if [ "${FAKE_CCUSAGE_RC:-0}" != 0 ]; then
+    echo "ccusage: native binary is not executable" >&2
+
+    return "$FAKE_CCUSAGE_RC"
+  fi
+
+  transcriptFile="$(cat "$FAKE_STATE/container.dir")/state/claude/projects/-home-sandbox-workspace-hosttest/h24-usage.jsonl"
+  reportKind=$2
+  shift 2
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --json) askedJson=1 ;;
+      --id)
+        askedId=$2
+        shift
+        ;;
+    esac
+    shift
+  done
+
+  if [ "${FAKE_CCUSAGE_EMPTY:-0}" != 1 ] && [ -f "$transcriptFile" ]; then
+    planted=1
+  fi
+
+  if [ "$planted" = 1 ] && [ "$reportKind" = session ] && ! grep -Fq "\"sessionId\":\"$askedId\"" "$transcriptFile"; then
+    planted=0
+  fi
+
+  if [ "$planted" = 1 ]; then
+    inputTokens=$((100 * ${FAKE_CCUSAGE_SCALE:-1}))
+    outputTokens=$((200 * ${FAKE_CCUSAGE_SCALE:-1}))
+    totalTokens=$((300 * ${FAKE_CCUSAGE_SCALE:-1}))
+  fi
+
+  case "$reportKind" in
+    daily) reportPeriod=2020-01-07 ;;
+    monthly) reportPeriod=2020-01 ;;
+    session) reportPeriod="" ;;
+    *) unhandled "exec ccusage $reportKind" ;;
+  esac
+
+  if [ "$askedJson" != 1 ] && [ "${FAKE_CCUSAGE_TABLE_NOISE:-0}" = 1 ]; then
+    printf '| 2020-01-07 | 7 | 1300 | 0.01 |\n'
+
+    return 0
+  fi
+
+  if [ "$askedJson" != 1 ]; then
+    printf '| Total | %s | %s | %s |\n' "$inputTokens" "$outputTokens" "$totalTokens"
+
+    return 0
+  fi
+
+  if [ "$reportKind" = session ]; then
+    if [ "$planted" = 1 ]; then
+      printf '{\n  "sessionId": "%s",\n  "totalTokens": %s\n}\n' "$askedId" "$totalTokens"
+    else
+      printf '{}\n'
+    fi
+
+    return 0
+  fi
+
+  printf '{\n  "%s": [\n' "$reportKind"
+
+  if [ "$planted" = 1 ]; then
+    printf '    {\n      "period": "%s",\n      "inputTokens": %s,\n      "outputTokens": %s,\n      "totalTokens": %s\n    }\n' \
+      "$reportPeriod" "$inputTokens" "$outputTokens" "$totalTokens"
+  fi
+
+  printf '  ],\n  "totals": {\n    "inputTokens": %s,\n    "outputTokens": %s,\n    "totalTokens": %s\n  }\n}\n' \
+    "$inputTokens" "$outputTokens" "$totalTokens"
 }
 
 # --------------------------------------------------------------------------------
@@ -865,13 +1322,31 @@ fake_exec() {
     "bash -i") exec_history_shell ;;
     "env H18_SCRIPT="*) exec_h18_run "$@" ;;
     "sh -c : h14-probe"*) exec_h14_probe ;;
+    "sh -c : h23-plant"*) exec_h23_plant "${!#}" ;;
+    "mvn -q org.apache.maven.plugins:maven-dependency-plugin:"*":get -Dartifact=junit:junit:4.13.2 -Dmaven.repo.local=/home/sandbox/.m2/"*) exec_mvn_download "${!#}"; return $? ;;
+    "pgrep -x sleep") exec_pgrep_sleep; return $? ;;
+    "node -e "*) exec_node_script "$@"; return $? ;;
+    "ccusage "*) exec_ccusage "$@"; return $? ;;
+    "npm config get cache") printf '%s\n' "${FAKE_NPM_CACHE:-/home/sandbox/workspace/state/cache/npm}" ;;
+    "uv cache dir") printf '%s\n' "/home/sandbox/workspace/state/cache/uv" ;;
+    "readlink /home/sandbox/.m2") printf '%s\n' "${FAKE_M2_LINK:-/home/sandbox/workspace/state/m2}" ;;
+    "bash -lc "*": toolchain-probe"*) toolchain_probe_answer login ;;
     "sh -c test ! -e"*)
       if [ "${FAKE_EXEC_RC:-0}" != 0 ]; then
         return "$FAKE_EXEC_RC"
       fi
-      if [ "${FAKE_SHARE_EXISTS:-0}" = 1 ]; then
-        return 1
-      fi
+      case "$*" in
+        *".local/bin/claude"*)
+          if [ "${FAKE_LOCAL_BIN_EXISTS:-0}" = 1 ]; then
+            return 1
+          fi
+          ;;
+        *)
+          if [ "${FAKE_SHARE_EXISTS:-0}" = 1 ]; then
+            return 1
+          fi
+          ;;
+      esac
       ;;
     *"claude -p /context") exec_context ;;
     *) unhandled "exec $execName $*" ;;

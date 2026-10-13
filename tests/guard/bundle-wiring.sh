@@ -6,13 +6,14 @@ set -u
 . "$(dirname "$0")/lib.sh"
 
 # --------------------------------------------------------------------------------
-# bundle_reaches_build_context: The bundle must reach the build: the .dockerignore allowlist lets best-practices/ in, and every COPY source in both Dockerfiles exists and sits inside base/, claude/ or best-practices/.
+# bundle_reaches_build_context: The bundle must reach the build: the .dockerignore allowlist lets best-practices/ and versions.env in, and every COPY source in both Dockerfiles exists and sits inside base/, claude/ or best-practices/, or is versions.env.
 # --------------------------------------------------------------------------------
+# A COPY with --from reads a build stage, not the build context, so it is not checked. A source is the first word after COPY that does not start with --.
 bundle_reaches_build_context() {
   local wanted dockerfile source firstSegment
   local ok=0
 
-  for wanted in '*' '!base' '!claude' '!best-practices'; do
+  for wanted in '*' '!base' '!claude' '!best-practices' '!versions.env'; do
     if ! has_line .dockerignore "$wanted"; then
       echo "    .dockerignore: missing the line $wanted"
       ok=1
@@ -21,6 +22,10 @@ bundle_reaches_build_context() {
 
   for dockerfile in $DOCKERFILES; do
     while IFS= read -r source; do
+      if [ -z "$source" ]; then
+        continue
+      fi
+
       firstSegment=${source%%/*}
       if [ ! -e "$source" ]; then
         echo "    $dockerfile: COPY source $source does not exist"
@@ -30,12 +35,14 @@ bundle_reaches_build_context() {
       case "$firstSegment" in
         base | claude | best-practices) ;;
         *)
-          echo "    $dockerfile: COPY source $source is outside base, claude and best-practices"
-          ok=1
+          if [ "$source" != "versions.env" ]; then
+            echo "    $dockerfile: COPY source $source is outside base, claude, best-practices and versions.env"
+            ok=1
+          fi
           ;;
       esac
     done <<EOF
-$(grep -E '^COPY ' "$dockerfile" | awk '{ print $2 }')
+$(grep -E '^COPY ' "$dockerfile" | grep -v -e '--from=' | awk '{ for (i = 2; i <= NF; i++) { if ($i !~ /^--/) { print $i; break } } }')
 EOF
   done
 

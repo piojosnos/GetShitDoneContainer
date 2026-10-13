@@ -5,10 +5,20 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 | On the Mac | Holds |
 |---|---|
 | `$SBX_DIR/<name>/` | your code |
-| `$SBX_DIR/state/` | Claude login, settings and sessions; bash history; gh login; git identity |
+| `$SBX_DIR/state/` | Claude login, settings and sessions; bash history; gh login; git identity; npm, uv and Maven caches |
 
 - Nothing is mounted over the container's home directory, so everything the image provides stays visible.
 - It runs side by side with the old `ClaudeCode/` layout, which keeps working and stays documented in `README.md`.
+
+## What the images hold
+
+| Image | Holds |
+|---|---|
+| `sbx-base:local` | Ubuntu 24.04, git, gh, Node.js 24, Python 3 (pip, venv) and uv, the Temurin JDK 21, Maven, jq, ripgrep, zip and unzip, the ssh client, make and a C compiler |
+| `sbx-claude:local` | `sbx-base` plus Claude Code, GSD, ccusage and the best-practices bundle |
+
+- Python projects use uv or a venv, because Ubuntu blocks plain pip installs into the system Python.
+- Every version is in `versions.env` (see "Build the images").
 
 ## Requirements
 
@@ -18,14 +28,20 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 
 ## Build the images
 
-From the repo root. Build the base first: the Claude image starts `FROM` it.
+From the repo root:
 
 ```bash
-docker build -f base/Dockerfile -t sbx-base:local .
-docker build -f claude/Dockerfile -t sbx-claude:local .
+./build.sh
 ```
 
-Both build from the repo root (the final `.`). A `.dockerignore` lets only `base/`, `claude/` and `best-practices/` into the build.
+- Builds `sbx-base:local`, then `sbx-claude:local`, which starts `FROM` the base.
+- Every version (base OS image, toolchains, Claude Code) lives in `versions.env` at the repo root. `build.sh` passes it to both builds.
+- The Dockerfiles have no default versions, so a plain `docker build` stops and names the missing pin.
+- Extra options pass through to both builds, for example `./build.sh --no-cache` for a clean build.
+- `build.sh` runs from any folder; the repo root is the build context.
+- Plain apt packages are not pinned. They follow the pinned Ubuntu release and pick up its security fixes at each rebuild.
+- In a sandbox shell, `cat /etc/sbx/versions.env` shows the pins the image was built with.
+- A `.dockerignore` lets only `base/`, `claude/`, `best-practices/` and `versions.env` into the build.
 
 ## Create a sandbox folder
 
@@ -51,7 +67,13 @@ What lives where:
 | `$SBX_DIR/state/shell` (holds `bash_history`) | `/home/sandbox/workspace/state/shell` | `HISTFILE` |
 | `$SBX_DIR/state/gh` (holds `hosts.yml`) | `/home/sandbox/workspace/state/gh` | `GH_CONFIG_DIR` |
 | `$SBX_DIR/state/git` (holds `config`) | `/home/sandbox/workspace/state/git` | `GIT_CONFIG_GLOBAL` |
+| `$SBX_DIR/state/cache/npm` | `/home/sandbox/workspace/state/cache/npm` | `NPM_CONFIG_CACHE` |
+| `$SBX_DIR/state/cache/uv` | `/home/sandbox/workspace/state/cache/uv` | `UV_CACHE_DIR` |
+| `$SBX_DIR/state/m2` | `/home/sandbox/workspace/state/m2` (also `~/.m2`) | |
 
+- The caches survive recreate and rebuild, so an upgrade does not download everything again.
+- Many small files over the Mac file sharing are slower than the container's own disk, and the caches can grow to several GB per sandbox.
+- Deleting `state/cache` or `state/m2` is always safe; the tools download again.
 - Everything else in `/home/sandbox` (`.bashrc`, `.local`, ...) comes from the image.
 - On the Mac, open `$SBX_DIR/$SBX_NAME` in your IDE, not `$SBX_DIR`: `state/` holds credentials.
 - Bash history is written right after each command, not when the shell exits. It is on the Mac at once and survives `docker compose down` and a fresh `up`. Other shells that are already open see it only after they restart.
@@ -66,10 +88,16 @@ What lives where:
 
 ## Start, enter, stop
 
-Start, from the repo root. `--wait` reports a container that fails to start instead of returning early.
+Start, from the repo root. `up` returns before the start hooks (the bundle and GSD sync) finish, so it does not report a failing hook: the container exits afterwards.
 
 ```bash
 docker compose up -d --wait
+```
+
+The hooks are done when the container runs its command. This succeeds then, and fails when the container has exited (`docker logs "sbx-$SBX_NAME"` shows why):
+
+```bash
+docker exec "sbx-$SBX_NAME" pgrep -x sleep
 ```
 
 Open a shell. Open as many as you like:
@@ -99,16 +127,23 @@ docker compose down
 
 ## Rebuild without losing login
 
-Stop, rebuild both images (add `--no-cache` for a clean build), start again:
+Stop, rebuild both images (add `--no-cache` to `build.sh` for a clean build), start again:
 
 ```bash
 docker compose down
-docker build -f base/Dockerfile -t sbx-base:local .
-docker build -f claude/Dockerfile -t sbx-claude:local .
+./build.sh
 docker compose up -d --wait
 ```
 
 The login and history live in `state/` on the Mac, so the new container picks them up unchanged.
+
+## Bump a version or add a tool
+
+1. Change the value in `versions.env`. For a new tool, add one `NAME=value` line there, and in the Dockerfile that installs it an `ARG NAME` right above the `RUN` that uses it. `build.sh` needs no change.
+2. Run `./build.sh`.
+3. Run `docker compose up -d --wait`. Compose recreates the container on the new image; login and history stay in `state/`.
+
+- A new or bumped pin gets the same review as any new dependency: exact version, publish date, provenance, and the digest or checksum.
 
 ## Best-practices bundle
 
@@ -126,7 +161,7 @@ A start needs no network. What it does in `state/claude`:
 |---|---|
 | `rules/` | Replaced by the image's rules. A hand edit or a stray file is lost. |
 | Each bundle skill folder in `skills/` | Replaced by the image's copy. Its name is recorded in `.best-practices-skills`. |
-| Other skills (GSD's, your own) | Never touched. |
+| Other skills (your own) | Never touched by the bundle sync. GSD's skills are synced by GSD, see below. |
 | `projects/` (memories), `CLAUDE.md`, `settings.json`, the login | Never touched. |
 
 How a rule loads:
@@ -154,6 +189,30 @@ Edit protection:
 Memories are not shipped. They belong to each project. A memory that proves general becomes a bundle rule by PR.
 
 Moving an existing project into a sandbox: its old memories and `CLAUDE.md` may repeat bundle rules. Paste the prompt in [`prompts/consolidate-memories.md`](prompts/consolidate-memories.md) into Claude once; it sorts them and removes duplicates only after you approve.
+
+## GSD
+
+GSD comes baked into the Claude image at the version in `versions.env`, from `@opengsd/gsd-core` only. At every start, before the bundle sync, the image's GSD is synced into `state/claude`. It needs no network.
+
+| In `state/claude` | What a start does |
+|---|---|
+| `gsd-core/`, `agents/`, `hooks/`, every `skills/gsd-*` folder | Replaced by the image's GSD. A hand edit is first saved to `gsd-local-patches/`. |
+| `settings.json` | GSD adds its hooks and permissions. Your own keys stay. |
+| Your own skills, `projects/` (sessions and memories), `CLAUDE.md`, the login | Never touched. |
+
+- GSD owns every skill whose name starts with `gsd-`. Give your own skills another name: a start removes a `gsd-*` skill that GSD does not ship.
+- GSD runs before the bundle, so a bundle skill wins a name clash.
+- A failed sync stops the start with an `[sbx] ERROR` line and the installer output above it.
+- GSD's own update notice in a session does not apply here. To upgrade GSD, change `GSD_CORE_VERSION` in `versions.env` and rebuild (see "Bump a version or add a tool").
+- The GSD package brings a second Claude binary for its agent SDK under `/usr/local/lib`. It is not on `PATH` and never updates itself.
+
+## Usage reports (ccusage)
+
+In a sandbox shell, run `ccusage daily`, `ccusage monthly` or `ccusage session`. Add `--json` for JSON.
+
+- It reads `CLAUDE_CONFIG_DIR`, which is this sandbox's `state/claude`, so it reports this project only.
+- By default it fetches the current price table from the network when it runs. `--offline` uses the table it ships with.
+- Starting the sandbox needs no network either way.
 
 ## Safety checks
 
@@ -202,9 +261,28 @@ If `up` fails, `docker compose logs` shows the `[sbx] ERROR` line that says what
 
 ## Verify a new build
 
-After building, or after changing anything under `base/`, `claude/`, `best-practices/` or `compose.yml`, run `bash tests/host/run-all.sh` on the Mac. When it passes, the automated checks hold. Claude's login and Claude's own behaviour are checked only by the helpers in `tests/host/manual/`: H-07 (login), the second half of H-09 (login and session survive a rebuild), the `claude doctor` part of H-13, and H-19 (the bundle as Claude uses it). Run them after a Claude Code pin change, a change to the managed settings, or a change to login handling. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers.
+After building, or after changing anything under `base/`, `claude/`, `best-practices/` or `compose.yml`, run `bash tests/host/run-all.sh` on the Mac. When it passes, the automated checks hold. Claude's login and Claude's own behaviour are checked only by the helpers in `tests/host/manual/`: H-07 (login), the second half of H-09 (login and session survive a rebuild), the `claude doctor` part of H-13, the GSD bump part of H-16 (`manual/h16-gsd-bump.sh`), and H-19 (the bundle as Claude uses it). Run them after a Claude Code or GSD pin change, a change to the managed settings, or a change to login handling. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers.
 
 It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
+
+## Free disk space
+
+Rebuilds and host-test runs pile up images, build cache and run folders. From the repo root:
+
+```bash
+./clean.sh          # shows disk use, containers, host-test run folders and images; removes nothing
+./clean.sh --yes    # removes them
+```
+
+| Removed | Kept |
+|---|---|
+| The test sandbox `sbx-hosttest` and its network | Every other container, running or stopped, old sandboxes included |
+| Every host-test run folder (`sbx-hosttest-*` in the macOS temp folder; each may hold a test Claude login) | The images those containers use |
+| The Docker build cache | All volumes |
+| Every image no container uses | Every sandbox folder and its `state/` |
+
+- `sbx-base:local` and `sbx-claude:local` go too when no container uses them. `./build.sh` rebuilds them; the first build after a clean takes a few minutes.
+- A build that fails with `No space left on device` usually means the Docker Desktop disk is full: run `./clean.sh --yes`, or raise the disk limit in Docker Desktop, Settings, Resources.
 
 ## Troubleshooting and known limits
 
@@ -215,12 +293,15 @@ It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
 | A check fails only because of the capability drop | Remove the `cap_drop` block from `compose.yml`, keep `no-new-privileges`, and report it. |
 | "Mounts denied" or "path is not shared" | Add the parent of `SBX_DIR` in Docker Desktop, Settings, Resources, File sharing. |
 | `required variable SBX_DIR is missing a value` | Export both `SBX_NAME` and `SBX_DIR` in this terminal. |
+| Maven fails with `java.io.IOException: Input/output error` and `Failed to delete tracking file` | Maven 3.9.12 and later cannot keep their local repository on the Docker Desktop for Mac mount. Keep `MAVEN_VERSION` at 3.9.11 until a newer release passes host check H-23. |
 | `up` fails with `... must be lowercase` and names `sbx-<name>-name-check` | `SBX_NAME` has an uppercase letter. Use the lowercase name; see the name rule in Requirements. |
 | `[sbx] ERROR: SBX_NAME "..." breaks the sandbox name rule` | Pick a name that follows the rule and rename the project folder to match. A sandbox named with `_` or `.` before this rule needs the same rename. |
 | `[sbx] ERROR: ... (the project folder) is missing` | Create it: `mkdir -p "$SBX_DIR/$SBX_NAME"`. Or `SBX_DIR` / `SBX_NAME` is mistyped. |
 | `claude --resume` shows nothing | Sessions are keyed by directory; start it from the same directory as before. |
 | A plain `docker run` is refused | Intended. Bypass the entrypoint, as in "Image-only smoke tests". |
 | The container stops right after `up` | Run `docker logs sbx-<name>`. The `[sbx] ERROR: start hook ... failed` line and the hook's own error above it say what broke. If the line says `is not executable`, the image lost the hook's execute bit; rebuild the image. If it says `is not a regular file`, a hook link in the image points nowhere (or something that is not a file sits in the hook folder); rebuild the image. |
+| `[sbx] ERROR: the GSD sync into ... failed` | The installer output above the line says why. Rebuild the image. A hand edit of a GSD file is kept in `state/claude/gsd-local-patches/`. |
+| A skill of yours named `gsd-...` is gone after a start | GSD owns that prefix. Rename the skill. |
 | Claude refuses to edit a file under `~/.claude/rules` or a bundle skill | Intended. Edit `best-practices/` in this repo (see "Best-practices bundle"). |
 | A sandbox migrated from the old layout loads the same rules twice | Remove the `@AGENTS.md` and `@code-conventions.md` imports from `state/claude/CLAUDE.md`. |
 | Host check H-10 showed Docker creating the missing folder | Report it. An `env_file` sentinel at the root of `SBX_DIR` would make Compose itself refuse a missing folder; it is not planned while H-10 passes, and the container refuses to start either way. |

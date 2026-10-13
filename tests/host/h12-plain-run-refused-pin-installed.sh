@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # H-12: a plain docker run is refused by the start check, and the installed Claude Code
-# version is the pinned one from claude/Dockerfile.
+# version is the pinned one from versions.env.
 # Depends on: nothing
 # Needs: images built
 set -u
