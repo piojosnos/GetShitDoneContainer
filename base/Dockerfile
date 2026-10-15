@@ -1,7 +1,10 @@
 # check=skip=InvalidDefaultArgInFrom
-# Shared base for every sbx agent image: Linux tools and toolchains, nothing agent-specific.
-# Build with ./build.sh. No ARG has a default, so a bare build names the missing pin.
-# Official JDK, uv, shellcheck and hadolint images, pinned in versions.env; the final stage copies only their files.
+# ------------------------------------------------------------------------------
+# Shared base for every sbx agent image: Linux tools and toolchains
+# ------------------------------------------------------------------------------
+# Build with ./build.sh. No ARG has a default, so a bare build names the pin.
+# The stages copy only files from official images pinned in versions.env.
+# ------------------------------------------------------------------------------
 ARG TEMURIN_IMAGE
 ARG UV_IMAGE
 ARG UBUNTU_IMAGE
@@ -15,10 +18,11 @@ FROM ${UBUNTU_IMAGE}
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# --- OS packages ---
-# Apt lists go in the same layer. Packages follow the pinned Ubuntu release.
-# Python comes from apt; uv handles projects and other Python versions.
-# No ARG above this RUN, so a pin bump never invalidates it.
+# ------------------------------------------------------------------------------
+# OS packages: apt tools and Python
+# ------------------------------------------------------------------------------
+# Apt lists go in the same layer. No ARG above this RUN, so a pin bump keeps it.
+# ------------------------------------------------------------------------------
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
        ca-certificates curl git less procps xz-utils \
@@ -26,8 +30,11 @@ RUN apt-get update \
        python3 python3-venv python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# --- Node.js ---
-# Official tarball, checked against nodejs.org SHASUMS256.txt; builds natively on arm64.
+# ------------------------------------------------------------------------------
+# Node.js from the official tarball
+# ------------------------------------------------------------------------------
+# Checked against nodejs.org SHASUMS256.txt; builds natively on arm64.
+# ------------------------------------------------------------------------------
 ARG NODE_VERSION
 RUN : "${NODE_VERSION:?NODE_VERSION is not set; build with ./build.sh}" \
     && arch="$(dpkg --print-architecture)" \
@@ -38,8 +45,11 @@ RUN : "${NODE_VERSION:?NODE_VERSION is not set; build with ./build.sh}" \
     && tar -xJf "$nodeArchive" -C /usr/local --strip-components=1 --no-same-owner \
     && rm "$nodeArchive"
 
-# --- GitHub CLI ---
-# Release tarball plus checksums file; the cli.github.com apt repo cannot pin a version.
+# ------------------------------------------------------------------------------
+# GitHub CLI from the release tarball, checked against its checksums
+# ------------------------------------------------------------------------------
+# The cli.github.com apt repo cannot pin a version.
+# ------------------------------------------------------------------------------
 ARG GH_VERSION
 RUN : "${GH_VERSION:?GH_VERSION is not set; build with ./build.sh}" \
     && arch="$(dpkg --print-architecture)" \
@@ -50,13 +60,19 @@ RUN : "${GH_VERSION:?GH_VERSION is not set; build with ./build.sh}" \
     && tar -xzf "$ghArchive" -C /usr/local/bin --strip-components=2 --no-same-owner "${ghArchiveDir}/bin/gh" \
     && rm "$ghArchive"
 
-# --- JDK (Temurin) ---
+# ------------------------------------------------------------------------------
+# JDK (Temurin) copied from the official image
+# ------------------------------------------------------------------------------
 # Linked into /usr/local/bin because a login shell may reset PATH.
+# ------------------------------------------------------------------------------
 COPY --from=jdk /opt/java/openjdk /opt/java/openjdk
 RUN for tool in /opt/java/openjdk/bin/*; do ln -s "$tool" "/usr/local/bin/$(basename "$tool")"; done
 
-# --- Maven ---
+# ------------------------------------------------------------------------------
+# Maven from Maven Central
+# ------------------------------------------------------------------------------
 # Maven Central keeps every release, so an old pin stays buildable.
+# ------------------------------------------------------------------------------
 ARG MAVEN_VERSION
 RUN : "${MAVEN_VERSION:?MAVEN_VERSION is not set; build with ./build.sh}" \
     && mavenArchive="apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
@@ -68,29 +84,41 @@ RUN : "${MAVEN_VERSION:?MAVEN_VERSION is not set; build with ./build.sh}" \
     && rm "$mavenArchive" \
     && ln -s /opt/maven/bin/mvn /usr/local/bin/mvn
 
-# --- uv ---
+# ------------------------------------------------------------------------------
+# uv from the pinned image
+# ------------------------------------------------------------------------------
 COPY --from=uv /uv /uvx /usr/local/bin/
 
-# --- Linters ---
-# One static binary from each pinned image, so the checks run the same in every sandbox.
+# ------------------------------------------------------------------------------
+# shellcheck and hadolint: one static binary from each pinned image
+# ------------------------------------------------------------------------------
+# So the checks run the same in every sandbox.
+# ------------------------------------------------------------------------------
 COPY --from=shellcheck --chmod=755 /bin/shellcheck /usr/local/bin/shellcheck
 COPY --from=hadolint --chmod=755 /bin/hadolint /usr/local/bin/hadolint
 
-# --- The sandbox user ---
-# Replaces the ubuntu user at 1000:1000, so files on the mounted folder keep predictable owners.
+# ------------------------------------------------------------------------------
+# The sandbox user, replacing the ubuntu user at 1000:1000
+# ------------------------------------------------------------------------------
+# So files on the mounted folder keep predictable owners.
+# ------------------------------------------------------------------------------
 RUN (userdel -r ubuntu || true) \
     && useradd -m -u 1000 -s /bin/bash sandbox \
     && test "$(id -u sandbox):$(id -g sandbox)" = "1000:1000"
 
-# --- git safe.directory ---
-# In /etc/gitconfig (image, not mount), so repos made on the Mac never hit "dubious ownership".
+# ------------------------------------------------------------------------------
+# git safe.directory for every folder
+# ------------------------------------------------------------------------------
+# In /etc/gitconfig (image, not mount): Mac repos never hit "dubious ownership".
+# ------------------------------------------------------------------------------
 RUN git config --system safe.directory '*'
 
-# --- Per-shell settings ---
-# Image ENV, because docker exec shells never run the entrypoint.
-# Everything writable lives under state/ in the mount, so it survives recreate and rebuild.
-# GIT_CONFIG_GLOBAL points into a folder, never a single file: git replaces the file by rename.
-# SBX_STATE_DIRS lists the state folders the entrypoint creates; agent images append to it.
+# ------------------------------------------------------------------------------
+# Per-shell settings as image ENV
+# ------------------------------------------------------------------------------
+# docker exec shells never run the entrypoint, so they get these from ENV.
+# GIT_CONFIG_GLOBAL points into a folder: git replaces the file by rename.
+# ------------------------------------------------------------------------------
 ENV HISTFILE=/home/sandbox/workspace/state/shell/bash_history \
     PROMPT_COMMAND="history -a" \
     GH_CONFIG_DIR=/home/sandbox/workspace/state/gh \
@@ -102,27 +130,39 @@ ENV HISTFILE=/home/sandbox/workspace/state/shell/bash_history \
     SBX_STATE_DIRS="cache/npm cache/uv m2" \
     LANG=C.UTF-8
 
-# --- Entrypoint ---
+# ------------------------------------------------------------------------------
+# The entrypoint and its library
+# ------------------------------------------------------------------------------
 # Copied as root: the script is mode 755, the library it sources is 644.
+# ------------------------------------------------------------------------------
 COPY base/sbx-entrypoint /usr/local/bin/sbx-entrypoint
 COPY base/sbx-start-lib.sh /usr/local/bin/sbx-start-lib.sh
 RUN chmod 755 /usr/local/bin/sbx-entrypoint \
     && chmod 644 /usr/local/bin/sbx-start-lib.sh
 
-# --- Start hooks ---
-# The entrypoint runs these in name order at start; a bad entry stops the start. Agent images add theirs.
+# ------------------------------------------------------------------------------
+# The start hooks folder
+# ------------------------------------------------------------------------------
+# The entrypoint runs these in name order at start; a bad entry stops the start.
+# Agent images add theirs.
+# ------------------------------------------------------------------------------
 RUN mkdir -p /etc/sbx/start.d
 
-# --- Home folders ---
-# Build time, so no mount exists yet: creates the empty mount target and ~/.local/state as sandbox.
-# ~/.m2 links into state/m2 (Maven has no clean variable for its repository).
+# ------------------------------------------------------------------------------
+# Home folders: the empty mount target and ~/.local/state
+# ------------------------------------------------------------------------------
+# Build time, so no mount exists yet. ~/.m2 links into state/m2: Maven has no
+# clean variable for its repository.
+# ------------------------------------------------------------------------------
 USER sandbox
 RUN mkdir -p /home/sandbox/workspace /home/sandbox/.local/state \
     && ln -s /home/sandbox/workspace/state/m2 /home/sandbox/.m2
 
-# --- Build-time smoke test ---
-# Runs as sandbox; each version must match its pin.
-# Last RUN: the mount point must be empty, because the mount hides anything the image holds there.
+# ------------------------------------------------------------------------------
+# Build-time smoke test: each version must match its pin
+# ------------------------------------------------------------------------------
+# Last RUN: the mount point must stay empty; a mount hides what the image holds.
+# ------------------------------------------------------------------------------
 RUN test "$(node -v)" = "v${NODE_VERSION}" \
     && gh --version | grep -F "gh version ${GH_VERSION} " >/dev/null \
     && mvn -v | grep -F "Apache Maven ${MAVEN_VERSION} " >/dev/null \
