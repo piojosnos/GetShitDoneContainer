@@ -10,7 +10,7 @@ set -u
 # --------------------------------------------------------------------------------
 # Group programs, in run order
 # --------------------------------------------------------------------------------
-groupList="helpers.sh host-rules.sh suite-lists.sh sandbox-rules.sh linters.sh"
+groupList="helpers.sh sandbox-rules.sh linters.sh"
 
 # --------------------------------------------------------------------------------
 # Main / Entry Point

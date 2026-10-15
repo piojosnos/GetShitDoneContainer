@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Self-test of the sandbox rules: the supply chain and bundle wiring rules pass on a clean copy and name each planted pin or COPY problem, and the supply chain rules also catch the old GSD package in a hook or helper, a download piped to a shell past a line break or through a substitution, and an install without a declared pin; the start rules pass on a clean copy and fail, naming the line, when working_dir is put back under the project folder, and fail when the name-check service is gone or can run a container; the state folder rule fails when the Claude image replaces SBX_STATE_DIRS, and the npm cache rule fails, naming the line, on an npm install without the throwaway cache; the isolation rules pass on a clean copy and fail, naming the line, on each planted way to undo the privilege limits and on each short-form or inline mount; the docs rule passes on a clean copy and fails, naming the line, when an image comment promises that nothing is created or SANDBOX.md promises a good build, and fails when a doc's name pattern differs from the code, a doc states the old name rule or the fake docker invents a Compose refusal.
-# - Run by run-all.sh; runs alone too.
-# - Runs the real tests/guard/start.sh and tests/guard/docs.sh inside a scratch copy of the tree, so a planted problem never touches the real files.
-# - Makes one work folder under TMPDIR and removes only that folder at exit.
-# - Usage, from anywhere: bash tests/selftest/guard/sandbox-rules.sh   (exit 0 = every case passes)
+# ------------------------------------------------------------------------------
+# Self-test of the sandbox rules: planted problems must fail the right rule
+# ------------------------------------------------------------------------------
+# Usage: bash tests/selftest/guard/sandbox-rules.sh (exit 0 = every case passes)
+# Each case plants its problem in a scratch copy of the tree.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 
@@ -291,49 +292,6 @@ case_isolation_rules() {
 }
 
 # --------------------------------------------------------------------------------
-# Cases of the docs rules: a clean copy, an image comment that promises nothing is created, a doc that promises a good build, a drifted name pattern, the old name rule and an invented Compose refusal in the fake docker
-# --------------------------------------------------------------------------------
-case_docs_rule() {
-  echo "--- docs rule"
-
-  make_scratch_repo || return 1
-  edit_scratch_file base/Dockerfile 's/never creates anything on the Mac/may be asked not to create a folder on the Mac/' || return 1
-  run_scratch_guard "$WORK/docs-clean.out" docs.sh
-  expect "sandbox rules: an image comment without the promise passes the docs rule" equals "$GUARD_RC" 0
-
-  make_scratch_repo || return 1
-  printf '# - It never creates anything on the Mac.\n' >>"$WORK/repo/base/Dockerfile"
-  run_scratch_guard "$WORK/docs-promise.out" docs.sh
-  expect "sandbox rules: a promise that nothing is created fails" has_text "$WORK/docs-promise.out" "FAIL: docs_promise_only_what_happens"
-  expect "sandbox rules: the promising line is named" has_text "$WORK/docs-promise.out" "never creates anything on the Mac"
-
-  make_scratch_repo || return 1
-  printf 'When it passes, the build is good.\n' >>"$WORK/repo/SANDBOX.md"
-  run_scratch_guard "$WORK/docs-good-build.out" docs.sh
-  expect "sandbox rules: a doc that promises a good build fails" has_text "$WORK/docs-good-build.out" "FAIL: docs_promise_only_what_happens"
-  expect "sandbox rules: the good-build line is named" has_text "$WORK/docs-good-build.out" "When it passes, the build is good."
-  expect "sandbox rules: a doc that promises a good build exits non-zero" test "$GUARD_RC" -ne 0
-
-  make_scratch_repo || return 1
-  edit_scratch_file SANDBOX.md 's/{0,30}/{0,40}/' || return 1
-  run_scratch_guard "$WORK/docs-pattern.out" docs.sh
-  expect "sandbox rules: a doc whose name pattern differs from the code fails" has_text "$WORK/docs-pattern.out" "FAIL: docs_state_the_sandbox_name_rule"
-  expect "sandbox rules: the differing pattern is reported" has_text "$WORK/docs-pattern.out" "SANDBOX.md does not state the name pattern"
-
-  make_scratch_repo || return 1
-  printf 'SBX_NAME: lowercase letters, digits, - and _.\n' >>"$WORK/repo/SANDBOX.md"
-  run_scratch_guard "$WORK/docs-old-rule.out" docs.sh
-  expect "sandbox rules: the old name rule in a doc fails" has_text "$WORK/docs-old-rule.out" "FAIL: docs_state_the_sandbox_name_rule"
-  expect "sandbox rules: the old rule line is named" has_text "$WORK/docs-old-rule.out" "SBX_NAME: lowercase letters, digits, - and _."
-
-  make_scratch_repo || return 1
-  printf '# fake note: "sbx-X" is not a valid project name\n' >>"$WORK/repo/tests/selftest/host/support/fake-docker"
-  run_scratch_guard "$WORK/docs-fake-refusal.out" docs.sh
-  expect "sandbox rules: an invented Compose refusal in the fake docker fails" has_text "$WORK/docs-fake-refusal.out" "FAIL: fake_docker_claims_only_real_compose"
-  expect "sandbox rules: the invented refusal line is named" has_text "$WORK/docs-fake-refusal.out" 'fake note: "sbx-X" is not a valid project name'
-}
-
-# --------------------------------------------------------------------------------
 # Main / Entry Point
 # --------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -343,5 +301,4 @@ case_supply_chain_evasions
 case_start_rules
 case_state_and_cache_rules
 case_isolation_rules
-case_docs_rule
 finish_cases

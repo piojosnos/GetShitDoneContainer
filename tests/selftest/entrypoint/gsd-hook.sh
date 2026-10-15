@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Self-test of claude/start.d/05-gsd against the fake GSD in tests/selftest/host/support/fake-gsd.
+# Self-test of claude/start.d/05-gsd against the fake GSD in tests/selftest/entrypoint/support/fake-gsd.
 # - Proves the success line, the hidden installer output, the fail-closed stops, the stop before the
 #   installer when the config folder cannot be made, the version check and the bundle winning a name clash.
 # - Run by run-all.sh; runs alone too.
@@ -14,8 +14,8 @@ set -u
 # --------------------------------------------------------------------------------
 install_fake_gsd() {
   mkdir -p "$WORK/bin" || return 1
-  cp "$REPO/tests/selftest/host/support/fake-gsd" "$WORK/bin/gsd-core" || return 1
-  cp "$REPO/tests/selftest/host/support/fake-gsd" "$WORK/bin/gsd-tools" || return 1
+  cp "$REPO/tests/selftest/entrypoint/support/fake-gsd" "$WORK/bin/gsd-core" || return 1
+  cp "$REPO/tests/selftest/entrypoint/support/fake-gsd" "$WORK/bin/gsd-tools" || return 1
   chmod +x "$WORK/bin/gsd-core" "$WORK/bin/gsd-tools" || return 1
 
   export PATH="$WORK/bin:$PATH"
