@@ -1,8 +1,8 @@
-# Host checklist (H-00..H-25)
+# Host checklist (H-00..H-26)
 
 The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them. Five short helpers in `tests/host/manual/` check what the script cannot: Claude's login, Claude's own behaviour, `claude doctor` and a real GSD pin bump. Run them after a change the script cannot see, or when a check fails and you want to look closer.
 
-- **IDs:** each check has an ID, H-00 to H-25 (H for host), so results can be reported by ID ("H-10 failed").
+- **IDs:** each check has an ID, H-00 to H-26 (H for host), so results can be reported by ID ("H-10 failed").
 - **When:** once after building a new version of the images or `compose.yml`.
 - **Setup and daily use:** see [`SANDBOX.md`](../SANDBOX.md).
 - Commands run from the repo root.
@@ -61,6 +61,7 @@ What each check proves:
 | H-23 | The npm, uv and Maven caches live in the state folder and a file in each survives a recreate; a real Maven download (junit 4.13.2 with a pinned plugin, into a new local repository under `state/m2`, needs network) reaches the Mac and survives it | `h23-caches-survive-recreate.sh` | automatic |
 | H-24 | `ccusage daily`, `monthly` and `session` in a sandbox shell report a planted transcript from `state/claude`, as the sandbox user, offline | `h24-ccusage-reports-usage.sh` | automatic |
 | H-25 | The images match versions.env (the record in the Claude image, GSD and ccusage at their pins, nothing under the mount point), and a build without build.sh stops naming the missing pin | `h25-images-match-versions.sh` | automatic |
+| H-26 | The test sandbox has exactly one mount, a bind at /home/sandbox/workspace; it is not privileged, drops every capability, adds none, and has no-new-privileges (read from docker inspect) | `h26-isolation-by-inspect.sh` | automatic |
 | Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |
 
 ## Manual helpers (when something looks wrong)
