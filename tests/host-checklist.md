@@ -102,10 +102,10 @@ bash tests/host/manual/h19-bundle-behaviour.sh
 - **H-21 says a name was not refused:** the image's entrypoint has no name check. Rebuild the images and run again; if it still fails, the check in `base/sbx-start-lib.sh` changed.
 - **H-15 fails after a Claude Code pin change:** the format of `/context` may have changed. Compare with what `manual/h19-bundle-behaviour.sh` shows before suspecting the bundle.
 - **H-15 and a login:** H-15 runs Claude without a login, so `state/claude/.claude.json` exists before `h07-login.sh` runs. The login proof in `h07-login.sh` is `.credentials.json` and `claude auth status`.
-- **H-18 fails after a Claude Code pin change:** H-18 follows the wire format of the pinned Claude through a small fake API.
-  - Run `bash tests/selftest/bundle/run-all.sh` in the dev sandbox first. If it fails too, the fake API needs updating, not the image.
-  - If only H-18 fails, `manual/h19-bundle-behaviour.sh` still covers both behaviours by hand.
-  - To drop H-18, delete its script, its entry in `tests/host/run-all.sh`, its self-test file `tests/selftest/host/h18-scope-and-deny.sh` and its name in `tests/selftest/host/run-all.sh`. No other check depends on it.
+- **H-18 fails after a Claude Code pin change:** H-18 follows the wire format of the pinned Claude through the fake API in `tests/host/support/fake-claude-api.js`.
+  - After a pin bump that file may need updating, not the image.
+  - `manual/h19-bundle-behaviour.sh` still covers both behaviours by hand.
+  - To drop H-18, delete its script and its entry in `tests/host/run-all.sh`. No other check depends on it.
 - **After the managed settings landed:** run `manual/h13-doctor.sh` once to see that `claude doctor` still reports updates disabled.
 - **Coexistence fails:** if you started or stopped a `cc_` container during the run, run it again.
 - **Rebuilding retags the images:** your running sandboxes keep their old image until their next `docker compose up`. That is safe: all their data is in their folder.
