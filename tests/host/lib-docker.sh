@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Docker beyond the test sandbox: building the images, facts about them, and the old-layout containers and folders.
-# - Loaded by lib.sh; never run directly. Defines functions only.
-# - Reads RUN and REPO_DIR, set by host_init. Removes no image and no container.
-# - claude_pin, pin_of and expected_arch stay shared because the self-test of the host tests calls them through lib.sh.
-# - Host side code is stock bash 3.2 with BSD tools (macOS).
+# ------------------------------------------------------------------------------
+# Docker beyond the test sandbox: images, facts about them, old-layout snapshots
+# ------------------------------------------------------------------------------
+# Sourced by tests/host/lib.sh; runs nothing. Reads RUN and REPO_DIR.
+# Removes no image and no container.
+# ------------------------------------------------------------------------------
 
-# --------------------------------------------------------------------------------
-# build_images LOG_PREFIX [--no-cache]: runs build.sh, which builds sbx-base:local, then sbx-claude:local; one log in the run folder.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# build_images LOG_PREFIX [--no-cache]: runs build.sh, logging to the run folder
+# ------------------------------------------------------------------------------
 # The log is RUN/logs/LOG_PREFIX-images.log.
 build_images() {
   local logPrefix=$1
@@ -32,9 +33,9 @@ build_images() {
   return 0
 }
 
-# --------------------------------------------------------------------------------
-# expected_arch: the image architecture the daemon should produce (arm64, amd64 or unknown).
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# expected_arch: the image architecture the daemon should build (or unknown)
+# ------------------------------------------------------------------------------
 expected_arch() {
   case "$(docker info --format '{{.Architecture}}' </dev/null)" in
     aarch64) printf 'arm64\n' ;;
@@ -43,24 +44,24 @@ expected_arch() {
   esac
 }
 
-# --------------------------------------------------------------------------------
-# pin_of NAME: the value of NAME in versions.env; empty when NAME is absent.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# pin_of NAME: the value of NAME in versions.env; empty when NAME is absent
+# ------------------------------------------------------------------------------
 pin_of() {
   sed -n "s/^$1=//p" "$REPO_DIR/versions.env" | head -n 1
 }
 
-# --------------------------------------------------------------------------------
-# claude_pin: the pinned Claude Code version, read from versions.env.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# claude_pin: the pinned Claude Code version, read from versions.env
+# ------------------------------------------------------------------------------
 claude_pin() {
   pin_of CLAUDE_CODE_VERSION
 }
 
-# --------------------------------------------------------------------------------
-# snapshot_old_containers: one sorted line per old-layout container: ID, name, state; returns 1 when docker ps fails.
-# --------------------------------------------------------------------------------
-# docker ps is captured first, so a failed call is a failure and never an empty list.
+# ------------------------------------------------------------------------------
+# snapshot_old_containers: one sorted line per old container; 1 if ps fails
+# ------------------------------------------------------------------------------
+# docker ps runs first, so a failed call is a failure, never an empty list.
 snapshot_old_containers() {
   local psOutput
 
@@ -73,10 +74,10 @@ snapshot_old_containers() {
   return 0
 }
 
-# --------------------------------------------------------------------------------
-# snapshot_old_folders: the tree hashes of ClaudeCode/ and OpenCode/ at HEAD, then git status of both; returns 1 when git fails.
-# --------------------------------------------------------------------------------
-# Tree hashes, not HEAD itself: a commit made elsewhere during a run changes nothing here.
+# ------------------------------------------------------------------------------
+# snapshot_old_folders: old-folder tree hashes and git status; 1 if git fails
+# ------------------------------------------------------------------------------
+# Tree hashes, not HEAD: a commit made elsewhere during a run changes nothing.
 snapshot_old_folders() {
   local treeHashes statusOutput
 
