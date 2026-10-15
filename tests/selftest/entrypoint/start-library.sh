@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Self-test of the start library itself: sourcing it runs nothing, and running base/sbx-entrypoint runs the start checks.
-# - Proves that sourcing base/sbx-start-lib.sh prints nothing and exits 0.
-# - Proves that executing base/sbx-entrypoint runs the start checks and never the command it was given.
-# - Run by run-all.sh; runs alone too.
-# - Makes one work folder under TMPDIR and removes only that folder at exit.
-# - Usage, from anywhere: bash tests/selftest/entrypoint/start-library.sh   (exit 0 = every case passes)
+# ------------------------------------------------------------------------------
+# Self-test of the start library: sourcing it runs nothing, running it checks
+# ------------------------------------------------------------------------------
+# Usage: bash tests/selftest/entrypoint/start-library.sh (exit 0 = all pass)
+# Run by run-all.sh; its one work folder under TMPDIR is removed at exit.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Case: sourcing the start library runs no start step
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 case_sourcing_runs_nothing() {
   local sourceRc
 
@@ -24,9 +24,9 @@ case_sourcing_runs_nothing() {
   expect "sourced: nothing is printed" test ! -s "$WORK/sourced/out"
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Case: executing the script runs the start checks and not the command
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 case_direct_run_checks() {
   local directRc
 
@@ -41,9 +41,9 @@ case_direct_run_checks() {
   expect "direct run: the command never ran" lacks_text "$WORK/direct/out" "entrypoint-command-ran"
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 start_group || exit 1
 case_sourcing_runs_nothing
