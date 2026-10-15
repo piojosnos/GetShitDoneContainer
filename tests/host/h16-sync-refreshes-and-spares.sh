@@ -1,18 +1,10 @@
 #!/usr/bin/env bash
-# H-16: a restart refreshes the bundle and GSD from the image and leaves the user's skills, memories, sessions, settings key and CLAUDE.md alone.
-# - Before the restart the check plants files in state/claude: a stale rule, a skill an older image
-#   installed (simulated by a name in the list file with no bundle folder), a user skill, a memory, a
-#   session transcript under projects/ and a CLAUDE.md. It also edits one synced rule and one synced
-#   bundle skill.
-# - It also plants a stale GSD (gsd-core/VERSION set to 0.0.0 and a hand edit in the first skills/gsd-*
-#   skill) and a user key in settings.json, written by node inside the container. It does not plant a
-#   gsd-* skill as a user file, because GSD owns that name.
-# - The restart is the same down and up as H-08, and runs the start hooks in the real image.
-# - After it, the stale rule and the old skill must be gone, GSD must be at the pin in versions.env with
-#   the edit undone, the bundle edits must be undone, and every user file and the settings key must be
-#   unchanged. Planted files are left in the run folder for the printed cleanup.
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-16: a restart refreshes the bundle and GSD and spares the user files
+# ------------------------------------------------------------------------------
 # Needs: test sandbox running; stops and restarts it
+# Planted files are left in the run folder for the printed cleanup.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 . "$(dirname "$0")/lib-bundle.sh"
@@ -25,9 +17,9 @@ sentinelText="h16-$$-$(date +%s)"
 sessionFile=$syncedDir/projects/-home-sandbox-workspace-hosttest/h16-session.jsonl
 settingsScript='const fs = require("fs"); const file = process.env.CLAUDE_CONFIG_DIR + "/settings.json"; let settings = {}; if (fs.existsSync(file)) { settings = JSON.parse(fs.readFileSync(file, "utf8")); } settings.h16Sentinel = process.argv[1]; fs.writeFileSync(file, JSON.stringify(settings, null, 2) + "\n");'
 
-# --------------------------------------------------------------------------------
-# Picks the first bundle skill, the first always-on rule and the first GSD skill to edit; FAIL and return 1 if there is none
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Picks the first bundle skill, always-on rule and GSD skill to edit
+# ------------------------------------------------------------------------------
 pick_samples() {
   local ruleFileList ruleFile gsdSkillPath
 
@@ -57,9 +49,12 @@ pick_samples() {
   firstGsdSkill=$(basename "$gsdSkillPath")
 }
 
-# --------------------------------------------------------------------------------
-# Plants the stale and user files in state/claude, edits one synced rule and skill, and makes GSD stale
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Plants stale and user files, edits a synced rule and skill, ages GSD
+# ------------------------------------------------------------------------------
+# User files: a skill, memory, session, CLAUDE.md and a settings.json key (set
+# by node in the container). No gsd-* skill is planted; GSD owns that name.
+# ------------------------------------------------------------------------------
 plant_files() {
   local plantOutput
 
@@ -83,9 +78,9 @@ plant_files() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks the stale rule and the old bundle skill are gone
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_stale_files_gone() {
   if [ -e "$syncedDir/rules/h16-stale.md" ]; then
     add_problem "state/claude/rules/h16-stale.md is still there after the restart"
@@ -96,9 +91,9 @@ check_stale_files_gone() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks GSD is back at the pin and the hand edit in the GSD skill is undone
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_gsd_refreshed() {
   local pinnedVersion syncedVersion=""
 
@@ -119,9 +114,9 @@ check_gsd_refreshed() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks every planted user file still holds its sentinel
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_user_files_spared() {
   local userFile
 
@@ -133,9 +128,9 @@ check_user_files_spared() {
   done
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-16 || exit 1
 pick_samples || exit 1

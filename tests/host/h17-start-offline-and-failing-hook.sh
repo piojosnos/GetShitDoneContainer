@@ -1,29 +1,18 @@
 #!/usr/bin/env bash
-# H-17: the sandbox starts with networking disabled, and a bad or failing start hook stops the start.
-# - Offline start: a container with --network none syncs the bundle and runs its command.
-# - The offline start also syncs GSD: state/claude/gsd-core/VERSION equals GSD_CORE_VERSION in
-#   versions.env, the output holds the line '[sbx] GSD VERSION synced', and the output names no
-#   npx and no @latest.
-# - Failing hook: a container whose config folder cannot be made exits non-zero with
-#   '[sbx] ERROR: start hook' and never runs its command. Every failing-hook container must stop
-#   within its 60 s limit; a stop by the limit is a failure of the check.
-# - Bad hook folders: two more containers each mount their own folder under $RUN/h17 over
-#   /etc/sbx/start.d, read-only, so only that folder's entries are seen. One holds a hook file with
-#   mode 644, the other a link that points nowhere. Each must exit non-zero with its
-#   '[sbx] ERROR: start hook' line ('is not executable' or 'is not a regular file') and never run
-#   its command.
-# - All four are plain docker run --rm containers with the compose restrictions, mounting their
-#   own folder $RUN/h17, so the running test sandbox is not touched.
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-17: the sandbox starts offline; a bad or failing start hook stops it
+# ------------------------------------------------------------------------------
 # Needs: images built; the run folder (not the running sandbox)
+# Plain docker run --rm containers on $RUN/h17; the running sandbox stays alone.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 . "$(dirname "$0")/lib-bundle.sh"
 host_init
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # FAIL and return 1 when there is no run folder
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_run_folder() {
   if [ -z "${RUN:-}" ]; then
     fail H-17 "no run folder" "run: bash tests/host/run-all.sh first"
@@ -31,9 +20,11 @@ require_run_folder() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Creates the two bad hook folders; safe to run again on the same run folder
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Creates the two bad hook folders; safe to run again on the same folder
+# ------------------------------------------------------------------------------
+# One holds a hook file with mode 644, the other a link that points nowhere.
+# ------------------------------------------------------------------------------
 make_hook_folders() {
   mkdir -p "$RUN/h17/hooks-not-executable" "$RUN/h17/hooks-dangling"
 
@@ -46,18 +37,23 @@ make_hook_folders() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Runs one container with the compose restrictions, the h17 workspace and DOCKER_ARGS; its status is docker's
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Runs one container with the compose restrictions on the h17 folder
+# ------------------------------------------------------------------------------
+# DOCKER_ARGS adds the per-case flags; the status returned is docker's.
+# ------------------------------------------------------------------------------
 run_restricted_container() {
   run_timeout 60 docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true \
     -e SBX_NAME=hosttest --mount "type=bind,source=$RUN/h17,target=/home/sandbox/workspace" \
     "$@" sbx-claude:local sh -c 'echo h17-command-ran' </dev/null 2>&1
 }
 
-# --------------------------------------------------------------------------------
-# Runs the offline container, one with a broken config folder and two with bad hook folders
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Runs the offline container, one broken-config container and two bad-hook ones
+# ------------------------------------------------------------------------------
+# The offline one has --network none. Each bad hook folder is mounted read-only
+# over /etc/sbx/start.d, so only its entries are seen.
+# ------------------------------------------------------------------------------
 run_containers() {
   mkdir -p "$RUN/h17/hosttest" "$RUN/h17/state"
 
@@ -76,9 +72,9 @@ run_containers() {
   danglingStatus=$?
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks the offline start exited 0 and ran its command
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_offline_start() {
   if [ "$offlineStatus" -ne 0 ]; then
     add_problem "the offline start exited $offlineStatus; got: $(first_lines "$offlineOutput")"
@@ -89,9 +85,12 @@ check_offline_start() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Checks the offline start synced GSD at the pinned version, printed its line and named no npx and no @latest
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Checks the offline start synced GSD at the pin and named no npx
+# ------------------------------------------------------------------------------
+# state/claude/gsd-core/VERSION equals GSD_CORE_VERSION in versions.env and the
+# output holds the line '[sbx] GSD VERSION synced' and no @latest.
+# ------------------------------------------------------------------------------
 check_offline_gsd() {
   local pin syncedVersion
 
@@ -115,9 +114,12 @@ check_offline_gsd() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Checks a failing or bad start hook stopped the start with the expected error and never ran the command
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Checks a failing or bad hook stopped the start and the command never ran
+# ------------------------------------------------------------------------------
+# Each must exit non-zero with '[sbx] ERROR: start hook' within its 60 s limit;
+# a stop by the limit is a failure of the check.
+# ------------------------------------------------------------------------------
 check_bad_hook_stop() {
   local label=$1 status=$2 output=$3 expectedLine=$4
 
@@ -139,9 +141,9 @@ check_bad_hook_stop() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_run_folder || exit 1
 make_hook_folders

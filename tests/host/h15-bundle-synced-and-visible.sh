@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
-# H-15: the bundle is synced into state/claude, equal to the repo, and Claude lists it.
-# - The rules and skills in the run folder's state/claude equal best-practices/ in the repo.
-# - Claude's own /context lists the always-on rules and both skills, and not the path-scoped rules.
-# - The /context probe needs no login and no network (dummy key, unreachable URL). Claude writes
-#   its own state/claude/.claude.json when it runs.
-# - Claude runs in the project folder (docker exec -w), so its project settings are the same
-#   whichever folder shells start in.
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-15: the bundle is synced into state/claude and Claude lists it
+# ------------------------------------------------------------------------------
 # Needs: test sandbox running
+# The rules and skills in state/claude equal best-practices/ in the repo.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 . "$(dirname "$0")/lib-bundle.sh"
@@ -16,9 +13,12 @@ host_init
 bundleDir=$REPO_DIR/best-practices
 syncedDir=$RUN/state/claude
 
-# --------------------------------------------------------------------------------
-# Asks Claude for its /context and checks it lists the always-on rules and the skills
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Asks Claude for its /context; checks it lists the always-on rules and skills
+# ------------------------------------------------------------------------------
+# No login or network is needed (dummy key, unreachable URL). The scoped rules
+# must not be listed; Claude writes its own state/claude/.claude.json.
+# ------------------------------------------------------------------------------
 check_claude_view() {
   local contextOutput ruleRelList ruleRel skillNameList skillName
 
@@ -45,9 +45,9 @@ check_claude_view() {
   done
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-15 || exit 1
 check_bundle_rules_synced "$syncedDir"

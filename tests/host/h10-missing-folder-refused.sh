@@ -1,16 +1,10 @@
 #!/usr/bin/env bash
-# H-10: starting the sandbox on a folder that does not exist is refused.
-# - The missing folder is $RUN/does-not-exist, so the printed cleanup removes it if Docker creates it.
-# - Four outcomes, four different lines:
-#     refused and the folder was not created                       PASS
-#     refused, but Docker created the folder (the flag ignored)    FAIL
-#     the sandbox started on the missing folder                    FAIL
-#     refused for another reason (a time limit, a missing image)   FAIL
-# - A FAIL here can be a correct report about Docker Compose. The script never edits
-#   compose.yml and never removes the folder.
-# - Always ends with the real test sandbox started again.
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-10: starting the sandbox on a folder that does not exist is refused
+# ------------------------------------------------------------------------------
 # Needs: test sandbox running; stops and restarts it
+# A FAIL can be a true finding about Compose; nothing is edited or removed.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
@@ -19,9 +13,9 @@ badDir="$RUN/does-not-exist"
 composeVersion=$(docker compose version --short </dev/null 2>/dev/null)
 restartNote=""
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Takes the test sandbox down before the test; FAIL and return 1 if that fails
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 stop_sandbox_first() {
   if ! compose_down >"$RUN/logs/h10-down.log" 2>&1; then
     fail H-10 "compose down failed before the test; log: $RUN/logs/h10-down.log"
@@ -29,9 +23,12 @@ stop_sandbox_first() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Tries to start a sandbox on the missing folder and notes whether Docker created it
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Tries to start on the missing folder; notes whether Docker created it
+# ------------------------------------------------------------------------------
+# The folder is $RUN/does-not-exist, so the printed cleanup removes it if
+# Docker creates it.
+# ------------------------------------------------------------------------------
 try_start_on_missing_folder() {
   upOutput=$(run_timeout 120 env SBX_NAME=hosttest SBX_DIR="$badDir" docker compose --env-file /dev/null -f "$REPO_DIR/compose.yml" up -d --wait </dev/null 2>&1)
   upStatus=$?
@@ -42,9 +39,9 @@ try_start_on_missing_folder() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Starts the real test sandbox again, whatever happened
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 restart_real_sandbox() {
   compose_down >"$RUN/logs/h10-down-after.log" 2>&1
 
@@ -53,9 +50,12 @@ restart_real_sandbox() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Reports one of the four outcomes; see the header
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Reports the outcome of the start attempt
+# ------------------------------------------------------------------------------
+# PASS: refused and the folder was not created. FAIL: the folder was created,
+# the sandbox started, or it was refused for another reason (time limit, image).
+# ------------------------------------------------------------------------------
 report_outcome() {
   local lastLines
 
@@ -88,9 +88,9 @@ report_outcome() {
   pass H-10 "a missing folder is refused (rc=$upStatus) and not created. Compose $composeVersion"
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-10 || exit 1
 stop_sandbox_first || exit 1
