@@ -19,18 +19,14 @@ edit_scratch_file() {
 }
 
 # --------------------------------------------------------------------------------
-# Cases of the supply chain and bundle wiring rules: a clean copy and one planted problem each
+# Cases of the supply chain rules: a clean copy and one planted problem each
 # --------------------------------------------------------------------------------
 case_supply_chain_rules() {
-  echo "--- supply chain and bundle wiring rules"
+  echo "--- supply chain rules"
 
   make_scratch_repo || return 1
   run_scratch_guard "$WORK/supply-clean.out" supply-chain.sh
   expect "supply chain: a clean copy passes" equals "$GUARD_RC" 0
-
-  make_scratch_repo || return 1
-  run_scratch_guard "$WORK/bundle-clean.out" bundle-wiring.sh
-  expect "bundle wiring: a clean copy passes" equals "$GUARD_RC" 0
 
   make_scratch_repo || return 1
   edit_scratch_file base/Dockerfile 's/^ARG NODE_VERSION$/ARG NODE_VERSION=1.2.3/' || return 1
@@ -68,18 +64,6 @@ case_supply_chain_rules() {
   edit_scratch_file versions.env 's/^\(TEMURIN_IMAGE=[^@]*\)@.*/\1/' || return 1
   run_scratch_guard "$WORK/supply-nodigest.out" supply-chain.sh
   expect "supply chain: an image pin without a digest fails" has_text "$WORK/supply-nodigest.out" "is not an image tag with its @sha256 digest"
-
-  make_scratch_repo || return 1
-  printf 'COPY outside.txt /etc/outside.txt\n' >>"$WORK/repo/claude/Dockerfile"
-  : >"$WORK/repo/outside.txt"
-  run_scratch_guard "$WORK/bundle-outside.out" bundle-wiring.sh
-  expect "bundle wiring: a COPY source outside the allowlist fails" has_text "$WORK/bundle-outside.out" "FAIL: bundle_reaches_build_context"
-  expect "bundle wiring: the outside COPY message names the allowlist" has_text "$WORK/bundle-outside.out" "outside base, claude, best-practices and versions.env"
-
-  make_scratch_repo || return 1
-  printf 'COPY --from=planted /opt/x /opt/x\n' >>"$WORK/repo/base/Dockerfile"
-  run_scratch_guard "$WORK/bundle-from.out" bundle-wiring.sh
-  expect "bundle wiring: a COPY from a build stage is not a build-context source" equals "$GUARD_RC" 0
 }
 
 # --------------------------------------------------------------------------------

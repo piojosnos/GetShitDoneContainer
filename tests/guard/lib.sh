@@ -72,18 +72,6 @@ run_steps_of() {
 }
 
 # --------------------------------------------------------------------------------
-# has_line FILE LINE: true if FILE has a line exactly equal to LINE.
-# --------------------------------------------------------------------------------
-has_line() { grep -Fxq -- "$2" "$1"; }
-
-# --------------------------------------------------------------------------------
-# frontmatter_of FILE: the lines between the opening and closing "---", when line 1 is "---".
-# --------------------------------------------------------------------------------
-frontmatter_of() {
-  awk 'NR == 1 && $0 != "---" { exit } NR > 1 && $0 == "---" { exit } NR > 1 { print }' "$1"
-}
-
-# --------------------------------------------------------------------------------
 # enter_repo_root: changes to the repository root and sets REPO and REPO_DIR to its physical path; returns 1 on failure.
 # --------------------------------------------------------------------------------
 enter_repo_root() {
