@@ -2,7 +2,7 @@
 # ------------------------------------------------------------------------------
 # Mac test run: every Docker check in one go, all output kept in host-test.log
 # ------------------------------------------------------------------------------
-# Usage: ./host-test.sh [--keep]   (exit 0 = every step passed)
+# Usage: ./host-test.sh [--keep]   (exit 0 = every step passed; sh works too)
 # --keep leaves the test sandbox up for the helpers in tests/host/manual/.
 # ------------------------------------------------------------------------------
 set -u
@@ -79,7 +79,8 @@ pin_digests() {
   local line pinName imageRef wantDigest gotDigest
   local status=0
 
-  while IFS= read -r line; do
+  # A pin holds no space, so a plain word loop reads one pin per word.
+  for line in $(grep -E '^[A-Z_]+=[^ ]+@sha256:[0-9a-f]{64}$' versions.env); do
     pinName=${line%%=*}
     imageRef=${line#*=}
     wantDigest=${imageRef##*@}
@@ -91,7 +92,7 @@ pin_digests() {
       printf 'FAIL: %s pins %s, the registry has %s\n' "$pinName" "$wantDigest" "${gotDigest:-nothing}"
       status=1
     fi
-  done < <(grep -E '^[A-Z_]+=[^ ]+@sha256:[0-9a-f]{64}$' versions.env)
+  done
 
   return "$status"
 }
