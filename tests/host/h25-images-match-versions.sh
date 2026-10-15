@@ -78,7 +78,7 @@ check_workspace_empty() {
 # --------------------------------------------------------------------------------
 # Checks both Dockerfiles stop when built without build.sh, with the message that names the missing pin
 # --------------------------------------------------------------------------------
-# - The base build stops while it reads the FROM lines; which of the three pins BuildKit names first is not documented, so any of them is accepted.
+# - The base build stops while it reads the FROM lines; which FROM pin BuildKit names first is not documented, so any of them is accepted.
 # - The plain progress log also echoes the RUN command and the FROM lines, so the checks match only what BuildKit and the shell print when the guard fires, never the Dockerfile text: the "should not be blank" error of the empty FROM, and the shell's own "NAME: NAME is not set" line.
 check_bare_builds() {
   local baseLog="$RUN/logs/h25-bare-base.log"
@@ -88,7 +88,7 @@ check_bare_builds() {
   run_timeout 300 docker build --progress=plain -f "$REPO_DIR/base/Dockerfile" "$REPO_DIR" </dev/null >"$baseLog" 2>&1
   baseStatus=$?
 
-  if [ "$baseStatus" -eq 0 ] || ! grep -Eq 'base name \(.*(TEMURIN_IMAGE|UV_IMAGE|UBUNTU_IMAGE).*\) should not be blank' "$baseLog"; then
+  if [ "$baseStatus" -eq 0 ] || ! grep -Eq 'base name \(.*(TEMURIN_IMAGE|UV_IMAGE|UBUNTU_IMAGE|SHELLCHECK_IMAGE|HADOLINT_IMAGE).*\) should not be blank' "$baseLog"; then
     add_problem "a build of base/Dockerfile without build.sh did not stop naming a missing pin; log: $baseLog"
   fi
 

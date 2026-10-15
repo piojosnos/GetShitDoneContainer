@@ -14,7 +14,7 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 
 | Image | Holds |
 |---|---|
-| `sbx-base:local` | Ubuntu 24.04, git, gh, Node.js 24, Python 3 (pip, venv) and uv, the Temurin JDK 21, Maven, jq, ripgrep, zip and unzip, the ssh client, make and a C compiler |
+| `sbx-base:local` | Ubuntu 24.04, git, gh, Node.js 24, Python 3 (pip, venv) and uv, the Temurin JDK 21, Maven, jq, ripgrep, zip and unzip, the ssh client, make and a C compiler, shellcheck and hadolint |
 | `sbx-claude:local` | `sbx-base` plus Claude Code, GSD, ccusage and the best-practices bundle |
 
 - Python projects use uv or a venv, because Ubuntu blocks plain pip installs into the system Python.
