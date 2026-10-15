@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
-# H-19 (attended): the bundle's skills, rules and edit protection, as Claude shows them.
-# - Needs a terminal, the test sandbox (sbx-hosttest) that bash tests/host/run-all.sh leaves running,
-#   and a Claude login (bash tests/host/manual/h07-login.sh makes one). It finds the run folder from
-#   the container's mount.
-# - Claude opens and you follow six numbered steps. Whether a skill is listed, a rule is followed, a
-#   language rule loads on demand and the managed settings show up are for you to judge.
-# - Automatic: after Claude exits, the copy of communication.md in the run folder must still equal
-#   the repo's file (the refused edit left it unchanged).
-# - Usage: bash tests/host/manual/h19-bundle-behaviour.sh   (exit 0 = every line is PASS)
+# ------------------------------------------------------------------------------
+# H-19 helper: the bundle's skills, rules and edit protection in Claude
+# ------------------------------------------------------------------------------
+# Usage: bash tests/host/manual/h19-bundle-behaviour.sh (exit 0 = all PASS)
+# Needs a terminal, the test sandbox and a Claude login.
+# ------------------------------------------------------------------------------
 set -u
 
 . "$(dirname "$0")/lib-manual.sh"
@@ -16,17 +13,17 @@ require_terminal
 . "$(dirname "$0")/../lib.sh"
 host_init
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Puts the shell file Claude reads in step 3 into the test project
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 make_probe_file() {
   mkdir -p "$RUN/hosttest/h19/deep"
   printf 'echo "h19 probe"\n' >"$RUN/hosttest/h19/deep/probe.sh"
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Prints the steps to follow inside Claude
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 print_steps() {
   printf 'Claude opens next, inside the test sandbox. Follow these steps in order:\n'
   printf '  1. Type / and look for pr-reply and merged in the list.\n'
@@ -39,18 +36,18 @@ print_steps() {
   printf '  6. Type /exit to come back here.\n\n'
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Opens Claude in the test sandbox and waits until it exits
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 open_claude() {
   run_claude
 
   printf '\n'
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks the synced communication.md still equals the repo file
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_rule_copy() {
   if ! cmp -s "$REPO_DIR/best-practices/rules/communication.md" "$RUN/state/claude/rules/communication.md"; then
     add_problem "compare: $RUN/state/claude/rules/communication.md"
@@ -60,9 +57,9 @@ check_rule_copy() {
     "the copy of communication.md in the run folder still equals the repo file"
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Asks one question for each step you judge
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 ask_judgments() {
   ask_judgment H-19 "Step 1: were pr-reply and merged listed?" \
     "the skills pr-reply and merged appear in Claude" \
@@ -81,9 +78,9 @@ ask_judgments() {
     "the managed settings were not shown as a source"
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-19 || exit 1
 make_probe_file

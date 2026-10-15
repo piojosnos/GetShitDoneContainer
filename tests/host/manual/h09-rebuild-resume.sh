@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
-# H-09 (attended): rebuild the images, recreate the test sandbox, and confirm the login and the
-# earlier Claude session survive.
-# - Needs a terminal and a Claude login in the test sandbox (sbx-hosttest); bash
-#   tests/host/manual/h07-login.sh makes one. It finds the run folder from the container's mount.
-# - Steps: rebuild sbx-base:local and sbx-claude:local (the real tags), take the sandbox down,
-#   bring it up, check claude auth status is still logged in, open claude --continue, then ask you
-#   whether the earlier session resumed. Nothing is deleted; the folders and the images stay.
-# - Slow clean rebuild: pass --no-cache, or set SBXTEST_NO_CACHE=1.
-# - Usage: bash tests/host/manual/h09-rebuild-resume.sh [--no-cache]   (exit 0 = PASS)
+# ------------------------------------------------------------------------------
+# H-09 helper: rebuild and recreate the sandbox; the login and session survive
+# ------------------------------------------------------------------------------
+# Usage: bash tests/host/manual/h09-rebuild-resume.sh [--no-cache]
+# Needs a terminal and a Claude login in the test sandbox. Exit 0 = PASS.
+# ------------------------------------------------------------------------------
 set -u
 
 . "$(dirname "$0")/lib-manual.sh"
@@ -18,9 +15,9 @@ host_init
 
 noCacheFlag=""
 
-# --------------------------------------------------------------------------------
-# Reads the arguments; --no-cache is the only one; prints the usage and returns 1 on anything else
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Reads the arguments: only --no-cache is allowed; else usage and return 1
+# ------------------------------------------------------------------------------
 parse_arguments() {
   while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -43,9 +40,9 @@ parse_arguments() {
   return 0
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Rebuilds both images; FAIL and return 1 if the build fails
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 rebuild_images() {
   info "rebuilding sbx-base:local and sbx-claude:local (logs in $RUN/logs)"
 
@@ -55,27 +52,27 @@ rebuild_images() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Takes the test sandbox down and up again on the new images; FAIL and return 1 if that fails
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Recreates the test sandbox on the new images; FAIL and return 1 if it fails
+# ------------------------------------------------------------------------------
 recreate_sandbox() {
   info "taking the test sandbox down and starting it again"
   restart_test_sandbox H-09 manual-down.log || return 1
   require_test_sandbox H-09 || return 1
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks claude auth status still says logged in; FAIL and return 1 if not
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_still_logged_in() {
   add_login_problem "if you have not logged in yet, run bash tests/host/manual/h07-login.sh first"
   report_result H-09 "claude auth status does not show a login after the rebuild" \
     'claude auth status still shows "loggedIn": true after the rebuild'
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Opens claude --continue and asks whether the earlier session resumed
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 resume_session() {
   printf '\nClaude opens next with claude --continue.\n'
   printf '  Look for: the session from the login helper is picked up again (earlier messages shown).\n'
@@ -87,9 +84,9 @@ resume_session() {
     "claude --continue did not resume the earlier session"
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 parse_arguments "$@" || exit 2
 require_test_sandbox H-09 || exit 1
 rebuild_images || exit 1
