@@ -1,16 +1,9 @@
-# One sbx sandbox: one container, one folder mounted from the Mac.
-#
-# Usage, from the repo root:
-#   export SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo
-#   docker compose up -d --wait
-#
-# - Every subcommand (up, down, ps, config) needs both variables: Compose reads the
-#   whole file first.
-# - A missing variable stops Compose with an error naming it, before anything is created.
-# - A mistyped SBX_NAME is refused by the container start, and nothing is created.
-# - SBX_NAME follows the sandbox name rule, ^[a-z][a-z0-9-]{0,30}$: starts with a lowercase letter, then lowercase letters, digits or hyphens, 31 characters at most.
-# - Compose turns the project name into lowercase. up refuses an uppercase letter through the name-check service below; the container start refuses any other name that breaks the rule. Use the exact name with every other command.
-# - Never ask "down" to remove volumes. There are none; all data is in $SBX_DIR on the Mac.
+# ------------------------------------------------------------------------------
+# One sbx sandbox: one container, one folder mounted from the Mac
+# ------------------------------------------------------------------------------
+# Usage: SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo docker compose up -d --wait
+# SANDBOX.md explains the variables and the sandbox name rule.
+# ------------------------------------------------------------------------------
 name: "sbx-${SBX_NAME:?SBX_NAME is required (starts with a lowercase letter, then lowercase letters, digits or hyphens, 31 characters at most)}"
 
 services:
@@ -21,27 +14,21 @@ services:
     container_name: "sbx-${SBX_NAME}"
     init: true                     # tini as PID 1: reaps zombies, stops promptly
     command: ["sleep", "infinity"] # shells come from: docker exec -it -w /home/sandbox/workspace/<name> sbx-<name> bash
-    # The entrypoint checks that <name>/ exists in the mounted folder, then starts the command in it.
-    # working_dir is the mount point itself: Docker creates a missing working directory, which
-    # would put an empty <name>/ on the Mac for a mistyped name.
+    # working_dir is the mount point, not <name>/: Docker creates a missing
+    # working directory, so a mistyped name leaves an empty <name>/ on the Mac.
     working_dir: "/home/sandbox/workspace"
     environment:
       SBX_NAME: "${SBX_NAME}"
-    # Privileges:
-    # - No Linux capability is needed: non-root user, all writes go to the mounted folder.
-    # - no-new-privileges blocks setuid escalation.
-    # - If a host check fails only because of cap_drop, remove cap_drop, keep no-new-privileges.
+    # No capability is needed: non-root, all writes go to the mounted folder.
+    # If a host check fails only on cap_drop, remove it; keep no-new-privileges.
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
     labels:
       sbx.name: "${SBX_NAME}"
-    # The one mount:
-    # - $SBX_DIR on the Mac appears at /home/sandbox/workspace.
-    # - It holds <name>/ (code) and state/ (Claude, history, gh, git).
-    # - create_host_path: false asks Compose to refuse a missing folder instead of
-    #   creating an empty one at a mistyped path.
+    # The one mount: $SBX_DIR holds <name>/ (code) and state/ (Claude, gh, git).
+    # create_host_path: false refuses a missing folder instead of creating one.
     volumes:
       - type: bind
         source: "${SBX_DIR:?SBX_DIR is required (absolute host path of the sandbox folder)}"
@@ -49,11 +36,8 @@ services:
         bind:
           create_host_path: false
 
-  # The name check never runs a container (scale 0, never pulled).
-  # - Its image name holds SBX_NAME, and Docker refuses an image name with an uppercase letter,
-  #   so up stops while it checks the images, before it creates or replaces anything.
-  # - Compose itself would turn the project name into lowercase and go on, so Foo would replace
-  #   the container of foo.
+  # Never runs (scale 0): its image name holds SBX_NAME, and Docker refuses an
+  # uppercase letter there, so up stops before it replaces anything.
   name-check:
     image: "sbx-${SBX_NAME}-name-check"
     pull_policy: never
