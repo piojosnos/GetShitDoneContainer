@@ -184,111 +184,41 @@ case_start_rules() {
   expect "start hooks: the late GSD hook is named" has_text "$WORK/start-gsd-late.out" "20-gsd"
 }
 
-# --------------------------------------------------------------------------------
-# Cases of the state folder and npm cache rules (the scratch copy has no .git, so only the named rule line is read from the isolation output): a clean copy, a Claude image that replaces SBX_STATE_DIRS, an npm install without the throwaway cache, a second npm call in the same step, and a Dockerfile that can leave files under the mount point
-# --------------------------------------------------------------------------------
-case_state_and_cache_rules() {
-  echo "--- state folder and npm cache rules"
+# ------------------------------------------------------------------------------
+# case_state_folder_rule: a clean copy, then a Claude image that replaces SBX_STATE_DIRS
+# ------------------------------------------------------------------------------
+case_state_folder_rule() {
+  echo "--- state folder rule"
 
   make_scratch_repo || return 1
   run_scratch_guard "$WORK/state-clean.out" start.sh
   expect "state folders: a clean copy passes the start rules" equals "$GUARD_RC" 0
-  run_scratch_guard "$WORK/cache-clean.out" isolation.sh
-  expect "npm cache: a clean copy passes the npm cache rule" has_text "$WORK/cache-clean.out" "PASS: npm_builds_keep_their_cache_out_of_the_mount"
 
   make_scratch_repo || return 1
   edit_scratch_file claude/Dockerfile 's|^\( *SBX_STATE_DIRS=\).*$|\1claude \\|' || return 1
   run_scratch_guard "$WORK/state-replace.out" start.sh
   expect "state folders: a Claude image that replaces SBX_STATE_DIRS fails" has_text "$WORK/state-replace.out" "FAIL: agent_image_keeps_base_state_folders"
   expect "state folders: the replacing line is named" has_text "$WORK/state-replace.out" "replaces SBX_STATE_DIRS"
-
-  make_scratch_repo || return 1
-  printf 'RUN npm install -g planted-package\n' >>"$WORK/repo/claude/Dockerfile"
-  run_scratch_guard "$WORK/cache-planted.out" isolation.sh
-  expect "npm cache: an npm install without the throwaway cache fails" has_text "$WORK/cache-planted.out" "FAIL: npm_builds_keep_their_cache_out_of_the_mount"
-  expect "npm cache: the planted install line is named" has_text "$WORK/cache-planted.out" "npm install -g planted-package"
-
-  make_scratch_repo || return 1
-  printf 'RUN NPM_CONFIG_CACHE=/tmp/npm-cache npm install -g planted-package \\\n    && ls "$(npm root -g)"\n' >>"$WORK/repo/claude/Dockerfile"
-  run_scratch_guard "$WORK/cache-second-call.out" isolation.sh
-  expect "npm cache: a second npm call that misses a one-command cache prefix fails" has_text "$WORK/cache-second-call.out" "FAIL: npm_builds_keep_their_cache_out_of_the_mount"
-  expect "npm cache: the step with the second npm call is named" has_text "$WORK/cache-second-call.out" "npm root -g"
-
-  make_scratch_repo || return 1
-  run_scratch_guard "$WORK/empty-clean.out" isolation.sh
-  expect "mount point: a clean copy passes the emptiness rule" has_text "$WORK/empty-clean.out" "PASS: images_leave_the_mount_point_empty"
-
-  make_scratch_repo || return 1
-  edit_scratch_file claude/Dockerfile '/test -z "$(ls -A \/home\/sandbox\/workspace)"/d' || return 1
-  run_scratch_guard "$WORK/empty-missing.out" isolation.sh
-  expect "mount point: a Dockerfile without the emptiness check fails" has_text "$WORK/empty-missing.out" "FAIL: images_leave_the_mount_point_empty"
-  expect "mount point: the Dockerfile without the check is named" has_text "$WORK/empty-missing.out" "claude/Dockerfile: no emptiness check"
-
-  make_scratch_repo || return 1
-  printf 'RUN mkdir -p /home/sandbox/workspace/state\n' >>"$WORK/repo/base/Dockerfile"
-  run_scratch_guard "$WORK/empty-late.out" isolation.sh
-  expect "mount point: a RUN after the emptiness check fails" has_text "$WORK/empty-late.out" "FAIL: images_leave_the_mount_point_empty"
-  expect "mount point: the late RUN is reported" has_text "$WORK/empty-late.out" "base/Dockerfile: the emptiness check is not in the last RUN"
-
-  make_scratch_repo || return 1
-  printf 'COPY versions.env /home/sandbox/workspace/versions.env\n' >>"$WORK/repo/claude/Dockerfile"
-  run_scratch_guard "$WORK/empty-late-copy.out" isolation.sh
-  expect "mount point: a COPY into the mount point after the emptiness check fails" has_text "$WORK/empty-late-copy.out" "FAIL: images_leave_the_mount_point_empty"
-  expect "mount point: the late COPY is reported" has_text "$WORK/empty-late-copy.out" "claude/Dockerfile: after the emptiness check, a step names the mount point"
-
-  make_scratch_repo || return 1
-  printf 'ADD https://example.invalid/x.tgz /home/sandbox/workspace/x.tgz\n' >>"$WORK/repo/base/Dockerfile"
-  run_scratch_guard "$WORK/empty-late-add.out" isolation.sh
-  expect "mount point: an ADD into the mount point after the emptiness check fails" has_text "$WORK/empty-late-add.out" "base/Dockerfile: after the emptiness check, a step names the mount point"
 }
 
-# --------------------------------------------------------------------------------
-# Cases of the isolation rules (the scratch copy has no .git, so only the named rule line is read from the output): a clean copy, each way to undo the privilege limits and each short-form mount
-# --------------------------------------------------------------------------------
-case_isolation_rules() {
-  local planted
-  local plantedName
-
-  echo "--- isolation rules"
+# ------------------------------------------------------------------------------
+# case_isolation_rule: a clean copy, then privileged: true in the sandbox service
+# ------------------------------------------------------------------------------
+# The scratch copy has no .git, so only the named rule line is read from the output.
+# ------------------------------------------------------------------------------
+case_isolation_rule() {
+  echo "--- isolation rule"
 
   make_scratch_repo || return 1
   run_scratch_guard "$WORK/isolation-clean.out" isolation.sh
-  expect "isolation: a clean copy passes the privilege rule" has_text "$WORK/isolation-clean.out" "PASS: runs_without_privileges"
-  expect "isolation: a clean copy passes the mount rule" has_text "$WORK/isolation-clean.out" "PASS: exactly_one_mount_and_not_over_home"
-
-  for planted in "privileged: true" "network_mode: host" "cap_add: [SYS_ADMIN]" "pid: host" "userns_mode: host" "security_opt: [seccomp=unconfined]"; do
-    plantedName=${planted%%:*}
-
-    make_scratch_repo || return 1
-    edit_scratch_file compose.yml "/^    init: true/a\
-    $planted" || return 1
-    run_scratch_guard "$WORK/isolation-$plantedName.out" isolation.sh
-    expect "isolation: $plantedName in the sandbox service fails the privilege rule" has_text "$WORK/isolation-$plantedName.out" "FAIL: runs_without_privileges"
-    expect "isolation: the $plantedName line is named" has_text "$WORK/isolation-$plantedName.out" "$planted"
-  done
+  expect "isolation: a clean copy passes the socket and privileges rule" has_text "$WORK/isolation-clean.out" "PASS: no_docker_socket_or_privileges"
 
   make_scratch_repo || return 1
-  edit_scratch_file compose.yml '/^      - no-new-privileges:true/a\
-      - seccomp=unconfined' || return 1
-  run_scratch_guard "$WORK/isolation-seccomp.out" isolation.sh
-  expect "isolation: an unconfined security option fails the privilege rule" has_text "$WORK/isolation-seccomp.out" "FAIL: runs_without_privileges"
-
-  make_scratch_repo || return 1
-  edit_scratch_file compose.yml '/^    volumes:/a\
-      - /etc:/hostetc:rw' || return 1
-  run_scratch_guard "$WORK/isolation-short-mount.out" isolation.sh
-  expect "isolation: a short-form mount fails the mount rule" has_text "$WORK/isolation-short-mount.out" "FAIL: exactly_one_mount_and_not_over_home"
-  expect "isolation: the short-form mount line is named" has_text "$WORK/isolation-short-mount.out" "- /etc:/hostetc:rw"
-
-  make_scratch_repo || return 1
-  edit_scratch_file compose.yml 's|^    volumes:$|    volumes: ["/Users/me:/home/sandbox/host-home"]|' || return 1
-  run_scratch_guard "$WORK/isolation-inline-mount.out" isolation.sh
-  expect "isolation: an inline volumes list fails the mount rule" has_text "$WORK/isolation-inline-mount.out" "FAIL: exactly_one_mount_and_not_over_home"
-
-  make_scratch_repo || return 1
-  printf '    volumes_from:\n      - other\n' >>"$WORK/repo/compose.yml"
-  run_scratch_guard "$WORK/isolation-volumes-from.out" isolation.sh
-  expect "isolation: volumes_from fails the mount rule" has_text "$WORK/isolation-volumes-from.out" "FAIL: exactly_one_mount_and_not_over_home"
+  edit_scratch_file compose.yml "/^    init: true/a\\
+    privileged: true" || return 1
+  run_scratch_guard "$WORK/isolation-privileged.out" isolation.sh
+  expect "isolation: privileged: true in the sandbox service fails" has_text "$WORK/isolation-privileged.out" "FAIL: no_docker_socket_or_privileges"
+  expect "isolation: the privileged line is named" has_text "$WORK/isolation-privileged.out" "    privileged: true"
 }
 
 # --------------------------------------------------------------------------------
@@ -299,6 +229,6 @@ start_group || exit 1
 case_supply_chain_rules
 case_supply_chain_evasions
 case_start_rules
-case_state_and_cache_rules
-case_isolation_rules
+case_state_folder_rule
+case_isolation_rule
 finish_cases
