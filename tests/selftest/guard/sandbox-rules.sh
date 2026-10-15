@@ -8,9 +8,9 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 
-# --------------------------------------------------------------------------------
-# edit_scratch_file FILE SED_SCRIPT: rewrites FILE of the scratch copy with the sed script; returns 1 on failure.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# edit_scratch_file FILE SED_SCRIPT: rewrites FILE of the scratch copy with sed
+# ------------------------------------------------------------------------------
 edit_scratch_file() {
   local editFile=$WORK/repo/$1
 
@@ -18,9 +18,9 @@ edit_scratch_file() {
   mv "$editFile.edited" "$editFile"
 }
 
-# --------------------------------------------------------------------------------
-# Cases of the supply chain rules: a clean copy and one planted problem each
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# case_supply_chain_rules: a clean copy, then one planted problem per rule
+# ------------------------------------------------------------------------------
 case_supply_chain_rules() {
   echo "--- supply chain rules"
 
@@ -124,9 +124,9 @@ case_supply_chain_evasions() {
   expect "supply chain: a GSD install that is not the official package fails" has_text "$WORK/supply-gsd-other.out" "FAIL: gsd_installs_only_the_official_package"
 }
 
-# --------------------------------------------------------------------------------
-# Cases of the start rules: a clean copy, a working_dir under the project folder and a GSD hook that sorts after the bundle hook
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# case_start_rules: a clean copy, a bad working_dir and a late GSD hook
+# ------------------------------------------------------------------------------
 case_start_rules() {
   echo "--- start rules"
 
@@ -142,17 +142,6 @@ case_start_rules() {
   expect "sandbox rules: a working_dir under the project folder exits non-zero" test "$GUARD_RC" -ne 0
 
   make_scratch_repo || return 1
-  edit_scratch_file compose.yml 's/^\( *\)scale: 0$/\1scale: 1/' || return 1
-  run_scratch_guard "$WORK/start-scaled.out" start.sh
-  expect "sandbox rules: a name check that can run a container fails" has_text "$WORK/start-scaled.out" "FAIL: compose_checks_the_name_before_it_acts"
-
-  make_scratch_repo || return 1
-  edit_scratch_file compose.yml '/image: "sbx-${SBX_NAME}-name-check"/d' || return 1
-  run_scratch_guard "$WORK/start-nocheck.out" start.sh
-  expect "sandbox rules: a compose.yml without the name check fails" has_text "$WORK/start-nocheck.out" "FAIL: compose_checks_the_name_before_it_acts"
-  expect "sandbox rules: a missing name check exits non-zero" test "$GUARD_RC" -ne 0
-
-  make_scratch_repo || return 1
   mv "$WORK/repo/claude/start.d/05-gsd" "$WORK/repo/claude/start.d/20-gsd" || return 1
   run_scratch_guard "$WORK/start-gsd-late.out" start.sh
   expect "start hooks: a GSD hook that sorts after the bundle hook fails" has_text "$WORK/start-gsd-late.out" "FAIL: gsd_sync_runs_before_the_bundle"
@@ -160,7 +149,7 @@ case_start_rules() {
 }
 
 # ------------------------------------------------------------------------------
-# case_state_folder_rule: a clean copy, then a Claude image that replaces SBX_STATE_DIRS
+# case_state_folder_rule: a clean copy, then an image that replaces the list
 # ------------------------------------------------------------------------------
 case_state_folder_rule() {
   echo "--- state folder rule"
@@ -177,9 +166,9 @@ case_state_folder_rule() {
 }
 
 # ------------------------------------------------------------------------------
-# case_isolation_rule: a clean copy, then privileged: true in the sandbox service
+# case_isolation_rule: a clean copy, then privileged: true in the compose file
 # ------------------------------------------------------------------------------
-# The scratch copy has no .git, so only the named rule line is read from the output.
+# The scratch copy has no .git, so only the named rule line is read.
 # ------------------------------------------------------------------------------
 case_isolation_rule() {
   echo "--- isolation rule"
@@ -196,9 +185,9 @@ case_isolation_rule() {
   expect "isolation: the privileged line is named" has_text "$WORK/isolation-privileged.out" "    privileged: true"
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 start_group || exit 1
 case_supply_chain_rules

@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
-# Self-test of the guard helpers: nowhere_matches fails when it cannot read its files, and says why.
-# - Run by run-all.sh; runs alone too.
-# - Makes one work folder under TMPDIR and removes only that folder at exit.
-# - Usage, from anywhere: bash tests/selftest/guard/helpers.sh   (exit 0 = every case passes)
+# ------------------------------------------------------------------------------
+# Self-test of the guard helpers: nowhere_matches fails loudly
+# ------------------------------------------------------------------------------
+# Usage: bash tests/selftest/guard/helpers.sh (exit 0 = every case passes)
+# One work folder under TMPDIR, removed at exit; stdin is closed in every case.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 
-# --------------------------------------------------------------------------------
-# guard_eval SNIPPET: runs SNIPPET in a subshell after sourcing the real guard library.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# guard_eval SNIPPET: runs SNIPPET after sourcing the real guard library
+# ------------------------------------------------------------------------------
 guard_eval() {
   ( . "$REPO/tests/guard/lib.sh"; eval "$1" )
 }
 
-# --------------------------------------------------------------------------------
-# Cases of nowhere_matches, run on planted files with stdin closed
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# case_nowhere_matches: missing file, empty glob, no file, clean file, hit
+# ------------------------------------------------------------------------------
 case_nowhere_matches() {
   local missingFile=$WORK/no-such-file.txt
   local emptyFolder=$WORK/empty-folder
@@ -53,9 +55,9 @@ case_nowhere_matches() {
   expect "nowhere_matches: a hit fails and prints the line" equals "$hitReported" yes
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 start_group || exit 1
 case_nowhere_matches
