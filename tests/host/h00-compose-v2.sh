@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# H-00: Docker Compose is the v2 generation (version 2 or higher); prints the versions as info.
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-00: Docker Compose is v2 or newer; the versions print as info
+# ------------------------------------------------------------------------------
 # Needs: Docker running
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 
-# --------------------------------------------------------------------------------
-# Reads the Compose and Docker versions and prints them as info; FAIL and return 1 if Compose does not answer
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Reads the Compose and Docker versions; FAIL if Compose does not answer
+# ------------------------------------------------------------------------------
 read_versions() {
   composeVersion=$(docker compose version --short </dev/null 2>&1)
   composeStatus=$?
@@ -26,9 +28,9 @@ read_versions() {
   info "Docker: ${dockerPlatform:-unknown}"
 }
 
-# --------------------------------------------------------------------------------
-# Checks the major version is at least 2; FAIL and return 1 if it is not a number
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Checks Compose is v2 or newer; FAIL if the major version is not a number
+# ------------------------------------------------------------------------------
 check_major_version() {
   case "$majorVersion" in
     ''|*[!0-9]*)
@@ -42,9 +44,9 @@ check_major_version() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 read_versions || exit 1
 check_major_version || exit 1

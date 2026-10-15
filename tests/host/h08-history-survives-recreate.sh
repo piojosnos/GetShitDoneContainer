@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# H-08: shell history is written after each command and survives a recreate.
-# - A non-tty bash -i is held open in the background (the first shell of the manual check).
-# - The marker must reach the history file on the host while that shell is still open.
-# - Then the sandbox is taken down and started again, and a fresh shell must show the marker.
-# - The background shell, with everything it started, is stopped when the check ends, pass or fail.
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-08: shell history is written per command and survives a recreate
+# ------------------------------------------------------------------------------
 # Needs: test sandbox running; stops and restarts it
+# The background shell is stopped when the check ends, pass or fail.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
@@ -13,17 +12,19 @@ host_init
 marker="marker-$$-$(date +%s)"
 historyFile="$RUN/state/shell/bash_history"
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Opens a shell in the background that echoes the marker and stays open
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# A non-tty bash -i held open: the first shell of the manual check.
+# ------------------------------------------------------------------------------
 start_background_shell() {
   ( ( printf 'echo %s\n' "$marker"; sleep 25 ) | docker exec -i "$CONTAINER" bash -i ) >/dev/null 2>&1 &
   shellPid=$!
 }
 
-# --------------------------------------------------------------------------------
-# Waits up to 10 s for the marker to reach the history file on the host; FAIL and return 1 if it never does
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Waits up to 10 s for the marker in the host history file; FAIL if it is not
+# ------------------------------------------------------------------------------
 wait_for_marker() {
   local seen i
 
@@ -44,9 +45,9 @@ wait_for_marker() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks a fresh shell shows the marker after the recreate
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_fresh_shell_history() {
   local freshOutput markerCount
 
@@ -59,9 +60,9 @@ check_fresh_shell_history() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-08 || exit 1
 start_background_shell

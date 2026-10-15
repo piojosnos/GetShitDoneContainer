@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# H-02: the Claude image is built on the base image. Its layers start with all the base
-# layers, and claude/Dockerfile has one FROM line: FROM ${BASE_IMAGE}.
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-02: the Claude image is built on the base image
+# ------------------------------------------------------------------------------
 # Needs: images built
+# Its layers start with the base layers; claude/Dockerfile has one FROM line.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Reads the layer lists of both images
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 read_layers() {
   layerTemplate='{{range .RootFS.Layers}}{{println .}}{{end}}'
   baseLayers=$(docker image inspect --format "$layerTemplate" sbx-base:local </dev/null 2>&1)
@@ -17,9 +19,9 @@ read_layers() {
   baseCount=0
 }
 
-# --------------------------------------------------------------------------------
-# Checks the Claude image's layers start with every base layer and add at least one of their own
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Checks the Claude layers start with the base layers and add their own
+# ------------------------------------------------------------------------------
 check_layer_prefix() {
   local claudePrefix
   local claudeCount
@@ -56,9 +58,9 @@ check_layer_prefix() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks claude/Dockerfile has one FROM line, FROM ${BASE_IMAGE}
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_single_from_line() {
   local fromCount
 
@@ -68,9 +70,9 @@ check_single_from_line() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 read_layers
 check_layer_prefix

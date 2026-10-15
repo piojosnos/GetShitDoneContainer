@@ -1,16 +1,10 @@
 #!/usr/bin/env bash
-# H-09: files survive a rebuild of both images, no volumes appear, and the container has exactly
-# one bind mount of the run folder at /home/sandbox/workspace.
-# - The volume list is scoped to the Compose project sbx-hosttest, so other Docker activity during
-#   the rebuild cannot fail it. The one-mount check stays the proof that no volume is used.
-# - The rebuild uses the cache. SBXTEST_NO_CACHE=1 (optional) rebuilds with --no-cache; slow.
-# - The memory sentinel under state/claude/projects proves a rebuild with restart leaves learned
-#   memories alone.
-# - The Claude login and claude --continue part needs a person: manual/h09-rebuild-resume.sh.
-# - The mount Source is compared by its last path component only, because Docker Desktop may
-#   show the folder under a different prefix.
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-09: files survive a rebuild, no volume appears, one bind mount remains
+# ------------------------------------------------------------------------------
 # Needs: test sandbox running; stops and restarts it
+# The login and claude --continue part is manual/h09-rebuild-resume.sh.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
@@ -19,16 +13,22 @@ sentinelText="h09-$$-$(date +%s)"
 memorySentinel=$RUN/state/claude/projects/-home-sandbox-workspace-hosttest/memory/h09-memory.md
 cacheFlag=""
 
-# --------------------------------------------------------------------------------
-# list_test_volumes: the volume names of the Compose project sbx-hosttest, one per line; returns docker's status.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# list_test_volumes: the volume names of the Compose project sbx-hosttest
+# ------------------------------------------------------------------------------
+# Scoped to the project, so other Docker activity during the rebuild cannot fail
+# the check. The one-mount check stays the proof that no volume is used.
+# ------------------------------------------------------------------------------
 list_test_volumes() {
   docker volume ls -q --filter label=com.docker.compose.project=sbx-hosttest </dev/null 2>&1
 }
 
-# --------------------------------------------------------------------------------
-# Writes the three sentinel files and records the volume list before the rebuild
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Writes the three sentinel files and records the volume list
+# ------------------------------------------------------------------------------
+# The memory sentinel under state/claude/projects proves a rebuild with restart
+# leaves learned memories alone.
+# ------------------------------------------------------------------------------
 plant_sentinels() {
   printf '%s\n' "$sentinelText" >"$RUN/hosttest/h09-sentinel.txt"
   printf '%s\n' "$sentinelText" >"$RUN/state/h09-sentinel.txt"
@@ -38,9 +38,12 @@ plant_sentinels() {
   volumesBeforeStatus=$?
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Takes the sandbox down, rebuilds both images and starts it again
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# The rebuild uses the cache; SBXTEST_NO_CACHE=1 (optional) adds --no-cache,
+# which is slow.
+# ------------------------------------------------------------------------------
 rebuild_and_restart() {
   if [ "${SBXTEST_NO_CACHE:-0}" = "1" ]; then
     cacheFlag="--no-cache"
@@ -59,9 +62,9 @@ rebuild_and_restart() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks the three sentinel files still hold their text
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_sentinels_survived() {
   local sentinelFile
 
@@ -72,9 +75,9 @@ check_sentinels_survived() {
   done
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks the rebuild created no volume
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_volumes_unchanged() {
   local volumesAfter volumesAfterStatus
 
@@ -93,9 +96,12 @@ check_volumes_unchanged() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Checks the container has exactly one bind mount of the run folder at the workspace
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Checks the container has exactly one bind mount of the run folder
+# ------------------------------------------------------------------------------
+# The Source is compared by its last path component only, because Docker Desktop
+# may show the folder under a different prefix.
+# ------------------------------------------------------------------------------
 check_one_bind_mount() {
   local mountLines mountCount runBase mountType mountDestination mountSource
 
@@ -123,9 +129,9 @@ check_one_bind_mount() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-09 || exit 1
 plant_sentinels
