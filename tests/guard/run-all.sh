@@ -3,7 +3,7 @@
 # Guard: a few rules the sandbox files must never break
 # ------------------------------------------------------------------------------
 # Usage, from anywhere: bash tests/guard/run-all.sh (exit 0 = all rules hold)
-# Reads the files only: builds nothing, runs nothing, needs no Docker.
+# What each suite is for and when to add a check: tests/README.md
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"

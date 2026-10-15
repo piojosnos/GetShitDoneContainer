@@ -3,7 +3,7 @@
 # Self-test of the container start, against a fake GSD
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/entrypoint/run-all.sh (exit 0 = all pass)
-# Linux only, in the dev sandbox.
+# What each suite is for and when to add a check: tests/README.md
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/../lib-expect.sh"

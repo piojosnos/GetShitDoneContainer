@@ -264,7 +264,7 @@ If `up` fails, `docker compose logs` shows the `[sbx] ERROR` line that says what
 
 After building, or after changing anything under `base/`, `claude/`, `best-practices/` or `compose.yml`, run `bash tests/host/run-all.sh` on the Mac. When it passes, the automated checks hold. Claude's login and Claude's own behaviour are checked only by the helpers in `tests/host/manual/`: H-07 (login), the second half of H-09 (login and session survive a rebuild), the `claude doctor` part of H-13, the GSD bump part of H-16 (`manual/h16-gsd-bump.sh`), and H-19 (the bundle as Claude uses it). Run them after a Claude Code or GSD pin change, a change to the managed settings, or a change to login handling. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers.
 
-It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
+It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes. [`tests/README.md`](tests/README.md) lists every test suite, where it runs and what it catches.
 
 ## Free disk space
 

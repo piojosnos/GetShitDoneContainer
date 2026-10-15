@@ -3,7 +3,7 @@
 # Self-test of the guard: planted problems must fail the right rule
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/guard/run-all.sh (exit 0 = all pass)
-# Linux only, in the dev sandbox.
+# What each suite is for and when to add a check: tests/README.md
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/../lib-expect.sh"
