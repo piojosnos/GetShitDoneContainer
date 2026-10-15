@@ -182,9 +182,10 @@ An edit to the copy in `state/claude` is lost at the next start.
 
 Edit protection:
 
-- Managed settings in the image make Claude refuse to edit the synced rules, the skill list and the bundle skills, even with permissions bypassed.
+- Managed settings in the image make Claude's Edit tool refuse the synced rules, the skill list and every skill under `state/claude/skills/` (the bundle's, GSD's and your own), even with permissions bypassed.
+- Edit your own skills in `state/claude/skills/` from a shell or a host editor: shell edits still work.
 - It guards against accidental edits by Claude. It is not a security boundary: a script Claude runs can still write there until the next start.
-- Your own skills and `state/claude/CLAUDE.md` stay editable.
+- `state/claude/CLAUDE.md` stays editable.
 
 Memories are not shipped. They belong to each project. A memory that proves general becomes a bundle rule by PR.
 
