@@ -26,7 +26,6 @@ case_nowhere_matches() {
   local noFileStatus=0
   local cleanStatus=0
   local hitStatus=0
-  local hitReported
 
   echo "--- nowhere_matches"
 
@@ -45,14 +44,8 @@ case_nowhere_matches() {
   expect "nowhere_matches: a glob that matched nothing fails the rule" equals "$globStatus" 1
   expect "nowhere_matches: no file at all fails the rule" equals "$noFileStatus" 1
   expect "nowhere_matches: a clean file passes" equals "$cleanStatus" 0
-
-  hitReported=no
-
-  if [ "$hitStatus" -eq 1 ] && has_text "$WORK/hit.out" "docker run"; then
-    hitReported=yes
-  fi
-
-  expect "nowhere_matches: a hit fails and prints the line" equals "$hitReported" yes
+  expect "nowhere_matches: a hit fails the rule" equals "$hitStatus" 1
+  expect "nowhere_matches: the hit line is printed" has_text "$WORK/hit.out" "docker run"
 }
 
 # ------------------------------------------------------------------------------
