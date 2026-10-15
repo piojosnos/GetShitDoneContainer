@@ -78,21 +78,29 @@ report_and_exit() {
   exit 1
 }
 
-# --------------------------------------------------------------------------------
-# run_groups SUITE_DIR GROUP...: runs each group program of a suite, prints its output and adds its FAIL lines to FAILS.
-# --------------------------------------------------------------------------------
-# A group that stops with a non-zero status and no FAIL line counts as one failure, so a crash is never silent.
+# ------------------------------------------------------------------------------
+# run_groups SUITE_DIR: runs every group program in SUITE_DIR, counts FAILS
+# ------------------------------------------------------------------------------
+# A group that crashes without a FAIL line counts as one failure.
+# ------------------------------------------------------------------------------
 run_groups() {
   local suiteDir=$1
   local group
+  local groupName
   local groupOutput
   local groupStatus
   local groupFailCount
 
-  shift
+  for group in "$suiteDir"/*.sh; do
+    groupName=${group##*/}
 
-  for group in "$@"; do
-    groupOutput=$(bash "$suiteDir/$group" </dev/null 2>&1)
+    case "$groupName" in
+      lib.sh | run-all.sh)
+        continue
+        ;;
+    esac
+
+    groupOutput=$(bash "$group" </dev/null 2>&1)
     groupStatus=$?
 
     if [ -n "$groupOutput" ]; then
@@ -103,7 +111,7 @@ run_groups() {
     FAILS=$((FAILS + groupFailCount))
 
     if [ "$groupStatus" -ne 0 ] && [ "$groupFailCount" -eq 0 ]; then
-      echo "FAIL: $group stopped with exit status $groupStatus before reporting a case"
+      echo "FAIL: $groupName stopped with exit status $groupStatus before reporting a case"
       FAILS=$((FAILS + 1))
     fi
   done
