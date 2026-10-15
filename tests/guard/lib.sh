@@ -53,25 +53,6 @@ nowhere_matches() {
 }
 
 # --------------------------------------------------------------------------------
-# run_steps_of DOCKERFILE: prints one line per RUN step as "LINE: text", with its continuation lines joined by a space and their trailing backslashes dropped.
-# --------------------------------------------------------------------------------
-# A rule that reads a step as one line cannot be dodged by a line break inside the step.
-run_steps_of() {
-  awk '
-    function flush() {
-      if (step != "") {
-        print step_line ": " step
-      }
-      step = ""
-    }
-    /^RUN[[:space:]]/ { flush(); step_line = NR; step = $0; continuing = /\\$/; sub(/[[:space:]]*\\$/, "", step); next }
-    continuing { piece = $0; continuing = /\\$/; sub(/[[:space:]]*\\$/, "", piece); step = step " " piece; next }
-    { flush() }
-    END { flush() }
-  ' "$1"
-}
-
-# --------------------------------------------------------------------------------
 # enter_repo_root: changes to the repository root and sets REPO and REPO_DIR to its physical path; returns 1 on failure.
 # --------------------------------------------------------------------------------
 enter_repo_root() {

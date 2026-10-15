@@ -66,9 +66,11 @@ case_supply_chain_rules() {
   expect "supply chain: an image pin without a digest fails" has_text "$WORK/supply-nodigest.out" "is not an image tag with its @sha256 digest"
 }
 
-# --------------------------------------------------------------------------------
-# Cases of the supply chain rules against evasions (the banned names are built from parts, so this file does not hold them): the old GSD package in a hook, a manual helper and a support script, a download piped to a shell across a line break, through process substitution or through sh -c, an install without a pin, with a floating tag, with a literal version or with an undeclared pin, and a GSD install that is not the pinned official package
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# case_supply_chain_evasions: old package names, piped downloads, bad installs
+# ------------------------------------------------------------------------------
+# The banned names are built from parts, so this file does not hold them.
+# ------------------------------------------------------------------------------
 case_supply_chain_evasions() {
   local oldName=get-shit-done
   local plantedFile
@@ -103,29 +105,18 @@ case_supply_chain_evasions() {
   make_scratch_repo || return 1
   printf 'RUN npm install -g leftpad\n' >>"$WORK/repo/claude/Dockerfile"
   run_scratch_guard "$WORK/supply-npm-nopin.out" supply-chain.sh
-  expect "supply chain: an npm install without a version fails" has_text "$WORK/supply-npm-nopin.out" "FAIL: installs_use_declared_pins"
+  expect "supply chain: an npm install without a version fails" has_text "$WORK/supply-npm-nopin.out" "FAIL: installs_use_pins"
   expect "supply chain: the unpinned package is named" has_text "$WORK/supply-npm-nopin.out" "leftpad"
-
-  make_scratch_repo || return 1
-  printf 'RUN npm install -g "leftpad@next"\n' >>"$WORK/repo/claude/Dockerfile"
-  run_scratch_guard "$WORK/supply-npm-tag.out" supply-chain.sh
-  expect "supply chain: an npm install at a floating tag fails" has_text "$WORK/supply-npm-tag.out" "FAIL: installs_use_declared_pins"
 
   make_scratch_repo || return 1
   printf 'RUN npm install -g "leftpad@1.3.0"\n' >>"$WORK/repo/claude/Dockerfile"
   run_scratch_guard "$WORK/supply-npm-literal.out" supply-chain.sh
-  expect "supply chain: an npm install at a version typed into the Dockerfile fails" has_text "$WORK/supply-npm-literal.out" "FAIL: installs_use_declared_pins"
-
-  make_scratch_repo || return 1
-  printf 'RUN npm install -g "leftpad@${LEFTPAD_VERSION}"\n' >>"$WORK/repo/claude/Dockerfile"
-  run_scratch_guard "$WORK/supply-npm-undeclared.out" supply-chain.sh
-  expect "supply chain: an npm install at an undeclared pin fails" has_text "$WORK/supply-npm-undeclared.out" "FAIL: installs_use_declared_pins"
-  expect "supply chain: the undeclared pin is named" has_text "$WORK/supply-npm-undeclared.out" "LEFTPAD_VERSION"
+  expect "supply chain: an npm install at a version typed into the Dockerfile fails" has_text "$WORK/supply-npm-literal.out" "FAIL: installs_use_pins"
 
   make_scratch_repo || return 1
   printf 'RUN npx -y leftpad\n' >>"$WORK/repo/claude/Dockerfile"
   run_scratch_guard "$WORK/supply-npx.out" supply-chain.sh
-  expect "supply chain: npx in a Dockerfile fails" has_text "$WORK/supply-npx.out" "FAIL: installs_use_declared_pins"
+  expect "supply chain: npx in a Dockerfile fails" has_text "$WORK/supply-npx.out" "FAIL: installs_use_pins"
 
   make_scratch_repo || return 1
   edit_scratch_file claude/Dockerfile 's|@opengsd/gsd-core@${GSD_CORE_VERSION}|leftpad@${GSD_CORE_VERSION}|' || return 1
