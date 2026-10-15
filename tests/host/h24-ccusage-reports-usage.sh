@@ -1,30 +1,32 @@
 #!/usr/bin/env bash
-# H-24: ccusage in a docker exec shell reports this sandbox's Claude usage from state/claude.
-# - A one-message transcript (100 input and 200 output tokens on 2020-01-07, under a run-unique session ID) is written
-#   from the Mac into state/claude/projects/-home-sandbox-workspace-hosttest/h24-usage.jsonl, the same file every run.
-# - ccusage daily and monthly, limited to that day, and ccusage session for that ID must report 100, 200 and 300 tokens, as whole numbers (1000 is not 100).
-# - The table report must show a Total row and a 300 that is a whole number.
-# - --offline keeps the price lookup off the network, so the result is the same every run.
-# - ccusage runs as the sandbox user in the project folder, so the check also proves its native binary is executable for that user.
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-24: ccusage reports this sandbox's Claude usage from state/claude
+# ------------------------------------------------------------------------------
 # Needs: test sandbox running
+# --offline keeps the price lookup off the network, so every run agrees.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 
 sessionId="h24-$$-$(date +%s)"
 
-# --------------------------------------------------------------------------------
-# project_stdout CMD...: runs CMD in the project folder of the test container; stdin closed, stderr discarded, never a tty.
-# --------------------------------------------------------------------------------
-# ccusage prints notices on stderr; only its stdout is compared.
+# ------------------------------------------------------------------------------
+# project_stdout CMD...: runs CMD in the project folder of the test container
+# ------------------------------------------------------------------------------
+# Stdin is closed, stderr discarded (ccusage prints notices there), never a tty.
+# Running as the sandbox user also proves ccusage's native binary is executable.
+# ------------------------------------------------------------------------------
 project_stdout() {
   docker exec -w "$PROJECT_DIR" "$CONTAINER" "$@" </dev/null 2>/dev/null
 }
 
-# --------------------------------------------------------------------------------
-# write_transcript: writes the one-message transcript under the run's state/claude/projects, over the file of the last run
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# write_transcript: writes the one-message transcript for the run
+# ------------------------------------------------------------------------------
+# 100 input and 200 output tokens on 2020-01-07 under a run-unique session ID,
+# in state/claude/projects/.../h24-usage.jsonl, the same file every run.
+# ------------------------------------------------------------------------------
 write_transcript() {
   local transcriptDir="$RUN/state/claude/projects/-home-sandbox-workspace-hosttest"
 
@@ -32,9 +34,9 @@ write_transcript() {
   printf '%s\n' '{"type":"assistant","timestamp":"2020-01-07T12:00:00.000Z","sessionId":"'"$sessionId"'","cwd":"/home/sandbox/workspace/hosttest","requestId":"h24-request","message":{"id":"h24-message","model":"claude-sonnet-4-5-20250929","role":"assistant","usage":{"input_tokens":100,"output_tokens":200,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}},"costUSD":0.01}' >"$transcriptDir/h24-usage.jsonl"
 }
 
-# --------------------------------------------------------------------------------
-# Reads the daily, monthly, session and table reports, each with its stdout and exit status
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Reads the daily, monthly, session and table reports with their statuses
+# ------------------------------------------------------------------------------
 run_reports() {
   dailyOutput=$(run_timeout 60 project_stdout ccusage daily --offline --json --since 20200107 --until 20200107)
   dailyStatus=$?
@@ -46,9 +48,12 @@ run_reports() {
   tableStatus=$?
 }
 
-# --------------------------------------------------------------------------------
-# check_report LABEL STATUS OUTPUT REGEX...: a problem when STATUS is not 0, and one for each REGEX that no line of OUTPUT matches
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# check_report LABEL STATUS OUTPUT REGEX...: a problem per failed expectation
+# ------------------------------------------------------------------------------
+# STATUS must be 0 and each REGEX must match a line of OUTPUT. Daily, monthly
+# and session give 100, 200 and 300 as whole numbers; the table has a Total row.
+# ------------------------------------------------------------------------------
 check_report() {
   local label=$1
   local reportStatus=$2
@@ -68,9 +73,9 @@ check_report() {
   done
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-24 || exit 1
 write_transcript

@@ -1,22 +1,17 @@
 #!/usr/bin/env bash
-# H-25: the images match versions.env, and a build without build.sh stops and names the missing pin.
-# - /etc/sbx/versions.env in sbx-claude:local must equal versions.env in the repo, so a forgotten rebuild fails here.
-# - gsd-tools runtime-identity in the image must name @opengsd/gsd-core at the pinned version, and
-#   ccusage --version must be the pinned version. Claude Code is H-12's.
-# - Nothing may sit under /home/sandbox/workspace in the image, because the mount would hide it.
-# - base/Dockerfile and claude/Dockerfile are each built once without build.sh, with no build args and
-#   no tag, and must stop: the base build naming a missing image pin, the Claude build printing the
-#   missing-pin message.
-# - The bare build logs go to the run folder.
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-25: the images match versions.env; a bare build is refused
+# ------------------------------------------------------------------------------
 # Needs: images built; the run folder (not the running sandbox)
+# Claude Code is H-12's; a build without build.sh must name the missing pin.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # FAIL and return 1 when there is no run folder
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_run_folder() {
   if [ -z "${RUN:-}" ]; then
     fail H-25 "no run folder" "run: bash tests/host/run-all.sh first"
@@ -24,9 +19,11 @@ require_run_folder() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks the record in the Claude image equals versions.env in the repo
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# A forgotten rebuild fails here.
+# ------------------------------------------------------------------------------
 check_record() {
   local recordFile="$RUN/logs/h25-image-versions.env"
   local diffText
@@ -39,9 +36,12 @@ check_record() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks the GSD and ccusage in the Claude image are the pinned versions
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# gsd-tools runtime-identity must name @opengsd/gsd-core at the pin, and ccusage
+# --version must be the pin.
+# ------------------------------------------------------------------------------
 check_tool_versions() {
   local gsdPin ccusagePin gsdIdentity ccusageVersion
 
@@ -59,9 +59,11 @@ check_tool_versions() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks nothing sits under /home/sandbox/workspace in the Claude image
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# The mount would hide anything the image put there.
+# ------------------------------------------------------------------------------
 check_workspace_empty() {
   local listing listingStatus
 
@@ -75,11 +77,12 @@ check_workspace_empty() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Checks both Dockerfiles stop when built without build.sh, with the message that names the missing pin
-# --------------------------------------------------------------------------------
-# - The base build stops while it reads the FROM lines; which FROM pin BuildKit names first is not documented, so any of them is accepted.
-# - The plain progress log also echoes the RUN command and the FROM lines, so the checks match only what BuildKit and the shell print when the guard fires, never the Dockerfile text: the "should not be blank" error of the empty FROM, and the shell's own "NAME: NAME is not set" line.
+# ------------------------------------------------------------------------------
+# Checks both Dockerfiles stop when built without build.sh, naming the pin
+# ------------------------------------------------------------------------------
+# BuildKit names whichever blank FROM pin it reads first, so any is accepted.
+# Only the guard's own messages count, never the echoed Dockerfile text.
+# ------------------------------------------------------------------------------
 check_bare_builds() {
   local baseLog="$RUN/logs/h25-bare-base.log"
   local claudeLog="$RUN/logs/h25-bare-claude.log"
@@ -100,9 +103,9 @@ check_bare_builds() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_run_folder || exit 1
 check_record
