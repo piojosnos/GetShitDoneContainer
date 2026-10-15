@@ -117,16 +117,21 @@ case_start_rules() {
 }
 
 # ------------------------------------------------------------------------------
-# case_isolation_rule: a clean copy, then privileged: true in the compose file
+# case_isolation_rule: a clean copy, then one refused compose line at a time
 # ------------------------------------------------------------------------------
 # The scratch copy has no .git, so only the named rule line is read.
 # ------------------------------------------------------------------------------
 case_isolation_rule() {
+  local plantedLine
+
   echo "--- isolation rule"
 
   clean_copy_passes "isolation: a clean copy passes the socket and privileges rule" isolation.sh no_docker_socket_or_privileges
-  plant_case "isolation: privileged: true in the sandbox service fails" isolation.sh no_docker_socket_or_privileges "    privileged: true" edit_scratch_file compose.yml "/^    init: true/a\\
-    privileged: true"
+
+  for plantedLine in "privileged: true" "network_mode: host" "pid: host" "devices:" "- seccomp=unconfined"; do
+    plant_case "isolation: $plantedLine in the sandbox service fails" isolation.sh no_docker_socket_or_privileges "    $plantedLine" edit_scratch_file compose.yml "/^    init: true/a\\
+    $plantedLine"
+  done
 }
 
 # ------------------------------------------------------------------------------

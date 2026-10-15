@@ -17,13 +17,16 @@ set -u
 OLD_LAYOUT_COMMIT=304f80d1a0705d9ab668ef2ed4acd9fcf65060ac
 
 # ------------------------------------------------------------------------------
-# no_docker_socket_or_privileges: no Docker socket, no sudo, no privileged mode
+# no_docker_socket_or_privileges: no Docker socket, no sudo, no extra privilege
 # ------------------------------------------------------------------------------
-# The mount and privilege facts are read from the running sandbox by host check
-# H-26; these greps stop the obvious lines from being written.
+# Compose refuses privileged, cap_add, devices, host namespaces, group_add and
+# unconfined profiles. Host check H-26 reads the running container.
 # ------------------------------------------------------------------------------
 no_docker_socket_or_privileges() {
-  nowhere_matches 'docker\.sock|privileged:[[:space:]]*true' $COMPOSE && nowhere_matches '\bsudo\b' $DOCKERFILES
+  local fieldRegex='^[[:space:]]*(privileged|cap_add|devices|device_cgroup_rules|pid|ipc|uts|userns_mode|network_mode|cgroup_parent|group_add|sysctls)[[:space:]]*:'
+  local unconfinedRegex='(seccomp|apparmor)[=:][[:space:]]*unconfined'
+
+  nowhere_matches "docker\\.sock|$fieldRegex|$unconfinedRegex" $COMPOSE && nowhere_matches '\bsudo\b' $DOCKERFILES
 }
 
 # ------------------------------------------------------------------------------
