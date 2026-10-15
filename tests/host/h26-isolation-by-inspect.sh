@@ -10,22 +10,34 @@ set -u
 host_init
 
 # ------------------------------------------------------------------------------
-# check_privileges: not privileged, all capabilities dropped, none added
+# refuse_host_mode NAME VALUE: adds a problem if VALUE is host (returns 1)
 # ------------------------------------------------------------------------------
-# Compose may write CapDrop and SecurityOpt in its own form, so the check looks
-# for substrings and prints the raw line.
+refuse_host_mode() {
+  if [ "$2" = "host" ]; then
+    add_problem "$1 is host"
+    return 1
+  fi
+
+  return 0
+}
+
+# ------------------------------------------------------------------------------
+# check_privileges: no privilege, host namespace, device, extra group or profile
+# ------------------------------------------------------------------------------
+# A normal compose container reports NetworkMode <project>_default, IpcMode
+# private (or shareable), PidMode, UTSMode and UsernsMode empty, Devices and
+# GroupAdd null. Compose may write CapDrop and SecurityOpt in its own form, so
+# the check looks for substrings and prints the raw line.
 # ------------------------------------------------------------------------------
 check_privileges() {
   local inspectLine privileged capDrop capAdd securityOpt
+  local networkMode pidMode ipcMode utsMode usernsMode devices groupAdd
   local problemFound=0
 
   inspectLine=$(docker container inspect \
-    --format '{{.HostConfig.Privileged}}|{{json .HostConfig.CapDrop}}|{{json .HostConfig.CapAdd}}|{{json .HostConfig.SecurityOpt}}' \
+    --format '{{.HostConfig.Privileged}}|{{json .HostConfig.CapDrop}}|{{json .HostConfig.CapAdd}}|{{json .HostConfig.SecurityOpt}}|{{.HostConfig.NetworkMode}}|{{.HostConfig.PidMode}}|{{.HostConfig.IpcMode}}|{{.HostConfig.UTSMode}}|{{.HostConfig.UsernsMode}}|{{json .HostConfig.Devices}}|{{json .HostConfig.GroupAdd}}' \
     "$CONTAINER" </dev/null 2>&1)
-  privileged=$(printf '%s\n' "$inspectLine" | cut -d'|' -f1)
-  capDrop=$(printf '%s\n' "$inspectLine" | cut -d'|' -f2)
-  capAdd=$(printf '%s\n' "$inspectLine" | cut -d'|' -f3)
-  securityOpt=$(printf '%s\n' "$inspectLine" | cut -d'|' -f4)
+  IFS='|' read -r privileged capDrop capAdd securityOpt networkMode pidMode ipcMode utsMode usernsMode devices groupAdd <<<"$inspectLine"
 
   if [ "$privileged" != "false" ]; then
     add_problem "Privileged is not false"
@@ -52,6 +64,36 @@ check_privileges() {
       problemFound=1
       ;;
   esac
+
+  case "$securityOpt" in
+    *unconfined*)
+      add_problem "SecurityOpt holds an unconfined profile"
+      problemFound=1
+      ;;
+  esac
+
+  refuse_host_mode NetworkMode "$networkMode" || problemFound=1
+  refuse_host_mode PidMode "$pidMode" || problemFound=1
+  refuse_host_mode IpcMode "$ipcMode" || problemFound=1
+  refuse_host_mode UTSMode "$utsMode" || problemFound=1
+  refuse_host_mode UsernsMode "$usernsMode" || problemFound=1
+
+  case "$networkMode" in
+    container:*)
+      add_problem "NetworkMode joins another container"
+      problemFound=1
+      ;;
+  esac
+
+  if [ "$devices" != "null" ] && [ "$devices" != "[]" ]; then
+    add_problem "Devices is not null or empty"
+    problemFound=1
+  fi
+
+  if [ "$groupAdd" != "null" ] && [ "$groupAdd" != "[]" ]; then
+    add_problem "GroupAdd is not null or empty"
+    problemFound=1
+  fi
 
   if [ "$problemFound" -eq 1 ]; then
     add_problem "docker inspect gave: $inspectLine"
@@ -81,4 +123,4 @@ require_test_sandbox H-26 || exit 1
 check_privileges
 check_mounts
 report_check H-26 "the test sandbox has an extra mount or a privilege" \
-  "one bind mount at /home/sandbox/workspace; not privileged; all capabilities dropped, none added; no-new-privileges"
+  "one bind mount at /home/sandbox/workspace; not privileged; all capabilities dropped, none added; no-new-privileges; no unconfined profile, host namespace, device or extra group"
