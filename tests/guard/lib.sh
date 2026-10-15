@@ -17,6 +17,9 @@ ENTRY="base/sbx-entrypoint base/sbx-start-lib.sh"
 DOCKERFILES="$BASE $CLAUDE"
 SANDBOX_FILES="$BASE $CLAUDE $COMPOSE $ENTRY versions.env build.sh clean.sh"
 
+# Every script the linter checks. Globs, not git ls-files, because the guard self-test runs in a copy without .git.
+SHELL_FILES="build.sh clean.sh base/sbx-entrypoint base/sbx-start-lib.sh claude/start.d/* tests/*/*.sh tests/*/*/*.sh tests/selftest/*/support/fake-gsd"
+
 # The Mac host tests: every script, and the ones that must run unattended.
 HOST_FILES="tests/host/*.sh tests/host/manual/*.sh"
 HOST_UNATTENDED_FILES="tests/host/*.sh"

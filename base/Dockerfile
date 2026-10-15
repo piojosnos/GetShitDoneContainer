@@ -1,12 +1,16 @@
 # check=skip=InvalidDefaultArgInFrom
 # Shared base for every sbx agent image: Linux tools and toolchains, nothing agent-specific.
 # Build with ./build.sh. No ARG has a default, so a bare build names the missing pin.
-# Official JDK and uv images, pinned in versions.env; the final stage copies only their files.
+# Official JDK, uv, shellcheck and hadolint images, pinned in versions.env; the final stage copies only their files.
 ARG TEMURIN_IMAGE
 ARG UV_IMAGE
 ARG UBUNTU_IMAGE
+ARG SHELLCHECK_IMAGE
+ARG HADOLINT_IMAGE
 FROM ${TEMURIN_IMAGE} AS jdk
 FROM ${UV_IMAGE} AS uv
+FROM ${SHELLCHECK_IMAGE} AS shellcheck
+FROM ${HADOLINT_IMAGE} AS hadolint
 FROM ${UBUNTU_IMAGE}
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -67,6 +71,11 @@ RUN : "${MAVEN_VERSION:?MAVEN_VERSION is not set; build with ./build.sh}" \
 # --- uv ---
 COPY --from=uv /uv /uvx /usr/local/bin/
 
+# --- Linters ---
+# One static binary from each pinned image, so the checks run the same in every sandbox.
+COPY --from=shellcheck --chmod=755 /bin/shellcheck /usr/local/bin/shellcheck
+COPY --from=hadolint --chmod=755 /bin/hadolint /usr/local/bin/hadolint
+
 # --- The sandbox user ---
 # Replaces the ubuntu user at 1000:1000, so files on the mounted folder keep predictable owners.
 RUN (userdel -r ubuntu || true) \
@@ -120,6 +129,8 @@ RUN test "$(node -v)" = "v${NODE_VERSION}" \
     && java -version 2>&1 | grep -F "Temurin" >/dev/null \
     && uv --version \
     && python3 --version \
+    && shellcheck --version >/dev/null \
+    && hadolint --version >/dev/null \
     && { test -z "$(ls -A /home/sandbox/workspace)" || { echo "Files under the mount point:"; find /home/sandbox/workspace; exit 1; }; }
 
 WORKDIR /home/sandbox/workspace

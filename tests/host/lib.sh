@@ -45,7 +45,7 @@ print_usage() {
 # The caller stops with || exit 2, the exit code of a usage error.
 require_no_arguments() {
   if [ "$#" -gt 0 ]; then
-    print_usage
+    print_usage ""
     return 1
   fi
 

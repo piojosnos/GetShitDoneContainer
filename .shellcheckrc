@@ -1,0 +1,7 @@
+# ------------------------------------------------------------------------------
+# shellcheck settings for every script the guard checks
+# ------------------------------------------------------------------------------
+# Each file is checked on its own, so sourced paths and library globals look
+# unknown or unused. A tilde inside a message string is text, not a path.
+# ------------------------------------------------------------------------------
+disable=SC1090,SC1091,SC2034,SC2088
