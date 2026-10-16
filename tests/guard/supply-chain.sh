@@ -98,14 +98,15 @@ versions_file_has_one_pin_per_line() {
 }
 
 # ------------------------------------------------------------------------------
-# pins_are_exact: _VERSION is x.y.z, _IMAGE is tag@sha256:digest, no other kind
+# pins_are_exact: _VERSION x.y.z, _IMAGE tag@sha256, _URL https, no other kind
 # ------------------------------------------------------------------------------
 pins_are_exact() {
   local ok=0
 
   pin_lines | grep -E '^[A-Z_]+_VERSION=' | grep -Ev '^[A-Z_]+_VERSION=[0-9]+\.[0-9]+\.[0-9]+$' | report_lines "versions.env: not an exact x.y.z version: " || ok=1
   pin_lines | grep -E '^[A-Z_]+_IMAGE=' | grep -Ev '^[A-Z_]+_IMAGE=[a-z0-9][a-z0-9./-]*:[A-Za-z0-9._-]+@sha256:[0-9a-f]{64}$' | report_lines "versions.env: not an image tag with its @sha256 digest: " || ok=1
-  pin_lines | grep -Ev '^[A-Z_]+_(VERSION|IMAGE)=' | sed 's/=.*//' | report_lines "versions.env: the name must end in _VERSION or _IMAGE: " || ok=1
+  pin_lines | grep -E '^[A-Z_]+_URL=' | grep -Ev '^[A-Z_]+_URL=https://[^@[:space:]]+$' | report_lines "versions.env: not an https:// URL without credentials: " || ok=1
+  pin_lines | grep -Ev '^[A-Z_]+_(VERSION|IMAGE|URL)=' | sed 's/=.*//' | report_lines "versions.env: the name must end in _VERSION, _IMAGE or _URL: " || ok=1
 
   return "$ok"
 }

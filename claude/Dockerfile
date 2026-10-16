@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# The Claude agent image: Claude Code, GSD, ccusage and the bundle on sbx-base
+# The Claude agent image: Claude Code, GSD and ccusage on sbx-base
 # ------------------------------------------------------------------------------
 # BASE_IMAGE keeps a default because it names the local base tag, not a version.
 # Pins come from versions.env through build.sh; no other ARG has a default.
@@ -50,24 +50,26 @@ RUN : "${CCUSAGE_VERSION:?CCUSAGE_VERSION is not set; build with ./build.sh}" \
 # ------------------------------------------------------------------------------
 # Claude settings as image ENV
 # ------------------------------------------------------------------------------
-# So every docker exec shell gets them. SBX_STATE_DIRS keeps the base list
-# and appends claude.
+# So every docker exec shell gets them. SBX_BUNDLE_DIR is where this sandbox
+# keeps its clone of BUNDLE_REPO_URL; SBX_STATE_DIRS appends claude.
 # ------------------------------------------------------------------------------
+ARG BUNDLE_REPO_URL
+RUN : "${BUNDLE_REPO_URL:?BUNDLE_REPO_URL is not set; build with ./build.sh}"
 ENV CLAUDE_CONFIG_DIR=/home/sandbox/workspace/state/claude \
     SBX_STATE_DIRS="${SBX_STATE_DIRS} claude" \
+    SBX_BUNDLE_DIR=/home/sandbox/workspace/best-practices \
+    BUNDLE_REPO_URL=${BUNDLE_REPO_URL} \
     DISABLE_UPDATES=1
 
 # ------------------------------------------------------------------------------
-# Best-practices bundle in /opt/sbx (outside the mount) and managed settings
+# Start hooks and managed settings
 # ------------------------------------------------------------------------------
 # Managed settings deny Claude's Edit tool on the synced rules, the skill list
 # and every skill folder. This is not a security boundary.
 # ------------------------------------------------------------------------------
-COPY best-practices /opt/sbx/best-practices
 COPY claude/start.d/ /etc/sbx/start.d/
 COPY claude/managed-settings.json /etc/claude-code/managed-settings.json
-RUN chmod -R u=rwX,go=rX /opt/sbx/best-practices \
-    && chmod 755 /etc/sbx/start.d/* \
+RUN chmod 755 /etc/sbx/start.d/* \
     && chmod 644 /etc/claude-code/managed-settings.json \
     && node -e 'JSON.parse(require("fs").readFileSync("/etc/claude-code/managed-settings.json", "utf8"))'
 

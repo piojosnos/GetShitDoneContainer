@@ -1,45 +1,36 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Syncs the image's best-practices bundle into the Claude config at every start
+# Links the sandbox's best-practices clone into the Claude config at each start
 # ------------------------------------------------------------------------------
 # Other skills (GSD, your own) are never touched.
+# A start with no clone goes on, so a first start works before the clone exists.
 # ------------------------------------------------------------------------------
 set -eu
 
-bundleDir=${SBX_BUNDLE_DIR:-/opt/sbx/best-practices}
 configDir=${CLAUDE_CONFIG_DIR:-}
+bundleDir=${SBX_BUNDLE_DIR:-}
 skillList=$configDir/.best-practices-skills
 
 # ------------------------------------------------------------------------------
-# check_inputs: stops the start when the config folder or the bundle is missing
+# check_inputs: stops the start when the config or clone folder is not named
 # ------------------------------------------------------------------------------
 check_inputs() {
-  if [ -z "$configDir" ]; then
-    echo "[sbx] ERROR: CLAUDE_CONFIG_DIR is not set." >&2
-    exit 1
-  fi
-
-  if [ ! -d "$bundleDir/rules" ]; then
-    echo "[sbx] ERROR: the best-practices bundle is missing: $bundleDir/rules" >&2
+  if [ -z "$configDir" ] || [ -z "$bundleDir" ]; then
+    echo "[sbx] ERROR: CLAUDE_CONFIG_DIR or SBX_BUNDLE_DIR is not set." >&2
     exit 1
   fi
 }
 
 # ------------------------------------------------------------------------------
-# sync_rules: replaces rules/ with the image's rules
+# remove_old_links: removes the rules link and the skills the last start listed
 # ------------------------------------------------------------------------------
-sync_rules() {
-  rm -rf "$configDir/rules"
-  cp -R "$bundleDir/rules" "$configDir/rules"
-}
-
+# rm on a link removes the link, never the clone; it also clears the copies an
+# older start left. A skill dropped from the clone goes away with its entry.
 # ------------------------------------------------------------------------------
-# remove_listed_skills: removes the skills the last sync listed
-# ------------------------------------------------------------------------------
-# So a skill dropped from the bundle goes away.
-# ------------------------------------------------------------------------------
-remove_listed_skills() {
+remove_old_links() {
   local oldName
+
+  rm -rf "$configDir/rules"
 
   if [ ! -f "$skillList" ]; then
     return
@@ -52,14 +43,20 @@ remove_listed_skills() {
 
     rm -rf "$configDir/skills/$oldName"
   done <"$skillList"
+
+  rm -f "$skillList"
 }
 
 # ------------------------------------------------------------------------------
-# copy_bundle_skills: copies the bundle's skills and lists their names
+# link_bundle: links rules and each skill folder of the clone, lists the skills
 # ------------------------------------------------------------------------------
-copy_bundle_skills() {
+# Relative links resolve in the container and on the Mac alike. The last test
+# stops the start when they miss the clone.
+# ------------------------------------------------------------------------------
+link_bundle() {
   local skillDir skillName
 
+  ln -s ../../best-practices/rules "$configDir/rules"
   : >"$skillList"
 
   for skillDir in "$bundleDir"/skills/*/; do
@@ -71,8 +68,13 @@ copy_bundle_skills() {
     skillName=$(basename "$skillDir")
     echo "$skillName" >>"$skillList"
     rm -rf "$configDir/skills/$skillName"
-    cp -R "$skillDir" "$configDir/skills/$skillName"
+    ln -s "../../../best-practices/skills/$skillName" "$configDir/skills/$skillName"
   done
+
+  if [ ! "$configDir/rules" -ef "$bundleDir/rules" ]; then
+    echo "[sbx] ERROR: $configDir/rules does not resolve to $bundleDir/rules" >&2
+    exit 1
+  fi
 }
 
 # ------------------------------------------------------------------------------
@@ -80,6 +82,11 @@ copy_bundle_skills() {
 # ------------------------------------------------------------------------------
 check_inputs
 mkdir -p "$configDir/skills"
-sync_rules
-remove_listed_skills
-copy_bundle_skills
+remove_old_links
+
+if [ -d "$bundleDir/rules" ]; then
+  link_bundle
+  echo "[sbx] best-practices linked from $bundleDir"
+else
+  echo "[sbx] no best-practices clone at $bundleDir; run sbx-bundle-clone"
+fi
