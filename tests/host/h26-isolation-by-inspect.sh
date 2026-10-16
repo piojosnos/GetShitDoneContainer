@@ -24,10 +24,8 @@ refuse_host_mode() {
 # ------------------------------------------------------------------------------
 # check_privileges: no privilege, host namespace, device, extra group or profile
 # ------------------------------------------------------------------------------
-# A normal compose container reports NetworkMode <project>_default, IpcMode
-# private (or shareable), PidMode, UTSMode and UsernsMode empty, Devices and
-# GroupAdd null. Compose may write CapDrop and SecurityOpt in its own form, so
-# the check looks for substrings and prints the raw line.
+# Normal values: NetworkMode <project>_default, IpcMode private or shareable,
+# the rest empty or null. Substring checks; a failure prints the raw line.
 # ------------------------------------------------------------------------------
 check_privileges() {
   local inspectLine privileged capDrop capAdd securityOpt
