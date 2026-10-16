@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
-current_phase: "02.1"
+current_phase: "02.2"
 current_phase_name: Best-practices from git, editable from any sandbox
 status: planning
-stopped_at: Phase 02 complete, ready to plan Phase 02.1
-last_updated: "2026-10-13T03:44:01.286Z"
-last_activity: 2026-10-13
-last_activity_desc: Phase 02 complete, transitioned to Phase 02.1
-state_head: f8ec3c242784d1b8c4e64031c60391c9c8dd4cab
+stopped_at: Phase 02.1 complete, ready to plan Phase 02.2
+last_updated: "2026-10-16T04:12:27.983Z"
+last_activity: 2026-10-16
+last_activity_desc: Phase 02.1 complete, transitioned to Phase 02.2
+state_head: 1ab464ae0b23c6cecae898e63fd6793f42561f13
 progress:
-  total_phases: 13
-  completed_phases: 7
-  total_plans: 53
-  completed_plans: 53
-  percent: 54
+  total_phases: 14
+  completed_phases: 8
+  total_plans: 64
+  completed_plans: 64
+  percent: 57
 ---
 
 # Project State
@@ -23,21 +23,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-08)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 02 — Pinned Toolchain, GSD, and ccusage
+**Current focus:** Phase 02.1 — Shell diet
 
 ## Current Position
 
-Phase: 02.1 — Shell diet
+Phase: 02.2 — Best-practices from git, editable from any sandbox
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-13 — Phase 02 complete, transitioned to Phase 02.1
+Last activity: 2026-10-16 — Phase 02.1 complete, transitioned to Phase 02.2
 
-Progress: [████████████████████] 44/44 plans ([█████░░░░░] 54%)
+Progress: [████████████████████] 44/44 plans ([██████░░░░] 57%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 53
+- Total plans completed: 64
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -52,6 +52,7 @@ Progress: [████████████████████] 44/44 p
 | 01.4 | 8 | - | - |
 | 01.5 | 16 | - | - |
 | 02 | 9 | - | - |
+| 02.1 | 11 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -115,6 +116,17 @@ Progress: [████████████████████] 44/44 p
 | Phase 02 P07 | 15 min | 2 tasks | 11 files |
 | Phase 02 P08 | 25 min | 2 tasks | 10 files |
 | Phase 02 P09 | not recorded | 3 tasks | 12 files |
+| Phase 02.1 P01 | 15 min | 2 tasks | 1 files |
+| Phase 02.1 P02 | 20min | 3 tasks | 12 files |
+| Phase 02.1 P03 | 20min | 3 tasks | 62 files |
+| Phase 02.1 P04 | 15min | 2 tasks | 5 files |
+| Phase 02.1 P05 | 55 min | 3 tasks | 9 files |
+| Phase 02.1 P06 | 20 min | 3 tasks | 12 files |
+| Phase 02.1 P07 | 25min | 3 tasks | 11 files |
+| Phase 02.1 P08 | 20min | 3 tasks | 13 files |
+| Phase 02.1 P09 | 25min | 3 tasks | 25 files |
+| Phase 02.1 P10 | 40 min | 3 tasks | 2 files |
+| Phase 02.1 P11 | 30 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -214,6 +226,17 @@ Recent decisions affecting current work:
 - [Phase 02]: H-25 bare builds use --progress=plain and log to h25-bare-*.log so H-01's platform scan and the runner's build counts ignore them
 - [Phase 02]: Plan 09: MAVEN_VERSION 3.9.11 after the Mac run showed 3.9.12 and later fail to download into a local repository on the Docker Desktop mount; H-23 now downloads a real artifact into state/m2
 - [Phase 02]: Plan 09: the Mac run passed 25 of 25 checks and the attended GSD bump to 1.16.0 kept login and session; Phase 1 WR-03 and IN-03 recorded fixed
+- [Phase 02.1]: Rule banner titles in new guard files start with 'Rule NAME:' because shellcheck parses '# shellcheck...' comments as directives
+- [Phase 02.1]: An empty suite folder fails closed: the unexpanded glob cannot be opened, so run_groups counts one failure instead of passing silently
+- [Phase 02.1]: H-26 matches CapDrop and SecurityOpt by substring and prints the raw docker inspect line on failure, since Compose may normalize their text
+- [Phase 02.1]: installs_use_pins greps npm install arguments after stripping quoted NAME@${X_VERSION} tokens; the ARG-declared check is gone because each install RUN fails on an empty pin
+- [Phase 02.1]: Guard plus guard self-test is 899 lines (cap 900); rule code was tightened with a shared report_lines helper to fit
+- [Phase 02.1]: case_name_rule keeps six values (a, my-project start; HostTest, my_project, ../x, 32 chars refused); entrypoint self-test is 512 lines with the fake GSD (cap 520)
+- [Phase 02.1]: Runner header extra line becomes the pointer to tests/README.md; the rule of thumb is written only there
+- [Phase 02.1]: Shipped-file comments use 80-column banners; the Dockerfile uv title avoids the text uvx because the installs guard greps Dockerfile comments
+- [Phase 02.1]: Plan 08: host test libraries, runner, manual helpers and probe use 80-column banners; run-all.sh points to tests/README.md
+- [Phase 02.1]: Plan 10: host-test.sh (Mac entry point, log host-test.log) joins the code branch chore/shell-diet at the user's request; branch tip f79785f, 26 commits
+- [Phase 02.1]: Re-scan: 18 of 20 proposals approved for a second code PR; R-03 (clean.sh trim) and R-14 (SIGTERM-only run_timeout) rejected
 
 ### Pending Todos
 
@@ -259,6 +282,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-09T17:06:41.522Z
-Stopped at: Phase 02 complete, ready to plan Phase 02.1
+Last session: 2026-10-15T05:59:13.005Z
+Stopped at: Phase 02.1 complete, ready to plan Phase 02.2
 Resume file: None

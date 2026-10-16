@@ -1,0 +1,1 @@
+No external API integration: this phase only deletes and rewrites shell checks and comments and pins two linter images; the "API" hits are the existing test-only fake Anthropic API (tests/host/support/fake-claude-api.js), whose comments are edited, not integrated.
