@@ -17,12 +17,14 @@ Committed shell scripts run on the user's macOS (BSD tools, bash 3.2). Agents au
 
 ## Script layout
 
-- Put a banner before each logical section, stating what the section does:
+- Put a banner before each logical section. A rule line is `#`, a space and 78 hyphens: 80 columns. The title says what the section does. An optional why of at most two lines sits under the title, closed by a third rule line. Without a why, the title sits between two rules. The file header uses the same shape: the purpose is the title, and the usage line goes in the block below.
 
   ```bash
-  # --------------------------------------------------------------------------------
+  # ------------------------------------------------------------------------------
   # Removes the skills the last sync listed
-  # --------------------------------------------------------------------------------
+  # ------------------------------------------------------------------------------
+  # A skill renamed in the image would otherwise stay behind.
+  # ------------------------------------------------------------------------------
   ```
 
 - Once a section does more than a few lines, move it into a function under its banner, and keep the top level a short list of calls.

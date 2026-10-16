@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
-# Coexistence: the old-layout containers and folders are untouched.
-# - Compares the container snapshot and the folder snapshot taken at the start of the run (in the
-#   run folder's logs) with the same snapshots now. Dirt that was already there and did not change passes.
-# - A failed docker ps or git is reported as a failure to read, never compared as an empty list or as changes.
-# - Only reads. Writes two files in the run folder: logs/old-containers.after and logs/old-folders.after.
-# - Alone, with no snapshots from the start, it checks git only: ClaudeCode/ and OpenCode/ must be clean.
-# Depends on: nothing (compares with the snapshots run-all.sh takes at the start)
+# ------------------------------------------------------------------------------
+# Coexistence: old-layout containers and files are untouched by the run
+# ------------------------------------------------------------------------------
 # Needs: nothing
+# Alone, with no start snapshots, it checks git only: ClaudeCode/ and OpenCode/.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
@@ -15,9 +13,12 @@ containerBaselineFile=""
 folderBaselineFile=""
 compared="git only; no baseline"
 
-# --------------------------------------------------------------------------------
-# Finds the snapshots run-all.sh took at the start of the run, and names what is compared
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Finds the snapshots run-all.sh took at the start of the run
+# ------------------------------------------------------------------------------
+# Dirt that was already there and did not change passes. Only reads; writes
+# logs/old-containers.after and logs/old-folders.after in the run folder.
+# ------------------------------------------------------------------------------
 find_baselines() {
   if [ -n "$RUN" ] && [ -f "$RUN/logs/old-containers.before" ]; then
     containerBaselineFile="$RUN/logs/old-containers.before"
@@ -36,9 +37,11 @@ find_baselines() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Compares the old container list now with the one from the start of the run
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# A failed docker ps is a failure to read, never compared as an empty list.
+# ------------------------------------------------------------------------------
 check_old_containers_unchanged() {
   local beforeText afterText
 
@@ -62,9 +65,11 @@ check_old_containers_unchanged() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Compares ClaudeCode/ and OpenCode/ with the start of the run; with no snapshot, checks that git shows them clean
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Compares ClaudeCode/ and OpenCode/ with the snapshot from the start
+# ------------------------------------------------------------------------------
+# A failed git is a failure to read, never compared as changes.
+# ------------------------------------------------------------------------------
 check_old_folders_unchanged() {
   local beforeText afterText
 
@@ -88,9 +93,11 @@ check_old_folders_unchanged() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Checks git shows no change under ClaudeCode/ or OpenCode/ (no snapshot from the start to compare with)
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Checks git shows no change under ClaudeCode/ or OpenCode/
+# ------------------------------------------------------------------------------
+# Used when there is no snapshot from the start to compare with.
+# ------------------------------------------------------------------------------
 check_old_folders_clean() {
   local gitOutput
 
@@ -104,9 +111,9 @@ check_old_folders_clean() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 find_baselines
 check_old_containers_unchanged

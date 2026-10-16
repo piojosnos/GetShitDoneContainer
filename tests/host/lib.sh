@@ -1,21 +1,20 @@
 #!/usr/bin/env bash
-# Shared setup for the host tests: the run folder and a scrubbed environment; loads the topic libraries.
-# - Sourced by run-all.sh, by every check, by the self-tests in tests/selftest/ (through lib-expect.sh) and by the guard in tests/guard/ (through lib.sh); never run directly.
-# - Loads lib-report.sh (PASS and FAIL lines, collecting a check's result), lib-sandbox.sh (the test
-#   sandbox) and lib-docker.sh (the images and the old containers), all from this folder.
-# - Sets no shell options and does not cd, so the caller keeps control of both.
-# - The caller's SBX_NAME, SBX_DIR and COMPOSE_* values are never used. DOCKER_HOST and the current Docker context are used as set; run-all.sh prints them.
-# - Deletes nothing.
-# - Host side code is stock bash 3.2 with BSD tools (macOS); GNU tools only inside docker exec.
+# ------------------------------------------------------------------------------
+# Shared setup for the host tests: run folder, clean environment, libraries
+# ------------------------------------------------------------------------------
+# Sourced by the checks, runner, guard and self-tests; never run directly.
+# Host code is stock bash 3.2 with BSD tools (macOS); GNU only in docker exec.
+# ------------------------------------------------------------------------------
 
-# The topic libraries live next to this file.
 . "$(dirname "${BASH_SOURCE[0]}")/lib-report.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/lib-sandbox.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/lib-docker.sh"
 
-# --------------------------------------------------------------------------------
-# host_init: sets REPO_DIR, HOST_DIR, SBX_NAME, PROJECT_DIR, CONTAINER and RUN; scrubs the environment.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# host_init: sets REPO_DIR, HOST_DIR, SBX_NAME, PROJECT_DIR, CONTAINER, RUN
+# ------------------------------------------------------------------------------
+# SBX_DIR and COMPOSE_* are unset, so a caller's values never reach the test.
+# ------------------------------------------------------------------------------
 host_init() {
   local libDir
 
@@ -32,29 +31,30 @@ host_init() {
   resolve_run_dir
 }
 
-# --------------------------------------------------------------------------------
-# print_usage [OPTIONS]: prints "Usage: bash SCRIPT OPTIONS" to stderr, SCRIPT as it was run.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# print_usage [OPTIONS]: prints the usage line to stderr
+# ------------------------------------------------------------------------------
 print_usage() {
   printf 'Usage: bash %s%s\n' "$0" "${1:+ $1}" >&2
 }
 
-# --------------------------------------------------------------------------------
-# require_no_arguments ARG...: for a script that takes no arguments; prints the usage and returns 1 when any is given.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# require_no_arguments ARG...: prints the usage and returns 1 given any ARG
+# ------------------------------------------------------------------------------
 # The caller stops with || exit 2, the exit code of a usage error.
+# ------------------------------------------------------------------------------
 require_no_arguments() {
   if [ "$#" -gt 0 ]; then
-    print_usage
+    print_usage ""
     return 1
   fi
 
   return 0
 }
 
-# --------------------------------------------------------------------------------
-# run_dir_name_ok PATH: true if the last path component starts with sbx-hosttest-.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# run_dir_name_ok PATH: true if PATH's last component starts with sbx-hosttest-
+# ------------------------------------------------------------------------------
 run_dir_name_ok() {
   local folderName
 
@@ -66,9 +66,9 @@ run_dir_name_ok() {
   return 1
 }
 
-# --------------------------------------------------------------------------------
-# resolve_run_dir: sets RUN from SBXTEST_DIR, else from the test container's mount; else empty.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# resolve_run_dir: sets RUN from SBXTEST_DIR or the container's mount
+# ------------------------------------------------------------------------------
 resolve_run_dir() {
   local mountSource
 
@@ -99,9 +99,9 @@ resolve_run_dir() {
   return 0
 }
 
-# --------------------------------------------------------------------------------
-# make_run_dir: creates a fresh run folder (hosttest, state, logs inside); sets RUN, exports SBXTEST_DIR.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# make_run_dir: creates a fresh run folder; sets RUN, exports SBXTEST_DIR
+# ------------------------------------------------------------------------------
 make_run_dir() {
   local baseDir created
 

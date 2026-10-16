@@ -1,21 +1,22 @@
 #!/usr/bin/env bash
-# H-14: the image holds the bundle at /opt/sbx/best-practices, equal to the repo, root-owned, outside every mount; the hook and the managed settings are in place.
-# - The bundle is copied out of the container with docker cp into a fresh folder in the run folder's
-#   logs/ (the printed cleanup removes it) and compared with best-practices/ in the repo.
-# - One probe inside the container reports the owner and mode of the bundle, the hook folder, the hooks
-#   (05-gsd and 10-best-practices) and the managed settings; anything the sandbox user can write
-#   under those folders; any mount point under them; and whether the managed settings parse.
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-14: the image holds the bundle, equal to the repo, root-owned, unmounted
+# ------------------------------------------------------------------------------
 # Needs: test sandbox running
+# The bundle is at /opt/sbx/best-practices; the hooks and settings are in place.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 
 copyDir=$RUN/logs/h14-bundle-$$-$(date +%s)
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Copies the bundle out of the image and compares it with the repo
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# docker cp copies it into a fresh folder in the run folder's logs/ (the printed
+# cleanup removes it); the repo side is best-practices/.
+# ------------------------------------------------------------------------------
 copy_bundle_out() {
   local diffOutput
 
@@ -30,9 +31,12 @@ copy_bundle_out() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Runs one probe in the container for owners, writable paths, mounts and the JSON parse
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Runs one probe in the container for owners, writable paths and mounts
+# ------------------------------------------------------------------------------
+# The probe also reports the mode of the bundle, the hooks and the managed
+# settings, and whether the managed settings parse as JSON.
+# ------------------------------------------------------------------------------
 probe_container() {
   local probeScript
 
@@ -53,9 +57,9 @@ PROBE
   probeOutput=$(in_container sh -c "$probeScript")
 }
 
-# --------------------------------------------------------------------------------
-# Checks the owner and mode of the bundle, the hook folder, the hooks and the managed settings
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Checks owner and mode of the bundle, the hook folder, hooks and settings
+# ------------------------------------------------------------------------------
 check_owners_and_modes() {
   local expected expectedPath expectedMode ownerLine
 
@@ -70,9 +74,9 @@ check_owners_and_modes() {
   done
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks the sandbox user can write nothing under those folders
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_nothing_writable() {
   local writableLines
 
@@ -83,9 +87,9 @@ check_nothing_writable() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks no mount sits under those folders
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_no_mounts() {
   local mountLines
 
@@ -96,18 +100,18 @@ check_no_mounts() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks the managed settings parse as JSON
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_managed_settings_parse() {
   if ! printf '%s\n' "$probeOutput" | grep -Fxq 'JSON ok'; then
     add_problem "the managed settings in /etc/claude-code do not parse as JSON"
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-14 || exit 1
 copy_bundle_out

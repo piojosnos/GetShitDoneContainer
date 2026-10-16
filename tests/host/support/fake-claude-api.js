@@ -1,7 +1,6 @@
 // Scripted fake Anthropic Messages API for tests. Node core modules only.
-// - Used by tests/host/h18-scope-and-deny.sh (inside the test container) and by
-//   tests/selftest/bundle/fake-api.sh (in the dev sandbox). Point Claude at it with
-//   ANTHROPIC_BASE_URL=http://127.0.0.1:<port> and a dummy ANTHROPIC_API_KEY.
+// - Used by tests/host/h18-scope-and-deny.sh (inside the test container). Point Claude at it
+//   with ANTHROPIC_BASE_URL=http://127.0.0.1:<port> and a dummy ANTHROPIC_API_KEY.
 // - H18_PORT: port to listen on (default 8799). Listens on 127.0.0.1 only.
 // - H18_SCRIPT: path to a JSON file holding an array of {name, input}; reply N is the Nth tool call.
 //   After the last entry the reply is a text block "done", which ends the Claude run.

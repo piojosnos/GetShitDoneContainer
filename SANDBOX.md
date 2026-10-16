@@ -14,7 +14,7 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 
 | Image | Holds |
 |---|---|
-| `sbx-base:local` | Ubuntu 24.04, git, gh, Node.js 24, Python 3 (pip, venv) and uv, the Temurin JDK 21, Maven, jq, ripgrep, zip and unzip, the ssh client, make and a C compiler |
+| `sbx-base:local` | Ubuntu 24.04, git, gh, Node.js 24, Python 3 (pip, venv) and uv, the Temurin JDK 21, Maven, jq, ripgrep, zip and unzip, the ssh client, make and a C compiler, shellcheck and hadolint |
 | `sbx-claude:local` | `sbx-base` plus Claude Code, GSD, ccusage and the best-practices bundle |
 
 - Python projects use uv or a venv, because Ubuntu blocks plain pip installs into the system Python.
@@ -182,9 +182,10 @@ An edit to the copy in `state/claude` is lost at the next start.
 
 Edit protection:
 
-- Managed settings in the image make Claude refuse to edit the synced rules, the skill list and the bundle skills, even with permissions bypassed.
+- Managed settings in the image make Claude's Edit tool refuse the synced rules, the skill list and every skill under `state/claude/skills/` (the bundle's, GSD's and your own), even with permissions bypassed.
+- Edit your own skills in `state/claude/skills/` from a shell or a host editor: shell edits still work.
 - It guards against accidental edits by Claude. It is not a security boundary: a script Claude runs can still write there until the next start.
-- Your own skills and `state/claude/CLAUDE.md` stay editable.
+- `state/claude/CLAUDE.md` stays editable.
 
 Memories are not shipped. They belong to each project. A memory that proves general becomes a bundle rule by PR.
 
@@ -261,9 +262,9 @@ If `up` fails, `docker compose logs` shows the `[sbx] ERROR` line that says what
 
 ## Verify a new build
 
-After building, or after changing anything under `base/`, `claude/`, `best-practices/` or `compose.yml`, run `bash tests/host/run-all.sh` on the Mac. When it passes, the automated checks hold. Claude's login and Claude's own behaviour are checked only by the helpers in `tests/host/manual/`: H-07 (login), the second half of H-09 (login and session survive a rebuild), the `claude doctor` part of H-13, the GSD bump part of H-16 (`manual/h16-gsd-bump.sh`), and H-19 (the bundle as Claude uses it). Run them after a Claude Code or GSD pin change, a change to the managed settings, or a change to login handling. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers.
+After building, or after changing anything under `base/`, `claude/`, `best-practices/` or `compose.yml`, run `./host-test.sh` on the Mac. It runs `tests/host/run-all.sh` and the other Docker checks and keeps the output in `host-test.log`. When it passes, the automated checks hold. Claude's login and Claude's own behaviour are checked only by the helpers in `tests/host/manual/`: H-07 (login), the second half of H-09 (login and session survive a rebuild), the `claude doctor` part of H-13, the GSD bump part of H-16 (`manual/h16-gsd-bump.sh`), and H-19 (the bundle as Claude uses it). Run them after a Claude Code or GSD pin change, a change to the managed settings, or a change to login handling. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers.
 
-It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
+It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes. [`tests/README.md`](tests/README.md) lists every test suite, where it runs and what it catches.
 
 ## Free disk space
 

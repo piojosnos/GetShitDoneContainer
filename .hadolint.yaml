@@ -1,0 +1,10 @@
+# ------------------------------------------------------------------------------
+# hadolint settings for both Dockerfiles
+# ------------------------------------------------------------------------------
+# DL3008: apt packages follow the pinned Ubuntu release, by policy.
+# DL3066: USER sandbox is a name on purpose, and the host checks prove uid 1000.
+# ------------------------------------------------------------------------------
+failure-threshold: warning
+ignored:
+  - DL3008
+  - DL3066

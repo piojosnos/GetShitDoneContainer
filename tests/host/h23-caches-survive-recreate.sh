@@ -1,16 +1,10 @@
 #!/usr/bin/env bash
-# H-23: the npm, uv and Maven caches live in the state folder and survive a recreate.
-# - npm and uv find their caches through image ENV (npm config get cache, uv cache dir), and ~/.m2 is a link into state/m2.
-# - The entrypoint makes state/cache/npm, state/cache/uv and state/m2 at start.
-# - A run-unique file is written into each cache from inside the container. It must be on the Mac,
-#   and still be there after the sandbox is taken down and started again.
-# - A real Maven download (junit 4.13.2, with the dependency plugin at a pinned version) is run in the project folder as the sandbox user.
-#   - It uses a local repository folder in ~/.m2 that is new on every run, so Maven has nothing cached and must write to the mount.
-#   - The jar must be on the Mac, and still be there after the recreate.
-#   - Maven 3.9.12 and later fail here on the Docker Desktop for Mac mount.
-# - The files are left in the run folder for the printed cleanup.
-# Depends on: nothing
-# Needs: test sandbox running with network access to Maven Central; stops and restarts it
+# ------------------------------------------------------------------------------
+# H-23: the npm, uv and Maven caches live in state/ and survive a recreate
+# ------------------------------------------------------------------------------
+# Needs: test sandbox running and Maven Central reachable; stops and restarts it
+# Files written into the caches are left in the run folder for the cleanup.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
@@ -20,16 +14,19 @@ mavenPlugin="org.apache.maven.plugins:maven-dependency-plugin:3.8.1"
 mavenRepoName="repository-$marker"
 mavenJar="$RUN/state/m2/$mavenRepoName/junit/junit/4.13.2/junit-4.13.2.jar"
 
-# --------------------------------------------------------------------------------
-# container_stdout CMD...: runs CMD in the test container; stdin closed, stderr discarded, so a tool notice never reaches a compared value.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# container_stdout CMD...: runs CMD in the test container; stdout only
+# ------------------------------------------------------------------------------
+# Stdin is closed and stderr discarded, so no tool notice reaches a compared
+# value.
+# ------------------------------------------------------------------------------
 container_stdout() {
   docker exec "$CONTAINER" "$@" </dev/null 2>/dev/null
 }
 
-# --------------------------------------------------------------------------------
-# Checks the entrypoint made the three cache folders on the Mac
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Checks the entrypoint made state/cache/npm, state/cache/uv and state/m2
+# ------------------------------------------------------------------------------
 check_state_folders() {
   local folderName
 
@@ -40,9 +37,12 @@ check_state_folders() {
   done
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks npm, uv and Maven find their caches under state
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# npm and uv find them through image ENV (npm config get cache, uv cache dir);
+# ~/.m2 is a link into state/m2.
+# ------------------------------------------------------------------------------
 check_cache_locations() {
   local npmCache uvCache m2Link
 
@@ -65,17 +65,19 @@ check_cache_locations() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Writes the marker into a file in each cache, from inside the container
-# --------------------------------------------------------------------------------
-# The first command is a no-op that names the script, so the fake docker can recognise it.
+# ------------------------------------------------------------------------------
 plant_cache_files() {
   in_container sh -c ': h23-plant; for cacheDir in "$NPM_CONFIG_CACHE" "$UV_CACHE_DIR" "$HOME/.m2"; do printf "%s\n" "$1" >"$cacheDir/$1"; done' h23-plant "$marker" >/dev/null
 }
 
-# --------------------------------------------------------------------------------
-# Downloads junit 4.13.2 with Maven as the sandbox user, in the project folder, into a local repository that did not exist before
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Downloads junit 4.13.2 with Maven into a repository new on every run
+# ------------------------------------------------------------------------------
+# Runs as the sandbox user in the project folder, so Maven must write to the
+# mount. Maven 3.9.12 and later fail here on the Docker Desktop for Mac mount.
+# ------------------------------------------------------------------------------
 download_maven_artifact() {
   local mvnOutput mvnStatus
 
@@ -91,9 +93,11 @@ download_maven_artifact() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# check_files_on_host WHEN: checks each cache folder on the Mac holds the marker file and the Maven jar; WHEN says which moment goes in the message.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# check_files_on_host WHEN: each cache folder on the Mac holds marker and jar
+# ------------------------------------------------------------------------------
+# WHEN names the moment in the message.
+# ------------------------------------------------------------------------------
 check_files_on_host() {
   local folderName
 
@@ -108,9 +112,9 @@ check_files_on_host() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-23 || exit 1
 check_state_folders

@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-# H-22: the base image holds the toolchain at the pinned versions, as native binaries, and a login shell in the sandbox finds it.
-# - One probe (support/toolchain-probe.sh) runs in a throwaway sbx-base:local container, which proves the tools
-#   come from the base image, and in a login shell of the test sandbox.
-# - Node, gh, uv, the JDK and Maven must report the versions in versions.env, Python must be 3, and every binary must match the daemon's architecture.
-# - The common Linux tools must be present and JAVA_HOME must be /opt/java/openjdk.
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-22: the base image holds the toolchain at the pins; a login shell finds it
+# ------------------------------------------------------------------------------
 # Needs: images built; test sandbox running
+# The probe runs in a throwaway base container and in a sandbox login shell.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 
-# --------------------------------------------------------------------------------
-# expected_elf_machine: the ELF machine bytes the daemon's architecture needs (b700 for arm64, 3e00 for amd64); prints nothing for any other.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# expected_elf_machine: the ELF machine bytes for the daemon's architecture
+# ------------------------------------------------------------------------------
+# b700 for arm64, 3e00 for amd64; prints nothing for any other.
+# ------------------------------------------------------------------------------
 expected_elf_machine() {
   case "$(expected_arch)" in
     arm64) printf 'b700\n' ;;
@@ -20,16 +21,20 @@ expected_elf_machine() {
   esac
 }
 
-# --------------------------------------------------------------------------------
-# image_tag_version NAME: the tag of the _IMAGE pin NAME, the text between the first colon and the @.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# image_tag_version NAME: the tag of the _IMAGE pin NAME
+# ------------------------------------------------------------------------------
+# The text between the first colon and the @.
+# ------------------------------------------------------------------------------
 image_tag_version() {
   pin_of "$1" | sed -e 's/^[^:]*://' -e 's/@.*$//'
 }
 
-# --------------------------------------------------------------------------------
-# run_probes: runs the probe in a throwaway sbx-base:local container and in a login shell of the test sandbox.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# run_probes: runs the probe in a throwaway base container and in the sandbox
+# ------------------------------------------------------------------------------
+# The throwaway sbx-base:local container proves the tools come from the base.
+# ------------------------------------------------------------------------------
 run_probes() {
   local probeText
 
@@ -38,9 +43,11 @@ run_probes() {
   shellOutput=$(run_timeout 120 in_project bash -lc "$probeText")
 }
 
-# --------------------------------------------------------------------------------
-# value_of OUTPUT KEY: the text after KEY on the first probe line that starts with KEY and a space; empty when there is none.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# value_of OUTPUT KEY: the text after KEY on the first probe line with that key
+# ------------------------------------------------------------------------------
+# The line starts with KEY and a space; the text is empty when there is none.
+# ------------------------------------------------------------------------------
 value_of() {
   local valueLine
 
@@ -48,9 +55,9 @@ value_of() {
   printf '%s\n' "${valueLine#"$2" }"
 }
 
-# --------------------------------------------------------------------------------
-# version_matches ACTUAL EXPECTED: true when ACTUAL is EXPECTED, or starts with EXPECTED and a space.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# version_matches ACTUAL EXPECTED: true when ACTUAL is, or starts with, EXPECTED
+# ------------------------------------------------------------------------------
 version_matches() {
   case "$1 " in
     "$2 "*) return 0 ;;
@@ -59,18 +66,18 @@ version_matches() {
   return 1
 }
 
-# --------------------------------------------------------------------------------
-# check_elf LABEL NAME ELF: a problem unless the binary of NAME is built for the daemon's architecture.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# check_elf LABEL NAME ELF: a problem unless NAME is built for the daemon's arch
+# ------------------------------------------------------------------------------
 check_elf() {
   if [ -n "$expectedElf" ] && [ "$3" != "$expectedElf" ]; then
     add_problem "$1: $2 is $3; expected $expectedElf"
   fi
 }
 
-# --------------------------------------------------------------------------------
-# check_missing LABEL OUTPUT: a problem for each tool the probe reported as missing.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# check_missing LABEL OUTPUT: a problem for each tool the probe reported missing
+# ------------------------------------------------------------------------------
 check_missing() {
   local missingLine
 
@@ -83,10 +90,12 @@ $(printf '%s\n' "$2" | grep '^MISSING ')
 EOF
 }
 
-# --------------------------------------------------------------------------------
-# check_tool_line LABEL OUTPUT NAME EXPECTED_TEXT PIN_TEXT: NAME must be a native binary; when EXPECTED_TEXT is not empty its version text must be that.
-# --------------------------------------------------------------------------------
-# A tool the probe reported as missing has no TOOL line; check_missing names it, so it is not reported twice here.
+# ------------------------------------------------------------------------------
+# check_tool_line LABEL OUTPUT NAME EXPECTED_TEXT PIN_TEXT: one tool's line
+# ------------------------------------------------------------------------------
+# NAME must be a native binary; a non-empty EXPECTED_TEXT must be its version.
+# A missing tool has no TOOL line: check_missing names it, so not twice here.
+# ------------------------------------------------------------------------------
 check_tool_line() {
   local label=$1
   local toolName=$3
@@ -107,9 +116,9 @@ check_tool_line() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# check_python LABEL OUTPUT: a Python 3, found by its version text, built for the daemon's architecture.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# check_python LABEL OUTPUT: a Python 3, native to the daemon's architecture
+# ------------------------------------------------------------------------------
 check_python() {
   local pythonLine rest
 
@@ -125,9 +134,9 @@ check_python() {
   check_elf "$1" "Python 3" "${rest%% *}"
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # check_java LABEL OUTPUT: the JDK is Temurin at the pinned version.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_java() {
   local javaVersion javaValue vendorLine
 
@@ -152,9 +161,9 @@ check_java() {
   esac
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # check_maven LABEL OUTPUT: Maven is at its pin and runs on the pinned JDK.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_maven() {
   local javaVersion mavenLine mavenJavaLine
 
@@ -178,9 +187,12 @@ check_maven() {
   esac
 }
 
-# --------------------------------------------------------------------------------
-# check_probe LABEL OUTPUT: every problem the probe output of one place shows; LABEL says which place.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# check_probe LABEL OUTPUT: every problem the probe output of one place shows
+# ------------------------------------------------------------------------------
+# Node, gh, uv, the JDK and Maven match versions.env, Python is 3, every binary
+# is native, the Linux tools exist and JAVA_HOME is /opt/java/openjdk.
+# ------------------------------------------------------------------------------
 check_probe() {
   local label=$1
   local output=$2
@@ -209,9 +221,9 @@ check_probe() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-22 || exit 1
 expectedElf=$(expected_elf_machine)

@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
-# H-18: in the real image, a path-scoped rule loads only after Claude reads a matching file, and the managed deny refuses edits to synced files under bypassPermissions.
-# - A fake Anthropic API in tests/host/support scripts Claude's tool calls, so no login and no network
-#   are needed. The scripts and assertions are the same as tests/selftest/bundle/fake-api.sh.
-# - It is tied to the wire format of the pinned Claude. After a pin bump, run
-#   bash tests/selftest/bundle/run-all.sh in the dev sandbox first.
-# - Claude runs in the project folder (docker exec -w), so its project settings are the same
-#   whichever folder shells start in.
-# - No other check depends on it: remove this script and its entry in run-all.sh to drop it.
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-18: a scoped rule loads on a matching read; the managed deny holds
+# ------------------------------------------------------------------------------
 # Needs: test sandbox running
+# No other check depends on it: drop it with its entry in run-all.sh.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
@@ -17,16 +13,19 @@ bundleDir=$REPO_DIR/best-practices
 syncedDir=$RUN/state/claude
 containerRoot=/home/sandbox/workspace
 
-# --------------------------------------------------------------------------------
-# first_heading FILE: prints the first "# " heading line of FILE without the "# ".
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# first_heading FILE: the first "# " heading line of FILE, without the "# "
+# ------------------------------------------------------------------------------
 first_heading() {
   grep -m 1 '^# ' "$1" | sed 's/^# //'
 }
 
-# --------------------------------------------------------------------------------
-# run_scenario NAME SCRIPTFILE: runs Claude against the fake API inside the test container.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# run_scenario NAME SCRIPTFILE: runs Claude against the fake API in the sandbox
+# ------------------------------------------------------------------------------
+# The fake Anthropic API in tests/host/support scripts Claude's tool calls, so
+# no login or network is needed. It follows the pinned Claude's wire format.
+# ------------------------------------------------------------------------------
 run_scenario() {
   local scenarioName=$1
   local scriptFile=$2
@@ -42,9 +41,9 @@ kill \$serverPid"
   run_timeout 120 docker exec -w "$PROJECT_DIR" "$CONTAINER" env H18_SCRIPT="$containerRoot/logs/$scriptFile" H18_LOG="$containerRoot/logs/h18-$scenarioName.log" H18_MARK_ALWAYS="$markAlways" H18_MARK_SCOPED="$markScoped" sh -c "$runnerScript" </dev/null >"$RUN/logs/h18-$scenarioName-run.log" 2>&1
 }
 
-# --------------------------------------------------------------------------------
-# Picks the always-on rule and the skill to probe, and each rule's marker heading
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Picks the always-on rule and the skill to probe, and each rule's marker
+# ------------------------------------------------------------------------------
 pick_samples() {
   local ruleRelList ruleRel skillDir
 
@@ -71,9 +70,9 @@ pick_samples() {
   markScoped=$(first_heading "$bundleDir/rules/shell.md")
 }
 
-# --------------------------------------------------------------------------------
-# Puts the fake API, the probe files and the two tool call scripts in the run folder
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Puts the fake API, the probe files and the two tool scripts in the run folder
+# ------------------------------------------------------------------------------
 prepare_files() {
   local projectRoot configRoot
 
@@ -90,9 +89,9 @@ prepare_files() {
     "$projectRoot" "$projectRoot" "$configRoot" "$alwaysRel" "$configRoot" "$alwaysRel" "$markAlways" "$configRoot" "$configRoot" "$firstSkill" >"$RUN/logs/h18-deny.json"
 }
 
-# --------------------------------------------------------------------------------
-# Checks the always-on rule loaded at once and the path-scoped rule only after the .sh read
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Checks the always-on rule loaded at once, the scoped rule after the .sh read
+# ------------------------------------------------------------------------------
 check_scope_loading() {
   local scopeLog
 
@@ -109,9 +108,11 @@ check_scope_loading() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Checks the managed deny refused edits and writes to synced files; counts only if the project edit went through
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Checks the managed deny refused edits and writes to synced files
+# ------------------------------------------------------------------------------
+# The refusals count only if the edit of the project file went through.
+# ------------------------------------------------------------------------------
 check_deny_held() {
   local controlText
 
@@ -135,9 +136,9 @@ check_deny_held() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-18 || exit 1
 pick_samples

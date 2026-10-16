@@ -1,30 +1,29 @@
 #!/usr/bin/env bash
-# Shared by the guard rule groups: the sandbox file lists, the search helpers, and how a group runs its rules.
-# - Sourced by the groups and the runner, never run directly; defines functions and constants only.
-# - Reads files only.
-# - Stock bash 3.2 with BSD tools, because the guard may run by hand on the Mac.
-# - Loads tests/host/lib.sh for require_no_arguments and print_usage.
+# ------------------------------------------------------------------------------
+# Shared by the guard groups: file lists, the search helper, the rule runner
+# ------------------------------------------------------------------------------
+# Sourced by the groups and the runner, never run; reads files only.
+# Stock bash 3.2 with BSD tools: the guard may run by hand on the Mac.
+# ------------------------------------------------------------------------------
 
 . "$(dirname "${BASH_SOURCE[0]}")/../host/lib.sh"
 
-# --------------------------------------------------------------------------------
-# Constants: the sandbox files and the host test files, as every group reads them
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Constants: the sandbox files, as every group reads them
+# ------------------------------------------------------------------------------
+# SHELL_FILES uses globs, not git ls-files: the self-test copy has no .git.
+# ------------------------------------------------------------------------------
 BASE=base/Dockerfile
 CLAUDE=claude/Dockerfile
 COMPOSE=compose.yml
 ENTRY="base/sbx-entrypoint base/sbx-start-lib.sh"
 DOCKERFILES="$BASE $CLAUDE"
 SANDBOX_FILES="$BASE $CLAUDE $COMPOSE $ENTRY versions.env build.sh clean.sh"
+SHELL_FILES="build.sh clean.sh base/sbx-entrypoint base/sbx-start-lib.sh claude/start.d/* tests/*/*.sh tests/*/*/*.sh tests/selftest/*/support/fake-gsd"
 
-# The Mac host tests: every script, and the ones that must run unattended.
-HOST_FILES="tests/host/*.sh tests/host/manual/*.sh"
-HOST_UNATTENDED_FILES="tests/host/*.sh"
-
-# --------------------------------------------------------------------------------
-# nowhere_matches REGEX FILE...: true if no line matches; prints the offending lines. Fails when a file cannot be read or none is given.
-# --------------------------------------------------------------------------------
-# grep keeps its stderr, so its own message names the file it could not read.
+# ------------------------------------------------------------------------------
+# nowhere_matches REGEX FILE...: true if no line matches; prints the hits
+# ------------------------------------------------------------------------------
 nowhere_matches() {
   local regex=$1
   local hits
@@ -53,40 +52,24 @@ nowhere_matches() {
   return 1
 }
 
-# --------------------------------------------------------------------------------
-# run_steps_of DOCKERFILE: prints one line per RUN step as "LINE: text", with its continuation lines joined by a space and their trailing backslashes dropped.
-# --------------------------------------------------------------------------------
-# A rule that reads a step as one line cannot be dodged by a line break inside the step.
-run_steps_of() {
-  awk '
-    function flush() {
-      if (step != "") {
-        print step_line ": " step
-      }
-      step = ""
-    }
-    /^RUN[[:space:]]/ { flush(); step_line = NR; step = $0; continuing = /\\$/; sub(/[[:space:]]*\\$/, "", step); next }
-    continuing { piece = $0; continuing = /\\$/; sub(/[[:space:]]*\\$/, "", piece); step = step " " piece; next }
-    { flush() }
-    END { flush() }
-  ' "$1"
+# ------------------------------------------------------------------------------
+# report_lines PREFIX: prints each stdin line after PREFIX; 1 if there was one
+# ------------------------------------------------------------------------------
+report_lines() {
+  local line
+  local found=0
+
+  while IFS= read -r line; do
+    echo "    $1$line"
+    found=1
+  done
+
+  return "$found"
 }
 
-# --------------------------------------------------------------------------------
-# has_line FILE LINE: true if FILE has a line exactly equal to LINE.
-# --------------------------------------------------------------------------------
-has_line() { grep -Fxq -- "$2" "$1"; }
-
-# --------------------------------------------------------------------------------
-# frontmatter_of FILE: the lines between the opening and closing "---", when line 1 is "---".
-# --------------------------------------------------------------------------------
-frontmatter_of() {
-  awk 'NR == 1 && $0 != "---" { exit } NR > 1 && $0 == "---" { exit } NR > 1 { print }' "$1"
-}
-
-# --------------------------------------------------------------------------------
-# enter_repo_root: changes to the repository root and sets REPO and REPO_DIR to its physical path; returns 1 on failure.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# enter_repo_root: changes to the repo root and sets REPO and REPO_DIR
+# ------------------------------------------------------------------------------
 enter_repo_root() {
   local libDir
 
@@ -97,9 +80,9 @@ enter_repo_root() {
   REPO_DIR=$REPO
 }
 
-# --------------------------------------------------------------------------------
-# run_rules RULE...: calls each rule function and prints PASS or FAIL for it; returns 1 when any rule failed.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# run_rules RULE...: calls each rule and prints PASS or FAIL; 1 if any failed
+# ------------------------------------------------------------------------------
 run_rules() {
   local rule
   local failCount=0

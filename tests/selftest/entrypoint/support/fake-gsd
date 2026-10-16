@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# A fake GSD for the entrypoint self-test; it is not GSD
+# ------------------------------------------------------------------------------
+# Runs as gsd-core (installer) or gsd-tools (identity); FAKE_REPO is required.
+# Knobs: FAKE_GSD_LOG=FILE, FAKE_GSD_FAIL=1, FAKE_GSD_VERSION=X.
+# ------------------------------------------------------------------------------
+set -u
+
+toolName=$(basename "$0")
+
+# ------------------------------------------------------------------------------
+# pinned_version: prints GSD_CORE_VERSION from FAKE_REPO/versions.env
+# ------------------------------------------------------------------------------
+pinned_version() {
+  sed -n 's/^GSD_CORE_VERSION=//p' "$FAKE_REPO/versions.env" | head -n 1
+}
+
+# ------------------------------------------------------------------------------
+# run_installer DIR: models gsd-core --claude --global --config-dir DIR
+# ------------------------------------------------------------------------------
+run_installer() {
+  local configDir=$1
+  local version=${FAKE_GSD_VERSION:-$(pinned_version)}
+
+  if [ "${FAKE_GSD_FAIL:-}" = 1 ]; then
+    echo "fake gsd: install failed on purpose" >&2
+    exit 1
+  fi
+
+  echo "GSD fake installer banner"
+
+  mkdir -p "$configDir/gsd-core" || exit 1
+  printf '%s' "$version" >"$configDir/gsd-core/VERSION"
+}
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+if [ -z "${FAKE_REPO:-}" ]; then
+  echo "fake gsd: FAKE_REPO is not set" >&2
+  exit 2
+fi
+
+if [ -n "${FAKE_GSD_LOG:-}" ]; then
+  echo "$toolName $*" >>"$FAKE_GSD_LOG"
+fi
+
+if [ "$toolName" = gsd-core ] && [ "$#" -eq 4 ] && [ "$1" = --claude ] && [ "$2" = --global ] && [ "$3" = --config-dir ]; then
+  run_installer "$4"
+  exit 0
+fi
+
+if [ "$toolName" = gsd-tools ] && [ "$#" -eq 2 ] && [ "$1" = runtime-identity ] && [ "$2" = --raw ]; then
+  printf '{"packageName":"@opengsd/gsd-core","version":"%s"}\n' "$(pinned_version)"
+  exit 0
+fi
+
+echo "fake gsd: unhandled" >&2
+exit 99

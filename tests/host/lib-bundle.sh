@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Shared bundle checks for the host tests: does a synced config folder equal best-practices/?
-# - Sourced after lib.sh by the checks that need it and by the bundle self-test's lib.sh; never run directly.
-#   Defines functions only.
-# - Each check takes the synced config folder (a state/claude) and reports through add_problem.
-# - Reads REPO_DIR, which host_init sets (the self-test sets it to the repo root itself). Deletes nothing.
-# - Host side code is stock bash 3.2 with BSD tools (macOS).
+# ------------------------------------------------------------------------------
+# Shared bundle checks for the host tests: is a synced config the bundle's
+# ------------------------------------------------------------------------------
+# Sourced after lib.sh by the checks that need it; runs nothing.
+# Each check takes a synced config folder (state/claude), reports by add_problem
+# ------------------------------------------------------------------------------
 
-# --------------------------------------------------------------------------------
-# bundle_skill_names: the bundle's skill names, one per line.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# bundle_skill_names: the bundle's skill names, one per line
+# ------------------------------------------------------------------------------
 bundle_skill_names() {
   local skillDir
 
@@ -19,9 +19,9 @@ bundle_skill_names() {
   done
 }
 
-# --------------------------------------------------------------------------------
-# check_bundle_rules_synced CONFIG_DIR [PROBLEM_TEXT]: CONFIG_DIR/rules must equal best-practices/rules.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# check_bundle_rules_synced CONFIG_DIR [PROBLEM_TEXT]: rules must match bundle
+# ------------------------------------------------------------------------------
 # PROBLEM_TEXT starts the message; the first lines of the diff follow it.
 check_bundle_rules_synced() {
   local configDir=$1
@@ -35,9 +35,9 @@ check_bundle_rules_synced() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# check_bundle_skills_synced CONFIG_DIR: each bundle skill folder must equal its copy in CONFIG_DIR/skills.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# check_bundle_skills_synced CONFIG_DIR: each bundle skill must equal its copy
+# ------------------------------------------------------------------------------
 check_bundle_skills_synced() {
   local configDir=$1
   local skillDir skillName skillDiff
@@ -56,9 +56,9 @@ check_bundle_skills_synced() {
   done
 }
 
-# --------------------------------------------------------------------------------
-# check_bundle_skill_list CONFIG_DIR: CONFIG_DIR/.best-practices-skills must list exactly the bundle's skills.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# check_bundle_skill_list CONFIG_DIR: the skill list must be the bundle's skills
+# ------------------------------------------------------------------------------
 check_bundle_skill_list() {
   local configDir=$1
   local expectedList actualList

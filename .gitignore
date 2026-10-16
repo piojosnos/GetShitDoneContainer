@@ -39,3 +39,6 @@ build/
 .idea
 _old
 .mvn
+
+### Mac test run ###
+host-test.log

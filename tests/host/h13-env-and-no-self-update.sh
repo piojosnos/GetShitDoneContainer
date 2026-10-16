@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# H-13: the environment is visible to docker exec, Claude Code self-update is off, and no self-installed Claude copy sits in ~/.local.
-# The claude doctor part needs a terminal: it is the manual helper (manual/h13-doctor.sh).
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-13: the env reaches docker exec; Claude Code self-update is off
+# ------------------------------------------------------------------------------
 # Needs: test sandbox running
+# The claude doctor part needs a terminal: manual/h13-doctor.sh.
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 
-# --------------------------------------------------------------------------------
-# Reads the container environment, the claude update reply and the exit status of the ~/.local/share/claude and ~/.local/bin/claude tests
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Reads the environment, the claude update reply and two path tests
+# ------------------------------------------------------------------------------
 read_environment() {
   envOutput=$(in_container env)
   updateOutput=$(run_timeout 60 in_container claude update)
@@ -19,9 +21,9 @@ read_environment() {
   localBinStatus=$?
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks the five variables are visible to docker exec
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_variables_set() {
   local envName
 
@@ -32,19 +34,21 @@ check_variables_set() {
   done
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks claude update says updates are disabled
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_updates_disabled() {
   if [[ "$updateOutput" != *"Updates are disabled by your administrator"* ]]; then
     add_problem "claude update did not say updates are disabled; got: $(first_lines "$updateOutput")"
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks ~/.local/share/claude does not exist in the container home
-# --------------------------------------------------------------------------------
-# The test exits 0 when the folder is absent and 1 when it exists; any other status means docker exec could not check.
+# ------------------------------------------------------------------------------
+# The test exits 0 when the folder is absent and 1 when it exists; any other
+# status means docker exec could not check.
+# ------------------------------------------------------------------------------
 check_no_share_folder() {
   case "$shareStatus" in
     0) ;;
@@ -53,10 +57,12 @@ check_no_share_folder() {
   esac
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks ~/.local/bin/claude does not exist in the container home
-# --------------------------------------------------------------------------------
-# The test exits 0 when the file is absent and 1 when it exists; any other status means docker exec could not check.
+# ------------------------------------------------------------------------------
+# The test exits 0 when the file is absent and 1 when it exists; any other
+# status means docker exec could not check.
+# ------------------------------------------------------------------------------
 check_no_local_bin_copy() {
   case "$localBinStatus" in
     0) ;;
@@ -65,9 +71,9 @@ check_no_local_bin_copy() {
   esac
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-13 || exit 1
 read_environment

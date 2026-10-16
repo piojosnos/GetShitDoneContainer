@@ -1,28 +1,28 @@
 #!/usr/bin/env bash
-# The test sandbox for the host tests: run commands in it, start and stop it, and refuse to act on anything else.
-# - Loaded by lib.sh; never run directly. Defines functions only.
-# - Every Docker call is aimed at the throwaway sandbox: project hosttest, container sbx-hosttest.
-# - compose_up waits for the start hooks; SBXTEST_START_SECONDS (optional) changes how long it waits (default 120).
-# - Reads CONTAINER, PROJECT_DIR, RUN and REPO_DIR, set by host_init. Never removes volumes.
-# - Host side code is stock bash 3.2 with BSD tools (macOS).
+# ------------------------------------------------------------------------------
+# The test sandbox for the host tests: run in it, start, stop, refuse others
+# ------------------------------------------------------------------------------
+# Sourced by tests/host/lib.sh; runs nothing. Reads CONTAINER and RUN.
+# Every Docker call targets container sbx-hosttest only; no volume is removed.
+# ------------------------------------------------------------------------------
 
-# --------------------------------------------------------------------------------
-# in_container CMD...: runs CMD in the test container; stdin closed, stderr merged, never a tty.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# in_container CMD...: runs CMD in the test container (no stdin, stderr merged)
+# ------------------------------------------------------------------------------
 in_container() {
   docker exec "$CONTAINER" "$@" </dev/null 2>&1
 }
 
-# --------------------------------------------------------------------------------
-# in_project CMD...: runs CMD in the project folder of the test container; stdin closed, stderr merged, never a tty.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# in_project CMD...: like in_container, in the project folder
+# ------------------------------------------------------------------------------
 in_project() {
   docker exec -w "$PROJECT_DIR" "$CONTAINER" "$@" </dev/null 2>&1
 }
 
-# --------------------------------------------------------------------------------
-# compose_cmd ARGS...: runs docker compose against compose.yml for the test sandbox only.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# compose_cmd ARGS...: runs docker compose on compose.yml for the test sandbox
+# ------------------------------------------------------------------------------
 # --env-file /dev/null: a .env file in the repo never reaches the test sandbox.
 compose_cmd() {
   if [ -z "${RUN:-}" ]; then
@@ -33,9 +33,9 @@ compose_cmd() {
   SBX_NAME=hosttest SBX_DIR="$RUN" docker compose --env-file /dev/null -f "$REPO_DIR/compose.yml" "$@" </dev/null
 }
 
-# --------------------------------------------------------------------------------
-# tree_pids PID: prints PID, then every process it started, parent first, one per line.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# tree_pids PID: prints PID, then every process it started, parent first
+# ------------------------------------------------------------------------------
 tree_pids() {
   local parentPid=$1
   local childPid
@@ -47,9 +47,11 @@ tree_pids() {
   done
 }
 
-# --------------------------------------------------------------------------------
-# kill_tree PID: stops PID and everything it started; collects the list first, then signals all in one call; returns 0.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# kill_tree PID: stops PID and everything it started; returns 0
+# ------------------------------------------------------------------------------
+# The list is collected first, then signalled in one call.
+# ------------------------------------------------------------------------------
 kill_tree() {
   local pidList
 
@@ -61,9 +63,9 @@ kill_tree() {
   return 0
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # any_alive PID...: true when at least one of the pids still exists
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 any_alive() {
   local checkedPid
 
@@ -76,9 +78,12 @@ any_alive() {
   return 1
 }
 
-# --------------------------------------------------------------------------------
-# run_timeout SECONDS CMD...: runs CMD; after SECONDS stops it and everything it started with SIGTERM, then with SIGKILL after a 5 s grace; returns 143 on timeout, or 137 when it had to be killed.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# run_timeout SECONDS CMD...: runs CMD; after SECONDS stops it and its children
+# ------------------------------------------------------------------------------
+# macOS has no timeout command. SIGTERM first, SIGKILL after a 5 s grace.
+# Returns 143 on a timeout, or 137 when it had to be killed.
+# ------------------------------------------------------------------------------
 run_timeout() {
   local seconds=$1
   local graceSeconds=5
@@ -99,7 +104,7 @@ run_timeout() {
       elapsedSeconds=$((elapsedSeconds + 1))
     done
 
-    # The list is taken before the first signal: children are re-parented once their parent dies.
+    # The list is taken first: children are re-parented once their parent dies.
     pidList=$(tree_pids "$commandPid")
 
     # The list is left unquoted on purpose: kill takes one argument per pid.
@@ -120,7 +125,8 @@ run_timeout() {
   wait "$commandPid"
   exitCode=$?
 
-  # 143 and 137 can mean the watcher is still in its grace loop; it ends on its own. Any other status stops it at once.
+  # After 143 or 137 the watcher may still be in its grace loop; let it end.
+  # Any other status stops it at once.
   if [ "$exitCode" -eq 143 ] || [ "$exitCode" -eq 137 ]; then
     wait "$watcherPid" 2>/dev/null
   else
@@ -131,12 +137,12 @@ run_timeout() {
   return "$exitCode"
 }
 
-# --------------------------------------------------------------------------------
-# wait_for_start_hooks: returns 0 once every start hook of the test sandbox has finished; else prints why and returns 1.
-# --------------------------------------------------------------------------------
-# The entrypoint runs the start hooks after `up --wait` has returned and execs the command (sleep)
-# only after the last hook, so a running sleep means every hook has finished. The wait lasts
-# SBXTEST_START_SECONDS (default 120).
+# ------------------------------------------------------------------------------
+# wait_for_start_hooks: returns 0 once every start hook has finished, else 1
+# ------------------------------------------------------------------------------
+# The entrypoint execs sleep after the last hook, so a running sleep means done.
+# SBXTEST_START_SECONDS (optional, default 120) sets how long this waits.
+# ------------------------------------------------------------------------------
 wait_for_start_hooks() {
   local limitSeconds=${SBXTEST_START_SECONDS:-120}
   local waitedSeconds=0
@@ -168,9 +174,11 @@ wait_for_start_hooks() {
   return 1
 }
 
-# --------------------------------------------------------------------------------
-# compose_up: starts the test sandbox and waits until its start hooks have finished; log in the run folder; returns the exit code.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# compose_up: starts the test sandbox and waits for its start hooks
+# ------------------------------------------------------------------------------
+# Log: RUN/logs/compose-up.log. Returns the exit code of the failing step.
+# ------------------------------------------------------------------------------
 compose_up() {
   local logFile exitCode
 
@@ -196,9 +204,11 @@ compose_up() {
   return 0
 }
 
-# --------------------------------------------------------------------------------
-# compose_down: takes the test sandbox down (never removes volumes); refuses if sbx-hosttest is not the test sandbox.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# compose_down: takes the test sandbox down, never its volumes
+# ------------------------------------------------------------------------------
+# Refuses if sbx-hosttest is not the test sandbox.
+# ------------------------------------------------------------------------------
 compose_down() {
   if docker container inspect "$CONTAINER" >/dev/null 2>&1 </dev/null; then
     if ! assert_test_sandbox; then
@@ -210,9 +220,9 @@ compose_down() {
   compose_cmd down
 }
 
-# --------------------------------------------------------------------------------
-# restart_test_sandbox ID LOG_NAME: compose down, then up; on a failure prints FAIL for ID and returns 1.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# restart_test_sandbox ID LOG_NAME: compose down, then up; FAIL for ID, 1 if not
+# ------------------------------------------------------------------------------
 restart_test_sandbox() {
   local checkId=$1
   local logFile
@@ -230,20 +240,23 @@ restart_test_sandbox() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# sandbox_mount_source: prints the host folder mounted at /home/sandbox/workspace in sbx-hosttest; returns 1 when the container cannot be inspected.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# sandbox_mount_source: prints the host folder mounted at the workspace
+# ------------------------------------------------------------------------------
+# Returns 1 when sbx-hosttest cannot be inspected.
+# ------------------------------------------------------------------------------
 sandbox_mount_source() {
   docker container inspect \
     --format '{{range .Mounts}}{{if eq .Destination "/home/sandbox/workspace"}}{{.Source}}{{end}}{{end}}' \
     "$CONTAINER" 2>/dev/null </dev/null
 }
 
-# --------------------------------------------------------------------------------
-# assert_test_sandbox: for cleanup; true only if sbx-hosttest is labelled sbx.name=hosttest and its mount, or the folder holding the mount, is named sbx-hosttest-*.
-# --------------------------------------------------------------------------------
-# Loose on purpose: it accepts the sandbox of an earlier run and the exited containers
-# that H-10 and the mistyped-name check leave on a folder inside a run folder.
+# ------------------------------------------------------------------------------
+# assert_test_sandbox: for cleanup; true only for the labelled test sandbox
+# ------------------------------------------------------------------------------
+# Needs label sbx.name=hosttest; the mount or its parent is sbx-hosttest-*.
+# Loose: also accepts an earlier run's sandbox and what H-10 and H-20 leave.
+# ------------------------------------------------------------------------------
 assert_test_sandbox() {
   local label mountSource
 
@@ -270,9 +283,11 @@ assert_test_sandbox() {
   return 1
 }
 
-# --------------------------------------------------------------------------------
-# assert_this_run_sandbox: for a check about to act; true only if assert_test_sandbox holds and the mount folder has the same name as the run folder.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# assert_this_run_sandbox: true only for the test sandbox of this run
+# ------------------------------------------------------------------------------
+# For a check about to act: the mount folder must be named like the run folder.
+# ------------------------------------------------------------------------------
 assert_this_run_sandbox() {
   local mountSource
 
@@ -283,9 +298,9 @@ assert_this_run_sandbox() {
   [ "$(basename "$mountSource")" = "$(basename "${RUN:-}")" ]
 }
 
-# --------------------------------------------------------------------------------
-# require_test_sandbox ID: true when the test sandbox of this run is running; else prints a FAIL line for ID, returns 1.
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# require_test_sandbox ID: true if this run's sandbox is running; else FAIL, 1
+# ------------------------------------------------------------------------------
 require_test_sandbox() {
   local checkId=$1
   local running

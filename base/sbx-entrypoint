@@ -1,30 +1,16 @@
 #!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# Container start: checks mount and folders, runs the hooks, then the command
+# ------------------------------------------------------------------------------
+# The steps live in sbx-start-lib.sh, next to this file; this file runs them.
+# ------------------------------------------------------------------------------
 set -eu
-
-# Container start check, then run the command.
-# - Runs only at container start, never in docker exec shells, so it sets no
-#   environment (shells get everything from image ENV).
-# - Refuses to start unless the workspace is a writable mount point. Without it
-#   (a plain docker run, a broken compose file), data would land in the container
-#   layer and be lost on recreate.
-# - Refuses an SBX_NAME that breaks the sandbox name rule (see sbx-start-lib.sh) before it uses the name as a folder.
-# - Refuses to start unless the project and state folders exist. A mistyped
-#   SBX_DIR has neither.
-# - Creates the state subfolders that are missing. Installs nothing.
-# - SBX_STATE_DIRS: extra state subfolders, set by the agent image (Claude adds
-#   "claude"), so this base script never needs to know which agent is on top.
-# - Then it runs the start hooks in /etc/sbx/start.d (agent images add theirs there).
-#   Folders are skipped and the glob never matches dotfiles; anything else must be an
-#   executable regular file. A link that points nowhere, a fifo or a socket stops the
-#   start, as do a file that is not executable and a hook that fails.
-# - Then changes to the project folder and runs the command there.
-# - The steps live in sbx-start-lib.sh, next to this file; this file only runs them.
 
 . "$(dirname "$0")/sbx-start-lib.sh"
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_workspace_mount || exit 1
 check_sandbox_name || exit 1
 check_project_and_state_folders || exit 1

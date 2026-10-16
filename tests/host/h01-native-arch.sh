@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# H-01: both images and the container run natively (no emulation).
-# Depends on: nothing
+# ------------------------------------------------------------------------------
+# H-01: both images and the container run natively (no emulation)
+# ------------------------------------------------------------------------------
 # Needs: test sandbox running
+# ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 
-# --------------------------------------------------------------------------------
-# Reads the expected and the reported architecture; FAIL and return 1 if the daemon reports one this check does not know
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Reads the expected and the reported architecture; FAIL if it is unknown
+# ------------------------------------------------------------------------------
 require_known_architecture() {
   expected=$(expected_arch)
   rawArch=$(docker info --format '{{.Architecture}}' </dev/null 2>&1)
@@ -19,9 +21,9 @@ require_known_architecture() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks both images were built for the daemon's architecture
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_image_architectures() {
   local imageName
   local imageArch
@@ -34,9 +36,9 @@ check_image_architectures() {
   done
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks the container reports the same architecture as the daemon
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_container_architecture() {
   containerArch=$(in_container uname -m)
   if [ "$containerArch" != "$rawArch" ]; then
@@ -44,10 +46,12 @@ check_container_architecture() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Checks no build, rebuild or start log of this run has the BuildKit or the docker run platform warning
-# --------------------------------------------------------------------------------
-# The two phrases: "does not match the detected host platform" (docker run) and InvalidBaseImagePlatform (BuildKit).
+# ------------------------------------------------------------------------------
+# Checks no log of this run holds a platform mismatch warning
+# ------------------------------------------------------------------------------
+# The two phrases: "does not match the detected host platform" (docker run)
+# and InvalidBaseImagePlatform (BuildKit).
+# ------------------------------------------------------------------------------
 check_no_platform_warnings() {
   local logFile
   local warningLogs=""
@@ -63,9 +67,9 @@ check_no_platform_warnings() {
   fi
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-01 || exit 1
 require_known_architecture || exit 1

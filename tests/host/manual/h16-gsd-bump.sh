@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
-# H-16 (attended): a real GSD pin bump reaches a logged-in sandbox; the login and the earlier session survive.
-# - Needs a terminal and a Claude login in the test sandbox (sbx-hosttest); bash
-#   tests/host/manual/h07-login.sh makes one. It finds the run folder from the container's mount.
-# - It asks you to set GSD_CORE_VERSION in versions.env to the version you approved as the bump target.
-#   Then it rebuilds sbx-base:local and sbx-claude:local, takes the sandbox down and up, and checks
-#   state/claude, the start log and claude auth status. Then it opens claude --continue and asks
-#   whether the earlier session resumed.
-# - It never edits a file. Once the pin has changed, it prints how to put the pin back whenever it
-#   ends, also after a failed rebuild or restart.
-# - Usage: bash tests/host/manual/h16-gsd-bump.sh   (exit 0 = PASS)
+# ------------------------------------------------------------------------------
+# H-16 helper: a GSD pin bump reaches a logged-in sandbox; the session survives
+# ------------------------------------------------------------------------------
+# Usage: bash tests/host/manual/h16-gsd-bump.sh (exit 0 = PASS)
+# It never edits a file; once the pin changed it prints how to put it back.
+# ------------------------------------------------------------------------------
 set -u
 
 . "$(dirname "$0")/lib-manual.sh"
@@ -20,9 +16,9 @@ host_init
 oldPin=""
 newPin=""
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks the test sandbox holds a Claude login; FAIL and return 1 if not
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_logged_in() {
   if add_login_problem "run bash tests/host/manual/h07-login.sh first"; then
     return 0
@@ -34,9 +30,9 @@ check_logged_in() {
   return 1
 }
 
-# --------------------------------------------------------------------------------
-# Waits while you change GSD_CORE_VERSION in versions.env; FAIL and return 1 if the pin is the same afterwards
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Waits while you change GSD_CORE_VERSION; FAIL and return 1 if it is unchanged
+# ------------------------------------------------------------------------------
 wait_for_pin_change() {
   local answer
 
@@ -56,9 +52,9 @@ wait_for_pin_change() {
   return 0
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Rebuilds both images with the new pin; FAIL and return 1 if the build fails
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 rebuild_images() {
   info "rebuilding sbx-base:local and sbx-claude:local with GSD $newPin (logs in $RUN/logs)"
 
@@ -69,9 +65,11 @@ rebuild_images() {
   fi
 }
 
-# --------------------------------------------------------------------------------
-# Checks state/claude, gsd-tools and the start log all show the new GSD, with no npx and no @latest
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Checks state/claude, gsd-tools and the start log show the new GSD
+# ------------------------------------------------------------------------------
+# The start log must show no npx and no @latest either.
+# ------------------------------------------------------------------------------
 check_bumped_gsd() {
   local syncedVersion=""
   local identityText startLog
@@ -104,18 +102,18 @@ check_bumped_gsd() {
     "GSD $newPin is in state/claude and in the start log, with no npx and no @latest"
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Checks claude auth status still says logged in
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 check_still_logged_in() {
   add_login_problem "if you have not logged in yet, run bash tests/host/manual/h07-login.sh first"
   count_result H-16 "claude auth status does not show a login after the GSD bump" \
     'claude auth status still shows "loggedIn": true after the GSD bump'
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Opens claude --continue and asks whether the earlier session resumed
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 resume_session() {
   printf '\nClaude opens next with claude --continue.\n'
   printf '  Look for: the session from the login helper is picked up again (earlier messages shown).\n'
@@ -127,19 +125,20 @@ resume_session() {
     "claude --continue did not resume the earlier session"
 }
 
-# --------------------------------------------------------------------------------
-# Prints how to put the old pin back; runs when the script ends, once the pin change was seen
-# --------------------------------------------------------------------------------
-# It names the recorded old pin instead of discarding the file's changes, so any other edit to versions.env stays.
+# ------------------------------------------------------------------------------
+# Prints how to put the old pin back; runs on exit once the change was seen
+# ------------------------------------------------------------------------------
+# It names the recorded old pin, not a discard of the file, so other edits stay.
+# ------------------------------------------------------------------------------
 print_restore_steps() {
   printf '\nThe images may now hold GSD %s.\n' "$newPin"
   printf 'Before your own sandboxes start again, set GSD_CORE_VERSION in %s/versions.env back to %s and rebuild:\n' "$REPO_DIR" "$oldPin"
   printf '  ./build.sh\n'
 }
 
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Main / Entry Point
-# --------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-16 || exit 1
 check_logged_in || exit 1
