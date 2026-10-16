@@ -64,8 +64,8 @@ ENV CLAUDE_CONFIG_DIR=/home/sandbox/workspace/state/claude \
 # ------------------------------------------------------------------------------
 # Start hooks and managed settings
 # ------------------------------------------------------------------------------
-# Managed settings deny Claude's Edit tool on the synced rules, the skill list
-# and every skill folder. This is not a security boundary.
+# Managed settings let Claude edit the clone and deny its Edit tool on the skill
+# list and on every path under state/claude/skills. Not a security boundary.
 # ------------------------------------------------------------------------------
 COPY claude/start.d/ /etc/sbx/start.d/
 COPY claude/managed-settings.json /etc/claude-code/managed-settings.json
