@@ -75,6 +75,8 @@ case_supply_chain_rules() {
   plant_case "supply chain: a version that is not x.y.z fails" supply-chain.sh pins_are_exact "not an exact x.y.z version" edit_scratch_file versions.env 's/^NODE_VERSION=.*/NODE_VERSION=24/'
   plant_case "supply chain: a floating image tag fails" supply-chain.sh no_floating_latest_versions "ubuntu:latest" edit_scratch_file versions.env 's/^UBUNTU_IMAGE=.*/UBUNTU_IMAGE=ubuntu:latest/'
   plant_case "supply chain: an image pin without a digest fails" supply-chain.sh pins_are_exact "not an image tag with its @sha256 digest" edit_scratch_file versions.env 's/^\(TEMURIN_IMAGE=[^@]*\)@.*/\1/'
+  plant_case "supply chain: a bundle URL over ssh fails" supply-chain.sh pins_are_exact "not an https:// URL" edit_scratch_file versions.env 's#^BUNDLE_REPO_URL=.*#BUNDLE_REPO_URL=git@github.com:piojosnos/claude-best-practices.git#'
+  plant_case "supply chain: a bundle URL with credentials fails" supply-chain.sh pins_are_exact "not an https:// URL" edit_scratch_file versions.env 's#https://#https://user:token@#'
 }
 
 # ------------------------------------------------------------------------------

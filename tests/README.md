@@ -29,9 +29,9 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 | | |
 |---|---|
-| Runs | The real `base/sbx-start-lib.sh`, `base/sbx-entrypoint` and `claude/start.d/05-gsd` as plain bash in a temp folder, with a fake GSD |
+| Runs | The real `base/sbx-start-lib.sh`, `base/sbx-entrypoint`, `claude/start.d/05-gsd` and `claude/start.d/10-best-practices` as plain bash in a temp folder, with a fake GSD |
 | Where | Linux only (needs `/proc`) |
-| Catches | A broken start hook step, the sandbox name rule, the project and state folders, the first GSD sync and its fail-closed stops |
+| Catches | A broken start hook step, the sandbox name rule, the project and state folders, the first GSD sync and its fail-closed stops, the bundle links (no clone, rerun, upgrade from copies) |
 | Does not catch | Anything about the real image: mounts, users, file modes, links and special files in the hook folder. Host checks H-12, H-16, H-17, H-20 and H-21 cover those |
 
 ## tests/selftest/guard/
