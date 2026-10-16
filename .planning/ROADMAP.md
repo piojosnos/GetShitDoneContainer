@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1.4: Test suite refactor** (INSERTED) - Every test suite is a folder run by its own `run-all.sh`, the fake docker is slim and in its own file, and the Mac run covers the success paths (completed 2026-10-06)
 - [x] **Phase 1.5: Host test fixes** (INSERTED) - The known bugs in the host tests and entrypoint from earlier reviews are fixed, each proven on the Mac (completed 2026-10-08)
 - [x] **Phase 2: Pinned Toolchain, GSD, and ccusage** - Every tool is baked in at a version pinned in `versions.env`, the image's GSD wins over persisted state, and `ccusage` reports real usage (completed 2026-10-13)
-- [ ] **Phase 2.1: Shell diet** (INSERTED) - The guard keeps only the rules that protect the images and the sandbox, the fake docker and host self-tests are gone, and comments are schematic
+- [x] **Phase 2.1: Shell diet** (INSERTED) - The guard keeps only the rules that protect the images and the sandbox, the fake docker and host self-tests are gone, and comments are schematic (completed 2026-10-16)
 - [ ] **Phase 2.2: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs
 - [ ] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login
 - [ ] **Phase 4: Jump-In and Sandbox Housekeeping** - One command drops you into a sandbox shell or Claude, and you can list and clean up sandboxes safely
@@ -289,7 +289,7 @@ Plans:
 
 ### Phase 02.1: Shell diet (INSERTED)
 
-**Goal**: The repo carries only the shell one person can maintain. About 620 lines of shipped scripts do the work; the checks around them shrink to what protects the images and the sandbox.
+**Goal**: The repo carries only the shell one person can maintain. About 700 lines of shipped scripts do the work (restated from about 620 on 2026-10-16, after the re-scan cut to clean.sh was rejected); the checks around them shrink to what protects the images and the sandbox.
 **Mode:** mvp
 **Depends on**: Phase 2
 **Requirements**: TBD
@@ -318,41 +318,41 @@ Plans:
 - [ ] `no_other_mount_form` (isolation.sh): delete with the mount and privilege rules; the `docker inspect` host check sees every mount form without parsing YAML.
 - [ ] Last step: once the cuts above are done, scan the remaining shell again (guard, host checks, shipped scripts) for more of the same: hand-written parsers, checks that guard other checks, rules a standard tool or the Mac run already covers, functions too long to read. Post each finding as a proposal with what it does and the simplification, and cut only what the user approves.
 
-**Plans:** 11 plans
+**Plans:** 11/11 plans complete
 
 Plans:
 **Wave 1**
-- [ ] 02.1-01-PLAN.md: The two linter image pins and the rehearsal binaries resolved and approved by the user (blocking checkpoint)
+- [x] 02.1-01-PLAN.md: The two linter image pins and the rehearsal binaries resolved and approved by the user (blocking checkpoint)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 02.1-02-PLAN.md: Tracer: shellcheck and hadolint pinned in versions.env, copied into sbx-base, run by a guard group that fails closed; self-test with fake linters; H-25 and SANDBOX.md follow
+- [x] 02.1-02-PLAN.md: Tracer: shellcheck and hadolint pinned in versions.env, copied into sbx-base, run by a guard group that fails closed; self-test with fake linters; H-25 and SANDBOX.md follow
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 02.1-03-PLAN.md: Fake docker, host and bundle self-tests and the rules that police tests and docs retired; every runner globs its groups; stale references fixed
+- [x] 02.1-03-PLAN.md: Fake docker, host and bundle self-tests and the rules that police tests and docs retired; every runner globs its groups; stale references fixed
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 02.1-04-PLAN.md: New host check H-26 (one bind mount, no privileges, from docker inspect); the guard's isolation parsers cut to plain greps
+- [x] 02.1-04-PLAN.md: New host check H-26 (one bind mount, no privileges, from docker inspect); the guard's isolation parsers cut to plain greps
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 02.1-05-PLAN.md: Supply-chain and start rules as plain greps; bundle wiring group deleted; one wildcard managed deny per synced folder; guard at 18 rules and about 800 lines
+- [x] 02.1-05-PLAN.md: Supply-chain and start rules as plain greps; bundle wiring group deleted; one wildcard managed deny per synced folder; guard at 18 rules and about 800 lines
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 02.1-06-PLAN.md: Entrypoint self-test diet and a smaller fake GSD; tests/README.md with the rule of thumb; runner pointers
+- [x] 02.1-06-PLAN.md: Entrypoint self-test diet and a smaller fake GSD; tests/README.md with the rule of thumb; runner pointers
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 02.1-07-PLAN.md: Schematic comments in the shipped scripts, Dockerfiles, compose.yml and versions.env; the shell rule's banner example
+- [x] 02.1-07-PLAN.md: Schematic comments in the shipped scripts, Dockerfiles, compose.yml and versions.env; the shell rule's banner example
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 02.1-08-PLAN.md: Schematic comments in the host libraries, runner, manual helpers and toolchain probe
+- [x] 02.1-08-PLAN.md: Schematic comments in the host libraries, runner, manual helpers and toolchain probe
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 02.1-09-PLAN.md: Schematic comments in the host checks H-00 to H-25 and Coexistence; whole-scope scan
+- [x] 02.1-09-PLAN.md: Schematic comments in the host checks H-00 to H-25 and Coexistence; whole-scope scan
 
 **Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 02.1-10-PLAN.md: Final gate, planning-ID scan, chore/shell-diet branch for one code PR, then the Mac run (checkpoint, 26 checks, green guard inside the sandbox)
+- [x] 02.1-10-PLAN.md: Final gate, planning-ID scan, chore/shell-diet branch for one code PR, then the Mac run (checkpoint, 26 checks, green guard inside the sandbox)
 
 **Wave 11** *(blocked on Wave 10 completion)*
-- [ ] 02.1-11-PLAN.md: Re-scan proposals and the user's decision on each (checkpoint); approved cuts go in a second code PR
+- [x] 02.1-11-PLAN.md: Re-scan proposals and the user's decision on each (checkpoint); approved cuts go in a second code PR
 
 ### Phase 02.2: Best-practices from git, editable from any sandbox (INSERTED)
 
@@ -455,7 +455,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 2.2 → 3 �
 | 1.4. Test suite refactor | 8/8 | Complete    | 2026-10-06 |
 | 1.5. Host test fixes | 16/16 | Complete    | 2026-10-08 |
 | 2. Pinned Toolchain, GSD, and ccusage | 9/9 | Complete    | 2026-10-13 |
-| 2.1. Shell diet | 0/11 | Not started | - |
+| 2.1. Shell diet | 11/11 | Complete    | 2026-10-16 |
 | 2.2. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
 | 4. Jump-In and Sandbox Housekeeping | 0/TBD | Not started | - |
