@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# The Claude agent image: Claude Code, GSD and ccusage on sbx-base
+# The Claude image: Claude Code, GSD, ccusage and the sbx-* wrappers on sbx-base
 # ------------------------------------------------------------------------------
 # BASE_IMAGE keeps a default because it names the local base tag, not a version.
 # Pins come from versions.env through build.sh; no other ARG has a default.
@@ -62,12 +62,13 @@ ENV CLAUDE_CONFIG_DIR=/home/sandbox/workspace/state/claude \
     DISABLE_UPDATES=1
 
 # ------------------------------------------------------------------------------
-# Start hooks and managed settings
+# Start hooks, the sbx-* wrappers and managed settings
 # ------------------------------------------------------------------------------
 # Managed settings let Claude edit the clone and deny its Edit tool on the skill
 # list and on every path under state/claude/skills. Not a security boundary.
 # ------------------------------------------------------------------------------
 COPY claude/start.d/ /etc/sbx/start.d/
+COPY --chmod=755 claude/bin/ /usr/local/bin/
 COPY claude/managed-settings.json /etc/claude-code/managed-settings.json
 RUN chmod 755 /etc/sbx/start.d/* \
     && chmod 644 /etc/claude-code/managed-settings.json \

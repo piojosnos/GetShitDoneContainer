@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# Logs gh in to GitHub and lets git use that login over HTTPS
+# ------------------------------------------------------------------------------
+# Usage: sbx-gh-login [gh auth login options]
+# The token and git's helper entry live in state/, so both survive a rebuild.
+# ------------------------------------------------------------------------------
+set -eu
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+gh auth login --hostname github.com --git-protocol https "$@"
+gh auth setup-git
