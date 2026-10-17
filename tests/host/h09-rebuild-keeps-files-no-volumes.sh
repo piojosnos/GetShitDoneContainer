@@ -11,6 +11,7 @@ host_init
 
 sentinelText="h09-$$-$(date +%s)"
 memorySentinel=$RUN/state/claude/projects/-home-sandbox-workspace-hosttest/memory/h09-memory.md
+cloneSentinel=$RUN/best-practices/h09-sentinel.txt
 cacheFlag=""
 
 # ------------------------------------------------------------------------------
@@ -24,14 +25,15 @@ list_test_volumes() {
 }
 
 # ------------------------------------------------------------------------------
-# Writes the three sentinel files and records the volume list
+# Writes the four sentinel files and records the volume list
 # ------------------------------------------------------------------------------
 # The memory sentinel under state/claude/projects proves a rebuild with restart
-# leaves learned memories alone.
+# leaves learned memories alone; the one in the clone proves it keeps the clone.
 # ------------------------------------------------------------------------------
 plant_sentinels() {
   printf '%s\n' "$sentinelText" >"$RUN/hosttest/h09-sentinel.txt"
   printf '%s\n' "$sentinelText" >"$RUN/state/h09-sentinel.txt"
+  printf '%s\n' "$sentinelText" >"$cloneSentinel"
   mkdir -p "$(dirname "$memorySentinel")"
   printf '%s\n' "$sentinelText" >"$memorySentinel"
   volumesBefore=$(list_test_volumes)
@@ -63,12 +65,12 @@ rebuild_and_restart() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks the three sentinel files still hold their text
+# Checks the four sentinel files still hold their text
 # ------------------------------------------------------------------------------
 check_sentinels_survived() {
   local sentinelFile
 
-  for sentinelFile in "$RUN/hosttest/h09-sentinel.txt" "$RUN/state/h09-sentinel.txt" "$memorySentinel"; do
+  for sentinelFile in "$RUN/hosttest/h09-sentinel.txt" "$RUN/state/h09-sentinel.txt" "$cloneSentinel" "$memorySentinel"; do
     if [ "$(cat "$sentinelFile" 2>/dev/null)" != "$sentinelText" ]; then
       add_problem "$sentinelFile is missing or changed after the rebuild"
     fi
@@ -140,4 +142,4 @@ check_sentinels_survived
 check_volumes_unchanged
 check_one_bind_mount
 report_check H-09 "the rebuild lost something or the mounts are wrong" \
-  "files survived the rebuild, the volume list is unchanged, one bind mount ${cacheFlag:+(built with $cacheFlag)}"
+  "files and a file in the best-practices clone survived the rebuild, the volume list is unchanged, one bind mount ${cacheFlag:+(built with $cacheFlag)}"

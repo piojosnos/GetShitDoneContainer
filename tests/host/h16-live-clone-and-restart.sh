@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# H-16: a restart refreshes the bundle and GSD and spares the user files
+# H-16: the clone is live; a restart relinks it and spares your files
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; stops and restarts it
-# Planted files are left in the run folder for the printed cleanup.
+# Moved files stay in the run folder for the printed cleanup.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 . "$(dirname "$0")/lib-bundle.sh"
 host_init
 
-bundleDir=$REPO_DIR/best-practices
+cloneDir=$RUN/best-practices
 syncedDir=$RUN/state/claude
 memoryDir=$syncedDir/projects/-home-sandbox-workspace-hosttest/memory
 sentinelText="h16-$$-$(date +%s)"
@@ -18,24 +18,15 @@ sessionFile=$syncedDir/projects/-home-sandbox-workspace-hosttest/h16-session.jso
 settingsScript='const fs = require("fs"); const file = process.env.CLAUDE_CONFIG_DIR + "/settings.json"; let settings = {}; if (fs.existsSync(file)) { settings = JSON.parse(fs.readFileSync(file, "utf8")); } settings.h16Sentinel = process.argv[1]; fs.writeFileSync(file, JSON.stringify(settings, null, 2) + "\n");'
 
 # ------------------------------------------------------------------------------
-# Picks the first bundle skill, always-on rule and GSD skill to edit
+# Picks the first GSD skill to edit; needs the clone and a synced GSD
+# ------------------------------------------------------------------------------
+# The fixture rule and skill names are fixed; only the GSD skill is looked up.
 # ------------------------------------------------------------------------------
 pick_samples() {
-  local ruleFileList ruleFile gsdSkillPath
+  local gsdSkillPath
 
-  firstSkill=$(bundle_skill_names | sed -n 1p)
-
-  firstRule=""
-  ruleFileList=$(cd "$bundleDir/rules" && find . -maxdepth 1 -type f -name '*.md' | sed 's|^\./||' | sort)
-
-  for ruleFile in $ruleFileList; do
-    if [ -z "$firstRule" ] && [ "$(sed -n 1p "$bundleDir/rules/$ruleFile")" != "---" ]; then
-      firstRule=$ruleFile
-    fi
-  done
-
-  if [ -z "$firstSkill" ] || [ -z "$firstRule" ]; then
-    fail H-16 "the repo bundle has no always-on rule or no skill to edit" "looked in $bundleDir"
+  if [ ! -d "$cloneDir/.git" ]; then
+    fail H-16 "the run folder has no best-practices clone" "looked in $cloneDir"
     return 1
   fi
 
@@ -50,16 +41,71 @@ pick_samples() {
 }
 
 # ------------------------------------------------------------------------------
-# Plants stale and user files, edits a synced rule and skill, ages GSD
+# git_step DESCRIPTION CMD...: runs CMD; a failure adds a problem
 # ------------------------------------------------------------------------------
-# User files: a skill, memory, session, CLAUDE.md and a settings.json key (set
-# by node in the container). No gsd-* skill is planted; GSD owns that name.
+git_step() {
+  local description=$1
+  local gitOutput
+
+  shift
+
+  if ! gitOutput=$("$@" 2>&1 </dev/null); then
+    add_problem "$description failed: $(first_lines "$gitOutput")"
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Checks an uncommitted edit in the clone on the Mac shows in the container
+# ------------------------------------------------------------------------------
+check_edit_is_live() {
+  local seenText
+
+  printf '%s edit\n' "$sentinelText" >>"$cloneDir/rules/sbx-fixture-always.md"
+  seenText=$(in_container cat /home/sandbox/workspace/state/claude/rules/sbx-fixture-always.md)
+
+  if [[ "$seenText" != *"$sentinelText edit"* ]]; then
+    add_problem "an edit of the clone's rule on the Mac is not in the sandbox at once; got: $(first_lines "$seenText")"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Checks a commit pushed to the origin and pulled on the Mac is live
+# ------------------------------------------------------------------------------
+# The pulled commit only adds a file, so the uncommitted edit does not block it.
+# ------------------------------------------------------------------------------
+check_pull_is_live() {
+  local otherDir=$RUN/h16-other-$$
+  local seenText
+
+  git_step "cloning the origin for the pushed commit" git clone -q "$RUN/bundle-origin.git" "$otherDir" || return
+  printf '%s\n' "$sentinelText" >"$otherDir/rules/h16-pulled.md"
+  git_step "adding the pulled rule" git -C "$otherDir" add rules/h16-pulled.md || return
+  git_step "committing the pulled rule" git -C "$otherDir" -c user.name=sbx-hosttest \
+    -c user.email=sbx-hosttest@example.invalid -c commit.gpgsign=false commit -q -m "h16 pulled rule" || return
+  git_step "pushing the pulled rule to the origin" git -C "$otherDir" push -q origin main || return
+  git_step "pulling in the clone" git -C "$cloneDir" pull -q --ff-only || return
+
+  seenText=$(in_container cat /home/sandbox/workspace/state/claude/rules/h16-pulled.md)
+
+  if [[ "$seenText" != *"$sentinelText"* ]]; then
+    add_problem "a pulled rule is not in the sandbox at once; got: $(first_lines "$seenText")"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Plants stale and user files, drops a skill from the clone, ages GSD
+# ------------------------------------------------------------------------------
+# The rules link and one fixture skill are moved aside, never deleted.
+# User files: a skill, memory, session, CLAUDE.md and a settings.json key.
 # ------------------------------------------------------------------------------
 plant_files() {
   local plantOutput
 
+  mv "$cloneDir/skills/sbx-fixture-two" "$RUN/h16-dropped-skill-$$"
+  mv "$syncedDir/rules" "$RUN/h16-old-rules-link-$$"
   mkdir -p "$syncedDir/rules" "$syncedDir/skills/h16-old-bundle-skill" "$syncedDir/skills/h16-user-skill" \
-    "$syncedDir/skills/$firstSkill" "$syncedDir/gsd-core" "$memoryDir"
+    "$syncedDir/gsd-core" "$memoryDir"
 
   printf '%s\n' "$sentinelText" >"$syncedDir/rules/h16-stale.md"
   printf '%s\n' "$sentinelText" >"$syncedDir/skills/h16-old-bundle-skill/SKILL.md"
@@ -67,8 +113,6 @@ plant_files() {
   printf '%s\n' "$sentinelText" >"$syncedDir/skills/h16-user-skill/SKILL.md"
   printf '%s\n' "$sentinelText" >"$memoryDir/h16-memory.md"
   printf '# %s\n' "$sentinelText" >"$syncedDir/CLAUDE.md"
-  printf 'h16 hand edit\n' >>"$syncedDir/rules/$firstRule"
-  printf 'h16 hand edit\n' >>"$syncedDir/skills/$firstSkill/SKILL.md"
   printf '%s\n' "$sentinelText" >"$sessionFile"
   printf '0.0.0' >"$syncedDir/gsd-core/VERSION"
   printf 'h16 hand edit\n' >>"$syncedDir/skills/$firstGsdSkill/SKILL.md"
@@ -79,15 +123,32 @@ plant_files() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks the stale rule and the old bundle skill are gone
+# Checks the dropped skill has no file or link, and the stale copies are gone
 # ------------------------------------------------------------------------------
 check_stale_files_gone() {
+  if [ -e "$syncedDir/skills/sbx-fixture-two" ] || [ -L "$syncedDir/skills/sbx-fixture-two" ]; then
+    add_problem "state/claude/skills/sbx-fixture-two is still there after the restart"
+  fi
+
   if [ -e "$syncedDir/rules/h16-stale.md" ]; then
     add_problem "state/claude/rules/h16-stale.md is still there after the restart"
   fi
 
-  if [ -e "$syncedDir/skills/h16-old-bundle-skill" ]; then
+  if [ -e "$syncedDir/skills/h16-old-bundle-skill" ] || [ -L "$syncedDir/skills/h16-old-bundle-skill" ]; then
     add_problem "state/claude/skills/h16-old-bundle-skill is still there after the restart"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Checks the restart kept the uncommitted edit and the pulled file in the clone
+# ------------------------------------------------------------------------------
+check_clone_kept() {
+  if ! grep -Fq "$sentinelText edit" "$cloneDir/rules/sbx-fixture-always.md" 2>/dev/null; then
+    add_problem "the uncommitted edit in the clone's rule is gone after the restart"
+  fi
+
+  if [ ! -f "$cloneDir/rules/h16-pulled.md" ]; then
+    add_problem "the pulled rule is gone from the clone after the restart"
   fi
 }
 
@@ -134,13 +195,14 @@ check_user_files_spared() {
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-16 || exit 1
 pick_samples || exit 1
+check_edit_is_live
+check_pull_is_live
 plant_files
 restart_test_sandbox H-16 h16-down.log || exit 1
+check_bundle_links "$syncedDir" "$cloneDir"
 check_stale_files_gone
+check_clone_kept
 check_gsd_refreshed
-check_bundle_skill_list "$syncedDir"
 check_user_files_spared
-check_bundle_rules_synced "$syncedDir"
-check_bundle_skills_synced "$syncedDir"
-report_check H-16 "the restart did not refresh the bundle and GSD or did not spare the user's files" \
-  "a restart removed the stale rule and skill, restored edited copies and GSD at the pin, and kept the user's skills, memories, sessions, settings key and CLAUDE.md"
+report_check H-16 "the clone is not live or the restart did not relink it and spare your files" \
+  "an edit and a pull in the clone on the Mac showed in the sandbox at once; a restart relinked the clone, dropped a removed skill and stale copies, kept the uncommitted edit, refreshed GSD and kept your skills, memories, sessions, settings key and CLAUDE.md"
