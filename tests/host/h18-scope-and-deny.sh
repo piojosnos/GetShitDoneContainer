@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# H-18: a scoped rule loads on a matching read; the managed deny holds
+# H-18: a scoped rule loads on a matching read; the managed settings hold
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running
-# No other check depends on it: drop it with its entry in run-all.sh.
+# Markers and edits use the run folder's clone; no other check depends on it.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
+. "$(dirname "$0")/lib-bundle.sh"
 host_init
 
-bundleDir=$REPO_DIR/best-practices
-syncedDir=$RUN/state/claude
+cloneDir=$RUN/best-practices
 containerRoot=/home/sandbox/workspace
+containerClone=/home/sandbox/workspace/best-practices
 
 # ------------------------------------------------------------------------------
 # first_heading FILE: the first "# " heading line of FILE, without the "# "
@@ -21,20 +22,21 @@ first_heading() {
 }
 
 # ------------------------------------------------------------------------------
-# run_scenario NAME SCRIPTFILE: runs Claude against the fake API in the sandbox
+# run_scenario NAME SCRIPTFILE MODE: runs Claude against the fake API
 # ------------------------------------------------------------------------------
-# The fake Anthropic API in tests/host/support scripts Claude's tool calls, so
-# no login or network is needed. It follows the pinned Claude's wire format.
+# The fake API in tests/host/support scripts Claude's tool calls; no login.
+# Modes: --permission-mode bypassPermissions, --permission-mode acceptEdits.
 # ------------------------------------------------------------------------------
 run_scenario() {
   local scenarioName=$1
   local scriptFile=$2
+  local permissionMode=$3
   local runnerScript
 
   runnerScript="node $containerRoot/logs/fake-claude-api.js >/dev/null 2>&1 </dev/null &
 serverPid=\$!
 sleep 1
-ANTHROPIC_BASE_URL=http://127.0.0.1:8799 ANTHROPIC_API_KEY=sk-ant-dummy claude -p go --permission-mode bypassPermissions >$containerRoot/logs/h18-$scenarioName-claude.log 2>&1 </dev/null
+ANTHROPIC_BASE_URL=http://127.0.0.1:8799 ANTHROPIC_API_KEY=sk-ant-dummy claude -p go --permission-mode $permissionMode >$containerRoot/logs/h18-$scenarioName-claude.log 2>&1 </dev/null
 kill \$serverPid"
 
   : >"$RUN/logs/h18-$scenarioName.log"
@@ -42,36 +44,63 @@ kill \$serverPid"
 }
 
 # ------------------------------------------------------------------------------
-# Picks the always-on rule and the skill to probe, and each rule's marker
+# Picks the always-on rule and the skill to probe, and each marker
+# ------------------------------------------------------------------------------
+# The markers are first headings in the clone: the always-on rule, the scoped
+# fixture rule and the first skill's SKILL.md.
 # ------------------------------------------------------------------------------
 pick_samples() {
-  local ruleRelList ruleRel skillDir
+  local ruleRelList ruleRel
 
   alwaysRel=""
-  ruleRelList=$(cd "$bundleDir/rules" && find . -type f ! -name .DS_Store | sed 's|^\./||' | sort)
+  firstSkill=""
+
+  if [ ! -d "$cloneDir/rules" ]; then
+    fail H-18 "the run folder has no best-practices clone" "looked in $cloneDir"
+    return 1
+  fi
+
+  ruleRelList=$(cd "$cloneDir/rules" && find . -type f ! -name .DS_Store | sed 's|^\./||' | sort)
 
   for ruleRel in $ruleRelList; do
-    if [ "$(sed -n 1p "$bundleDir/rules/$ruleRel")" != "---" ]; then
+    if [ "$(sed -n 1p "$cloneDir/rules/$ruleRel")" != "---" ]; then
       alwaysRel=$ruleRel
       break
     fi
   done
 
-  firstSkill=""
+  firstSkill=$(clone_skill_names "$cloneDir" | sed -n 1p)
 
-  for skillDir in "$bundleDir"/skills/*/; do
-    if [ -d "$skillDir" ]; then
-      firstSkill=$(basename "$skillDir")
-      break
-    fi
-  done
+  if [ -z "$alwaysRel" ] || [ -z "$firstSkill" ]; then
+    fail H-18 "the clone has no always-on rule or no skill to probe" "looked in $cloneDir"
+    return 1
+  fi
 
-  markAlways=$(first_heading "$bundleDir/rules/$alwaysRel")
-  markScoped=$(first_heading "$bundleDir/rules/shell.md")
+  markAlways=$(first_heading "$cloneDir/rules/$alwaysRel")
+  markScoped=$(first_heading "$cloneDir/rules/sbx-fixture-shell.md")
+  skillMark=$(first_heading "$cloneDir/skills/$firstSkill/SKILL.md")
 }
 
 # ------------------------------------------------------------------------------
-# Puts the fake API, the probe files and the two tool scripts in the run folder
+# read_call PATH, edit_call PATH OLD NEW, write_call PATH: one tool call as JSON
+# ------------------------------------------------------------------------------
+read_call() {
+  printf '{"name":"Read","input":{"file_path":"%s"}}' "$1"
+}
+
+edit_call() {
+  printf '{"name":"Edit","input":{"file_path":"%s","old_string":"%s","new_string":"%s"}}' "$1" "$2" "$3"
+}
+
+write_call() {
+  printf '{"name":"Write","input":{"file_path":"%s","content":"planted"}}' "$1"
+}
+
+# ------------------------------------------------------------------------------
+# Puts the fake API, the probe files and the tool scripts in the run folder
+# ------------------------------------------------------------------------------
+# deny: the project edit (the control), an edit and a write through the skills
+# link, then real-path edits of the clone's skill and rule, each after a Read.
 # ------------------------------------------------------------------------------
 prepare_files() {
   local projectRoot configRoot
@@ -84,9 +113,22 @@ prepare_files() {
   projectRoot=$containerRoot/hosttest
   configRoot=$containerRoot/state/claude
 
-  printf '[{"name":"Read","input":{"file_path":"%s/h18/deep/probe.sh"}}]\n' "$projectRoot" >"$RUN/logs/h18-scope.json"
-  printf '[{"name":"Read","input":{"file_path":"%s/h18/control.txt"}},{"name":"Edit","input":{"file_path":"%s/h18/control.txt","old_string":"before","new_string":"after"}},{"name":"Read","input":{"file_path":"%s/rules/%s"}},{"name":"Edit","input":{"file_path":"%s/rules/%s","old_string":"%s","new_string":"scribble"}},{"name":"Write","input":{"file_path":"%s/rules/h18-planted.md","content":"planted"}},{"name":"Write","input":{"file_path":"%s/skills/%s/h18-planted.md","content":"planted"}}]\n' \
-    "$projectRoot" "$projectRoot" "$configRoot" "$alwaysRel" "$configRoot" "$alwaysRel" "$markAlways" "$configRoot" "$configRoot" "$firstSkill" >"$RUN/logs/h18-deny.json"
+  printf '[%s]\n' "$(read_call "$projectRoot/h18/deep/probe.sh")" >"$RUN/logs/h18-scope.json"
+
+  printf '[%s,%s,%s,%s,%s,%s,%s,%s,%s]\n' \
+    "$(read_call "$projectRoot/h18/control.txt")" \
+    "$(edit_call "$projectRoot/h18/control.txt" "before" "after")" \
+    "$(read_call "$configRoot/skills/$firstSkill/SKILL.md")" \
+    "$(edit_call "$configRoot/skills/$firstSkill/SKILL.md" "$skillMark" "h18 link edit")" \
+    "$(write_call "$configRoot/skills/$firstSkill/h18-planted.md")" \
+    "$(read_call "$containerClone/skills/$firstSkill/SKILL.md")" \
+    "$(edit_call "$containerClone/skills/$firstSkill/SKILL.md" "$skillMark" "h18 real edit")" \
+    "$(read_call "$containerClone/rules/$alwaysRel")" \
+    "$(edit_call "$containerClone/rules/$alwaysRel" "$markAlways" "h18 bypass edit")" >"$RUN/logs/h18-deny.json"
+
+  printf '[%s,%s]\n' \
+    "$(read_call "$containerClone/rules/$alwaysRel")" \
+    "$(edit_call "$containerClone/rules/$alwaysRel" "h18 bypass edit" "h18 accept edit")" >"$RUN/logs/h18-allow.json"
 }
 
 # ------------------------------------------------------------------------------
@@ -102,16 +144,17 @@ check_scope_loading() {
   fi
 
   if grep -Eq '^step=0 .* scoped=yes$' "$scopeLog"; then
-    add_problem "the path-scoped rule loaded before any matching file was touched (shell.md is in the first request)"
+    add_problem "the path-scoped rule loaded before any matching file was touched (sbx-fixture-shell.md is in the first request)"
   elif ! grep -Eq '^step=[1-9][0-9]* .* scoped=yes$' "$scopeLog"; then
     add_problem "the path-scoped rule never loaded after Claude read h18/deep/probe.sh; log: $(tr '\n' ' ' <"$scopeLog")"
   fi
 }
 
 # ------------------------------------------------------------------------------
-# Checks the managed deny refused edits and writes to synced files
+# Checks the managed deny refused the edit and the write through the skills link
 # ------------------------------------------------------------------------------
-# The refusals count only if the edit of the project file went through.
+# The refusals count only if the edit of the project file went through. The
+# clone's skill must hold the real-path text and not the link-path text.
 # ------------------------------------------------------------------------------
 check_deny_held() {
   local controlText
@@ -123,16 +166,36 @@ check_deny_held() {
     return
   fi
 
-  if ! cmp -s "$bundleDir/rules/$alwaysRel" "$syncedDir/rules/$alwaysRel"; then
-    add_problem "the synced rule state/claude/rules/$alwaysRel was changed by an edit that should have been refused"
+  if grep -Fq "h18 link edit" "$cloneDir/skills/$firstSkill/SKILL.md"; then
+    add_problem "an edit through state/claude/skills/$firstSkill reached the clone; it should have been refused"
   fi
 
-  if [ -e "$syncedDir/rules/h18-planted.md" ]; then
-    add_problem "a file was planted in state/claude/rules/h18-planted.md; the write should have been refused"
+  if ! grep -Fq "h18 real edit" "$cloneDir/skills/$firstSkill/SKILL.md"; then
+    add_problem "the edit of the clone's skill by its real path did not go through; run output: $(head -c 300 "$RUN/logs/h18-deny-run.log" | tr '\n' ' ')"
   fi
 
-  if [ -e "$syncedDir/skills/$firstSkill/h18-planted.md" ]; then
-    add_problem "a file was planted in state/claude/skills/$firstSkill/h18-planted.md; the write should have been refused"
+  if [ -e "$cloneDir/skills/$firstSkill/h18-planted.md" ]; then
+    add_problem "a file was planted through state/claude/skills/$firstSkill/h18-planted.md; the write should have been refused"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Checks the clone's rule was edited by its real path in both permission modes
+# ------------------------------------------------------------------------------
+# The bypassPermissions edit must be there first; the acceptEdits edit builds on
+# it, so the final text shows that both went through.
+# ------------------------------------------------------------------------------
+check_clone_edits() {
+  local ruleFile=$cloneDir/rules/$alwaysRel
+
+  if grep -Fq "h18 accept edit" "$ruleFile"; then
+    return
+  fi
+
+  if grep -Fq "h18 bypass edit" "$ruleFile"; then
+    add_problem "the acceptEdits edit of the clone's rule did not go through; allow run: $(head -c 300 "$RUN/logs/h18-allow-run.log" | tr '\n' ' ') $(head -c 300 "$RUN/logs/h18-allow-claude.log" 2>/dev/null | tr '\n' ' ')"
+  else
+    add_problem "the bypassPermissions edit of the clone's rule by its real path did not go through; the rule still says '$(first_heading "$ruleFile")'"
   fi
 }
 
@@ -141,11 +204,13 @@ check_deny_held() {
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-18 || exit 1
-pick_samples
+pick_samples || exit 1
 prepare_files
-run_scenario scope h18-scope.json
-run_scenario deny h18-deny.json
+run_scenario scope h18-scope.json bypassPermissions
+run_scenario deny h18-deny.json bypassPermissions
+run_scenario allow h18-allow.json acceptEdits
 check_scope_loading
 check_deny_held
-report_check H-18 "path-scoped loading or the managed deny is wrong in the real image" \
-  "shell.md loaded only after a .sh read; edits and writes to synced files were refused under bypassPermissions; the project edit went through"
+check_clone_edits
+report_check H-18 "path-scoped loading or the settings on the clone are wrong in the real image" \
+  "the scoped rule loaded only after a .sh read; edits through ~/.claude/skills were refused; the clone's rule and skill were edited by their real path under bypassPermissions and acceptEdits"
