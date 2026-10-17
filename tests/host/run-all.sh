@@ -7,6 +7,7 @@
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
+. "$(dirname "$0")/lib-bundle.sh"
 host_init
 RUN=""
 unset SBXTEST_DIR
@@ -197,6 +198,22 @@ create_run_folder() {
 }
 
 # ------------------------------------------------------------------------------
+# create_bundle_clone: makes the fixture origin and the sandbox's clone
+# ------------------------------------------------------------------------------
+# Both sit in the run folder. The run stops when either step fails.
+# ------------------------------------------------------------------------------
+create_bundle_clone() {
+  local cloneLog=$RUN/logs/bundle-clone.log
+
+  if ! make_bundle_origin "$RUN/bundle-origin.git" >"$cloneLog" 2>&1 ||
+    ! make_bundle_clone "$RUN/bundle-origin.git" "$RUN/best-practices" >>"$cloneLog" 2>&1; then
+    fatal "could not make the fixture bundle clone (log: $cloneLog)"
+  fi
+
+  info "bundle clone: $RUN/best-practices"
+}
+
+# ------------------------------------------------------------------------------
 # record_old_layout: writes the old containers and folders to the run logs
 # ------------------------------------------------------------------------------
 # Coexistence compares against these files at the end.
@@ -284,6 +301,7 @@ install_traps
 print_docker_target
 check_docker_reachable
 create_run_folder
+create_bundle_clone
 record_old_layout
 remove_leftover_test_container
 run_compose_check

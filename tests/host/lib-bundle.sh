@@ -1,18 +1,44 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Shared bundle checks for the host tests: is a synced config the bundle's
+# Shared bundle helpers for the host tests: the fixture clone and its links
 # ------------------------------------------------------------------------------
-# Sourced after lib.sh by the checks that need it; runs nothing.
-# Each check takes a synced config folder (state/claude), reports by add_problem
+# Sourced after lib.sh; runs nothing. Fixture commits use a test identity.
+# The Mac user's git identity and GitHub login are never used.
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# bundle_skill_names: the bundle's skill names, one per line
+# make_bundle_origin ORIGIN_DIR: a local bare repo holding the fixture bundle
 # ------------------------------------------------------------------------------
-bundle_skill_names() {
+# A seed folder next to ORIGIN_DIR gets one commit on main; ORIGIN_DIR is a bare
+# clone of it, so its HEAD names main. Returns non-zero on any failure.
+# ------------------------------------------------------------------------------
+make_bundle_origin() {
+  local originDir=$1
+  local seedDir=$originDir.seed
+
+  mkdir -p "$seedDir" || return 1
+  cp -R "$HOST_DIR/support/bundle/." "$seedDir/" || return 1
+  git -C "$seedDir" init -q || return 1
+  git -C "$seedDir" symbolic-ref HEAD refs/heads/main || return 1
+  git -C "$seedDir" add -A || return 1
+  git -C "$seedDir" -c user.name=sbx-hosttest -c user.email=sbx-hosttest@example.invalid -c commit.gpgsign=false commit -q -m "fixture bundle" || return 1
+  git clone -q --bare "$seedDir" "$originDir" || return 1
+}
+
+# ------------------------------------------------------------------------------
+# make_bundle_clone ORIGIN_DIR CLONE_DIR: the sandbox's own clone of the origin
+# ------------------------------------------------------------------------------
+make_bundle_clone() {
+  git clone -q "$1" "$2"
+}
+
+# ------------------------------------------------------------------------------
+# clone_skill_names CLONE_DIR: the clone's skill names, one per line
+# ------------------------------------------------------------------------------
+clone_skill_names() {
   local skillDir
 
-  for skillDir in "$REPO_DIR"/best-practices/skills/*/; do
+  for skillDir in "$1"/skills/*/; do
     if [ -d "$skillDir" ]; then
       basename "$skillDir"
     fi
@@ -20,53 +46,44 @@ bundle_skill_names() {
 }
 
 # ------------------------------------------------------------------------------
-# check_bundle_rules_synced CONFIG_DIR [PROBLEM_TEXT]: rules must match bundle
+# check_bundle_links CONFIG_DIR CLONE_DIR: state/claude links into the clone
 # ------------------------------------------------------------------------------
-# PROBLEM_TEXT starts the message; the first lines of the diff follow it.
-check_bundle_rules_synced() {
+# Reports by add_problem and prints nothing itself. The links are relative, so
+# they must also resolve on the Mac side of the bind mount.
+# ------------------------------------------------------------------------------
+check_bundle_links() {
   local configDir=$1
-  local problemText=${2:-state/claude/rules differs from best-practices/rules}
-  local rulesDiff
+  local cloneDir=$2
+  local linkText rulesDiff skillName expectedList actualList
 
-  rulesDiff=$(diff -r -x .DS_Store "$REPO_DIR/best-practices/rules" "$configDir/rules" 2>&1)
+  if [ ! -L "$configDir/rules" ]; then
+    add_problem "state/claude/rules is not a link"
+  else
+    linkText=$(readlink "$configDir/rules")
 
-  if [ "$?" -ne 0 ]; then
-    add_problem "$problemText: $(first_lines "$rulesDiff")"
-  fi
-}
-
-# ------------------------------------------------------------------------------
-# check_bundle_skills_synced CONFIG_DIR: each bundle skill must equal its copy
-# ------------------------------------------------------------------------------
-check_bundle_skills_synced() {
-  local configDir=$1
-  local skillDir skillName skillDiff
-
-  for skillDir in "$REPO_DIR"/best-practices/skills/*/; do
-    if [ ! -d "$skillDir" ]; then
-      continue
+    if [ "$linkText" != "../../best-practices/rules" ]; then
+      add_problem "state/claude/rules links to '$linkText'; expected '../../best-practices/rules'"
     fi
 
-    skillName=$(basename "$skillDir")
-    skillDiff=$(diff -r -x .DS_Store "$skillDir" "$configDir/skills/$skillName" 2>&1)
+    rulesDiff=$(diff -r -x .DS_Store "$cloneDir/rules" "$configDir/rules/" 2>&1)
 
     if [ "$?" -ne 0 ]; then
-      add_problem "state/claude/skills/$skillName differs from best-practices/skills/$skillName: $(first_lines "$skillDiff")"
+      add_problem "state/claude/rules read through the link differs from the clone: $(first_lines "$rulesDiff")"
+    fi
+  fi
+
+  for skillName in $(clone_skill_names "$cloneDir"); do
+    linkText=$(readlink "$configDir/skills/$skillName" 2>/dev/null)
+
+    if [ "$linkText" != "../../../best-practices/skills/$skillName" ]; then
+      add_problem "state/claude/skills/$skillName links to '$linkText'; expected '../../../best-practices/skills/$skillName'"
     fi
   done
-}
 
-# ------------------------------------------------------------------------------
-# check_bundle_skill_list CONFIG_DIR: the skill list must be the bundle's skills
-# ------------------------------------------------------------------------------
-check_bundle_skill_list() {
-  local configDir=$1
-  local expectedList actualList
-
-  expectedList=$(bundle_skill_names)
+  expectedList=$(clone_skill_names "$cloneDir")
   actualList=$(cat "$configDir/.best-practices-skills" 2>/dev/null)
 
   if [ "$actualList" != "$expectedList" ]; then
-    add_problem "state/claude/.best-practices-skills lists '$(printf '%s' "$actualList" | tr '\n' ' ')'; the bundle has '$(printf '%s' "$expectedList" | tr '\n' ' ')'"
+    add_problem "state/claude/.best-practices-skills lists '$(printf '%s' "$actualList" | tr '\n' ' ')'; the clone has '$(printf '%s' "$expectedList" | tr '\n' ' ')'"
   fi
 }
