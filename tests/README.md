@@ -47,7 +47,7 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 | | |
 |---|---|
-| Runs | H-00 to H-26 and Coexistence against real Docker: builds, mounts, isolation (H-26), persistence, the bundle and the GSD sync |
+| Runs | H-00 to H-27 and Coexistence against real Docker: builds, mounts, isolation (H-26), persistence, the bundle clone and its links (H-27 covers the wrappers and a push) and the GSD sync |
 | Where | The Mac. `run-all.sh` is unattended; the helpers in `manual/` need a real terminal |
 | Catches | Anything that only shows on the real images and mounts |
 | Does not catch | Claude's login and behaviour; only the helpers in `manual/` cover them |

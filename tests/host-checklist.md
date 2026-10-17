@@ -1,8 +1,8 @@
-# Host checklist (H-00..H-26)
+# Host checklist (H-00..H-27)
 
 The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them. Five short helpers in `tests/host/manual/` check what the script cannot: Claude's login, Claude's own behaviour, `claude doctor` and a real GSD pin bump. Run them after a change the script cannot see, or when a check fails and you want to look closer.
 
-- **IDs:** each check has an ID, H-00 to H-26 (H for host), so results can be reported by ID ("H-10 failed").
+- **IDs:** each check has an ID, H-00 to H-27 (H for host), so results can be reported by ID ("H-10 failed").
 - **When:** once after building a new version of the images or `compose.yml`.
 - **Setup and daily use:** see [`SANDBOX.md`](../SANDBOX.md).
 - Commands run from the repo root.
@@ -49,12 +49,12 @@ What each check proves:
 | H-11 | Stopping is quick and keeps everything | `h11-stop-is-quick-and-safe.sh` | automatic |
 | H-12 | A plain `docker run` is refused; the pinned Claude is installed | `h12-plain-run-refused-pin-installed.sh` | automatic |
 | H-13 | Environment is visible, self-update is off and no Claude copy sits in `~/.local`; `claude doctor` agrees | `h13-env-and-no-self-update.sh`, `manual/h13-doctor.sh` | automatic; helper for the rest |
-| H-14 | The image holds the bundle, equal to the repo; owners, modes and no mount are right; the managed settings parse | `h14-bundle-in-image.sh` | automatic |
-| H-15 | Rules and skills are synced and equal to the repo; Claude lists the always-on rules and the skills, not the path-scoped rules | `h15-bundle-synced-and-visible.sh` | automatic |
-| H-16 | A restart refreshes the bundle and GSD from the image (a stale GSD version and a hand-edited GSD skill are replaced) and keeps your own skills, memories, sessions, settings keys and `CLAUDE.md`; the helper bumps the GSD pin for real with a logged-in sandbox | `h16-sync-refreshes-and-spares.sh`, `manual/h16-gsd-bump.sh` | automatic; helper for the rest |
-| H-17 | A start works with networking off; a failing hook, a hook file that is not executable and a dangling hook link each stop the start | `h17-start-offline-and-failing-hook.sh` | automatic |
-| H-18 | In the real image, a path-scoped rule loads only after Claude reads a matching file, and the managed deny refuses edits to synced files under `bypassPermissions`; no login or network needed | `h18-scope-and-deny.sh` | automatic |
-| H-19 | Skills in Claude, a rule followed, a language rule on demand, a refused edit, the managed settings source | `manual/h19-bundle-behaviour.sh` | helper only |
+| H-14 | The wrappers, hooks and managed settings in the image are root-owned, read-only to the sandbox user and unmounted; the image holds no bundle copy; `BUNDLE_REPO_URL` and `SBX_BUNDLE_DIR` match; the clone is the one additional directory | `h14-wrappers-and-settings-in-image.sh` | automatic |
+| H-15 | `state/claude` links into the clone; Claude lists the always-on rules by their clone path and the skills, not the path-scoped rules; the container reads the clone through `~/.claude/rules` | `h15-bundle-linked-and-visible.sh` | automatic |
+| H-16 | The clone is live: an edit and a pull on the Mac show in the sandbox at once. A restart relinks the clone, drops a removed skill and stale copies, keeps an uncommitted edit, refreshes GSD (a stale GSD version and a hand-edited GSD skill are replaced) and keeps your own skills, memories, sessions, settings keys and `CLAUDE.md`; the helper bumps the GSD pin for real with a logged-in sandbox | `h16-live-clone-and-restart.sh`, `manual/h16-gsd-bump.sh` | automatic; helper for the rest |
+| H-17 | A start works with networking off, both with a clone linked and with none (it then says to run `sbx-bundle-clone`); a failing hook, a hook file that is not executable and a dangling hook link each stop the start | `h17-start-offline-and-failing-hook.sh` | automatic |
+| H-18 | In the real image, a path-scoped rule loads only after Claude reads a matching file; the managed deny refuses edits through `~/.claude/skills`, while the clone's rule and skill can be edited by their real path under `bypassPermissions` and `acceptEdits`; no login or network needed | `h18-scope-and-deny.sh` | automatic |
+| H-19 | The real bundle flow: login, clone of the private repo, skills in Claude, a rule followed, a language rule on demand, a rule amended on a branch, a refused edit through `~/.claude/skills`, the managed settings source | `manual/h19-bundle-behaviour.sh` | helper only |
 | H-20 | A sandbox folder without the project folder (a mistyped name) is refused, and nothing is created | `h20-mistyped-name-refused.sh` | automatic |
 | H-21 | An `SBX_NAME` that breaks the sandbox name rule is refused at start; the command never runs | `h21-bad-name-refused.sh` | automatic |
 | H-22 | The base image holds git, gh, Node 24, Python 3, uv, Temurin 21 and Maven at their pins as native binaries, plus the common Linux tools; a login shell in the sandbox finds them | `h22-toolchain-in-base.sh` | automatic |
@@ -62,6 +62,7 @@ What each check proves:
 | H-24 | `ccusage daily`, `monthly` and `session` in a sandbox shell report a planted transcript from `state/claude`, as the sandbox user, offline | `h24-ccusage-reports-usage.sh` | automatic |
 | H-25 | The images match versions.env (the record in the Claude image, GSD and ccusage at their pins, nothing under the mount point), and a build without build.sh stops naming the missing pin | `h25-images-match-versions.sh` | automatic |
 | H-26 | The test sandbox has exactly one mount, a bind at /home/sandbox/workspace; it is not privileged, drops every capability, adds none, has no-new-privileges and no unconfined profile, shares no host namespace (network, PID, IPC, UTS, user) and has no device or extra group (read from docker inspect) | `h26-isolation-by-inspect.sh` | automatic |
+| H-27 | In a fresh sandbox folder, offline: `sbx-claude` warns when nothing is linked and runs `claude`; `sbx-bundle-clone` links the clone at once and refuses a second run; a branch is pushed to the origin; a failed clone leaves no folder | `h27-bundle-clone-and-publish.sh` | automatic |
 | Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |
 
 ## Manual helpers (when something looks wrong)
@@ -82,7 +83,7 @@ bash tests/host/manual/h19-bundle-behaviour.sh
 | `h09-rebuild-resume.sh` | Confirm the earlier session resumes in `claude --continue`, then `/exit` | After a rebuild and a recreate the login survives and `claude --continue` resumes the earlier session |
 | `h13-doctor.sh` | Confirm `claude doctor` shows auto-updates disabled | `claude doctor` reports auto-updates disabled; the wording is for you to judge |
 | `h16-gsd-bump.sh` | Set `GSD_CORE_VERSION` in `versions.env` to the approved bump target when asked, confirm the session resumes in `claude --continue`, then put the pin back | After a GSD pin bump and a rebuild the new GSD is synced into `state/claude`, the login survives and `claude --continue` resumes |
-| `h19-bundle-behaviour.sh` | Follow five steps in Claude: the skills are listed, an always-on rule is followed, a language rule loads on a matching file, an edit of a synced rule is refused, `/status` shows the managed settings | The skills are listed, an always-on rule is followed, a language rule loads on demand, an edit of a synced rule is refused, and `/status` shows the managed settings |
+| `h19-bundle-behaviour.sh` | Run `sbx-gh-login`, `sbx-bundle-clone` (the private repo) and `sbx-claude`; then ask, read and amend a rule on a branch, try an edit through `~/.claude/skills`, check `/status`, and optionally push and open a PR | The clone works with a real login, the skills are listed, a rule is followed, a language rule loads on demand, a rule is amended on a branch in the clone, an edit through `~/.claude/skills` is refused, and `/status` shows the managed settings |
 
 - `h09-rebuild-resume.sh`, `h16-gsd-bump.sh` and `h19-bundle-behaviour.sh` need a Claude login in the test sandbox. `h07-login.sh` makes one.
 - Add `--no-cache` to `h09-rebuild-resume.sh` for a clean rebuild: `bash tests/host/manual/h09-rebuild-resume.sh --no-cache`. It is slow.
@@ -94,6 +95,7 @@ bash tests/host/manual/h19-bundle-behaviour.sh
 - **FAIL line:** shows the check ID and what went wrong, with detail lines under it.
 - **NOT RUN:** an earlier step failed: the setup, or an earlier link of the chain H-08, H-16, H-23, H-11, H-09, H-20, H-10. Fix that one first.
 - **Build failure:** the output names the log path, inside the run folder's `logs/`.
+- **H-27 failure:** H-27 runs offline in its own folder under the run folder, and its logs are next to its `run.log` there.
 - **"Mounts denied" during setup:** Docker Desktop does not share `$TMPDIR`. Add it in Settings, Resources, File sharing.
 - **H-10 says Docker created the missing folder:** Compose ignored `create_host_path: false`. That is a real finding, not a script bug.
   - Do not change `compose.yml`.
