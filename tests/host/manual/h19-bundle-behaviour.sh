@@ -56,10 +56,12 @@ print_steps() {
   printf 'A shell in the test sandbox opens next. Follow these steps in order:\n'
 
   if [ "$keptRealClone" -eq 1 ]; then
-    printf '  1. Run sbx-gh-login if it asks (open the URL on the Mac, enter the code).\n'
+    printf '  1. Run sbx-gh-login if it asks (open the URL on the Mac, enter the code;\n'
+    printf '     give a git name and email if it asks for them).\n'
     printf '     Skip sbx-bundle-clone: the real clone is there. Then run sbx-claude.\n'
   else
-    printf '  1. Run sbx-gh-login (open the URL it prints on the Mac, enter the code),\n'
+    printf '  1. Run sbx-gh-login (open the URL it prints on the Mac, enter the code;\n'
+    printf '     give a git name and email if it asks for them),\n'
     printf '     then sbx-bundle-clone, then sbx-claude.\n'
   fi
 

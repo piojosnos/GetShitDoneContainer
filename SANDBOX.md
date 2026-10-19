@@ -83,7 +83,7 @@ What lives where:
 
 ### gh and git identity
 
-- `sbx-gh-login` once in the sandbox; it persists. It runs `gh auth login` and `gh auth setup-git`, so git pushes and pulls over HTTPS with that login.
+- `sbx-gh-login` once in the sandbox; it persists. It runs `gh auth login` and `gh auth setup-git`, so git pushes and pulls over HTTPS with that login. Then it asks for `user.name` and `user.email` if they are empty; set ones are printed and left alone.
   - There is no keyring in the container, so gh stores its token as plain text in `state/gh/hosts.yml`. Git's helper entry is in `state/git/config`. Neither is ever in a clone.
   - `state/` sits next to your project folder, not inside it, so the token never ends up in a git repo.
 - `git config --global user.name "Your Name"` and `git config --global user.email you@example.com` persist in `state/git/config`.
@@ -164,7 +164,7 @@ First run, once per sandbox:
 
 | Step | Command | What it does |
 |---|---|---|
-| 1 | `sbx-gh-login` | Logs gh in and lets git use that login over HTTPS |
+| 1 | `sbx-gh-login` | Logs gh in and lets git use that login over HTTPS. It also asks for the git name and email if none is set. |
 | 2 | `sbx-bundle-clone` | Clones the repo into `SBX_BUNDLE_DIR` and links it. It refuses an existing folder and prints how to update or relink it. |
 | 3 | `sbx-claude` | Starts Claude. It warns and waits 5 seconds when no clone is linked. |
 
