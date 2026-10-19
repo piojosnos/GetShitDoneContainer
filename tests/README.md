@@ -12,7 +12,7 @@ A new check needs a real failure it would have caught, not a hypothetical one.
 | `tests/host/` and `tests/host/manual/` | `bash tests/host/run-all.sh` | the Mac, with Docker |
 | `tests/host-checklist.md` | read it | the Mac, by hand |
 
-On the Mac, `./host-test.sh` runs everything that needs Docker in one go: the host checks, the pin digests against the registry, the guard and both self-tests inside `sbx-hosttest`, and the guard in the Mac shell. It writes all output to `host-test.log` in the repo root and ends with one OK or FAIL line per step. Pass `--keep` to leave the test sandbox up for `tests/host/manual/`.
+On the Mac, `./host-test.sh` runs everything that needs Docker in one go: the host checks, the pin digests against the registry, the guard and both self-tests inside `sbx-hosttest`, and the guard in the Mac shell (with shellcheck and hadolint run from `sbx-base`). It writes all output to `host-test.log` in the repo root and ends with one OK or FAIL line per step. Pass `--keep` to leave the test sandbox up for `tests/host/manual/`.
 
 There is no CI yet. Docs and shell portability have no automated check; PR review covers them.
 
@@ -21,7 +21,7 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 | | |
 |---|---|
 | Runs | 18 rules that read the files only: pins and supply chain, start hooks, isolation greps, shellcheck and hadolint |
-| Where | New-layout sandbox: every rule passes, because sbx-base holds both linters. Old dev sandbox or Mac shell without the linters: the two linter rules FAIL as "not installed" and every other rule must PASS |
+| Where | New-layout sandbox: every rule passes, because sbx-base holds both linters. Old dev sandbox or a Mac shell by hand without the linters: the two linter rules FAIL as "not installed" and every other rule must PASS. `./host-test.sh` gives the Mac shell stand-ins that run both linters from `sbx-base`, so there every rule passes |
 | Catches | An unpinned or floating version, a pipe-to-shell install, the compromised GSD package, a mounted Docker socket or privileged mode, a badly named start hook, a shell or Dockerfile lint error |
 | Does not catch | Whether an image builds or behaves (`tests/host/` does) |
 
