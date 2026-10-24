@@ -49,7 +49,7 @@ show_context() {
 }
 
 # ------------------------------------------------------------------------------
-# host_checks: H-00 to H-26 and Coexistence; builds both images first
+# host_checks: H-00 to H-27 and Coexistence; builds both images first
 # ------------------------------------------------------------------------------
 host_checks() {
   bash tests/host/run-all.sh
