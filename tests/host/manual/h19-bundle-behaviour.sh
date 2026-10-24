@@ -16,6 +16,15 @@ host_init
 keptRealClone=0
 
 # ------------------------------------------------------------------------------
+# clone_git ARGS...: runs git on the clone inside the sandbox, stdout only
+# ------------------------------------------------------------------------------
+# The agent can write the clone's .git, so the Mac never runs git on it.
+# ------------------------------------------------------------------------------
+clone_git() {
+  docker exec "$CONTAINER" git -C /home/sandbox/workspace/best-practices "$@" 2>/dev/null </dev/null
+}
+
+# ------------------------------------------------------------------------------
 # Moves the fixture clone aside; the real clone needs the folder
 # ------------------------------------------------------------------------------
 # A clone of the real repo from an earlier run stays, and the steps say to skip
@@ -28,7 +37,7 @@ set_clone_aside() {
     return
   fi
 
-  cloneUrl=$(git -C "$RUN/best-practices" remote get-url origin 2>/dev/null)
+  cloneUrl=$(clone_git remote get-url origin)
 
   if [ "$cloneUrl" = "$(pin_of BUNDLE_REPO_URL)" ]; then
     keptRealClone=1
@@ -115,12 +124,12 @@ find_source_headers() {
 has_unpublished_branch() {
   local branchName aheadCount
 
-  for branchName in $(git -C "$RUN/best-practices" for-each-ref --format='%(refname:short)' refs/heads); do
+  for branchName in $(clone_git for-each-ref --format='%(refname:short)' refs/heads); do
     if [ "$branchName" = "main" ]; then
       continue
     fi
 
-    aheadCount=$(git -C "$RUN/best-practices" rev-list --count "origin/main..$branchName" 2>/dev/null)
+    aheadCount=$(clone_git rev-list --count "origin/main..$branchName")
 
     if [ "${aheadCount:-0}" -gt 0 ]; then
       return 0
@@ -139,7 +148,7 @@ check_clone() {
   if [ ! -d "$RUN/best-practices/.git" ]; then
     add_problem "$RUN/best-practices is not a git clone"
   else
-    originUrl=$(git -C "$RUN/best-practices" remote get-url origin 2>/dev/null)
+    originUrl=$(clone_git remote get-url origin)
 
     if [ "$originUrl" != "$(pin_of BUNDLE_REPO_URL)" ]; then
       add_problem "the clone's origin is '$originUrl'; versions.env pins '$(pin_of BUNDLE_REPO_URL)'"

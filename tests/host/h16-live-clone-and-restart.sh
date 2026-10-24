@@ -70,9 +70,12 @@ check_edit_is_live() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks a commit pushed to the origin and pulled on the Mac is live
+# Checks a commit pushed to the origin and pulled in the sandbox is live
 # ------------------------------------------------------------------------------
 # The pulled commit only adds a file, so the uncommitted edit does not block it.
+# The pull runs inside the container: the clone's .git is writable by the agent,
+# so the Mac never runs git on it. The container reaches the origin by its
+# mounted path, not by the clone's recorded Mac path.
 # ------------------------------------------------------------------------------
 check_pull_is_live() {
   local otherDir=$RUN/h16-other-$$
@@ -84,7 +87,8 @@ check_pull_is_live() {
   git_step "committing the pulled rule" git -C "$otherDir" -c user.name=sbx-hosttest \
     -c user.email=sbx-hosttest@example.invalid -c commit.gpgsign=false commit -q -m "h16 pulled rule" || return
   git_step "pushing the pulled rule to the origin" git -C "$otherDir" push -q origin main || return
-  git_step "pulling in the clone" git -C "$cloneDir" pull -q --ff-only || return
+  git_step "pulling in the sandbox" in_container git -C /home/sandbox/workspace/best-practices \
+    pull -q --ff-only /home/sandbox/workspace/bundle-origin.git main || return
 
   seenText=$(in_container cat /home/sandbox/workspace/state/claude/rules/h16-pulled.md)
 
@@ -205,4 +209,4 @@ check_clone_kept
 check_gsd_refreshed
 check_user_files_spared
 report_check H-16 "the clone is not live or the restart did not relink it and spare your files" \
-  "an edit and a pull in the clone on the Mac showed in the sandbox at once; a restart relinked the clone, dropped a removed skill and stale copies, kept the uncommitted edit, refreshed GSD and kept your skills, memories, sessions, settings key and CLAUDE.md"
+  "an edit of the clone on the Mac and a pull inside the sandbox showed in the sandbox at once; a restart relinked the clone, dropped a removed skill and stale copies, kept the uncommitted edit, refreshed GSD and kept your skills, memories, sessions, settings key and CLAUDE.md"

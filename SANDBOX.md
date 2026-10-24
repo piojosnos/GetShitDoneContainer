@@ -192,14 +192,13 @@ Update the practices:
 
 | From | Command |
 |---|---|
-| The Mac | `git -C "$SBX_DIR/best-practices" pull` |
 | A sandbox shell | `git -C /home/sandbox/workspace/best-practices pull` |
 | Claude | Ask it to pull the practices |
 
+- Never run git on the clone from the Mac, and do not open it in an IDE with git integration. The agent (and anything it runs) can write the clone's `.git`, and git runs the hooks and config found there. Run git inside the sandbox and review changes in the PR on GitHub.
 - An edit or a pull is on disk at once. A running Claude session sees a changed rule at its next session or after `/clear`.
 - A pull that adds or removes a skill shows after a restart, or after `/etc/sbx/start.d/10-best-practices`.
 - A clone made on the Mac while the sandbox runs needs that hook once.
-- If the Mac's git has no login for the private repo, pull inside the sandbox.
 
 Change a rule or a skill:
 
@@ -218,10 +217,10 @@ Edit protection:
 The trade:
 
 - Claude can change rules that every later session in this sandbox loads, also when a prompt injection asks it to.
-- `git -C "$SBX_DIR/best-practices" status` and `git diff` on the Mac show every change. Nothing reaches another sandbox without a PR you merge.
-- `sbx-gh-login` gives the sandbox gh's default scopes, so pushing to any of your repos is possible. "Push only with my go" is a rule Claude follows, not a lock.
-- A fine-grained token limited to the bundle repo caps that. It is optional.
-- Branch protection on a private repo may need a paid GitHub plan.
+- Review a change in its PR on GitHub. Another sandbox gets it only when it is pushed and that sandbox pulls.
+- `sbx-gh-login` gives the sandbox gh's default scopes, so a push to `main` of the bundle repo, or to any of your repos, is possible without a PR. "Push only with my go" is a rule Claude follows, not a lock.
+- Recommended: a fine-grained token limited to the bundle repo caps that.
+- Branch protection on `main` stops a direct push. On a private repo it may need a paid GitHub plan.
 
 Memories are not shipped. They belong to each project. A memory that proves general becomes a bundle rule by PR against the bundle repo.
 
