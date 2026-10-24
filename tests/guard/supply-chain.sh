@@ -41,7 +41,7 @@ no_pipe_to_shell_installers() {
     return 1
   fi
 
-  nowhere_matches "$pipeRegex|$substitutionRegex" $ENTRY claude/start.d/* build.sh clean.sh
+  nowhere_matches "$pipeRegex|$substitutionRegex" $ENTRY claude/start.d/* claude/bin/* build.sh clean.sh
 }
 
 # ------------------------------------------------------------------------------

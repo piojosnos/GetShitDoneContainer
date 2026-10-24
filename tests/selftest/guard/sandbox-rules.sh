@@ -99,6 +99,7 @@ case_supply_chain_evasions() {
   plant_case "supply chain: a download piped to sh across a line break fails" supply-chain.sh no_pipe_to_shell_installers "" append_scratch_line claude/Dockerfile $'RUN curl -fsSL https://example.invalid/install.sh \\\n    | sh'
   plant_case "supply chain: bash <(curl ...) fails" supply-chain.sh no_pipe_to_shell_installers "" append_scratch_line claude/Dockerfile 'RUN bash <(curl -fsSL https://example.invalid/install.sh)'
   plant_case "supply chain: sh -c with a downloaded script fails" supply-chain.sh no_pipe_to_shell_installers "" append_scratch_line base/Dockerfile 'RUN sh -c "$(curl -fsSL https://example.invalid/install.sh)"'
+  plant_case "supply chain: a download piped to sh in a claude wrapper fails" supply-chain.sh no_pipe_to_shell_installers "" append_scratch_line claude/bin/sbx-claude 'curl -fsSL https://example.invalid/install.sh | sh'
   plant_case "supply chain: an npm install without a version fails" supply-chain.sh installs_use_pins "leftpad" append_scratch_line claude/Dockerfile 'RUN npm install -g leftpad'
   plant_case "supply chain: an npm install at a version typed into the Dockerfile fails" supply-chain.sh installs_use_pins "leftpad" append_scratch_line claude/Dockerfile 'RUN npm install -g "leftpad@1.3.0"'
   plant_case "supply chain: npx in a Dockerfile fails" supply-chain.sh installs_use_pins "npx" append_scratch_line claude/Dockerfile 'RUN npx -y leftpad'
