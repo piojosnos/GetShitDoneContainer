@@ -33,6 +33,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 - ✓ Tools that every agent image needs (Linux utilities, git, gh, Node.js, Python, JDK 21, Maven) are defined in one shared base image. Agent images (ClaudeCode, later OpenCode) build on top of it. (Phase 2)
 - ✓ `ccusage` (e.g. `ccusage`, `ccusage daily`) runs from the container shell and reports real usage for that project's Claude sessions. (Phase 2)
 - ✓ Every pin lives in `versions.env` and `build.sh` passes it to both builds; a build without `build.sh` stops and names the missing pin; the npm, uv and Maven caches live in `<sandbox>/state` and survive recreate; host checks are proven with 25 of 25 passing (Phase 2)
+- ✓ The best-practices bundle lives in its own private GitHub repo; each sandbox keeps its own clone in `<sandbox>/best-practices` (via `sbx-gh-login` and `sbx-bundle-clone`), a start links it without network, and an edit goes back as a PR from inside the sandbox with the persisted gh login; proven by 27 of 27 host checks and an attended push and PR (Phase 2.2)
 
 ### Active
 
@@ -93,7 +94,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 | ClaudeCode first, OpenCode next, pluggable later | Get one sandbox solid before generalizing | — Pending |
 | Migration is documented, not scripted | Only about 4 existing sandboxes. Script only if it proves painful | — Pending |
 | One unattended host test run (`tests/host/run-all.sh`) plus a short manual pass verifies every image change on the Mac | The manual checklist was too slow, and Docker cannot run in the dev sandbox | Good: 14 of 14 checks and the 3 helpers passed on the Mac (2026-10-03) |
-| Ship the best-practices bundle as plain files in this repo, baked into the image and synced into the Claude config by a start hook | Stopgap until the bundle gets its own repo (Phase 2.2); every change is a reviewed diff, and a rebuild plus restart delivers it | Good: 19 of 19 host checks and the attended h19 pass on the Mac (Phase 1.2) |
+| Ship the best-practices bundle as plain files in this repo, baked into the image and synced into the Claude config by a start hook | Stopgap until the bundle gets its own repo (Phase 2.2); every change is a reviewed diff, and a rebuild plus restart delivers it | Superseded in Phase 2.2 by the per-sandbox clone; it served from Phase 1.2 (19 of 19 host checks and the attended h19) |
 | Guard the synced bundle with managed Edit deny rules, documented as not a security boundary | Stops Claude from rewriting the instructions every later session loads; a script can still write until the next start recopies | Good: deny proven in the real image (H-18) and with a negative control at the pinned Claude |
 | A start hook entry that is not an executable regular file stops the container start (folders and dot names are skipped) | A skipped hook means the agent starts with a stale bundle; failing closed makes the fault visible at once | Good: H-17 proves a non-executable hook and a dangling hook link stop the start in the real image (Phase 1.3) |
 | Real Docker runs only on the Mac; `tests/host/run-all.sh` passing there is the gate, and the manual helpers are diagnostic tools, not an ordered pass | Docker cannot run in the dev sandbox, and Actions, dind, a VM and the host socket were each rejected | Good: 19 passed, 0 failed, 0 not run on the Mac at `a821736` (Phase 1.4) |
@@ -102,6 +103,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 | One sandbox name rule, `^[a-z][a-z0-9-]{0,30}$`, defined once in `base/sbx-start-lib.sh`; a `name-check` service in `compose.yml` makes `up` refuse an uppercase name, and the entrypoint refuses the rest | Compose lowercases the project name instead of refusing it, so a mixed-case name could collide with another sandbox; docs and a guard rule read the rule from the code so they cannot drift | Good: H-03 and H-21 pass on the Mac, 21 passed, 0 failed (Phase 1.5) |
 | One `versions.env` holds every pin; `build.sh` is the only build path and the Dockerfiles have no defaults; every pin gets a human supply-chain review | One place to bump; a stale default can never be built by accident | Good: H-25 proves the images match `versions.env` and a bare build stops (Phase 2) |
 | Hold Maven at 3.9.11 | Maven 3.9.12 and later fail with an Input/output error when the local repository is on the Docker Desktop for Mac mount | Good: H-23 downloads into `state/m2` on the Mac; lift the hold once a release passes H-23 (Phase 2) |
+| Each sandbox keeps its own clone of the bundle repo inside its sandbox folder, linked into Claude's config by a start hook; the Mac never runs git on the clone | No compose change and no folder shared between sandboxes; a change reaches another sandbox only through a merged PR and a pull; the clone's `.git` is agent-writable, so host git on it is unsafe | Good: H-14 to H-19 and H-27 pass on the Mac, and PR #2 was opened from a new-layout sandbox (Phase 2.2) |
 
 ## Evolution
 
@@ -121,4 +123,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-13 after Phase 2*
+*Last updated: 2026-10-26 after Phase 2.2*
