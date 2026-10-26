@@ -49,7 +49,7 @@ show_context() {
 }
 
 # ------------------------------------------------------------------------------
-# host_checks: H-00 to H-26 and Coexistence; builds both images first
+# host_checks: H-00 to H-27 and Coexistence; builds both images first
 # ------------------------------------------------------------------------------
 host_checks() {
   bash tests/host/run-all.sh
@@ -123,17 +123,35 @@ sandbox_suites() {
 }
 
 # ------------------------------------------------------------------------------
+# make_linter_standin DIR TOOL: writes DIR/TOOL, which runs TOOL from sbx-base
+# ------------------------------------------------------------------------------
+# The stand-in mounts the current folder read-only at the same path.
+# ------------------------------------------------------------------------------
+make_linter_standin() {
+  printf '#!/bin/sh\nexec docker run --rm -v "$PWD:$PWD:ro" -w "$PWD" --entrypoint %s sbx-base:local "$@"\n' "$2" > "$1/$2"
+  chmod +x "$1/$2"
+}
+
+# ------------------------------------------------------------------------------
 # mac_guard: the guard in the Mac shell (stock bash 3.2 and BSD tools)
 # ------------------------------------------------------------------------------
-# The linters live in sbx-base, so their two rules may fail as not installed.
-# Any other FAIL line fails this step.
+# The Mac has no shellcheck or hadolint. Two stand-ins on PATH run them from
+# sbx-base:local, so every rule must pass here and any FAIL fails the step.
 # ------------------------------------------------------------------------------
 mac_guard() {
-  local output
+  local output standinDir status
 
-  output=$(bash tests/guard/run-all.sh 2>&1)
+  standinDir=$(mktemp -d "${TMPDIR:-/tmp}/sbx-linters.XXXXXX") || return 1
+  make_linter_standin "$standinDir" shellcheck
+  make_linter_standin "$standinDir" hadolint
+
+  output=$(PATH="$standinDir:$PATH" bash tests/guard/run-all.sh 2>&1)
+  status=$?
+  rm -rf "$standinDir"
+
   printf '%s\n' "$output"
-  ! printf '%s\n' "$output" | grep '^FAIL: ' | grep -qv -e '^FAIL: shellcheck_passes$' -e '^FAIL: hadolint_passes$'
+
+  return "$status"
 }
 
 # ------------------------------------------------------------------------------

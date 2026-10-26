@@ -46,8 +46,8 @@ check_workspace_mount() {
 # ------------------------------------------------------------------------------
 # check_sandbox_name: SBX_NAME must follow the sandbox name rule
 # ------------------------------------------------------------------------------
-# The name becomes a folder, so it is checked first.
-# LC_ALL=C makes [a-z] the 26 ASCII letters in any locale.
+# The name becomes a folder, so it is checked first; state and best-practices
+# are taken. LC_ALL=C makes [a-z] the 26 ASCII letters in any locale.
 # ------------------------------------------------------------------------------
 check_sandbox_name() {
   local LC_ALL=C
@@ -56,6 +56,13 @@ check_sandbox_name() {
     start_error "SBX_NAME \"${SBX_NAME:-}\" breaks the sandbox name rule: $sandboxNameRuleText. Example: my-project."
     return 1
   fi
+
+  case "$SBX_NAME" in
+    state | best-practices)
+      start_error "SBX_NAME \"$SBX_NAME\" is taken: $ws/$SBX_NAME is one of the sandbox's own folders. Pick another name."
+      return 1
+      ;;
+  esac
 }
 
 # ------------------------------------------------------------------------------

@@ -11,7 +11,7 @@ set -u
 # no_compromised_gsd_package: GSD comes only from @opengsd/gsd-core
 # ------------------------------------------------------------------------------
 no_compromised_gsd_package() {
-  nowhere_matches 'get-shit-done-cc|gsd-build' $SANDBOX_FILES claude/start.d/* claude/managed-settings.json best-practices/rules/* best-practices/skills/*/* SANDBOX.md tests/host-checklist.md tests/host/*.sh tests/host/manual/*.sh tests/host/support/* tests/selftest/*.sh tests/selftest/*/*.sh tests/selftest/*/support/*
+  nowhere_matches 'get-shit-done-cc|gsd-build' $SANDBOX_FILES claude/start.d/* claude/bin/* claude/managed-settings.json SANDBOX.md tests/host-checklist.md tests/host/*.sh tests/host/manual/*.sh tests/host/support/*.* tests/host/support/bundle/rules/* tests/host/support/bundle/skills/*/* tests/selftest/*.sh tests/selftest/*/*.sh tests/selftest/*/support/*
 }
 
 # ------------------------------------------------------------------------------
@@ -41,7 +41,7 @@ no_pipe_to_shell_installers() {
     return 1
   fi
 
-  nowhere_matches "$pipeRegex|$substitutionRegex" $ENTRY claude/start.d/* build.sh clean.sh
+  nowhere_matches "$pipeRegex|$substitutionRegex" $ENTRY claude/start.d/* claude/bin/* build.sh clean.sh
 }
 
 # ------------------------------------------------------------------------------
@@ -98,14 +98,15 @@ versions_file_has_one_pin_per_line() {
 }
 
 # ------------------------------------------------------------------------------
-# pins_are_exact: _VERSION is x.y.z, _IMAGE is tag@sha256:digest, no other kind
+# pins_are_exact: _VERSION x.y.z, _IMAGE tag@sha256, _URL https, no other kind
 # ------------------------------------------------------------------------------
 pins_are_exact() {
   local ok=0
 
   pin_lines | grep -E '^[A-Z_]+_VERSION=' | grep -Ev '^[A-Z_]+_VERSION=[0-9]+\.[0-9]+\.[0-9]+$' | report_lines "versions.env: not an exact x.y.z version: " || ok=1
   pin_lines | grep -E '^[A-Z_]+_IMAGE=' | grep -Ev '^[A-Z_]+_IMAGE=[a-z0-9][a-z0-9./-]*:[A-Za-z0-9._-]+@sha256:[0-9a-f]{64}$' | report_lines "versions.env: not an image tag with its @sha256 digest: " || ok=1
-  pin_lines | grep -Ev '^[A-Z_]+_(VERSION|IMAGE)=' | sed 's/=.*//' | report_lines "versions.env: the name must end in _VERSION or _IMAGE: " || ok=1
+  pin_lines | grep -E '^[A-Z_]+_URL=' | grep -Ev '^[A-Z_]+_URL=https://[^@[:space:]]+$' | report_lines "versions.env: not an https:// URL without credentials: " || ok=1
+  pin_lines | grep -Ev '^[A-Z_]+_(VERSION|IMAGE|URL)=' | sed 's/=.*//' | report_lines "versions.env: the name must end in _VERSION, _IMAGE or _URL: " || ok=1
 
   return "$ok"
 }
