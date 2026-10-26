@@ -20,7 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1.5: Host test fixes** (INSERTED) - The known bugs in the host tests and entrypoint from earlier reviews are fixed, each proven on the Mac (completed 2026-10-08)
 - [x] **Phase 2: Pinned Toolchain, GSD, and ccusage** - Every tool is baked in at a version pinned in `versions.env`, the image's GSD wins over persisted state, and `ccusage` reports real usage (completed 2026-10-13)
 - [x] **Phase 2.1: Shell diet** (INSERTED) - The guard keeps only the rules that protect the images and the sandbox, the fake docker and host self-tests are gone, and comments are schematic (completed 2026-10-16)
-- [ ] **Phase 2.2: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs
+- [x] **Phase 2.2: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs (completed 2026-10-26)
 - [ ] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login
 - [ ] **Phase 4: Jump-In and Sandbox Housekeeping** - One command drops you into a sandbox shell or Claude, and you can list and clean up sandboxes safely
 - [ ] **Phase 5: Migration, Docs, and Old-Layout Retirement** - Existing sandboxes move over with history intact, the old `cc-*` layout is gone, and the README matches the repo
@@ -364,10 +364,31 @@ Plans:
   1. The bundle repo exists on GitHub, and this repo no longer carries its own copy of the bundle (one source of truth).
   2. Each sandbox has its own clone of the bundle repo in its sandbox folder (for example `<sandbox>/best-practices`, a plain subfolder of the one mount, so no compose change). Edits there survive container recreate and image rebuild.
   3. From inside the sandbox, the user can edit a skill or rule in the clone, commit on a branch, push, and open a PR against the bundle repo using the sandbox's persisted gh login.
-  4. Creating a sandbox pulls the latest bundle with a best-effort `git pull --ff-only`. With no network the start still succeeds, using the clone as it is. Running `git pull` in the clone updates a running sandbox, through the same sync rules as Phase 1.2.
+  4. A new sandbox gets the latest bundle by cloning it (`sbx-bundle-clone`, after `sbx-gh-login`). The start never pulls: the user updates the clone with `git pull` on the Mac, in the sandbox, or by asking Claude, and the running sandbox sees the change at once. A start with no clone, or with no network, still succeeds.
   5. No folder is shared read-write between sandboxes: a change made in one sandbox reaches another only after its PR is merged and the other sandbox pulls.
 
-**Plans**: TBD
+**Plans:** 8/8 plans complete
+
+Plans:
+**Wave 1**
+- [x] 02.2-01-PLAN.md: Tracer: the sandbox's clone is linked into Claude (BUNDLE_REPO_URL and SBX_BUNDLE_DIR as image ENV, the link hook, no bundle in the image, the URL guard rule, the hook self-test)
+- [x] 02.2-02-PLAN.md: The private bundle repo created and its main seeded from best-practices/ by subtree split (blocking checkpoints: create, then the seed history choice and the one push to main)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 02.2-03-PLAN.md: Claude may edit the clone from any project folder (managed settings); sbx-gh-login, sbx-bundle-clone and sbx-claude on PATH; state and best-practices refused as sandbox names
+- [x] 02.2-04-PLAN.md: The bundle PR (generated headers gone, the "where the practices live" rule) pushed after the go and merged by the user
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 02.2-05-PLAN.md: Host checks on a fixture clone: the run folder's origin and clone, H-14 wrappers and settings, H-15 links and Claude's view, H-17 offline with and without a clone
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 02.2-06-PLAN.md: New H-27 (wrappers, live links, a push, offline); H-16 live edits and pulls plus a relinking restart; H-09 keeps a clone file; H-18 settings on the clone; the H-19 real-flow helper
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 02.2-07-PLAN.md: best-practices/ leaves this repo; SANDBOX.md, the host checklist, the memory prompt and the test map follow the clone model
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 02.2-08-PLAN.md: Final gate, planning-ID scan, feat/best-practices-from-git for one code PR, then the Mac run with 27 checks and the attended real flow (checkpoint)
 
 ### Phase 3: Remembered Sandboxes and One-Command Upgrade
 
@@ -456,7 +477,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 2.2 → 3 �
 | 1.5. Host test fixes | 16/16 | Complete    | 2026-10-08 |
 | 2. Pinned Toolchain, GSD, and ccusage | 9/9 | Complete    | 2026-10-13 |
 | 2.1. Shell diet | 11/11 | Complete    | 2026-10-16 |
-| 2.2. Best-practices from git, editable from any sandbox | 0/TBD | Not started | - |
+| 2.2. Best-practices from git, editable from any sandbox | 8/8 | Complete    | 2026-10-26 |
 | 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
 | 4. Jump-In and Sandbox Housekeeping | 0/TBD | Not started | - |
 | 5. Migration, Docs, and Old-Layout Retirement | 0/TBD | Not started | - |
