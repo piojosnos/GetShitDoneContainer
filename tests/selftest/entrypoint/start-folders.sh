@@ -154,6 +154,13 @@ case_name_rule() {
   start_with_name "$tooLongName" "$WORK/name/too-long.out"
   expect "entrypoint: a name of 32 characters is refused" refused_by_name_rule "$NAME_RC" "$WORK/name/too-long.out"
 
+  start_with_name state "$WORK/name/state.out"
+  expect "entrypoint: the state folder name is refused (state)" refused_by_name_rule "$NAME_RC" "$WORK/name/state.out"
+
+  start_with_name best-practices "$WORK/name/best-practices.out"
+  expect "entrypoint: the clone folder name is refused (best-practices)" refused_by_name_rule "$NAME_RC" "$WORK/name/best-practices.out"
+  expect "entrypoint: a taken name says so" has_text "$WORK/name/best-practices.out" "is taken:"
+
   expect "entrypoint: the name error names SBX_NAME and the value" has_text "$WORK/name/upper.out" 'SBX_NAME "HostTest"'
   expect "entrypoint: the name error states the rule in plain words" has_text "$WORK/name/upper.out" "$ruleText"
   expect "entrypoint: the name error gives a valid example" has_text "$WORK/name/upper.out" "Example: my-project."

@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# Clones the best-practices repo into the sandbox and links it into Claude
+# ------------------------------------------------------------------------------
+# Usage: sbx-bundle-clone (run sbx-gh-login first for a private repo)
+# It never overwrites: an existing folder is refused and left as it is.
+# ------------------------------------------------------------------------------
+set -eu
+
+: "${BUNDLE_REPO_URL:?BUNDLE_REPO_URL is not set}"
+: "${SBX_BUNDLE_DIR:?SBX_BUNDLE_DIR is not set}"
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+if [ -e "$SBX_BUNDLE_DIR" ]; then
+  echo "[sbx] ERROR: $SBX_BUNDLE_DIR already exists; nothing was changed." >&2
+  echo "[sbx]        To update it: git -C $SBX_BUNDLE_DIR pull. To relink it: /etc/sbx/start.d/10-best-practices" >&2
+  exit 1
+fi
+
+if ! GIT_TERMINAL_PROMPT=0 git clone "$BUNDLE_REPO_URL" "$SBX_BUNDLE_DIR"; then
+  echo "[sbx] ERROR: cannot clone $BUNDLE_REPO_URL. A private repo needs sbx-gh-login first." >&2
+  exit 1
+fi
+
+/etc/sbx/start.d/10-best-practices

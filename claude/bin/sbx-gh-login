@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# Logs gh in to GitHub, lets git use that login, and sets a git name and email
+# ------------------------------------------------------------------------------
+# Usage: sbx-gh-login [gh auth login options]
+# The token and git's helper entry live in state/, so both survive a rebuild.
+# The git name and email are asked for only when empty; set ones are left alone.
+# ------------------------------------------------------------------------------
+set -eu
+
+# ------------------------------------------------------------------------------
+# Prints a global git setting, or asks for it when it is empty
+# ------------------------------------------------------------------------------
+# Usage: ask_git_setting user.name "Your name"
+# With no terminal on stdin it says so and leaves the setting empty.
+# ------------------------------------------------------------------------------
+ask_git_setting() {
+  local settingName=$1
+  local promptText=$2
+  local settingValue
+
+  settingValue=$(git config --global "$settingName" || true)
+
+  if [ -n "$settingValue" ]; then
+    echo "[sbx] git $settingName is $settingValue"
+
+    return
+  fi
+
+  if [ ! -t 0 ]; then
+    echo "[sbx] git $settingName is not set and there is no terminal to ask." >&2
+    echo "[sbx] Set it with: git config --global $settingName <value>" >&2
+
+    return
+  fi
+
+  read -r -p "$promptText: " settingValue || true
+
+  if [ -z "$settingValue" ]; then
+    echo "[sbx] git $settingName stays empty; commits will fail until it is set." >&2
+
+    return
+  fi
+
+  git config --global "$settingName" "$settingValue"
+}
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+gh auth login --hostname github.com --git-protocol https "$@"
+gh auth setup-git
+
+ask_git_setting user.name "Git name for your commits"
+ask_git_setting user.email "Git email for your commits"

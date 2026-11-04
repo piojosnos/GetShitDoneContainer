@@ -3,7 +3,7 @@
 # H-17: the sandbox starts offline; a bad or failing start hook stops it
 # ------------------------------------------------------------------------------
 # Needs: images built; the run folder (not the running sandbox)
-# Plain docker run --rm containers on $RUN/h17; the running sandbox stays alone.
+# Plain docker run --rm containers; offline with a clone linked, and with none.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -21,12 +21,20 @@ require_run_folder() {
 }
 
 # ------------------------------------------------------------------------------
-# Creates the two bad hook folders; safe to run again on the same folder
+# Creates the start folders and the clone; safe to run again on the same folder
 # ------------------------------------------------------------------------------
-# One holds a hook file with mode 644, the other a link that points nowhere.
+# h17 gets a clone and the two bad hook folders (a hook file with mode 644, a
+# link that points nowhere); h17-noclone gets no clone.
 # ------------------------------------------------------------------------------
-make_hook_folders() {
-  mkdir -p "$RUN/h17/hooks-not-executable" "$RUN/h17/hooks-dangling"
+make_start_folders() {
+  mkdir -p "$RUN/h17/hooks-not-executable" "$RUN/h17/hooks-dangling" "$RUN/h17/hosttest" "$RUN/h17/state"
+  mkdir -p "$RUN/h17-noclone/hosttest" "$RUN/h17-noclone/state"
+
+  if [ ! -d "$RUN/h17/best-practices" ]; then
+    if ! make_bundle_clone "$RUN/bundle-origin.git" "$RUN/h17/best-practices" >/dev/null 2>&1; then
+      add_problem "could not clone $RUN/bundle-origin.git into $RUN/h17/best-practices"
+    fi
+  fi
 
   printf '#!/bin/sh\nexit 0\n' >"$RUN/h17/hooks-not-executable/10-not-executable"
   chmod 644 "$RUN/h17/hooks-not-executable/10-not-executable"
@@ -38,36 +46,41 @@ make_hook_folders() {
 }
 
 # ------------------------------------------------------------------------------
-# Runs one container with the compose restrictions on the h17 folder
+# Runs one container with the compose restrictions on a folder
 # ------------------------------------------------------------------------------
-# DOCKER_ARGS adds the per-case flags; the status returned is docker's.
+# run_restricted_container FOLDER [DOCKER_ARG...] mounts FOLDER at
+# /home/sandbox/workspace; the DOCKER_ARGs add the per-case flags.
 # ------------------------------------------------------------------------------
 run_restricted_container() {
+  local folder=$1
+
+  shift
   run_timeout 60 docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true \
-    -e SBX_NAME=hosttest --mount "type=bind,source=$RUN/h17,target=/home/sandbox/workspace" \
+    -e SBX_NAME=hosttest --mount "type=bind,source=$folder,target=/home/sandbox/workspace" \
     "$@" sbx-claude:local sh -c 'echo h17-command-ran' </dev/null 2>&1
 }
 
 # ------------------------------------------------------------------------------
-# Runs the offline container, one broken-config container and two bad-hook ones
+# Runs two offline containers, one broken-config one and two bad-hook ones
 # ------------------------------------------------------------------------------
-# The offline one has --network none. Each bad hook folder is mounted read-only
-# over /etc/sbx/start.d, so only its entries are seen.
+# The offline ones have --network none: one with the clone, one with none.
+# Each bad hook folder is mounted read-only over /etc/sbx/start.d.
 # ------------------------------------------------------------------------------
 run_containers() {
-  mkdir -p "$RUN/h17/hosttest" "$RUN/h17/state"
-
-  offlineOutput=$(run_restricted_container)
+  offlineOutput=$(run_restricted_container "$RUN/h17")
   offlineStatus=$?
 
-  brokenOutput=$(run_restricted_container -e CLAUDE_CONFIG_DIR=/proc/no-such-dir)
+  noCloneOutput=$(run_restricted_container "$RUN/h17-noclone")
+  noCloneStatus=$?
+
+  brokenOutput=$(run_restricted_container "$RUN/h17" -e CLAUDE_CONFIG_DIR=/proc/no-such-dir)
   brokenStatus=$?
 
-  notExecutableOutput=$(run_restricted_container \
+  notExecutableOutput=$(run_restricted_container "$RUN/h17" \
     --mount "type=bind,source=$RUN/h17/hooks-not-executable,target=/etc/sbx/start.d,readonly")
   notExecutableStatus=$?
 
-  danglingOutput=$(run_restricted_container \
+  danglingOutput=$(run_restricted_container "$RUN/h17" \
     --mount "type=bind,source=$RUN/h17/hooks-dangling,target=/etc/sbx/start.d,readonly")
   danglingStatus=$?
 }
@@ -82,6 +95,34 @@ check_offline_start() {
 
   if [[ "$offlineOutput" != *"h17-command-ran"* ]]; then
     add_problem "the offline start did not run its command; got: $(first_lines "$offlineOutput")"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Checks the offline start linked the clone it found
+# ------------------------------------------------------------------------------
+check_offline_links() {
+  check_bundle_links "$RUN/h17/state/claude" "$RUN/h17/best-practices"
+
+  if [[ "$offlineOutput" != *"[sbx] best-practices linked from /home/sandbox/workspace/best-practices"* ]]; then
+    add_problem "the offline start did not print the linked line; got: $(first_lines "$offlineOutput")"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Checks a start with no clone exits 0, runs its command and says what to run
+# ------------------------------------------------------------------------------
+check_offline_without_clone() {
+  if [ "$noCloneStatus" -ne 0 ]; then
+    add_problem "the start with no clone exited $noCloneStatus; got: $(first_lines "$noCloneOutput")"
+  fi
+
+  if [[ "$noCloneOutput" != *"h17-command-ran"* ]]; then
+    add_problem "the start with no clone did not run its command; got: $(first_lines "$noCloneOutput")"
+  fi
+
+  if [[ "$noCloneOutput" != *"[sbx] no best-practices clone at /home/sandbox/workspace/best-practices; run sbx-bundle-clone"* ]]; then
+    add_problem "the start with no clone did not print the no-clone line; got: $(first_lines "$noCloneOutput")"
   fi
 }
 
@@ -146,15 +187,16 @@ check_bad_hook_stop() {
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_run_folder || exit 1
-make_hook_folders
+make_start_folders
 run_containers
 check_offline_start
 check_offline_gsd
-check_bundle_rules_synced "$RUN/h17/state/claude" "the offline start did not sync the rules"
+check_offline_links
+check_offline_without_clone
 check_bad_hook_stop "a failing start hook" "$brokenStatus" "$brokenOutput" "[sbx] ERROR: start hook"
 check_bad_hook_stop "the hook file that is not executable" "$notExecutableStatus" "$notExecutableOutput" \
   "[sbx] ERROR: start hook /etc/sbx/start.d/10-not-executable is not executable; the container was not started."
 check_bad_hook_stop "the dangling hook link" "$danglingStatus" "$danglingOutput" \
   "[sbx] ERROR: start hook /etc/sbx/start.d/10-dangling is not a regular file; the container was not started."
 report_check H-17 "the offline start or a start hook stop is wrong" \
-  "starts and syncs the bundle and GSD $(pin_of GSD_CORE_VERSION) with --network none, naming no npx and no @latest; a failing hook, a hook file that is not executable and a dangling hook link each stop the start with [sbx] ERROR"
+  "starts with --network none, syncs GSD $(pin_of GSD_CORE_VERSION) naming no npx and no @latest, and links a clone that is there; starts with no clone and says to run sbx-bundle-clone; a failing hook, a hook file that is not executable and a dangling hook link each stop the start with [sbx] ERROR"

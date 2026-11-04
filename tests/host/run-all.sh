@@ -7,6 +7,7 @@
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
+. "$(dirname "$0")/lib-bundle.sh"
 host_init
 RUN=""
 unset SBXTEST_DIR
@@ -18,9 +19,9 @@ unset SBXTEST_DIR
 # fail for an environmental reason.
 # ------------------------------------------------------------------------------
 fatalCheck="h00-compose-v2.sh"
-noSandboxCheckList="h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh h17-start-offline-and-failing-hook.sh h21-bad-name-refused.sh h25-images-match-versions.sh"
-sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h14-bundle-in-image.sh h15-bundle-synced-and-visible.sh h18-scope-and-deny.sh h22-toolchain-in-base.sh h24-ccusage-reports-usage.sh h26-isolation-by-inspect.sh"
-chainCheckList="h08-history-survives-recreate.sh h16-sync-refreshes-and-spares.sh h23-caches-survive-recreate.sh h11-stop-is-quick-and-safe.sh h09-rebuild-keeps-files-no-volumes.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
+noSandboxCheckList="h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh h17-start-offline-and-failing-hook.sh h21-bad-name-refused.sh h25-images-match-versions.sh h27-bundle-clone-and-publish.sh"
+sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h14-wrappers-and-settings-in-image.sh h15-bundle-linked-and-visible.sh h18-scope-and-deny.sh h22-toolchain-in-base.sh h24-ccusage-reports-usage.sh h26-isolation-by-inspect.sh"
+chainCheckList="h08-history-survives-recreate.sh h16-live-clone-and-restart.sh h23-caches-survive-recreate.sh h11-stop-is-quick-and-safe.sh h09-rebuild-keeps-files-no-volumes.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
 finalCheckList="coexistence.sh"
 
 remainingList="$fatalCheck $noSandboxCheckList $sandboxCheckList $chainCheckList $finalCheckList"
@@ -197,6 +198,22 @@ create_run_folder() {
 }
 
 # ------------------------------------------------------------------------------
+# create_bundle_clone: makes the fixture origin and the sandbox's clone
+# ------------------------------------------------------------------------------
+# Both sit in the run folder. The run stops when either step fails.
+# ------------------------------------------------------------------------------
+create_bundle_clone() {
+  local cloneLog=$RUN/logs/bundle-clone.log
+
+  if ! make_bundle_origin "$RUN/bundle-origin.git" >"$cloneLog" 2>&1 ||
+    ! make_bundle_clone "$RUN/bundle-origin.git" "$RUN/best-practices" >>"$cloneLog" 2>&1; then
+    fatal "could not make the fixture bundle clone (log: $cloneLog)"
+  fi
+
+  info "bundle clone: $RUN/best-practices"
+}
+
+# ------------------------------------------------------------------------------
 # record_old_layout: writes the old containers and folders to the run logs
 # ------------------------------------------------------------------------------
 # Coexistence compares against these files at the end.
@@ -284,6 +301,7 @@ install_traps
 print_docker_target
 check_docker_reachable
 create_run_folder
+create_bundle_clone
 record_old_layout
 remove_leftover_test_container
 run_compose_check

@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# Runs Claude, after a loud warning when no best-practices clone is linked
+# ------------------------------------------------------------------------------
+# Usage: sbx-claude [claude arguments]
+# ------------------------------------------------------------------------------
+set -eu
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+if [ ! "${CLAUDE_CONFIG_DIR:?CLAUDE_CONFIG_DIR is not set}/rules" -ef "${SBX_BUNDLE_DIR:?SBX_BUNDLE_DIR is not set}/rules" ]; then
+  {
+    echo ""
+    echo "[sbx] ================================================================"
+    echo "[sbx] WARNING: no best-practices clone is linked into Claude."
+    echo "[sbx] Claude starts WITHOUT your standing rules and skills."
+    echo "[sbx] Press Ctrl-C now and run sbx-gh-login, then sbx-bundle-clone."
+    echo "[sbx] If $SBX_BUNDLE_DIR already exists,"
+    echo "[sbx] /etc/sbx/start.d/10-best-practices relinks it."
+    echo "[sbx] ================================================================"
+  } >&2
+  sleep 5
+fi
+
+exec claude "$@"

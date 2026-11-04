@@ -1,7 +1,6 @@
-# Both images build from the repo root; only these folders and versions.env enter the build.
+# Both images build from the repo root; only base, claude and versions.env enter the build.
 *
 !base
 !claude
-!best-practices
 !versions.env
 **/.DS_Store

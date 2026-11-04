@@ -7,7 +7,7 @@ How to use it:
 1. Start the sandbox for the project and open Claude in the project folder.
 2. Paste the prompt below.
 3. Review the sorted list Claude shows, adjust it, then say go.
-4. Turn the "general, not in the bundle" items into a PR to `best-practices/` in this repo.
+4. Turn the "general, not in the bundle" items into a PR against the bundle repo: edit the clone at `/home/sandbox/workspace/best-practices` on a branch (see [`SANDBOX.md`](../SANDBOX.md), "Best-practices bundle").
 
 ## Prompt
 
@@ -17,7 +17,8 @@ came from this project's own memories. I want each piece of guidance to live in 
 one place.
 
 1. Read every file in ~/.claude/rules/ and every SKILL.md under ~/.claude/skills/ that
-   is listed in ~/.claude/.best-practices-skills. These are the bundle; never edit them.
+   is listed in ~/.claude/.best-practices-skills. These are the bundle, links into the
+   clone at /home/sandbox/workspace/best-practices; do not edit them during this task.
 2. Read all of your memories for this project, the project's CLAUDE.md (repo root and
    .claude/CLAUDE.md, if present) and ~/.claude/CLAUDE.md.
 3. Sort every memory and every CLAUDE.md item into one of these groups:
