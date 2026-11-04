@@ -1,43 +1,43 @@
 ---
 gsd_state_version: "1.0"
-current_phase: "02.2"
-current_phase_name: Best-practices from git, editable from any sandbox
+current_phase: 3
+current_phase_name: Remembered Sandboxes and One-Command Upgrade
 status: planning
-stopped_at: Phase 02.1 complete, ready to plan Phase 02.2
-last_updated: "2026-10-16T04:12:27.983Z"
-last_activity: 2026-10-16
-last_activity_desc: Phase 02.1 complete, transitioned to Phase 02.2
-state_head: 1ab464ae0b23c6cecae898e63fd6793f42561f13
+stopped_at: Phase 02.2 complete, ready to plan Phase 3
+last_updated: "2026-10-26T21:49:34.523Z"
+last_activity: 2026-10-26
+last_activity_desc: Phase 02.2 complete, transitioned to Phase 3
+state_head: cf3d31d30579ec99251acef4d6a8631c83da498b
 progress:
   total_phases: 14
-  completed_phases: 8
-  total_plans: 64
-  completed_plans: 64
-  percent: 57
+  completed_phases: 9
+  total_plans: 72
+  completed_plans: 72
+  percent: 64
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-08)
+See: .planning/PROJECT.md (updated 2026-10-26)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 02.1 — Shell diet
+**Current focus:** Phase 3: Remembered Sandboxes and One-Command Upgrade
 
 ## Current Position
 
-Phase: 02.2 — Best-practices from git, editable from any sandbox
+Phase: 3 — Remembered Sandboxes and One-Command Upgrade
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-16 — Phase 02.1 complete, transitioned to Phase 02.2
+Last activity: 2026-10-26 — Phase 02.2 complete, transitioned to Phase 3
 
-Progress: [████████████████████] 44/44 plans ([██████░░░░] 57%)
+Progress: [████████████████████] 44/44 plans ([██████░░░░] 64%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 64
+- Total plans completed: 72
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -53,6 +53,7 @@ Progress: [████████████████████] 44/44 p
 | 01.5 | 16 | - | - |
 | 02 | 9 | - | - |
 | 02.1 | 11 | - | - |
+| 02.2 | 8 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -127,6 +128,13 @@ Progress: [████████████████████] 44/44 p
 | Phase 02.1 P09 | 25min | 3 tasks | 25 files |
 | Phase 02.1 P10 | 40 min | 3 tasks | 2 files |
 | Phase 02.1 P11 | 30 min | 2 tasks | 2 files |
+| Phase 02.2 P01 | 52 min | 2 tasks | 7 files |
+| Phase 02.2 P02 | n/a | 3 tasks | 0 files |
+| Phase 02.2 P03 | 23 min | 3 tasks | 8 files |
+| Phase 02.2 P05 | 25 min | 3 tasks | 11 files |
+| Phase 02.2 P06 | 25 min | 3 tasks | 7 files |
+| Phase 02.2 P07 | 20min | 3 tasks | 16 files |
+| Phase 02.2 P08 | 3 sessions | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -237,6 +245,18 @@ Recent decisions affecting current work:
 - [Phase 02.1]: Plan 08: host test libraries, runner, manual helpers and probe use 80-column banners; run-all.sh points to tests/README.md
 - [Phase 02.1]: Plan 10: host-test.sh (Mac entry point, log host-test.log) joins the code branch chore/shell-diet at the user's request; branch tip f79785f, 26 commits
 - [Phase 02.1]: Re-scan: 18 of 20 proposals approved for a second code PR; R-03 (clean.sh trim) and R-14 (SIGTERM-only run_timeout) rejected
+- [Phase 02.2]: SBX_BUNDLE_DIR is one image ENV (/home/sandbox/workspace/best-practices) read with no default; links use two fixed relative targets and an -ef test stops a start that misses the clone
+- [Phase 02.2]: The Claude image carries no bundle copy; the sandbox's own clone is the only source Claude reads
+- [Phase 02.2]: Seeded the bundle repo piojosnos/claude-best-practices (private) with the reworded history: planning-ID subject scopes became (bundle); one push to main, no force
+- [Phase 02.2]: Drop the rules deny from managed settings; a deny through a symlinked folder also blocks the clone's real path
+- [Phase 02.2]: sbx-bundle-clone never overwrites; any existing path is refused with update and relink commands
+- [Phase 02.2]: sbx-claude warns when ~/.claude/rules does not resolve to the clone's rules, then waits 5 seconds
+- [Phase 02.2]: Guard scan lists the host fixture files by glob so a folder never reaches grep; H-14 expects exactly the two skill deny entries (a rules deny fails it)
+- [Phase 02.2]: H-27 holds its in-container script with read -d from a quoted heredoc so bash 3.2 on the Mac never parses it as a command substitution
+- [Phase 02.2]: H-18 treats the final text 'h18 accept edit' as proof both the bypassPermissions and acceptEdits real-path edits of the clone went through
+- [Phase 02.2]: Plan 07: h14 keeps its negative probe for a bundle copy in the image (a path literal), because removing it would weaken the no-copy check
+- [Phase 02.2]: sbx-gh-login asks for the git name and email when they are empty, because a fresh sandbox has no identity and the first commit in the clone failed
+- [Phase 02.2]: host-test.sh runs shellcheck and hadolint in the Mac-shell guard from sbx-base through two stand-ins, so any guard FAIL fails the step
 
 ### Pending Todos
 
@@ -254,6 +274,7 @@ None yet.
 - [Phase 1.4]: Code review left 7 findings open (WR-03, WR-04, IN-01 to IN-05); WR-01, WR-02, WR-05 and WR-06 were fixed in Phase 1.5. See 01.4-REVIEW-DISPOSITION.md
 - [Phase 1.4]: Open note: the user's Mac `git status` listed 10 files as modified in the code worktree while the sandbox shows it clean; cause pending
 - [Phase 1.5]: The H-03 gap is closed: plans 12 to 15 added the entrypoint name rule and the Compose name check, and the Mac run of 01.5-16 passed 21 of 21 checks. 01.5 IN-01 to IN-07 stay open. See 01.5-16-SUMMARY.md
+- [Phase 2.2]: UAT passed 3 of 3; two todos from it (H-19 step 6 wording, `sbx-gh-login` re-running the login) plus the review todos in `.planning/todos/pending/`. The code branch `feat/best-practices-from-git` is not pushed yet, so `origin/main` still carries `best-practices/` until its PR is merged
 
 ### Quick Tasks Completed
 
@@ -282,6 +303,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-10-15T05:59:13.005Z
-Stopped at: Phase 02.1 complete, ready to plan Phase 02.2
+Last session: 2026-10-26
+Stopped at: Phase 02.2 complete, ready to plan Phase 3
 Resume file: None
