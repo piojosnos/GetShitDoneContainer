@@ -4,7 +4,7 @@
 # ------------------------------------------------------------------------------
 # Usage: sbx-upgrade NAME [BUILD_OPTION...]
 # Options go to build.sh, for example --no-cache. A failed build leaves the
-# sandbox as it was.
+# sandbox as it was. The last line is the tool versions of the new container.
 # ------------------------------------------------------------------------------
 
 # The library sets repoDir.
@@ -53,6 +53,16 @@ recreate_sandbox() {
 }
 
 # ------------------------------------------------------------------------------
+# print_tool_versions NAME: prints the versions line of the recreated container
+# ------------------------------------------------------------------------------
+print_tool_versions() {
+  if ! docker exec "sbx-$1" cat /etc/sbx/tool-versions </dev/null; then
+    sbx_error "could not read /etc/sbx/tool-versions in sbx-$1"
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 [ "$#" -ge 1 ] || sbx_usage 'NAME [BUILD_OPTION...]'
@@ -67,3 +77,4 @@ run_build "$sandboxName" "$@"
 recreate_sandbox "$sandboxName"
 wait_until_ready "$sandboxName"
 echo "sbx-upgrade: sbx-$sandboxName runs on the new images"
+print_tool_versions "$sandboxName"

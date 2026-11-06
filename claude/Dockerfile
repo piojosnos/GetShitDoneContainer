@@ -74,6 +74,16 @@ RUN chmod 755 /etc/sbx/start.d/* \
     && chmod 644 /etc/claude-code/managed-settings.json \
     && node -e 'JSON.parse(require("fs").readFileSync("/etc/claude-code/managed-settings.json", "utf8"))'
 
+# ------------------------------------------------------------------------------
+# The tool versions line: the Claude fields go in front of the base fields
+# ------------------------------------------------------------------------------
+# From the same pins the smoke test below checks, so the line cannot disagree.
+# ------------------------------------------------------------------------------
+RUN { printf 'claude %s | gsd %s | ccusage %s | ' "${CLAUDE_CODE_VERSION}" "${GSD_CORE_VERSION}" "${CCUSAGE_VERSION}"; cat /etc/sbx/tool-versions; } > /tmp/tool-versions \
+    && mv /tmp/tool-versions /etc/sbx/tool-versions \
+    && chmod 644 /etc/sbx/tool-versions \
+    && grep -Eq '^claude [0-9.]+ \| gsd [0-9.]+ \| ccusage [0-9.]+ \| node [0-9.]+ \| jdk [0-9.]+ \| mvn [0-9.]+ \| python [0-9.]+$' /etc/sbx/tool-versions
+
 USER sandbox
 
 # ------------------------------------------------------------------------------
