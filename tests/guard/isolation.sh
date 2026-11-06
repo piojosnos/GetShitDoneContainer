@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Guard rules on isolation: no Docker socket, no privileges, old layout kept
+# Guard rules on isolation: no socket, no privileges, data kept, old layout kept
 # ------------------------------------------------------------------------------
 # Usage: bash tests/guard/isolation.sh (exit 0 = every rule holds)
 # Mounts and effective privileges are checked on the running sandbox by H-26.
@@ -30,6 +30,16 @@ no_docker_socket_or_privileges() {
 }
 
 # ------------------------------------------------------------------------------
+# host_scripts_keep_sandbox_data: bin/ has no delete, prune, kill or take-down
+# ------------------------------------------------------------------------------
+# Stop is compose stop and upgrade is up --force-recreate, so no host script
+# needs any of them; removing volumes is how the old layout lost data.
+# ------------------------------------------------------------------------------
+host_scripts_keep_sandbox_data() {
+  nowhere_matches '\b(rm|rmdir|prune|kill|down)\b|--volumes' bin/*
+}
+
+# ------------------------------------------------------------------------------
 # old_layout_untouched: no change to the old layout until it is retired
 # ------------------------------------------------------------------------------
 old_layout_untouched() {
@@ -44,4 +54,5 @@ require_no_arguments "$@" || exit 2
 enter_repo_root || exit 1
 run_rules \
   no_docker_socket_or_privileges \
+  host_scripts_keep_sandbox_data \
   old_layout_untouched || exit 1
