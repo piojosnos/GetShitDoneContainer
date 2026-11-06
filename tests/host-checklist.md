@@ -65,6 +65,7 @@ What each check proves:
 | H-27 | In a fresh sandbox folder, offline: `sbx-claude` warns when nothing is linked and runs `claude`; `sbx-bundle-clone` links the clone at once and refuses a second run; a branch is pushed to the origin; a failed clone leaves no folder | `h27-bundle-clone-and-publish.sh` | automatic |
 | H-28 | sbx-add registers a sandbox on a folder with a space in its path and refuses it twice; sbx-start and sbx-stop work by name with /bin/bash, ignore SBX_DIR, SBX_NAME and COMPOSE_PROJECT_NAME from your terminal, and keep the container and the files; the test sandbox is restored on the run folder | h28-sbx-add-start-stop.sh | automatic |
 | H-29 | sbx-upgrade with a bogus build option fails and leaves the sandbox as it was; sbx-upgrade rebuilds, recreates only sbx-hosttest (new container, other sbx containers unchanged), keeps the files in the project folder, state/ and state/claude, keeps one bind mount and no volume, warns that open shells close, and starts a stopped sandbox; the login and session survive in the helper | h29-sbx-upgrade.sh, manual/h29-upgrade-resume.sh | automatic; helper for the rest |
+| H-30 | The tool versions line in sbx-claude:local matches versions.env (jdk from the TEMURIN_IMAGE tag, python from the image); an interactive shell prints it once, bash -c and bash -lc print nothing; sbx-upgrade ends with it (H-29) | h30-version-line.sh | automatic |
 | Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |
 
 ## Manual helpers (when something looks wrong)

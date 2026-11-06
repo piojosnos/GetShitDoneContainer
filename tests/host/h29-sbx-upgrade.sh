@@ -148,7 +148,7 @@ check_one_bind_mount() {
 check_upgrade() {
   local sentinelFile
   local volumesAfter
-  local lastLine
+  local lastLine versionsLine previousLine
 
   run_sbx h29-upgrade sbx-upgrade hosttest
 
@@ -194,10 +194,16 @@ check_upgrade() {
 
   check_one_bind_mount
 
+  versionsLine=$(run_timeout 60 docker run --rm --entrypoint cat sbx-claude:local /etc/sbx/tool-versions </dev/null 2>&1)
   lastLine=$(tail -n 1 "$RUN/logs/h29-upgrade.out")
+  previousLine=$(tail -n 2 "$RUN/logs/h29-upgrade.out" | head -n 1)
 
-  if [ "$lastLine" != "sbx-upgrade: sbx-hosttest runs on the new images" ]; then
-    add_problem "the last line of sbx-upgrade is '$lastLine'; log: $RUN/logs/h29-upgrade.out"
+  if [ "$lastLine" != "$versionsLine" ]; then
+    add_problem "the last line of sbx-upgrade is '$lastLine'; expected the versions line '$versionsLine'; log: $RUN/logs/h29-upgrade.out"
+  fi
+
+  if [ "$previousLine" != "sbx-upgrade: sbx-hosttest runs on the new images" ]; then
+    add_problem "the line before the versions line is '$previousLine'; log: $RUN/logs/h29-upgrade.out"
   fi
 }
 
@@ -239,4 +245,4 @@ check_upgrade
 check_upgrade_of_stopped
 restore_test_sandbox h29
 report_check H-29 "sbx-upgrade did not rebuild and recreate the sandbox safely" \
-  "a failed build left the sandbox as it was; sbx-upgrade rebuilt, recreated only sbx-hosttest, kept its files and one bind mount, and started a stopped sandbox"
+  "a failed build left the sandbox as it was; sbx-upgrade rebuilt, recreated only sbx-hosttest, kept its files and one bind mount, ended with the versions line, and started a stopped sandbox"
