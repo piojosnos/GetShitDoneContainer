@@ -63,6 +63,7 @@ What each check proves:
 | H-25 | The images match versions.env (the record in the Claude image, GSD and ccusage at their pins, nothing under the mount point), and a build without build.sh stops naming the missing pin | `h25-images-match-versions.sh` | automatic |
 | H-26 | The test sandbox has exactly one mount, a bind at /home/sandbox/workspace; it is not privileged, drops every capability, adds none, has no-new-privileges and no unconfined profile, shares no host namespace (network, PID, IPC, UTS, user) and has no device or extra group (read from docker inspect) | `h26-isolation-by-inspect.sh` | automatic |
 | H-27 | In a fresh sandbox folder, offline: `sbx-claude` warns when nothing is linked and runs `claude`; `sbx-bundle-clone` links the clone at once and refuses a second run; a branch is pushed to the origin; a failed clone leaves no folder | `h27-bundle-clone-and-publish.sh` | automatic |
+| H-28 | sbx-add registers a sandbox on a folder with a space in its path and refuses it twice; sbx-start and sbx-stop work by name with /bin/bash, ignore SBX_DIR, SBX_NAME and COMPOSE_PROJECT_NAME from your terminal, and keep the container and the files; the test sandbox is restored on the run folder | h28-sbx-add-start-stop.sh | automatic |
 | Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |
 
 ## Manual helpers (when something looks wrong)
