@@ -403,7 +403,20 @@ Plans:
   4. The versions of Claude Code, GSD, ccusage, Node, JDK, Maven, and Python are printed at the end of a rebuild and whenever a bash shell opens in the sandbox.
   5. All `sbx-*` scripts run under macOS's stock bash (3.2) and work with a host path that contains spaces.
 
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+**Wave 1**
+- [ ] 03-01-PLAN.md: Tracer: sbx-add registers a sandbox once, sbx-start and sbx-stop work by name (registry, shared library, one name rule); docker-free self-test; H-28 and the Mac-shell self-test step
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 03-02-PLAN.md: sbx-upgrade builds both images and recreates one sandbox; refusals before the build; guard rule that keeps deletes out of bin/; H-29 and the attended login helper
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 03-03-PLAN.md: The tool versions line written into the images, printed by interactive shells and after sbx-upgrade (H-30); SANDBOX.md script flow and the test docs
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 03-04-PLAN.md: Final gate, planning-ID scan, feat/sbx-scripts for one code PR, then the Mac run with 30 checks and the attended helper (checkpoint)
 
 ### Phase 4: Jump-In and Sandbox Housekeeping
 
