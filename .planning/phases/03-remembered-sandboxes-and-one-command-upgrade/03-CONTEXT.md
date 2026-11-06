@@ -44,10 +44,16 @@ Requirements: SCR-01, SCR-02, SCR-03, SCR-07. Jump-in, list and remove are Phase
   ```
   The separator must be ASCII in source (code conventions); the planner picks it.
 
+### Settled after research
+- **D-18:** `sbx-upgrade` leaves the sandbox running, even when it was stopped or never started before. "Upgraded" always means "running on the new image".
+- **D-19:** `sbx-start` waits for the start hooks to finish (polling, bounded at 120 s) before it returns, so the sandbox is ready when the command ends. Phase 7's healthcheck later replaces the polling.
+- **D-20:** The reserved names `state` and `best-practices` move into one variable in `base/sbx-start-lib.sh`; `sbx-add` reads that same list rather than keeping a copy.
+- **D-21:** `sbx-add` also refuses a host path that contains the registry folder (which covers `/` and `$HOME`), and a host path that another registered sandbox already uses.
+- **D-22:** The version line uses ` | ` as its separator and the full Python version (for example `3.12.3`). `SBX_CONFIG_DIR` overrides the registry folder; only tests set it.
+
 ### Claude's Discretion
 - Exact output and error wording of the scripts, and the usage lines.
 - Where the version file sits in the image and how the shell prints it (`.bashrc` or `/etc/bash.bashrc` hook, interactive check).
-- Whether `sbx-start` also waits for the start hooks (the host tests poll `pgrep -x sleep`), given Phase 7 later makes `up --wait` mean ready.
 - How `sbx-upgrade` passes extra options (for example `--no-cache`) through to `build.sh`.
 - How the host checks prove the scripts on the Mac (a test registry folder so the user's `~/.config/sbx` is never touched, spaces in the path, bash 3.2).
 
