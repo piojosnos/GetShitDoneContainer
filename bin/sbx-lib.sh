@@ -201,6 +201,19 @@ require_images() {
 }
 
 # ------------------------------------------------------------------------------
+# sandbox_is_running NAME: true when the container sbx-NAME is running
+# ------------------------------------------------------------------------------
+# A missing container is false, not an error.
+# ------------------------------------------------------------------------------
+sandbox_is_running() {
+  local runningState
+
+  runningState=$(docker container inspect --format '{{.State.Running}}' "sbx-$1" 2>/dev/null </dev/null) || return 1
+
+  [ "$runningState" = "true" ]
+}
+
+# ------------------------------------------------------------------------------
 # wait_until_ready NAME: returns 0 once the start hooks of sbx-NAME are done
 # ------------------------------------------------------------------------------
 # The entrypoint runs sleep after its last start hook, so a running sleep means
