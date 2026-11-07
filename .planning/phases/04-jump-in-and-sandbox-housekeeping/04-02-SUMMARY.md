@@ -220,4 +220,4 @@ None - no external service configuration required.
 
 ## Self-Check: PASSED
 
-Files bin/sbx-list, tests/selftest/sbx/list.sh and tests/host/h32-sbx-list.sh exist; commits 2502e79, 112bfed and 6b6249b exist. SCR-05 is declared by this plan only.
+Files bin/sbx-list, tests/selftest/sbx/list.sh and tests/host/h32-sbx-list.sh exist; commits 2502e79, 112bfed and 6b6249b exist. SCR-05 stays open in REQUIREMENTS.md: plans 04 and 05 of this phase also declare it and have no summary yet.

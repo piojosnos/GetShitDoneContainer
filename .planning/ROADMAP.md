@@ -430,14 +430,14 @@ Plans:
   3. The user lists all registered sandboxes with their host path and running or stopped status, and the status matches what `docker ps -a` shows.
   4. The user removes a sandbox's container, and optionally its registration. Its `<name>/` and `state/` folders on the Mac are left untouched, and re-registering the same path brings back the login and history.
 
-**Plans:** 1/5 plans executed
+**Plans:** 2/5 plans executed
 
 Plans:
 **Wave 1**
 - [x] 04-01-PLAN.md: Tracer: sbx-shell starts a sandbox when needed and opens bash in its project folder (start steps shared with sbx-start in the library, sbx-start's sbx-shell hint); docker-free self-test; H-31 and the attended jump-in helper
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 04-02-PLAN.md: sbx-list: one row per registered sandbox with its folder and status from one docker ps call, the older-image mark, broken entries, labelled containers with no entry; self-test; H-32
+- [x] 04-02-PLAN.md: sbx-list: one row per registered sandbox with its folder and status from one docker ps call, the older-image mark, broken entries, labelled containers with no entry; self-test; H-32
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 04-03-PLAN.md: sbx-rm: a plain compose down and the optional unregister after a good down, the data guard rule narrowed for it in the same commit; self-test; H-33 with the re-register round trip
@@ -508,7 +508,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 2.2 → 3 �
 | 2.1. Shell diet | 11/11 | Complete    | 2026-10-16 |
 | 2.2. Best-practices from git, editable from any sandbox | 8/8 | Complete    | 2026-10-26 |
 | 3. Remembered Sandboxes and One-Command Upgrade | 4/4 | Complete    | 2026-11-07 |
-| 4. Jump-In and Sandbox Housekeeping | 1/5 | In Progress|  |
+| 4. Jump-In and Sandbox Housekeeping | 2/5 | In Progress|  |
 | 5. Migration, Docs, and Old-Layout Retirement | 0/TBD | Not started | - |
 | 6. Automated checks (CI) | 0/TBD | Not started | - |
 | 7. Start readiness | 0/TBD | Not started | - |
