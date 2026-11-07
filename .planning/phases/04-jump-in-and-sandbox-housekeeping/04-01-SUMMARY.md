@@ -201,3 +201,7 @@ None - no external service configuration required.
 ---
 *Phase: 04-jump-in-and-sandbox-housekeeping*
 *Completed: 2026-11-07*
+
+## Self-Check: PASSED
+
+Files bin/sbx-shell, tests/selftest/sbx/shell.sh, tests/host/h31-sbx-shell.sh and tests/host/manual/h31-jump-in.sh exist; commits 7ed9ead, 844315e and 2ce13b4 exist. SCR-04 stays open in REQUIREMENTS.md: another plan of this phase also declares it and has no summary yet.

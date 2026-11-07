@@ -1,18 +1,18 @@
 ---
 gsd_state_version: "1.0"
 current_phase: 04
-current_phase_name: jump-in-and-sandbox-housekeeping
+current_phase_name: Jump-In and Sandbox Housekeeping
 status: executing
-stopped_at: Phase 4 context gathered
-last_updated: "2026-11-07T02:25:18.897Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-11-07T04:09:12.280Z"
 last_activity: 2026-11-07
-last_activity_desc: Phase 03 complete, transitioned to Phase 4
-state_head: fdf8860575789d325e3cae36b8aa15d0b44e7438
+last_activity_desc: Phase 04 execution started
+state_head: f3d207afc406e1ce59a6a26413b0489827924a8e
 progress:
   total_phases: 14
   completed_phases: 10
   total_plans: 81
-  completed_plans: 76
+  completed_plans: 77
   percent: 71
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-26)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 03 — Remembered Sandboxes and One-Command Upgrade
+**Current focus:** Phase 04 — Jump-In and Sandbox Housekeeping
 
 ## Current Position
 
-Phase: 04 (jump-in-and-sandbox-housekeeping) — READY TO EXECUTE
-Plan: Not started
+Phase: 04 (Jump-In and Sandbox Housekeeping) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-11-07 — Phase 03 complete, transitioned to Phase 4
+Last activity: 2026-11-07 — Phase 04 execution started
 
 Progress: [████████████████████] 44/44 plans ([███████░░░] 71%)
 
@@ -140,6 +140,7 @@ Progress: [████████████████████] 44/44 p
 | Phase 03 P02 | 20 min | 3 tasks | 10 files |
 | Phase 03 P03 | 7 min | 3 tasks | 10 files |
 | Phase 03 P04 | 45min | 3 tasks | 2 files |
+| Phase 04 P01 | 68 min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -267,6 +268,8 @@ Recent decisions affecting current work:
 - [Phase 03]: sbx-upgrade prints the open-sessions warning before the build, worded 'after the build', and passes options after the name to build.sh
 - [Phase 03]: tool versions line is a build-time file /etc/sbx/tool-versions printed by /etc/bash.bashrc (interactive shells only) and as the last line of sbx-upgrade
 - [Phase 03]: UBUNTU_IMAGE pin digest drift found by the Mac pin check is out of scope for phase 3; bump versions.env in a separate small PR
+- [Phase 04]: bring_up_sandbox lives in bin/sbx-lib.sh (not sbx-shell calling sbx-start): the jump-in prints no start lines and never warns about an image it will not recreate
+- [Phase 04]: sbx-shell always runs check_name and read_registry_entry, also for a running sandbox; a running sandbox gets one inspect and the exec only
 
 ### Pending Todos
 
@@ -313,6 +316,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-07T01:26:11.615Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-jump-in-and-sandbox-housekeeping/04-CONTEXT.md
+Last session: 2026-11-07T04:09:12.084Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None
