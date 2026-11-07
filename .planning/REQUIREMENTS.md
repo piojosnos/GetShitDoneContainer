@@ -58,13 +58,13 @@ The shared agent bundle: skills, standing rules (`AGENTS.md`, `code-conventions.
 
 Generic `sbx-*` scripts: short, plain bash, and runnable with macOS's stock bash.
 
-- [ ] **SCR-01**: The user registers a sandbox once with `sbx-add <name> <host_path>` (the registry records an agent field, defaulting to `claude`). Every other script then takes only `<name>`
-- [ ] **SCR-02**: The user can start and stop a sandbox by name
-- [ ] **SCR-03**: One command rebuilds the base and agent images and recreates the sandbox, keeping login and history
+- [x] **SCR-01**: The user registers a sandbox once with `sbx-add <name> <host_path>` (the registry records an agent field, defaulting to `claude`). Every other script then takes only `<name>`
+- [x] **SCR-02**: The user can start and stop a sandbox by name
+- [x] **SCR-03**: One command rebuilds the base and agent images and recreates the sandbox, keeping login and history
 - [ ] **SCR-04**: One command jumps into a sandbox: it starts the sandbox if needed, then opens a shell, optionally launching `claude` directly
 - [ ] **SCR-05**: The user can list all registered sandboxes with their host path and running status
 - [ ] **SCR-06**: The user can remove a sandbox's container (and optionally its registration) without touching its workspace or state
-- [ ] **SCR-07**: Tool versions (Claude, GSD, ccusage, Node, JDK, Maven, Python) are printed after a rebuild and on shell entry
+- [x] **SCR-07**: Tool versions (Claude, GSD, ccusage, Node, JDK, Maven, Python) are printed after a rebuild and on shell entry
 - [ ] **SCR-08**: The old `cc-*` scripts and the whole-home-mount layout are removed from the repo
 
 ### Automation
@@ -148,13 +148,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BP-03 | Phase 2.2 | Complete |
 | BP-04 | Phase 2.2 | Complete |
 | BP-05 | Phase 2.2 | Complete |
-| SCR-01 | Phase 3 | Pending |
-| SCR-02 | Phase 3 | Pending |
-| SCR-03 | Phase 3 | Pending |
+| SCR-01 | Phase 3 | Complete |
+| SCR-02 | Phase 3 | Complete |
+| SCR-03 | Phase 3 | Complete |
 | SCR-04 | Phase 4 | Pending |
 | SCR-05 | Phase 4 | Pending |
 | SCR-06 | Phase 4 | Pending |
-| SCR-07 | Phase 3 | Pending |
+| SCR-07 | Phase 3 | Complete |
 | SCR-08 | Phase 5 | Pending |
 | DOC-01 | Phase 5 | Pending |
 | DOC-02 | Phase 5 | Pending |

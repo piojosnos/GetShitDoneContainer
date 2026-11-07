@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 3
-current_phase_name: Remembered Sandboxes and One-Command Upgrade
-status: executing
-stopped_at: Phase 3 context gathered
-last_updated: "2026-11-06T19:01:54.951Z"
-last_activity: 2026-10-26
-last_activity_desc: Phase 02.2 complete, transitioned to Phase 3
-state_head: 1339373f96537ffdc9ae7047b3fd8f4b397a499c
+current_phase: 4
+current_phase_name: Jump-In and Sandbox Housekeeping
+status: planning
+stopped_at: Phase 03 complete, ready to plan Phase 4
+last_updated: "2026-11-07T01:04:00.526Z"
+last_activity: 2026-11-07
+last_activity_desc: Phase 03 complete, transitioned to Phase 4
+state_head: eb04e2ca49d5bf2af31b50e01258ef26e1d9f87e
 progress:
   total_phases: 14
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 76
-  completed_plans: 72
-  percent: 64
+  completed_plans: 76
+  percent: 71
 ---
 
 # Project State
@@ -23,21 +23,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-26)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 3: Remembered Sandboxes and One-Command Upgrade
+**Current focus:** Phase 03 — Remembered Sandboxes and One-Command Upgrade
 
 ## Current Position
 
-Phase: 3 (Remembered Sandboxes and One-Command Upgrade) — READY TO EXECUTE
+Phase: 4 — Jump-In and Sandbox Housekeeping
 Plan: Not started
-Status: Ready to execute
-Last activity: 2026-10-26 — Phase 02.2 complete, transitioned to Phase 3
+Status: Ready to plan
+Last activity: 2026-11-07 — Phase 03 complete, transitioned to Phase 4
 
-Progress: [████████████████████] 44/44 plans ([██████░░░░] 64%)
+Progress: [████████████████████] 44/44 plans ([███████░░░] 71%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 72
+- Total plans completed: 76
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -54,6 +54,7 @@ Progress: [████████████████████] 44/44 p
 | 02 | 9 | - | - |
 | 02.1 | 11 | - | - |
 | 02.2 | 8 | - | - |
+| 03 | 4 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -135,6 +136,10 @@ Progress: [████████████████████] 44/44 p
 | Phase 02.2 P06 | 25 min | 3 tasks | 7 files |
 | Phase 02.2 P07 | 20min | 3 tasks | 16 files |
 | Phase 02.2 P08 | 3 sessions | 3 tasks | 8 files |
+| Phase 03 P01 | 25 min | 3 tasks | 15 files |
+| Phase 03 P02 | 20 min | 3 tasks | 10 files |
+| Phase 03 P03 | 7 min | 3 tasks | 10 files |
+| Phase 03 P04 | 45min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -257,6 +262,11 @@ Recent decisions affecting current work:
 - [Phase 02.2]: Plan 07: h14 keeps its negative probe for a bundle copy in the image (a path literal), because removing it would weaken the no-copy check
 - [Phase 02.2]: sbx-gh-login asks for the git name and email when they are empty, because a fresh sandbox has no identity and the first commit in the clone failed
 - [Phase 02.2]: host-test.sh runs shellcheck and hadolint in the Mac-shell guard from sbx-base through two stand-ins, so any guard FAIL fails the step
+- [Phase 03]: Registry entries are two-line text files read with a case loop, never sourced; a mutant that sources them fails the self-test
+- [Phase 03]: sbx-add refuses a host path that is, holds or sits inside the registry folder or another sandbox's folder, compared per path segment
+- [Phase 03]: sbx-upgrade prints the open-sessions warning before the build, worded 'after the build', and passes options after the name to build.sh
+- [Phase 03]: tool versions line is a build-time file /etc/sbx/tool-versions printed by /etc/bash.bashrc (interactive shells only) and as the last line of sbx-upgrade
+- [Phase 03]: UBUNTU_IMAGE pin digest drift found by the Mac pin check is out of scope for phase 3; bump versions.env in a separate small PR
 
 ### Pending Todos
 
@@ -303,6 +313,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-06T18:00:33.150Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-remembered-sandboxes-and-one-command-upgrade/03-CONTEXT.md
+Last session: 2026-11-06T23:57:34.189Z
+Stopped at: Phase 03 complete, ready to plan Phase 4
+Resume file: None
