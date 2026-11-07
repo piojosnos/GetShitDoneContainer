@@ -49,6 +49,8 @@ start_group() {
 #   shell-status       set: docker exec -it exits with this number; else 0
 #   compose-fail       set: compose prints its usual line, then exits 1
 #   image-missing      set: docker image inspect exits 1
+#   ps-lines           set: docker ps prints this file; unset: prints nothing
+#   ps-fail            set: docker ps exits 1
 # Without container-image, every container inspect fails and the id is gone.
 # ------------------------------------------------------------------------------
 make_scripted_docker() {
@@ -58,6 +60,10 @@ make_scripted_docker() {
     printf '%s\n' "state=\"$WORK/standin-state\""
     printf '%s\n' "echo \"docker \$*\" >>\"$WORK/standin-calls\""
     printf '%s\n' 'case "$1" in'
+    printf '%s\n' '  ps)'
+    printf '%s\n' '    [ -f "$state/ps-fail" ] && exit 1'
+    printf '%s\n' '    [ -f "$state/ps-lines" ] && cat "$state/ps-lines"'
+    printf '%s\n' '    exit 0 ;;'
     printf '%s\n' '  compose)'
     printf '%s\n' '    echo "standin: compose $*"'
     printf '%s\n' '    [ -f "$state/compose-fail" ] && exit 1'
@@ -113,6 +119,15 @@ set_standin_state() {
 # ------------------------------------------------------------------------------
 set_standin_knob() {
   printf '%s\n' "${2:-}" >"$WORK/standin-state/$1"
+}
+
+# ------------------------------------------------------------------------------
+# set_standin_ps LINE...: sets what docker ps prints, one line for each LINE
+# ------------------------------------------------------------------------------
+# Call it after set_standin_state, which empties the state folder first.
+# ------------------------------------------------------------------------------
+set_standin_ps() {
+  printf '%s\n' "$@" >"$WORK/standin-state/ps-lines"
 }
 
 # ------------------------------------------------------------------------------
