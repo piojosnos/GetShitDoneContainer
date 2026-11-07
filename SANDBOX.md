@@ -131,6 +131,7 @@ sbx-start demo
 
 - It returns when the start hooks (the GSD sync and the bundle links) are done, and prints the command to open a shell.
 - A hook that fails stops the container, and `sbx-start` says so.
+- A running sandbox on an older image is recreated by `sbx-start`, after a warning (see "Upgrade").
 
 Open a shell. Open as many as you like:
 
@@ -196,7 +197,7 @@ Add `--no-cache` for a clean build: `sbx-upgrade demo --no-cache`.
 - It ends running, even when it was stopped.
 - The login and history live in `state/` on the Mac, so they stay.
 - It ends by printing the tool versions line of the new container.
-- Other sandboxes keep their old image until their next `sbx-start`, which recreates them on the new one.
+- Other sandboxes keep their old image until their next `sbx-start`, which recreates them on the new one. For a running sandbox, `sbx-start` prints the same warning as `sbx-upgrade` first (the recreate closes its open shells and Claude sessions) and then goes on; it does not wait for an answer. Finish your sessions before you run `sbx-start` on a running sandbox.
 - Each upgrade leaves the old images untagged. `./clean.sh` shows them and `./clean.sh --yes` frees them (see "Free disk space").
 
 ## Bump a version or add a tool

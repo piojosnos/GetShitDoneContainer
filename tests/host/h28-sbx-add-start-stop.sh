@@ -182,6 +182,28 @@ check_start_again() {
 }
 
 # ------------------------------------------------------------------------------
+# Checks that sbx-start of a running sandbox on the current image is silent
+# ------------------------------------------------------------------------------
+# The older-image warning compares two image ids; a false warning here would mean
+# the ids are not comparable on this Docker.
+# ------------------------------------------------------------------------------
+check_start_running() {
+  run_sbx h28-start-running sbx-start hosttest
+
+  if [ "$sbxStatus" -ne 0 ]; then
+    add_problem "sbx-start of the running sandbox exited $sbxStatus; log: $RUN/logs/h28-start-running.err"
+  fi
+
+  if grep -qF 'older image' "$RUN/logs/h28-start-running.out"; then
+    add_problem "sbx-start warned about an older image for a sandbox on the current image; log: $RUN/logs/h28-start-running.out"
+  fi
+
+  if [ -z "$firstId" ] || [ "$(sandbox_field '{{.Id}}')" != "$firstId" ]; then
+    add_problem "sbx-start of the running sandbox recreated the container"
+  fi
+}
+
+# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -194,6 +216,7 @@ check_stop_before_start
 check_start
 check_stop
 check_start_again
+check_start_running
 restore_test_sandbox h28
 report_check H-28 "the sbx scripts did not register, start or stop the sandbox by name" \
-  "sbx-add registered a folder with a space and refused it twice; sbx-start and sbx-stop worked by name with /bin/bash; the container and the files stayed"
+  "sbx-add registered a folder with a space and refused it twice; sbx-start and sbx-stop worked by name with /bin/bash; the container and the files stayed; sbx-start of a running sandbox on the current image printed no warning"

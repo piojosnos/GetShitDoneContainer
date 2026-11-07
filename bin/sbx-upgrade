@@ -18,7 +18,7 @@ set -eu
 # ------------------------------------------------------------------------------
 warn_if_running() {
   if sandbox_is_running "$1"; then
-    echo "sbx-upgrade: sbx-$1 is running; after the build, recreating it will close its open shells and Claude sessions"
+    warn_sessions_close "$1" "is running; after the build, recreating it"
   fi
 }
 

@@ -214,6 +214,16 @@ sandbox_is_running() {
 }
 
 # ------------------------------------------------------------------------------
+# warn_sessions_close NAME LEAD: warns that a recreate of sbx-NAME ends its sessions
+# ------------------------------------------------------------------------------
+# LEAD says why and ends with the recreate, for example "is running; recreating it".
+# One wording for every script that recreates a running sandbox.
+# ------------------------------------------------------------------------------
+warn_sessions_close() {
+  echo "$scriptName: sbx-$1 $2 will close its open shells and Claude sessions"
+}
+
+# ------------------------------------------------------------------------------
 # wait_until_ready NAME: returns 0 once the start hooks of sbx-NAME are done
 # ------------------------------------------------------------------------------
 # The entrypoint runs sleep after its last start hook, so a running sleep means
