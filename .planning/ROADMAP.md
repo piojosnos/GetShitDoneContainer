@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Pinned Toolchain, GSD, and ccusage** - Every tool is baked in at a version pinned in `versions.env`, the image's GSD wins over persisted state, and `ccusage` reports real usage (completed 2026-10-13)
 - [x] **Phase 2.1: Shell diet** (INSERTED) - The guard keeps only the rules that protect the images and the sandbox, the fake docker and host self-tests are gone, and comments are schematic (completed 2026-10-16)
 - [x] **Phase 2.2: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs (completed 2026-10-26)
-- [ ] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login
+- [x] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login (completed 2026-11-07)
 - [ ] **Phase 4: Jump-In and Sandbox Housekeeping** - One command drops you into a sandbox shell or Claude, and you can list and clean up sandboxes safely
 - [ ] **Phase 5: Migration, Docs, and Old-Layout Retirement** - Existing sandboxes move over with history intact, the old `cc-*` layout is gone, and the README matches the repo
 - [ ] **Phase 6: Automated checks (CI)** - GitHub runs the guard on every PR push and shows it as a PR check
@@ -403,7 +403,20 @@ Plans:
   4. The versions of Claude Code, GSD, ccusage, Node, JDK, Maven, and Python are printed at the end of a rebuild and whenever a bash shell opens in the sandbox.
   5. All `sbx-*` scripts run under macOS's stock bash (3.2) and work with a host path that contains spaces.
 
-**Plans**: TBD
+**Plans:** 4/4 plans complete
+
+Plans:
+**Wave 1**
+- [x] 03-01-PLAN.md: Tracer: sbx-add registers a sandbox once, sbx-start and sbx-stop work by name (registry, shared library, one name rule); docker-free self-test; H-28 and the Mac-shell self-test step
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 03-02-PLAN.md: sbx-upgrade builds both images and recreates one sandbox; refusals before the build; guard rule that keeps deletes out of bin/; H-29 and the attended login helper
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 03-03-PLAN.md: The tool versions line written into the images, printed by interactive shells and after sbx-upgrade (H-30); SANDBOX.md script flow and the test docs
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 03-04-PLAN.md: Final gate, planning-ID scan, feat/sbx-scripts for one code PR, then the Mac run with 30 checks and the attended helper (checkpoint)
 
 ### Phase 4: Jump-In and Sandbox Housekeeping
 
@@ -478,7 +491,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 2.2 → 3 �
 | 2. Pinned Toolchain, GSD, and ccusage | 9/9 | Complete    | 2026-10-13 |
 | 2.1. Shell diet | 11/11 | Complete    | 2026-10-16 |
 | 2.2. Best-practices from git, editable from any sandbox | 8/8 | Complete    | 2026-10-26 |
-| 3. Remembered Sandboxes and One-Command Upgrade | 0/TBD | Not started | - |
+| 3. Remembered Sandboxes and One-Command Upgrade | 4/4 | Complete    | 2026-11-07 |
 | 4. Jump-In and Sandbox Housekeeping | 0/TBD | Not started | - |
 | 5. Migration, Docs, and Old-Layout Retirement | 0/TBD | Not started | - |
 | 6. Automated checks (CI) | 0/TBD | Not started | - |
