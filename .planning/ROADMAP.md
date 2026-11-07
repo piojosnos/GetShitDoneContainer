@@ -430,7 +430,7 @@ Plans:
   3. The user lists all registered sandboxes with their host path and running or stopped status, and the status matches what `docker ps -a` shows.
   4. The user removes a sandbox's container, and optionally its registration. Its `<name>/` and `state/` folders on the Mac are left untouched, and re-registering the same path brings back the login and history.
 
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans executed
 
 Plans:
 **Wave 1**
@@ -446,7 +446,7 @@ Plans:
 - [x] 04-04-PLAN.md: SANDBOX.md teaches the three commands; the test docs name H-31 to H-33 and the seventh helper
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 04-05-PLAN.md: Final gate, planning-ID scan, feat/sbx-shell-list-rm for one code PR, then the Mac run with 33 checks and the attended helper (checkpoint)
+- [x] 04-05-PLAN.md: Final gate, planning-ID scan, feat/sbx-shell-list-rm for one code PR, then the Mac run with 33 checks and the attended helper (checkpoint)
 
 ### Phase 5: Migration, Docs, and Old-Layout Retirement
 
@@ -508,7 +508,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 2.2 → 3 �
 | 2.1. Shell diet | 11/11 | Complete    | 2026-10-16 |
 | 2.2. Best-practices from git, editable from any sandbox | 8/8 | Complete    | 2026-10-26 |
 | 3. Remembered Sandboxes and One-Command Upgrade | 4/4 | Complete    | 2026-11-07 |
-| 4. Jump-In and Sandbox Housekeeping | 4/5 | In Progress|  |
+| 4. Jump-In and Sandbox Housekeeping | 5/5 | In Progress|  |
 | 5. Migration, Docs, and Old-Layout Retirement | 0/TBD | Not started | - |
 | 6. Automated checks (CI) | 0/TBD | Not started | - |
 | 7. Start readiness | 0/TBD | Not started | - |

@@ -2,17 +2,17 @@
 gsd_state_version: "1.0"
 current_phase: 04
 current_phase_name: Jump-In and Sandbox Housekeeping
-status: executing
-stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-11-07T16:14:38.141Z"
+status: verifying
+stopped_at: Completed 04-05-PLAN.md
+last_updated: "2026-11-07T23:40:31.413Z"
 last_activity: 2026-11-07
 last_activity_desc: Phase 04 execution started
-state_head: 504e57ab8cee0f04c59744ef826fd0b8753a984f
+state_head: c2c0cf773f0eb5fc6c274b6231cdef702f0cc987
 progress:
   total_phases: 14
   completed_phases: 10
   total_plans: 81
-  completed_plans: 80
+  completed_plans: 81
   percent: 71
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 
 Phase: 04 (Jump-In and Sandbox Housekeeping) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-11-07 — Phase 04 execution started
 
 Progress: [████████████████████] 44/44 plans ([███████░░░] 71%)
@@ -144,6 +144,7 @@ Progress: [████████████████████] 44/44 p
 | Phase 04 P02 | 11 min | 3 tasks | 7 files |
 | Phase 04 P03 | 15 min | 3 tasks | 8 files |
 | Phase 04 P04 | 2 min | 2 tasks | 4 files |
+| Phase 04 P05 | n/a (spans a user Mac run) | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -276,6 +277,7 @@ Recent decisions affecting current work:
 - [Phase 04]: sbx-list: paused and restarting read stopped; a broken registry entry is a row, not a failure; leftover hint names only sbx-add; fixed-width printf instead of column
 - [Phase 04]: sbx-rm runs exactly run_compose NAME down (no volumes, images or orphans) and deletes the registry entry only after a good down; the guard pins that one delete to an exact line
 - [Phase 04]: sbx-list example in SANDBOX.md is the full output (rows, older-image note, unregistered section); docs follow bin/ as plans 01 to 03 left it
+- [Phase 04]: Phase 4 gate passed on the Mac as written (33 host checks, bash 3.2 self-test, attended helper); no gap-closure plan needed
 
 ### Pending Todos
 
@@ -322,6 +324,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-07T16:14:37.946Z
-Stopped at: Completed 04-04-PLAN.md
+Last session: 2026-11-07T23:40:31.215Z
+Stopped at: Completed 04-05-PLAN.md
 Resume file: None
