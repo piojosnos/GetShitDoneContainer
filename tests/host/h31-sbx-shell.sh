@@ -56,7 +56,8 @@ register() {
 # Checks the start of a sandbox with no container, run without a terminal
 # ------------------------------------------------------------------------------
 # sbx-shell starts the sandbox and waits for its hooks, then Docker refuses the
-# shell because stdin is not a terminal.
+# shell because stdin is not a terminal. Older Docker says "the input device is
+# not a TTY", newer Docker says "stdin is not a terminal"; both count.
 # ------------------------------------------------------------------------------
 check_start_without_terminal() {
   run_sbx h31-noterm sbx-shell hosttest
@@ -65,8 +66,8 @@ check_start_without_terminal() {
     add_problem "sbx-shell without a terminal exited 0; log: $RUN/logs/h31-noterm.err"
   fi
 
-  if ! grep -qi 'TTY' "$RUN/logs/h31-noterm.err"; then
-    add_problem "sbx-shell without a terminal printed no TTY refusal from Docker; log: $RUN/logs/h31-noterm.err"
+  if ! grep -qiE 'TTY|not a terminal' "$RUN/logs/h31-noterm.err"; then
+    add_problem "sbx-shell without a terminal printed no terminal refusal from Docker (neither 'not a TTY' nor 'not a terminal'); log: $RUN/logs/h31-noterm.err"
   fi
 
   if [ "$(sandbox_field '{{.State.Running}}')" != "true" ]; then
