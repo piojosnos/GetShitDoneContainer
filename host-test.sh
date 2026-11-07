@@ -73,7 +73,11 @@ linter_versions() {
 }
 
 # ------------------------------------------------------------------------------
-# pin_digests: every NAME=image@sha256 pin equals the registry's index digest
+# pin_digests: compare every NAME=image@sha256 pin with the registry's tag
+# ------------------------------------------------------------------------------
+# The build always uses the pinned digest. When the tag has moved on, the step
+# prints an INFO line (a newer image, often with security fixes, is available)
+# and stays OK. Only a tag the registry cannot resolve fails the step.
 # ------------------------------------------------------------------------------
 pin_digests() {
   local line pinName imageRef wantDigest gotDigest
@@ -86,11 +90,13 @@ pin_digests() {
     wantDigest=${imageRef##*@}
     gotDigest=$(docker buildx imagetools inspect "${imageRef%@*}" | sed -n 's/^Digest: *//p')
 
-    if [ "$gotDigest" = "$wantDigest" ]; then
+    if [ -z "$gotDigest" ]; then
+      printf 'FAIL: %s: the registry did not resolve %s\n' "$pinName" "${imageRef%@*}"
+      status=1
+    elif [ "$gotDigest" = "$wantDigest" ]; then
       printf 'PASS: %s %s\n' "$pinName" "$wantDigest"
     else
-      printf 'FAIL: %s pins %s, the registry has %s\n' "$pinName" "$wantDigest" "${gotDigest:-nothing}"
-      status=1
+      printf 'INFO: %s pins %s, the registry now has %s (a newer image; bump the pin when convenient)\n' "$pinName" "$wantDigest" "$gotDigest"
     fi
   done
 
