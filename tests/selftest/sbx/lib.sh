@@ -37,6 +37,75 @@ start_group() {
 }
 
 # ------------------------------------------------------------------------------
+# make_scripted_docker: makes WORK/scripted/docker, a stand-in that follows files
+# ------------------------------------------------------------------------------
+# For the cases that must get past the pre-Docker checks. It answers from the
+# files in WORK/standin-state and logs to WORK/standin-calls, so the refusing
+# stand-in still sees no call. compose succeeds and prints a line.
+#   container-image    set: the container exists and this is its image id
+#   container-running  true or false, what container inspect prints for State
+#   image-id           the id of the current image
+#   exec-ok            set: docker exec succeeds
+# Without container-image, every container inspect fails and the id is gone.
+# ------------------------------------------------------------------------------
+make_scripted_docker() {
+  mkdir -p "$WORK/scripted" "$WORK/standin-state"
+  {
+    printf '%s\n' '#!/bin/sh'
+    printf '%s\n' "state=\"$WORK/standin-state\""
+    printf '%s\n' "echo \"docker \$*\" >>\"$WORK/standin-calls\""
+    printf '%s\n' 'case "$1" in'
+    printf '%s\n' '  compose) echo "standin: compose $*"; exit 0 ;;'
+    printf '%s\n' '  exec) [ -f "$state/exec-ok" ]; exit $? ;;'
+    printf '%s\n' '  image)'
+    printf '%s\n' '    case "$*" in'
+    printf '%s\n' "      *'{{.Id}}'*) cat \"\$state/image-id\" ;;"
+    printf '%s\n' '    esac'
+    printf '%s\n' '    exit 0 ;;'
+    printf '%s\n' '  container)'
+    printf '%s\n' '    [ -f "$state/container-image" ] || exit 1'
+    printf '%s\n' '    case "$*" in'
+    printf '%s\n' "      *'{{.State.Running}}'*) cat \"\$state/container-running\" ;;"
+    printf '%s\n' "      *'{{.Image}}'*) cat \"\$state/container-image\" ;;"
+    printf '%s\n' '    esac'
+    printf '%s\n' '    exit 0 ;;'
+    printf '%s\n' 'esac'
+    printf '%s\n' 'exit 99'
+  } >"$WORK/scripted/docker"
+  chmod 755 "$WORK/scripted/docker"
+}
+
+# ------------------------------------------------------------------------------
+# set_standin_state IMAGE_ID CONTAINER_IMAGE RUNNING EXEC_OK
+# ------------------------------------------------------------------------------
+# An empty CONTAINER_IMAGE means no container. EXEC_OK is yes or no.
+# ------------------------------------------------------------------------------
+set_standin_state() {
+  rm -f "$WORK/standin-state"/*
+  printf '%s\n' "$1" >"$WORK/standin-state/image-id"
+
+  if [ -n "$2" ]; then
+    printf '%s\n' "$2" >"$WORK/standin-state/container-image"
+    printf '%s\n' "$3" >"$WORK/standin-state/container-running"
+  fi
+
+  if [ "$4" = "yes" ]; then
+    : >"$WORK/standin-state/exec-ok"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# run_sbx_scripted LABEL SCRIPT ARG...: run_sbx with the scripted docker first
+# ------------------------------------------------------------------------------
+run_sbx_scripted() {
+  local savedPath=$PATH
+
+  PATH=$WORK/scripted:$PATH
+  run_sbx "$@"
+  PATH=$savedPath
+}
+
+# ------------------------------------------------------------------------------
 # run_sbx LABEL SCRIPT ARG...: runs bin/SCRIPT, sets SBX_RC
 # ------------------------------------------------------------------------------
 # Output goes to WORK/LABEL.out and WORK/LABEL.err; stdin is closed.

@@ -48,7 +48,7 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 | | |
 |---|---|
-| Runs | The real `bin/` scripts as plain bash in a temp folder, with a stand-in `docker` that refuses every call and a registry in the work folder |
+| Runs | The real `bin/` scripts as plain bash in a temp folder, with a stand-in `docker` that refuses every call (the `start.sh` group swaps in a scripted one for the start wait) and a registry in the work folder |
 | Where | Linux and the Mac shell. `./host-test.sh` runs it under `/bin/bash` |
 | Catches | A name, path or registry entry the scripts should refuse, a registry value that would run, a refusal that comes too late |
 | Does not catch | Anything Docker does. H-28 to H-30 cover it |

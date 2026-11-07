@@ -218,6 +218,8 @@ sandbox_is_running() {
 # ------------------------------------------------------------------------------
 # The entrypoint runs sleep after its last start hook, so a running sleep means
 # done. A compose healthcheck that waits for the hooks should replace this poll.
+# A container that is gone counts as stopped: the failed inspect must not end the
+# caller, which runs under set -e, before the error is printed.
 # ------------------------------------------------------------------------------
 wait_until_ready() {
   local sandboxName=$1
@@ -229,7 +231,7 @@ wait_until_ready() {
       return 0
     fi
 
-    running=$(docker container inspect --format '{{.State.Running}}' "sbx-$sandboxName" 2>/dev/null </dev/null)
+    running=$(docker container inspect --format '{{.State.Running}}' "sbx-$sandboxName" 2>/dev/null </dev/null) || running=""
 
     if [ "$running" != "true" ]; then
       sbx_error "sbx-$sandboxName stopped during its start; docker logs sbx-$sandboxName shows why"
