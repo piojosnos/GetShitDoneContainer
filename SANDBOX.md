@@ -441,7 +441,7 @@ Rebuilds and host-test runs pile up images, build cache and run folders. From th
 | `the input device is not a TTY` or `stdin is not a terminal` from `sbx-shell` | Run it in a terminal, not through a pipe or a script. The sandbox has already started. |
 | `broken entry` in `sbx-list` | `sbx-start NAME` prints what is wrong with the entry. Fix the file, or delete it and run `sbx-add` again. |
 | `docker compose down failed for sbx-NAME; the registry entry stays` | Read the Compose output above it, then run `sbx-rm NAME` again. |
-| `cannot read the containers from Docker` | Start Docker Desktop. |
+| `cannot read the containers from Docker` or `cannot reach Docker; is Docker running?` | Start Docker Desktop. |
 | `the build failed; sbx-NAME was left as it was` | Read the build output above it. The sandbox still runs on the old image. |
 | `the start hooks of sbx-NAME did not finish within 120 s` or `sbx-NAME stopped during its start` | Run `docker logs sbx-NAME`. |
 | `overlaps the registry folder`, `overlaps the repo folder` or `overlaps the folder of sandbox` | Pick a folder of its own for the sandbox. |

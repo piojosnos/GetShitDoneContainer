@@ -51,6 +51,7 @@ start_group() {
 #   image-missing      set: docker image inspect exits 1
 #   ps-lines           set: docker ps prints this file; unset: prints nothing
 #   ps-fail            set: docker ps exits 1
+#   docker-down        set: every call fails, as with Docker not running
 # Without container-image, every container inspect fails and the id is gone.
 # ------------------------------------------------------------------------------
 make_scripted_docker() {
@@ -59,7 +60,13 @@ make_scripted_docker() {
     printf '%s\n' '#!/bin/sh'
     printf '%s\n' "state=\"$WORK/standin-state\""
     printf '%s\n' "echo \"docker \$*\" >>\"$WORK/standin-calls\""
+    printf '%s\n' 'if [ -f "$state/docker-down" ]; then'
+    printf '%s\n' '  echo "standin: cannot connect to the Docker daemon" >&2'
+    printf '%s\n' '  exit 1'
+    printf '%s\n' 'fi'
     printf '%s\n' 'case "$1" in'
+    printf '%s\n' '  info)'
+    printf '%s\n' '    exit 0 ;;'
     printf '%s\n' '  ps)'
     printf '%s\n' '    [ -f "$state/ps-fail" ] && exit 1'
     printf '%s\n' '    [ -f "$state/ps-lines" ] && cat "$state/ps-lines"'

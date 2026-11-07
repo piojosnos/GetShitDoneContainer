@@ -60,6 +60,39 @@ case_older_image() {
 }
 
 # ------------------------------------------------------------------------------
+# refused_before_up LABEL TEXT: exit 1, TEXT in the error, no compose call
+# ------------------------------------------------------------------------------
+refused_before_up() {
+  refused_cleanly "$1" "$2" "" "" && ! grep -Fq -- 'docker compose' "$WORK/standin-calls"
+}
+
+# ------------------------------------------------------------------------------
+# Case: Docker not answering and a missing image get their own message each
+# ------------------------------------------------------------------------------
+case_docker_down_or_image_missing() {
+  SBX_CONFIG_DIR=$WORK/cfg-start-docker
+  export SBX_CONFIG_DIR
+
+  echo '--- sbx-start with Docker stopped or the image missing'
+
+  run_sbx downadd sbx-add down "$WORK/start dir/down"
+
+  set_standin_state sha256:new "" "" yes
+  set_standin_knob docker-down
+  reset_standin_calls
+  run_sbx_scripted downstart sbx-start down
+  expect "sbx-start: Docker not answering is refused before compose up" refused_before_up downstart "cannot reach Docker; is Docker running?"
+  expect "sbx-start: Docker not answering does not advise sbx-upgrade" lacks_text "$WORK/downstart.err" "sbx-upgrade"
+
+  set_standin_state sha256:new "" "" yes
+  set_standin_knob image-missing
+  reset_standin_calls
+  run_sbx_scripted noimagestart sbx-start down
+  expect "sbx-start: a missing image is refused before compose up with the sbx-upgrade advice" refused_before_up noimagestart "sbx-claude:local is not built; run: sbx-upgrade down"
+  expect "sbx-start: a missing image does not blame Docker" lacks_text "$WORK/noimagestart.err" "is Docker running?"
+}
+
+# ------------------------------------------------------------------------------
 # Case: sbx-upgrade and sbx-start share one warning wording
 # ------------------------------------------------------------------------------
 case_shared_wording() {
@@ -79,6 +112,7 @@ start_group || exit 1
 make_scripted_docker
 case_container_gone
 case_older_image
+case_docker_down_or_image_missing
 case_shared_wording
 expect "sbx-start: no case reached the refusing docker" no_docker_call
 finish_cases

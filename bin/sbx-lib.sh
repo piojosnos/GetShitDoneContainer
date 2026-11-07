@@ -191,8 +191,16 @@ run_compose() {
 # ------------------------------------------------------------------------------
 # require_images NAME: the Claude image must exist before the sandbox starts
 # ------------------------------------------------------------------------------
+# Docker must answer first: with Docker stopped every image looks missing, and
+# sbx-upgrade would be the wrong advice.
+# ------------------------------------------------------------------------------
 require_images() {
   local sandboxName=$1
+
+  if ! docker info >/dev/null 2>&1 </dev/null; then
+    sbx_error "cannot reach Docker; is Docker running?"
+    return 1
+  fi
 
   if ! docker image inspect "$claudeImage" >/dev/null 2>&1 </dev/null; then
     sbx_error "$claudeImage is not built; run: sbx-upgrade $sandboxName (it builds the images and starts the sandbox)"

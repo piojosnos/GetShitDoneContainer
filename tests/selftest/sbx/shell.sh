@@ -137,6 +137,14 @@ case_shell_checks_before_compose() {
   reset_standin_calls
   run_sbx_scripted noimagerun sbx-shell noimage
   expect "sbx-shell: a missing image is refused before compose and the shell" refused_before_shell noimagerun "is not built; run: sbx-upgrade"
+  expect "sbx-shell: a missing image does not blame Docker" lacks_text "$WORK/noimagerun.err" "is Docker running?"
+
+  set_standin_state sha256:new "" "" yes
+  set_standin_knob docker-down
+  reset_standin_calls
+  run_sbx_scripted dockerdownrun sbx-shell noimage
+  expect "sbx-shell: Docker not answering is refused before compose and the shell" refused_before_shell dockerdownrun "cannot reach Docker; is Docker running?"
+  expect "sbx-shell: Docker not answering does not advise sbx-upgrade" lacks_text "$WORK/dockerdownrun.err" "sbx-upgrade"
 }
 
 # ------------------------------------------------------------------------------
