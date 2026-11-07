@@ -66,6 +66,7 @@ What each check proves:
 | H-28 | sbx-add registers a sandbox on a folder with a space in its path and refuses it twice; sbx-start and sbx-stop work by name with /bin/bash, ignore SBX_DIR, SBX_NAME and COMPOSE_PROJECT_NAME from your terminal, and keep the container and the files; the test sandbox is restored on the run folder | h28-sbx-add-start-stop.sh | automatic |
 | H-29 | sbx-upgrade with a bogus build option fails and leaves the sandbox as it was; sbx-upgrade rebuilds, recreates only sbx-hosttest (new container, other sbx containers unchanged), keeps the files in the project folder, state/ and state/claude, keeps one bind mount and no volume, warns that open shells close, and starts a stopped sandbox; the login and session survive in the helper | h29-sbx-upgrade.sh, manual/h29-upgrade-resume.sh | automatic; helper for the rest |
 | H-30 | The tool versions line in sbx-claude:local matches versions.env (jdk from the TEMURIN_IMAGE tag, python from the image); an interactive shell prints it once, bash -c and bash -lc print nothing; sbx-upgrade ends with it (H-29) | h30-version-line.sh | automatic |
+| H-31 | sbx-shell on a sandbox with no container starts it and waits for its start hooks, then (with no terminal) Docker refuses the shell; through a terminal it opens bash in /home/sandbox/workspace/hosttest on a running sandbox without recreating it, and on a stopped one after starting it again; the helper logs in with sbx-claude in that shell and finds Claude still logged in after a stop and a new sbx-shell | `h31-sbx-shell.sh`, `manual/h31-jump-in.sh` | automatic; helper for the rest |
 | Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |
 
 ## Manual helpers (when something looks wrong)
@@ -79,6 +80,7 @@ bash tests/host/manual/h13-doctor.sh
 bash tests/host/manual/h16-gsd-bump.sh
 bash tests/host/manual/h19-bundle-behaviour.sh
 bash tests/host/manual/h29-upgrade-resume.sh
+bash tests/host/manual/h31-jump-in.sh
 ```
 
 | Helper | You do | What it proves |
@@ -89,6 +91,7 @@ bash tests/host/manual/h29-upgrade-resume.sh
 | `h16-gsd-bump.sh` | Set `GSD_CORE_VERSION` in `versions.env` to the approved bump target when asked, confirm the session resumes in `claude --continue`, then put the pin back | After a GSD pin bump and a rebuild the new GSD is synced into `state/claude`, the login survives and `claude --continue` resumes |
 | `h19-bundle-behaviour.sh` | Run `sbx-gh-login`, `sbx-bundle-clone` (the private repo) and `sbx-claude`; then ask, read and amend a rule on a branch, try an edit through `~/.claude/skills`, check `/status`, and optionally push and open a PR | The clone works with a real login, the skills are listed, a rule is followed, a language rule loads on demand, a rule is amended on a branch in the clone, an edit through `~/.claude/skills` is refused, and `/status` shows the managed settings |
 | `h29-upgrade-resume.sh` | Log in to Claude in the helper's own sandbox, send one message, /exit; after sbx-upgrade confirm the session resumes in claude --continue, then /exit | sbx-upgrade keeps the Claude login and claude --continue resumes the earlier session in a registered sandbox |
+| `h31-jump-in.sh` | In the shell sbx-shell opens, run pwd, then sbx-claude: log in, send one message, /exit, exit; after it stops and reopens the sandbox, run sbx-claude again and confirm there is no login prompt | sbx-shell starts a sandbox and opens a real shell in its project folder, and sbx-claude in that shell starts Claude already logged in after a stop and a new start |
 
 - `h09-rebuild-resume.sh`, `h16-gsd-bump.sh` and `h19-bundle-behaviour.sh` need a Claude login in the test sandbox. `h07-login.sh` makes one. `h29-upgrade-resume.sh` makes its own.
 - Add `--no-cache` to `h09-rebuild-resume.sh` for a clean rebuild: `bash tests/host/manual/h09-rebuild-resume.sh --no-cache`. It is slow. `h29-upgrade-resume.sh` takes `--no-cache` the same way.
