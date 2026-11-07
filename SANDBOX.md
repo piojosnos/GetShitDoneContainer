@@ -76,6 +76,7 @@ sbx-add demo /Users/you/sbx-demo
   - a name outside the name rule, `state` and `best-practices`, or a name that is already registered
   - a relative path, or one with a `.`, `..` or empty part
   - a folder that holds the registry folder, such as `/` or your home
+  - a folder that is, holds or sits inside this repo's folder, because the Mac runs the repo's scripts and a sandbox there could change them
   - a folder that is, holds or sits inside another sandbox's folder
 - Registering a folder you already used with the raw commands keeps its login and history.
 
@@ -379,7 +380,7 @@ Rebuilds and host-test runs pile up images, build cache and run folders. From th
 | `sbx-claude:local is not built` | Run `sbx-upgrade NAME`. |
 | `the build failed; sbx-NAME was left as it was` | Read the build output above it. The sandbox still runs on the old image. |
 | `the start hooks of sbx-NAME did not finish within 120 s` or `sbx-NAME stopped during its start` | Run `docker logs sbx-NAME`. |
-| `overlaps the registry folder` or `overlaps the folder of sandbox` | Pick a folder of its own for the sandbox. |
+| `overlaps the registry folder`, `overlaps the repo folder` or `overlaps the folder of sandbox` | Pick a folder of its own for the sandbox. |
 | `required variable SBX_DIR is missing a value` | Only the raw Compose commands read `SBX_NAME` and `SBX_DIR` from your terminal; export both, or use the `sbx-*` scripts. |
 | Maven fails with `java.io.IOException: Input/output error` and `Failed to delete tracking file` | Maven 3.9.12 and later cannot keep their local repository on the Docker Desktop for Mac mount. Keep `MAVEN_VERSION` at 3.9.11 until a newer release passes host check H-23. |
 | `up` fails with `... must be lowercase` and names `sbx-<name>-name-check` | `SBX_NAME` has an uppercase letter. Use the lowercase name; see the name rule in Requirements. |

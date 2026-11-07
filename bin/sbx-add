@@ -6,7 +6,7 @@
 # The entry is two lines in ~/.config/sbx/sandboxes/NAME, outside every mount.
 # ------------------------------------------------------------------------------
 
-# The library sets registryDir, configDir and entryDir.
+# The library sets registryDir, configDir, repoDir and entryDir.
 # shellcheck disable=SC2154
 set -eu
 
@@ -103,6 +103,20 @@ refuse_registry_overlap() {
 }
 
 # ------------------------------------------------------------------------------
+# refuse_repo_overlap PATH: fails when PATH is, holds or is in the repo folder
+# ------------------------------------------------------------------------------
+# The Mac runs the repo's scripts, compose.yml and build.sh. A sandbox that
+# reaches them could change what the Mac runs next. This also refuses the
+# folders that hold the repo, such as the folder it was cloned into.
+# ------------------------------------------------------------------------------
+refuse_repo_overlap() {
+  if paths_overlap "$1" "$repoDir"; then
+    sbx_error "'$1' overlaps the repo folder $repoDir; a sandbox there could change the scripts the Mac runs. Pick another folder."
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
 # refuse_sandbox_overlap PATH: fails when PATH overlaps a registered sandbox
 # ------------------------------------------------------------------------------
 # Two sandboxes on one folder, or one inside the other, would share a state/
@@ -161,6 +175,7 @@ check_name "$1"
 refuse_registered "$1"
 check_host_path "$2"
 refuse_registry_overlap "$hostPath"
+refuse_repo_overlap "$hostPath"
 refuse_sandbox_overlap "$hostPath"
 create_folders "$1"
 write_entry "$1"

@@ -164,6 +164,48 @@ case_bad_paths() {
 }
 
 # ------------------------------------------------------------------------------
+# folders_absent PATH: true when PATH/state was not made
+# ------------------------------------------------------------------------------
+folders_absent() {
+  [ ! -e "$1/state" ]
+}
+
+# ------------------------------------------------------------------------------
+# Case: a folder that is, holds or sits inside the repo folder is refused
+# ------------------------------------------------------------------------------
+# The script runs from a copy of bin/ and the start library in WORK/box/repo, so
+# a failing case makes folders in the copy and never in the real repo.
+# ------------------------------------------------------------------------------
+case_repo_overlap() {
+  local realBin=$BIN
+  local repoText='overlaps the repo folder'
+  local fakeRepo=$WORK/box/repo
+
+  echo '--- the repo folder'
+
+  mkdir -p "$fakeRepo/bin" "$fakeRepo/base"
+  cp "$realBin"/sbx-* "$fakeRepo/bin/"
+  cp "$REPO/base/sbx-start-lib.sh" "$fakeRepo/base/"
+  BIN=$fakeRepo/bin
+
+  run_sbx repois sbx-add repois "$fakeRepo"
+  expect "sbx-add: the repo folder itself is refused" refused_cleanly repois "$repoText" repois ""
+  expect "sbx-add: the repo folder got no state folder" folders_absent "$fakeRepo"
+
+  run_sbx repoholds sbx-add repoholds "$WORK/box"
+  expect "sbx-add: a folder that holds the repo folder is refused" refused_cleanly repoholds "$repoText" repoholds ""
+  expect "sbx-add: the folder that holds the repo got no state folder" folders_absent "$WORK/box"
+
+  run_sbx repoinside sbx-add repoinside "$fakeRepo/inside"
+  expect "sbx-add: a folder inside the repo folder is refused" refused_cleanly repoinside "$repoText" repoinside "$fakeRepo/inside"
+
+  run_sbx repoprefix sbx-add repoprefix "$WORK/box/repo-other"
+  expect "sbx-add: a folder that only shares a text prefix with the repo folder is accepted" equals "$SBX_RC" 0
+
+  BIN=$realBin
+}
+
+# ------------------------------------------------------------------------------
 # Case: names and folders already taken by another sandbox (after the register)
 # ------------------------------------------------------------------------------
 case_overlaps() {
@@ -198,6 +240,7 @@ case_bad_names
 case_bad_paths
 case_registers
 case_defaults
+case_repo_overlap
 case_overlaps
 expect "sbx-add: no case reached docker" no_docker_call
 finish_cases
