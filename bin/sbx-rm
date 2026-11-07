@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# Removes a sandbox's container; with --unregister also its registry entry
+# ------------------------------------------------------------------------------
+# Usage: sbx-rm NAME [--unregister]
+# Compose takes the container and its network, never volumes or images. Nothing
+# in the sandbox folder is read, written or deleted.
+# ------------------------------------------------------------------------------
+
+# The library sets entryFile and entryDir.
+# shellcheck disable=SC2154
+set -eu
+
+. "$(dirname "$0")/sbx-lib.sh"
+
+sandboxName=""
+unregisterEntry=no
+
+# ------------------------------------------------------------------------------
+# parse_arguments ARG...: sets sandboxName and unregisterEntry from the line
+# ------------------------------------------------------------------------------
+# --unregister may come before or after the name; anything else is the usage.
+# ------------------------------------------------------------------------------
+parse_arguments() {
+  if [ "$#" -eq 1 ] && [ "$1" != "--unregister" ]; then
+    sandboxName=$1
+    return 0
+  fi
+
+  if [ "$#" -eq 2 ] && [ "$2" = "--unregister" ]; then
+    sandboxName=$1
+    unregisterEntry=yes
+    return 0
+  fi
+
+  if [ "$#" -eq 2 ] && [ "$1" = "--unregister" ]; then
+    sandboxName=$2
+    unregisterEntry=yes
+    return 0
+  fi
+
+  sbx_usage 'NAME [--unregister]'
+}
+
+# ------------------------------------------------------------------------------
+# warn_if_running NAME: warns before a running sandbox loses its sessions
+# ------------------------------------------------------------------------------
+warn_if_running() {
+  if sandbox_is_running "$1"; then
+    warn_sessions_close "$1" "is running; removing it"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# remove_container NAME: takes the container and its network of the sandbox
+# ------------------------------------------------------------------------------
+remove_container() {
+  if ! run_compose "$1" down; then
+    sbx_error "docker compose down failed for sbx-$1; the registry entry stays and nothing in $entryDir was changed"
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# unregister_sandbox NAME: deletes the registry entry, the only delete here
+# ------------------------------------------------------------------------------
+unregister_sandbox() {
+  if ! rm -- "$entryFile"; then
+    sbx_error "could not delete $entryFile; the container is gone and nothing in $entryDir was changed"
+    return 1
+  fi
+
+  echo "sbx-rm: deleted the registry entry $entryFile; sbx-add $1 \"$entryDir\" registers the folder again"
+}
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+parse_arguments "$@"
+sbx_init
+check_name "$sandboxName"
+read_registry_entry "$sandboxName"
+warn_if_running "$sandboxName"
+remove_container "$sandboxName"
+
+if [ "$unregisterEntry" = "yes" ]; then
+  unregister_sandbox "$sandboxName"
+fi
+
+echo "sbx-rm: the container sbx-$sandboxName is gone; nothing in $entryDir was changed"

@@ -147,6 +147,15 @@ case_host_script_rule() {
   clean_copy_passes "host scripts: a clean copy passes the data rule" isolation.sh host_scripts_keep_sandbox_data
   plant_case "host scripts: a compose take-down in sbx-stop fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-stop" append_scratch_line bin/sbx-stop 'run_compose "$1" down -v'
   plant_case "host scripts: a delete in sbx-upgrade fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-upgrade" append_scratch_line bin/sbx-upgrade 'rm -rf "$entryDir"'
+  plant_case "host scripts: a volume take-down in sbx-rm fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm" append_scratch_line bin/sbx-rm 'run_compose "$1" down -v'
+  plant_case "host scripts: an image removal in sbx-rm fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm" append_scratch_line bin/sbx-rm 'run_compose "$1" down --rmi local'
+  plant_case "host scripts: an orphan removal in sbx-rm fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm" append_scratch_line bin/sbx-rm 'run_compose "$1" down --remove-orphans'
+  plant_case "host scripts: a folder delete in sbx-rm fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm" append_scratch_line bin/sbx-rm 'rm -rf "$entryDir"'
+  plant_case "host scripts: a delete of another path in sbx-rm fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm" append_scratch_line bin/sbx-rm '  if ! rm -- "$entryDir"; then'
+  plant_case "host scripts: a second operand to the entry delete fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm" append_scratch_line bin/sbx-rm '  if ! rm -- "$entryFile" "$entryDir"; then'
+  plant_case "host scripts: the word rm in sbx-list fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-list" append_scratch_line bin/sbx-list '# docker rm the leftovers'
+  plant_case "host scripts: the word down in sbx-shell fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-shell" append_scratch_line bin/sbx-shell '# take the sandbox down'
+  plant_case "host scripts: a missing sbx-rm fails the data rule" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm is missing" rm -f "$WORK/repo/bin/sbx-rm"
 }
 
 # ------------------------------------------------------------------------------

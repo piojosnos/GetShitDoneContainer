@@ -234,10 +234,10 @@ runs_older_image() {
 }
 
 # ------------------------------------------------------------------------------
-# warn_sessions_close NAME LEAD: warns that recreating sbx-NAME ends sessions
+# warn_sessions_close NAME LEAD: warns that sbx-NAME loses its open sessions
 # ------------------------------------------------------------------------------
-# LEAD says why and ends with the recreate, e.g. "is running; recreating it".
-# One wording for every script that recreates a running sandbox.
+# LEAD says why and ends with the recreate or the removal, e.g. "is running;
+# removing it". One wording for every script that recreates or removes one.
 # ------------------------------------------------------------------------------
 warn_sessions_close() {
   echo "$scriptName: sbx-$1 $2 will close its open shells and Claude sessions"
