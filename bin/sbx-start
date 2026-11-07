@@ -6,6 +6,9 @@
 # The folders are checked first, so a wrong entry never reaches Docker. A running
 # sandbox on an older image is recreated on the current one, after a warning.
 # ------------------------------------------------------------------------------
+
+# The library sets claudeImage.
+# shellcheck disable=SC2154
 set -eu
 
 . "$(dirname "$0")/sbx-lib.sh"
