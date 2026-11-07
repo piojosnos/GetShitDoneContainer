@@ -426,7 +426,7 @@ Plans:
 **Requirements**: SCR-04, SCR-05, SCR-06
 **Success Criteria** (what must be TRUE):
   1. On a stopped sandbox, the jump-in command starts it and opens a bash shell in `/home/sandbox/workspace/<name>`. On a running sandbox, it just opens the shell.
-  2. The same command can launch `claude` directly instead of a shell, already logged in.
+  2. In that shell, `sbx-claude` starts Claude already logged in. There is no separate command that launches Claude from the Mac.
   3. The user lists all registered sandboxes with their host path and running or stopped status, and the status matches what `docker ps -a` shows.
   4. The user removes a sandbox's container, and optionally its registration. Its `<name>/` and `state/` folders on the Mac are left untouched, and re-registering the same path brings back the login and history.
 
