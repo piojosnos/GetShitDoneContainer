@@ -78,6 +78,7 @@ sbx-add demo /Users/you/sbx-demo
   - a folder that holds the registry folder, such as `/` or your home
   - a folder that is, holds or sits inside this repo's folder, because the Mac runs the repo's scripts and a sandbox there could change them
   - a folder that is, holds or sits inside another sandbox's folder
+- Those folder checks compare folders, not spelling: a symlink, `/tmp` against `/private/tmp`, or another letter case on the Mac's disk is still the same folder.
 - Registering a folder you already used with the raw commands keeps its login and history.
 
 The registry is one file per sandbox, `~/.config/sbx/sandboxes/NAME`, with two lines:

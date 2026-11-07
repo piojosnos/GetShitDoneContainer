@@ -16,7 +16,7 @@ set -eu
 # check_host_path PATH: sets hostPath to PATH without trailing slashes, or fails
 # ------------------------------------------------------------------------------
 # Refused: empty, relative, a line break, and an empty, . or .. part. ~ is not
-# expanded. Paths are compared as text; a symlink is not followed.
+# expanded. The overlap checks below follow symlinks (see paths_overlap).
 # ------------------------------------------------------------------------------
 check_host_path() {
   local rawPath=$1
@@ -55,26 +55,126 @@ check_host_path() {
 }
 
 # ------------------------------------------------------------------------------
+# locate_folder PATH: sets locatedBase and locatedTail from an absolute PATH
+# ------------------------------------------------------------------------------
+# locatedBase is the deepest folder of PATH that exists, with every symlink
+# resolved. locatedTail is the rest, as /part/part, empty when PATH exists.
+# ------------------------------------------------------------------------------
+locate_folder() {
+  local walkPath=$1
+
+  if [[ "$walkPath" != /* ]]; then
+    return 1
+  fi
+
+  locatedTail=""
+
+  while [ "${#walkPath}" -gt 1 ] && [ "${walkPath%/}" != "$walkPath" ]; do
+    walkPath=${walkPath%/}
+  done
+
+  while [ ! -d "$walkPath" ]; do
+    locatedTail=/${walkPath##*/}$locatedTail
+    walkPath=${walkPath%/*}
+
+    if [ -z "$walkPath" ]; then
+      walkPath=/
+    fi
+  done
+
+  locatedBase=$(cd -P "$walkPath" && pwd -P) || return 1
+}
+
+# ------------------------------------------------------------------------------
+# folder_within FOLDER ANCESTOR: true when ANCESTOR is FOLDER or a folder above it
+# ------------------------------------------------------------------------------
+# FOLDER is a resolved path. Each step compares the two folders themselves with
+# -ef, not their spelling.
+# ------------------------------------------------------------------------------
+folder_within() {
+  local walkPath=$1
+
+  while true; do
+    if [ "$walkPath" -ef "$2" ]; then
+      return 0
+    fi
+
+    if [ "$walkPath" = "/" ]; then
+      return 1
+    fi
+
+    walkPath=${walkPath%/*}
+
+    if [ -z "$walkPath" ]; then
+      walkPath=/
+    fi
+  done
+}
+
+# ------------------------------------------------------------------------------
+# tails_overlap FIRST SECOND: true when one tail is the other or holds it
+# ------------------------------------------------------------------------------
+# Both tails are below the same existing folder. They are compared per segment
+# and without letter case, because the Mac's disk ignores case: /x/sbx and
+# /x/sbx-other do not overlap, and an empty tail holds every tail.
+# ------------------------------------------------------------------------------
+tails_overlap() {
+  local LC_ALL=C
+  local firstTail
+  local secondTail
+
+  firstTail=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')/
+  secondTail=$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')/
+
+  case "$secondTail" in
+    "$firstTail"*)
+      return 0
+      ;;
+  esac
+
+  case "$firstTail" in
+    "$secondTail"*)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
+# ------------------------------------------------------------------------------
 # paths_overlap A B: true when A and B are one folder or one holds the other
 # ------------------------------------------------------------------------------
-# Compared per path segment: /x/sbx and /x/sbx-other do not overlap, and / holds
-# every path.
+# Folders are compared as folders, not as text, so a symlink, /tmp against
+# /private/tmp and a different letter case on the Mac's disk all count as the
+# same folder. A part that does not exist yet is compared as text below the
+# deepest part that does. Whatever cannot be resolved counts as an overlap.
 # ------------------------------------------------------------------------------
 paths_overlap() {
-  local firstPath=${1%/}/
-  local secondPath=${2%/}/
+  local firstBase
+  local firstTail
+  local secondBase
+  local secondTail
 
-  case "$secondPath" in
-    "$firstPath"*)
-      return 0
-      ;;
-  esac
+  locate_folder "$1" || return 0
+  firstBase=$locatedBase
+  firstTail=$locatedTail
 
-  case "$firstPath" in
-    "$secondPath"*)
-      return 0
-      ;;
-  esac
+  locate_folder "$2" || return 0
+  secondBase=$locatedBase
+  secondTail=$locatedTail
+
+  if [ "$firstBase" -ef "$secondBase" ]; then
+    tails_overlap "$firstTail" "$secondTail"
+    return
+  fi
+
+  if [ -z "$secondTail" ] && folder_within "$firstBase" "$secondBase"; then
+    return 0
+  fi
+
+  if [ -z "$firstTail" ] && folder_within "$secondBase" "$firstBase"; then
+    return 0
+  fi
 
   return 1
 }

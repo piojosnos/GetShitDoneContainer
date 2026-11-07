@@ -199,6 +199,14 @@ case_repo_overlap() {
   run_sbx repoinside sbx-add repoinside "$fakeRepo/inside"
   expect "sbx-add: a folder inside the repo folder is refused" refused_cleanly repoinside "$repoText" repoinside "$fakeRepo/inside"
 
+  ln -s "$fakeRepo" "$WORK/box/repolink"
+  run_sbx repolink sbx-add repolink "$WORK/box/repolink"
+  expect "sbx-add: a symlink to the repo folder is refused" refused_cleanly repolink "$repoText" repolink ""
+  expect "sbx-add: the folder behind the symlink got no state folder" folders_absent "$fakeRepo"
+
+  run_sbx repolinkin sbx-add repolinkin "$WORK/box/repolink/inside"
+  expect "sbx-add: a folder inside a symlink to the repo folder is refused" refused_cleanly repolinkin "$repoText" repolinkin "$fakeRepo/inside"
+
   run_sbx repoprefix sbx-add repoprefix "$WORK/box/repo-other"
   expect "sbx-add: a folder that only shares a text prefix with the repo folder is accepted" equals "$SBX_RC" 0
 
@@ -230,6 +238,47 @@ case_overlaps() {
 }
 
 # ------------------------------------------------------------------------------
+# Case: folders are compared as folders, so a symlink or a letter case cannot hide one
+# ------------------------------------------------------------------------------
+# Runs after case_overlaps, which registered demo (WORK/sbx one) and deep
+# (WORK/a/b/c). /tmp against /private/tmp on the Mac is the same case as a symlink.
+# ------------------------------------------------------------------------------
+case_same_folder() {
+  local sandboxText='overlaps the folder of sandbox'
+  local registryText='overlaps the registry folder'
+
+  echo '--- one folder under another name'
+
+  ln -s "$WORK/sbx one" "$WORK/link to one"
+  run_sbx linkone sbx-add linkone "$WORK/link to one"
+  expect "sbx-add: a symlink to another sandbox folder is refused" refused_cleanly linkone "$sandboxText demo" linkone ""
+
+  run_sbx linkoneinner sbx-add linkoneinner "$WORK/link to one/inner"
+  expect "sbx-add: a folder inside a symlink to another sandbox folder is refused" refused_cleanly linkoneinner "$sandboxText demo" linkoneinner "$WORK/sbx one/inner"
+
+  ln -s "$WORK/a" "$WORK/link to a"
+  run_sbx linkholder sbx-add linkholder "$WORK/link to a/b"
+  expect "sbx-add: a folder that holds another sandbox folder through a symlink is refused" refused_cleanly linkholder "$sandboxText deep" linkholder ""
+
+  ln -s "$WORK/cfg" "$WORK/link to cfg"
+  run_sbx linkreg sbx-add linkreg "$WORK/link to cfg/inside"
+  expect "sbx-add: a folder inside a symlink to the registry folder is refused" refused_cleanly linkreg "$registryText" linkreg "$WORK/cfg/inside"
+
+  SBX_CONFIG_DIR="$WORK/link to cfg" run_sbx regthroughlink sbx-add regthroughlink "$WORK/cfg"
+  expect "sbx-add: the registry folder given as a symlink is still protected" refused_cleanly regthroughlink "$registryText" regthroughlink ""
+
+  SBX_CONFIG_DIR=$WORK/cfg-notyet run_sbx notyet sbx-add notyet "$WORK/CFG-NOTYET/inside"
+  expect "sbx-add: a registry folder not made yet is compared without letter case" refused_cleanly notyet "$registryText" notyet "$WORK/CFG-NOTYET/inside"
+
+  if [ "$WORK/SBX ONE" -ef "$WORK/sbx one" ]; then
+    run_sbx upper sbx-add upper "$WORK/SBX ONE"
+    expect "sbx-add: the same folder in another letter case is refused" refused_cleanly upper "$sandboxText demo" upper ""
+  else
+    echo "INFO: this disk tells letter cases apart; the same-folder-in-another-case check runs on the Mac only"
+  fi
+}
+
+# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -242,5 +291,6 @@ case_registers
 case_defaults
 case_repo_overlap
 case_overlaps
+case_same_folder
 expect "sbx-add: no case reached docker" no_docker_call
 finish_cases
