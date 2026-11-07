@@ -430,7 +430,23 @@ Plans:
   3. The user lists all registered sandboxes with their host path and running or stopped status, and the status matches what `docker ps -a` shows.
   4. The user removes a sandbox's container, and optionally its registration. Its `<name>/` and `state/` folders on the Mac are left untouched, and re-registering the same path brings back the login and history.
 
-**Plans**: TBD
+**Plans:** 5 plans
+
+Plans:
+**Wave 1**
+- [ ] 04-01-PLAN.md: Tracer: sbx-shell starts a sandbox when needed and opens bash in its project folder (start steps shared with sbx-start in the library, sbx-start's sbx-shell hint); docker-free self-test; H-31 and the attended jump-in helper
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 04-02-PLAN.md: sbx-list: one row per registered sandbox with its folder and status from one docker ps call, the older-image mark, broken entries, labelled containers with no entry; self-test; H-32
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 04-03-PLAN.md: sbx-rm: a plain compose down and the optional unregister after a good down, the data guard rule narrowed for it in the same commit; self-test; H-33 with the re-register round trip
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 04-04-PLAN.md: SANDBOX.md teaches the three commands; the test docs name H-31 to H-33 and the seventh helper
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 04-05-PLAN.md: Final gate, planning-ID scan, feat/sbx-shell-list-rm for one code PR, then the Mac run with 33 checks and the attended helper (checkpoint)
 
 ### Phase 5: Migration, Docs, and Old-Layout Retirement
 
