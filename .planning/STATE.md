@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 04
 current_phase_name: Jump-In and Sandbox Housekeeping
 status: executing
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-11-07T04:14:59.146Z"
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-11-07T16:11:42.214Z"
 last_activity: 2026-11-07
 last_activity_desc: Phase 04 execution started
-state_head: 598af869deaadaa4a8f52078df99ce4ac48e8d56
+state_head: bd66eae7ac7cc6f294f18e23d95fe959c17b3c14
 progress:
   total_phases: 14
   completed_phases: 10
   total_plans: 81
-  completed_plans: 78
+  completed_plans: 79
   percent: 71
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-10-26)
 ## Current Position
 
 Phase: 04 (Jump-In and Sandbox Housekeeping) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-11-07 — Phase 04 execution started
 
@@ -142,6 +142,7 @@ Progress: [████████████████████] 44/44 p
 | Phase 03 P04 | 45min | 3 tasks | 2 files |
 | Phase 04 P01 | 68 min | 3 tasks | 10 files |
 | Phase 04 P02 | 11 min | 3 tasks | 7 files |
+| Phase 04 P03 | 15 min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -272,6 +273,7 @@ Recent decisions affecting current work:
 - [Phase 04]: bring_up_sandbox lives in bin/sbx-lib.sh (not sbx-shell calling sbx-start): the jump-in prints no start lines and never warns about an image it will not recreate
 - [Phase 04]: sbx-shell always runs check_name and read_registry_entry, also for a running sandbox; a running sandbox gets one inspect and the exec only
 - [Phase 04]: sbx-list: paused and restarting read stopped; a broken registry entry is a row, not a failure; leftover hint names only sbx-add; fixed-width printf instead of column
+- [Phase 04]: sbx-rm runs exactly run_compose NAME down (no volumes, images or orphans) and deletes the registry entry only after a good down; the guard pins that one delete to an exact line
 
 ### Pending Todos
 
@@ -318,6 +320,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-07T04:14:58.946Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-11-07T16:11:42.012Z
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None
