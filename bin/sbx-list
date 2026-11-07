@@ -1,0 +1,175 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# Lists the registered sandboxes with their status and folder
+# ------------------------------------------------------------------------------
+# Usage: sbx-list
+# One docker ps call gives every status, so the list matches docker ps -a. It
+# only reads: no container, registry entry or folder is changed.
+# ------------------------------------------------------------------------------
+
+# The library sets registryDir and entryDir.
+# shellcheck disable=SC2154
+set -eu
+
+. "$(dirname "$0")/sbx-lib.sh"
+
+containerStateText=""
+olderImageFound=no
+
+# ------------------------------------------------------------------------------
+# read_container_states: sets containerStateText, one "NAME STATE" line each
+# ------------------------------------------------------------------------------
+# The label keeps the old-layout containers out. A failed docker ps is an error,
+# never an empty list, so no sandbox is shown as stopped or gone by mistake.
+# ------------------------------------------------------------------------------
+read_container_states() {
+  local stateText
+
+  if ! stateText=$(docker ps -a --filter label=sbx.name --format '{{.Names}} {{.State}}' 2>/dev/null </dev/null); then
+    sbx_error "cannot read the containers from Docker; is Docker running?"
+    return 1
+  fi
+
+  containerStateText=$(printf '%s\n' "$stateText" | LC_ALL=C sort)
+}
+
+# ------------------------------------------------------------------------------
+# status_word STATE: prints running for running, else stopped
+# ------------------------------------------------------------------------------
+# Paused, restarting, exited, created, dead and removing all read stopped.
+# ------------------------------------------------------------------------------
+status_word() {
+  if [ "$1" = "running" ]; then
+    echo "running"
+  else
+    echo "stopped"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# status_of NAME: prints the status of the container sbx-NAME
+# ------------------------------------------------------------------------------
+# The match is the whole name, so sbx-demo-two is never the sandbox demo.
+# ------------------------------------------------------------------------------
+status_of() {
+  local containerName
+  local containerState
+
+  while read -r containerName containerState; do
+    if [ "$containerName" = "sbx-$1" ]; then
+      status_word "$containerState"
+      return 0
+    fi
+  done <<EOF
+$containerStateText
+EOF
+
+  echo "no container"
+}
+
+# ------------------------------------------------------------------------------
+# print_row NAME STATUS PATH: prints one line of the table
+# ------------------------------------------------------------------------------
+print_row() {
+  printf '%-31s %-20s %s\n' "$1" "$2" "$3"
+}
+
+# ------------------------------------------------------------------------------
+# print_table: the header and one row for each registry entry
+# ------------------------------------------------------------------------------
+# LC_ALL=C puts the glob in byte order, so the rows never depend on the locale
+# of the Mac. A broken entry is a row; sbx-start NAME prints the reason.
+# ------------------------------------------------------------------------------
+print_table() {
+  local LC_ALL=C
+  local entryPath
+  local entryName
+  local statusText
+  local rowCount=0
+
+  for entryPath in "$registryDir"/*; do
+    if [ ! -f "$entryPath" ]; then
+      continue
+    fi
+
+    entryName=${entryPath##*/}
+
+    if [ "$rowCount" -eq 0 ]; then
+      print_row NAME STATUS PATH
+    fi
+
+    rowCount=$((rowCount + 1))
+
+    if ! check_name "$entryName" 2>/dev/null || ! read_registry_entry "$entryName" 2>/dev/null; then
+      print_row "$entryName" "broken entry" "$entryPath"
+      continue
+    fi
+
+    statusText=$(status_of "$entryName")
+
+    if [ "$statusText" = "running" ] && runs_older_image "$entryName"; then
+      statusText="running, older image"
+      olderImageFound=yes
+    fi
+
+    print_row "$entryName" "$statusText" "$entryDir"
+  done
+
+  if [ "$rowCount" -eq 0 ]; then
+    echo "sbx-list: no sandboxes registered; register one with: sbx-add NAME HOST_PATH"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# print_older_image_note: says what a running, older image row means
+# ------------------------------------------------------------------------------
+print_older_image_note() {
+  if [ "$olderImageFound" = "yes" ]; then
+    echo "older image: sbx-start NAME recreates it on the current image; that closes its open shells and Claude sessions"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# print_leftovers: lists the labelled containers that have no registry entry
+# ------------------------------------------------------------------------------
+# For example the host-test sandbox, or one whose entry was deleted by hand.
+# ------------------------------------------------------------------------------
+print_leftovers() {
+  local containerName
+  local containerState
+  local leftoverCount=0
+
+  while read -r containerName containerState; do
+    if [ -z "$containerName" ]; then
+      continue
+    fi
+
+    case "$containerName" in
+      sbx-*)
+        if [ -f "$registryDir/${containerName#sbx-}" ]; then
+          continue
+        fi
+        ;;
+    esac
+
+    if [ "$leftoverCount" -eq 0 ]; then
+      echo
+      echo "Containers with the sbx.name label but no registry entry (sbx-add NAME HOST_PATH registers one again):"
+    fi
+
+    leftoverCount=$((leftoverCount + 1))
+    printf '  %-35s %s\n' "$containerName" "$(status_word "$containerState")"
+  done <<EOF
+$containerStateText
+EOF
+}
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+[ "$#" -eq 0 ] || sbx_usage ''
+sbx_init
+read_container_states
+print_table
+print_older_image_note
+print_leftovers

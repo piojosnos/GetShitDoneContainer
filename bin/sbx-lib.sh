@@ -22,7 +22,7 @@ sbx_error() {
 # It runs before sbx_init, so the script name is read here when it is not set.
 # ------------------------------------------------------------------------------
 sbx_usage() {
-  echo "Usage: ${scriptName:-${0##*/}} $1" >&2
+  echo "Usage: ${scriptName:-${0##*/}}${1:+ $1}" >&2
   exit 2
 }
 
