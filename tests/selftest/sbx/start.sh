@@ -26,19 +26,6 @@ case_container_gone() {
 }
 
 # ------------------------------------------------------------------------------
-# appears_before FILE FIRST SECOND: true when FIRST is on an earlier line than SECOND
-# ------------------------------------------------------------------------------
-appears_before() {
-  local firstLine
-  local secondLine
-
-  firstLine=$(grep -Fn -m1 -- "$2" "$1" | cut -d: -f1)
-  secondLine=$(grep -Fn -m1 -- "$3" "$1" | cut -d: -f1)
-
-  [ -n "$firstLine" ] && [ -n "$secondLine" ] && [ "$firstLine" -lt "$secondLine" ]
-}
-
-# ------------------------------------------------------------------------------
 # Case: a running sandbox on an older image gets a warning before the recreate
 # ------------------------------------------------------------------------------
 case_older_image() {
@@ -59,6 +46,7 @@ case_older_image() {
 
   set_standin_state sha256:new sha256:new true yes
   run_sbx_scripted currentstart sbx-start older
+  expect "sbx-start: the closing hint names sbx-shell" has_text "$WORK/currentstart.out" "sbx-start: open a shell with: sbx-shell older"
   expect "sbx-start: a running sandbox on the current image is not warned" lacks_text "$WORK/currentstart.out" "older image"
   expect "sbx-start: a running sandbox on the current image still starts" equals "$SBX_RC" 0
 

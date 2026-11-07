@@ -37,7 +37,7 @@ start_group() {
 }
 
 # ------------------------------------------------------------------------------
-# make_scripted_docker: makes WORK/scripted/docker, a stand-in that follows files
+# make_scripted_docker: makes WORK/scripted/docker, a stand-in fed by files
 # ------------------------------------------------------------------------------
 # For the cases that must get past the pre-Docker checks. It answers from the
 # files in WORK/standin-state and logs to WORK/standin-calls, so the refusing
@@ -45,7 +45,10 @@ start_group() {
 #   container-image    set: the container exists and this is its image id
 #   container-running  true or false, what container inspect prints for State
 #   image-id           the id of the current image
-#   exec-ok            set: docker exec succeeds
+#   exec-ok            set: docker exec succeeds (the start-hook wait)
+#   shell-status       set: docker exec -it exits with this number; else 0
+#   compose-fail       set: compose prints its usual line, then exits 1
+#   image-missing      set: docker image inspect exits 1
 # Without container-image, every container inspect fails and the id is gone.
 # ------------------------------------------------------------------------------
 make_scripted_docker() {
@@ -55,9 +58,18 @@ make_scripted_docker() {
     printf '%s\n' "state=\"$WORK/standin-state\""
     printf '%s\n' "echo \"docker \$*\" >>\"$WORK/standin-calls\""
     printf '%s\n' 'case "$1" in'
-    printf '%s\n' '  compose) echo "standin: compose $*"; exit 0 ;;'
-    printf '%s\n' '  exec) [ -f "$state/exec-ok" ]; exit $? ;;'
+    printf '%s\n' '  compose)'
+    printf '%s\n' '    echo "standin: compose $*"'
+    printf '%s\n' '    [ -f "$state/compose-fail" ] && exit 1'
+    printf '%s\n' '    exit 0 ;;'
+    printf '%s\n' '  exec)'
+    printf '%s\n' '    if [ "$2" = "-it" ]; then'
+    printf '%s\n' '      [ -f "$state/shell-status" ] && exit "$(cat "$state/shell-status")"'
+    printf '%s\n' '      exit 0'
+    printf '%s\n' '    fi'
+    printf '%s\n' '    [ -f "$state/exec-ok" ]; exit $? ;;'
     printf '%s\n' '  image)'
+    printf '%s\n' '    [ -f "$state/image-missing" ] && exit 1'
     printf '%s\n' '    case "$*" in'
     printf '%s\n' "      *'{{.Id}}'*) cat \"\$state/image-id\" ;;"
     printf '%s\n' '    esac'
@@ -92,6 +104,35 @@ set_standin_state() {
   if [ "$4" = "yes" ]; then
     : >"$WORK/standin-state/exec-ok"
   fi
+}
+
+# ------------------------------------------------------------------------------
+# set_standin_knob NAME [VALUE]: writes VALUE (default empty) to the knob NAME
+# ------------------------------------------------------------------------------
+# Call it after set_standin_state, which empties the state folder first.
+# ------------------------------------------------------------------------------
+set_standin_knob() {
+  printf '%s\n' "${2:-}" >"$WORK/standin-state/$1"
+}
+
+# ------------------------------------------------------------------------------
+# reset_standin_calls: empties the log of the calls the scripted docker saw
+# ------------------------------------------------------------------------------
+reset_standin_calls() {
+  : >"$WORK/standin-calls"
+}
+
+# ------------------------------------------------------------------------------
+# appears_before FILE FIRST SECOND: true when FIRST is on an earlier line
+# ------------------------------------------------------------------------------
+appears_before() {
+  local firstLine
+  local secondLine
+
+  firstLine=$(grep -Fn -m1 -- "$2" "$1" | cut -d: -f1)
+  secondLine=$(grep -Fn -m1 -- "$3" "$1" | cut -d: -f1)
+
+  [ -n "$firstLine" ] && [ -n "$secondLine" ] && [ "$firstLine" -lt "$secondLine" ]
 }
 
 # ------------------------------------------------------------------------------
