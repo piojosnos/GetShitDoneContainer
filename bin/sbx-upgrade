@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# Rebuilds both images, then recreates one sandbox on them
+# ------------------------------------------------------------------------------
+# Usage: sbx-upgrade NAME [BUILD_OPTION...]
+# Options go to build.sh, for example --no-cache. A failed build leaves the
+# sandbox as it was. The last line is the tool versions of the new container.
+# ------------------------------------------------------------------------------
+
+# The library sets repoDir.
+# shellcheck disable=SC2154
+set -eu
+
+. "$(dirname "$0")/sbx-lib.sh"
+
+# ------------------------------------------------------------------------------
+# warn_if_running NAME: says so when the recreate will close open sessions
+# ------------------------------------------------------------------------------
+warn_if_running() {
+  if sandbox_is_running "$1"; then
+    warn_sessions_close "$1" "is running; after the build, recreating it"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# run_build NAME [BUILD_OPTION...]: builds both images with build.sh
+# ------------------------------------------------------------------------------
+# build.sh is its own process with its own set -e, so nothing here runs until
+# it has finished.
+# ------------------------------------------------------------------------------
+run_build() {
+  local sandboxName=$1
+
+  shift
+
+  if ! bash "$repoDir/build.sh" "$@"; then
+    sbx_error "the build failed; sbx-$sandboxName was left as it was"
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# recreate_sandbox NAME: recreates the container of NAME on the new images
+# ------------------------------------------------------------------------------
+# --force-recreate, because a cached build keeps the image id and a plain up
+# would keep the old container. Up also starts a stopped or new sandbox.
+# ------------------------------------------------------------------------------
+recreate_sandbox() {
+  if ! run_compose "$1" up -d --force-recreate --wait; then
+    sbx_error "docker compose up failed after the build; docker logs sbx-$1 shows why"
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# print_tool_versions NAME: prints the versions line of the recreated container
+# ------------------------------------------------------------------------------
+print_tool_versions() {
+  if ! docker exec "sbx-$1" cat /etc/sbx/tool-versions </dev/null; then
+    sbx_error "could not read /etc/sbx/tool-versions in sbx-$1"
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+[ "$#" -ge 1 ] || sbx_usage 'NAME [BUILD_OPTION...]'
+sandboxName=$1
+shift
+sbx_init
+check_name "$sandboxName"
+read_registry_entry "$sandboxName"
+check_sandbox_folders "$sandboxName"
+warn_if_running "$sandboxName"
+run_build "$sandboxName" "$@"
+recreate_sandbox "$sandboxName"
+wait_until_ready "$sandboxName"
+echo "sbx-upgrade: sbx-$sandboxName runs on the new images"
+print_tool_versions "$sandboxName"

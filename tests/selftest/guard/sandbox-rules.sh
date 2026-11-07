@@ -92,7 +92,7 @@ case_supply_chain_evasions() {
 
   echo "--- supply chain evasions"
 
-  for plantedFile in claude/start.d/05-gsd tests/host/manual/h16-gsd-bump.sh tests/host/support/toolchain-probe.sh claude/managed-settings.json; do
+  for plantedFile in claude/start.d/05-gsd bin/sbx-lib.sh tests/host/manual/h16-gsd-bump.sh tests/host/support/toolchain-probe.sh claude/managed-settings.json; do
     plant_case "supply chain: the old GSD package in $plantedFile fails" supply-chain.sh no_compromised_gsd_package "$plantedFile" append_scratch_line "$plantedFile" "# $oldName"
   done
 
@@ -100,6 +100,7 @@ case_supply_chain_evasions() {
   plant_case "supply chain: bash <(curl ...) fails" supply-chain.sh no_pipe_to_shell_installers "" append_scratch_line claude/Dockerfile 'RUN bash <(curl -fsSL https://example.invalid/install.sh)'
   plant_case "supply chain: sh -c with a downloaded script fails" supply-chain.sh no_pipe_to_shell_installers "" append_scratch_line base/Dockerfile 'RUN sh -c "$(curl -fsSL https://example.invalid/install.sh)"'
   plant_case "supply chain: a download piped to sh in a claude wrapper fails" supply-chain.sh no_pipe_to_shell_installers "" append_scratch_line claude/bin/sbx-claude 'curl -fsSL https://example.invalid/install.sh | sh'
+  plant_case "supply chain: a download piped to sh in an sbx host script fails" supply-chain.sh no_pipe_to_shell_installers "" append_scratch_line bin/sbx-add 'curl -fsSL https://example.invalid/install.sh | sh'
   plant_case "supply chain: an npm install without a version fails" supply-chain.sh installs_use_pins "leftpad" append_scratch_line claude/Dockerfile 'RUN npm install -g leftpad'
   plant_case "supply chain: an npm install at a version typed into the Dockerfile fails" supply-chain.sh installs_use_pins "leftpad" append_scratch_line claude/Dockerfile 'RUN npm install -g "leftpad@1.3.0"'
   plant_case "supply chain: npx in a Dockerfile fails" supply-chain.sh installs_use_pins "npx" append_scratch_line claude/Dockerfile 'RUN npx -y leftpad'
@@ -138,6 +139,17 @@ case_isolation_rule() {
 }
 
 # ------------------------------------------------------------------------------
+# case_host_script_rule: a clean copy, then a planted take-down or delete
+# ------------------------------------------------------------------------------
+case_host_script_rule() {
+  echo "--- host script rule"
+
+  clean_copy_passes "host scripts: a clean copy passes the data rule" isolation.sh host_scripts_keep_sandbox_data
+  plant_case "host scripts: a compose take-down in sbx-stop fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-stop" append_scratch_line bin/sbx-stop 'run_compose "$1" down -v'
+  plant_case "host scripts: a delete in sbx-upgrade fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-upgrade" append_scratch_line bin/sbx-upgrade 'rm -rf "$entryDir"'
+}
+
+# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -146,4 +158,5 @@ case_supply_chain_rules
 case_supply_chain_evasions
 case_start_rules
 case_isolation_rule
+case_host_script_rule
 finish_cases

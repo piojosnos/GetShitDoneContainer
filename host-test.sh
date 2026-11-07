@@ -49,7 +49,7 @@ show_context() {
 }
 
 # ------------------------------------------------------------------------------
-# host_checks: H-00 to H-27 and Coexistence; builds both images first
+# host_checks: H-00 to H-30 and Coexistence; builds both images first
 # ------------------------------------------------------------------------------
 host_checks() {
   bash tests/host/run-all.sh
@@ -161,6 +161,26 @@ mac_guard() {
 }
 
 # ------------------------------------------------------------------------------
+# mac_sbx_selftest: the sbx-* self-test in the Mac shell, under /bin/bash
+# ------------------------------------------------------------------------------
+# A bash link first on PATH makes the suite and every script it runs use
+# /bin/bash, the stock 3.2.
+# ------------------------------------------------------------------------------
+mac_sbx_selftest() {
+  local standinDir status
+
+  standinDir=$(mktemp -d "${TMPDIR:-/tmp}/sbx-bash.XXXXXX") || return 1
+  ln -s /bin/bash "$standinDir/bash"
+  printf '/bin/bash is %s\n' "$(/bin/bash -c 'printf %s "$BASH_VERSION"')"
+
+  PATH="$standinDir:$PATH" /bin/bash tests/selftest/sbx/run-all.sh
+  status=$?
+  rm -rf "$standinDir"
+
+  return "$status"
+}
+
+# ------------------------------------------------------------------------------
 # build_warnings: the build logs carry no Dockerfile warning
 # ------------------------------------------------------------------------------
 build_warnings() {
@@ -183,6 +203,7 @@ remove_sandbox() {
 # ------------------------------------------------------------------------------
 main() {
   run_step "context" show_context
+  run_step "sbx self-test in the Mac shell" mac_sbx_selftest
   run_step "host checks" host_checks
   run_step "run folder" find_run_dir
 

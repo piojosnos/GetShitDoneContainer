@@ -14,6 +14,9 @@ hookDir=/etc/sbx/start.d
 sandboxNamePattern='^[a-z][a-z0-9-]{0,30}$'
 sandboxNameRuleText='starts with a lowercase letter, then lowercase letters, digits or hyphens, 31 characters at most'
 
+# Names of the sandbox folder's own folders; the host scripts in bin/ read it.
+sandboxReservedNameList="state best-practices"
+
 # ------------------------------------------------------------------------------
 # is_mount PATH: true when PATH is a mount point
 # ------------------------------------------------------------------------------
@@ -46,23 +49,24 @@ check_workspace_mount() {
 # ------------------------------------------------------------------------------
 # check_sandbox_name: SBX_NAME must follow the sandbox name rule
 # ------------------------------------------------------------------------------
-# The name becomes a folder, so it is checked first; state and best-practices
-# are taken. LC_ALL=C makes [a-z] the 26 ASCII letters in any locale.
+# Checked first, because the name becomes a folder; the names in
+# sandboxReservedNameList are taken. LC_ALL=C pins [a-z] to ASCII.
 # ------------------------------------------------------------------------------
 check_sandbox_name() {
   local LC_ALL=C
+  local reservedName
 
   if [[ ! "${SBX_NAME:-}" =~ $sandboxNamePattern ]]; then
     start_error "SBX_NAME \"${SBX_NAME:-}\" breaks the sandbox name rule: $sandboxNameRuleText. Example: my-project."
     return 1
   fi
 
-  case "$SBX_NAME" in
-    state | best-practices)
+  for reservedName in $sandboxReservedNameList; do
+    if [ "$SBX_NAME" = "$reservedName" ]; then
       start_error "SBX_NAME \"$SBX_NAME\" is taken: $ws/$SBX_NAME is one of the sandbox's own folders. Pick another name."
       return 1
-      ;;
-  esac
+    fi
+  done
 }
 
 # ------------------------------------------------------------------------------

@@ -45,21 +45,54 @@ From the repo root:
 - A `.dockerignore` lets only `base/`, `claude/` and `versions.env` into the build.
 - `versions.env` also holds `BUNDLE_REPO_URL`, the repo `sbx-bundle-clone` clones. It is a setting, not a version; change it and rebuild.
 
-## Create a sandbox folder
+## Scripts
 
-Once per terminal, export both variables. Every compose subcommand (up, down, ps, config) needs both.
-
-```bash
-export SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo
-```
-
-Once per sandbox, create the project and state folders. The container creates the subfolders of `state/` itself.
+Four scripts in `bin/` register, start, stop and upgrade a sandbox by name. Put `bin/` on your PATH once, in `~/.zshrc`:
 
 ```bash
-mkdir -p "$SBX_DIR/$SBX_NAME" "$SBX_DIR/state"
+export PATH="/path/to/GetShitDoneContainer/bin:$PATH"
 ```
 
-What lives where:
+- Put `bin/` on PATH; do not copy or link the scripts. They find `compose.yml` and `build.sh` from their own folder.
+- Every script takes the name only. They run with the Mac's stock bash and accept a folder with spaces.
+
+| Command | What it does |
+|---|---|
+| `sbx-add NAME HOST_PATH` | Registers the sandbox once. Creates the folder, its project folder and `state/`, and writes the registry entry. The agent is claude. |
+| `sbx-start NAME` | Checks the folders, runs `docker compose up -d --wait`, then waits up to 120 s for the start hooks. |
+| `sbx-stop NAME` | Runs `docker compose stop`. The container stays; nothing in the folder changes. |
+| `sbx-upgrade NAME [BUILD_OPTION...]` | Builds both images with `./build.sh`, then recreates this sandbox and waits for it. Prints the tool versions last. |
+
+## Register a sandbox
+
+Once per sandbox:
+
+```bash
+sbx-add demo /Users/you/sbx-demo
+```
+
+- It creates `/Users/you/sbx-demo`, `/Users/you/sbx-demo/demo` (your code) and `/Users/you/sbx-demo/state`. The container creates the subfolders of `state/` itself.
+- It refuses:
+  - a name outside the name rule, `state` and `best-practices`, or a name that is already registered
+  - a relative path, or one with a `.`, `..` or empty part
+  - a folder that holds the registry folder, such as `/` or your home
+  - a folder that is, holds or sits inside this repo's folder, because the Mac runs the repo's scripts and a sandbox there could change them
+  - a folder that is, holds or sits inside another sandbox's folder
+- Those folder checks compare folders, not spelling: a symlink, `/tmp` against `/private/tmp`, or another letter case on the Mac's disk is still the same folder.
+- Registering a folder you already used with the raw commands keeps its login and history.
+
+The registry is one file per sandbox, `~/.config/sbx/sandboxes/NAME`, with two lines:
+
+```text
+SBX_DIR=/Users/you/sbx-demo
+SBX_AGENT=claude
+```
+
+- It lives outside every sandbox's folder on purpose, so no agent can change which folder a start mounts.
+- The scripts read it as text and never run it.
+- `SBX_CONFIG_DIR` moves the registry folder. Only the tests set it.
+
+What lives where. `$SBX_DIR` is the folder you registered and `$SBX_NAME` is the sandbox name:
 
 | On the Mac | In the container | Env var |
 |---|---|---|
@@ -79,7 +112,7 @@ What lives where:
 - Deleting `state/cache` or `state/m2` is always safe; the tools download again.
 - Everything else in `/home/sandbox` (`.bashrc`, `.local`, ...) comes from the image.
 - On the Mac, open `$SBX_DIR/$SBX_NAME` in your IDE, not `$SBX_DIR`: `state/` holds credentials.
-- Bash history is written right after each command, not when the shell exits. It is on the Mac at once and survives `docker compose down` and a fresh `up`. Other shells that are already open see it only after they restart.
+- Bash history is written right after each command, not when the shell exits. It is on the Mac at once and survives a stop, an upgrade and a fresh start. Other shells that are already open see it only after they restart.
 
 ### gh and git identity
 
@@ -91,25 +124,32 @@ What lives where:
 
 ## Start, enter, stop
 
-Start, from the repo root. `up` returns before the start hooks (the GSD sync and the bundle links) finish, so it does not report a failing hook: the container exits afterwards.
+Start:
 
 ```bash
-docker compose up -d --wait
+sbx-start demo
 ```
 
-The hooks are done when the container runs its command. This succeeds then, and fails when the container has exited (`docker logs "sbx-$SBX_NAME"` shows why):
-
-```bash
-docker exec "sbx-$SBX_NAME" pgrep -x sleep
-```
+- It returns when the start hooks (the GSD sync and the bundle links) are done, and prints the command to open a shell.
+- A hook that fails stops the container, and `sbx-start` says so.
+- A running sandbox on an older image is recreated by `sbx-start`, after a warning (see "Upgrade").
 
 Open a shell. Open as many as you like:
 
 ```bash
-docker exec -it -w "/home/sandbox/workspace/$SBX_NAME" "sbx-$SBX_NAME" bash
+docker exec -it -w /home/sandbox/workspace/demo sbx-demo bash
 ```
 
-`-w` starts the shell in your project folder; without it a shell starts in `/home/sandbox/workspace`. Start Claude there:
+`-w` starts the shell in your project folder; without it a shell starts in `/home/sandbox/workspace`. The shell prints the tool versions line when it opens, for example:
+
+```text
+claude 2.1.285 | gsd 1.15.0 | ccusage 20.0.26 | node 24.21.0 | jdk 21.0.12 | mvn 3.9.11 | python 3.12.3
+```
+
+- Scripts and one-off `docker exec` commands stay quiet.
+- `sbx-upgrade` ends with the same line.
+
+Start Claude there:
 
 ```bash
 sbx-claude
@@ -124,29 +164,47 @@ sbx-claude
 Stop:
 
 ```bash
-docker compose down
+sbx-stop demo
 ```
 
+- The container stays and the next `sbx-start` reuses it.
 - Everything in `$SBX_DIR` stays.
-- Never ask down to remove volumes. This layout uses none, and that request is how the old layout lost data.
+- Never ask Compose to remove volumes. This layout uses none, and that request is how the old layout lost data.
 
-## Rebuild without losing login
+### What the scripts run
 
-Stop, rebuild both images (add `--no-cache` to `build.sh` for a clean build), start again:
+For the user who wants the raw commands. From the repo root:
 
 ```bash
-docker compose down
-./build.sh
-docker compose up -d --wait
+SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo docker compose --env-file /dev/null -p sbx-demo -f compose.yml up -d --wait
+SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo docker compose --env-file /dev/null -p sbx-demo -f compose.yml stop
 ```
 
-The login and history live in `state/` on the Mac, so the new container picks them up unchanged.
+- `up` returns before the start hooks finish, so it does not report a failing hook: the container exits afterwards. `sbx-start` waits for them.
+- The hooks are done when the container runs its command. `docker exec sbx-demo pgrep -x sleep` succeeds then, and fails when the container has exited (`docker logs sbx-demo` shows why).
+
+## Upgrade
+
+Rebuild both images and recreate one sandbox on them:
+
+```bash
+sbx-upgrade demo
+```
+
+Add `--no-cache` for a clean build: `sbx-upgrade demo --no-cache`.
+
+- The build runs while the sandbox keeps running. A failed build leaves it as it was.
+- On success the sandbox is recreated without asking, after one line warning that its open shells and Claude sessions close.
+- It ends running, even when it was stopped.
+- The login and history live in `state/` on the Mac, so they stay.
+- It ends by printing the tool versions line of the new container.
+- Other sandboxes keep their old image until their next `sbx-start`, which recreates them on the new one. For a running sandbox, `sbx-start` prints the same warning as `sbx-upgrade` first (the recreate closes its open shells and Claude sessions) and then goes on; it does not wait for an answer. Finish your sessions before you run `sbx-start` on a running sandbox.
+- Each upgrade leaves the old images untagged. `./clean.sh` shows them and `./clean.sh --yes` frees them (see "Free disk space").
 
 ## Bump a version or add a tool
 
 1. Change the value in `versions.env`. For a new tool, add one `NAME=value` line there, and in the Dockerfile that installs it an `ARG NAME` right above the `RUN` that uses it. `build.sh` needs no change.
-2. Run `./build.sh`.
-3. Run `docker compose up -d --wait`. Compose recreates the container on the new image; login and history stay in `state/`.
+2. Run `sbx-upgrade NAME`. It runs `./build.sh` and recreates that sandbox on the new images; login and history stay in `state/`. Other sandboxes pick the images up at their next `sbx-start`.
 
 - A new or bumped pin gets the same review as any new dependency: exact version, publish date, provenance, and the digest or checksum.
 
@@ -283,22 +341,13 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 
 ### Before every start: check the sandbox folder
 
-- Compose is told not to create a missing folder, but some Compose versions ignore that (docker/compose issue 13602).
-- A mistyped `SBX_DIR` could then get an empty folder on your Mac. The container still refuses to start, but the bogus folder is left behind.
-- `SBX_DIR` must be an absolute path: Compose reads a relative one from the repo folder and does not expand `~`.
-
-Paste this right before `docker compose up -d --wait`. If it prints anything, fix `SBX_DIR` or run the `mkdir` above, and do not start:
-
-```bash
-case "$SBX_DIR" in /*) ;; *) echo "NOT ABSOLUTE: $SBX_DIR" ;; esac
-for d in "$SBX_NAME" state; do [ -d "$SBX_DIR/$d" ] || echo "MISSING: $SBX_DIR/$d"; done
-```
-
-If `up` fails, `docker compose logs` shows the `[sbx] ERROR` line that says what is missing.
+- `sbx-start` and `sbx-upgrade` check that the project folder and `state/` exist before Docker runs. A missing one stops them with the path.
+- The registered path is absolute: Compose reads a relative one from the repo folder and does not expand `~`.
+- With the raw Compose commands, some Compose versions ignore the "do not create a missing folder" setting (docker/compose issue 13602), so a mistyped `SBX_DIR` could get an empty folder on your Mac. The container still refuses to start.
 
 ## Verify a new build
 
-After building, or after changing anything under `base/`, `claude/` or `compose.yml`, run `./host-test.sh` on the Mac. It runs `tests/host/run-all.sh` and the other Docker checks and keeps the output in `host-test.log`. When it passes, the automated checks hold. Claude's login and Claude's own behaviour are checked only by the helpers in `tests/host/manual/`: H-07 (login), the second half of H-09 (login and session survive a rebuild), the `claude doctor` part of H-13, the GSD bump part of H-16 (`manual/h16-gsd-bump.sh`), and H-19 (the real bundle flow: login, clone, read, amend, refuse). Run them after a Claude Code or GSD pin change, a change to the managed settings, or a change to login handling. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers.
+After building, or after changing anything under `base/`, `claude/` or `compose.yml`, run `./host-test.sh` on the Mac. It runs `tests/host/run-all.sh` and the other Docker checks and keeps the output in `host-test.log`. When it passes, the automated checks hold. Claude's login and Claude's own behaviour are checked only by the helpers in `tests/host/manual/`: H-07 (login), the second half of H-09 (login and session survive a rebuild), the `claude doctor` part of H-13, the GSD bump part of H-16 (`manual/h16-gsd-bump.sh`), H-19 (the real bundle flow: login, clone, read, amend, refuse), and `h29-upgrade-resume.sh` (login and session survive `sbx-upgrade`). Run them after a Claude Code or GSD pin change, a change to the managed settings, or a change to login handling. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers.
 
 It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes. [`tests/README.md`](tests/README.md) lists every test suite, where it runs and what it catches.
 
@@ -329,7 +378,12 @@ Rebuilds and host-test runs pile up images, build cache and run folders. From th
 | Console keyless sign-in is lost on recreate | It is stored outside `CLAUDE_CONFIG_DIR`. Log in with a claude.ai account instead. |
 | A check fails only because of the capability drop | Remove the `cap_drop` block from `compose.yml`, keep `no-new-privileges`, and report it. |
 | "Mounts denied" or "path is not shared" | Add the parent of `SBX_DIR` in Docker Desktop, Settings, Resources, File sharing. |
-| `required variable SBX_DIR is missing a value` | Export both `SBX_NAME` and `SBX_DIR` in this terminal. |
+| `sbx-...: NAME is not registered` | Run `sbx-add NAME HOST_PATH`. |
+| `sbx-claude:local is not built` | Run `sbx-upgrade NAME`. |
+| `the build failed; sbx-NAME was left as it was` | Read the build output above it. The sandbox still runs on the old image. |
+| `the start hooks of sbx-NAME did not finish within 120 s` or `sbx-NAME stopped during its start` | Run `docker logs sbx-NAME`. |
+| `overlaps the registry folder`, `overlaps the repo folder` or `overlaps the folder of sandbox` | Pick a folder of its own for the sandbox. |
+| `required variable SBX_DIR is missing a value` | Only the raw Compose commands read `SBX_NAME` and `SBX_DIR` from your terminal; export both, or use the `sbx-*` scripts. |
 | Maven fails with `java.io.IOException: Input/output error` and `Failed to delete tracking file` | Maven 3.9.12 and later cannot keep their local repository on the Docker Desktop for Mac mount. Keep `MAVEN_VERSION` at 3.9.11 until a newer release passes host check H-23. |
 | `up` fails with `... must be lowercase` and names `sbx-<name>-name-check` | `SBX_NAME` has an uppercase letter. Use the lowercase name; see the name rule in Requirements. |
 | `[sbx] ERROR: SBX_NAME "..." breaks the sandbox name rule` | Pick a name that follows the rule and rename the project folder to match. A sandbox named with `_` or `.` before this rule needs the same rename. |

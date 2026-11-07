@@ -149,6 +149,22 @@ RUN chmod 755 /usr/local/bin/sbx-entrypoint \
 RUN mkdir -p /etc/sbx/start.d
 
 # ------------------------------------------------------------------------------
+# The tool versions line, printed by every interactive shell
+# ------------------------------------------------------------------------------
+# Written once here, so a shell never waits for java or mvn. The Claude image
+# adds its own fields in front.
+# ------------------------------------------------------------------------------
+RUN printf 'node %s | jdk %s | mvn %s | python %s\n' \
+       "${NODE_VERSION}" \
+       "$(java -version 2>&1 | sed -n '1s/.*"\(.*\)".*/\1/p')" \
+       "${MAVEN_VERSION}" \
+       "$(python3 --version | sed 's/^Python //')" \
+       > /etc/sbx/tool-versions \
+    && chmod 644 /etc/sbx/tool-versions \
+    && grep -Eq '^node [0-9.]+ \| jdk [0-9.]+ \| mvn [0-9.]+ \| python [0-9.]+$' /etc/sbx/tool-versions \
+    && printf '%s\n' 'cat /etc/sbx/tool-versions' >> /etc/bash.bashrc
+
+# ------------------------------------------------------------------------------
 # Home folders: the empty mount target and ~/.local/state
 # ------------------------------------------------------------------------------
 # Build time, so no mount exists yet. ~/.m2 links into state/m2: Maven has no

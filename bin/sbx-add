@@ -1,0 +1,283 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# Registers a sandbox once: its name, its folder on the Mac and its agent
+# ------------------------------------------------------------------------------
+# Usage: sbx-add NAME HOST_PATH
+# The entry is two lines in ~/.config/sbx/sandboxes/NAME, outside every mount.
+# ------------------------------------------------------------------------------
+
+# The library sets registryDir, configDir, repoDir and entryDir.
+# shellcheck disable=SC2154
+set -eu
+
+. "$(dirname "$0")/sbx-lib.sh"
+
+# ------------------------------------------------------------------------------
+# check_host_path PATH: sets hostPath to PATH without trailing slashes, or fails
+# ------------------------------------------------------------------------------
+# Refused: empty, relative, a line break, and an empty, . or .. part. ~ is not
+# expanded. The overlap checks below follow symlinks (see paths_overlap).
+# ------------------------------------------------------------------------------
+check_host_path() {
+  local rawPath=$1
+
+  if [ -z "$rawPath" ]; then
+    sbx_error "the host path is empty"
+    return 1
+  fi
+
+  if [[ "$rawPath" != /* ]]; then
+    sbx_error "'$rawPath' is not an absolute path; ~ and relative paths are not expanded"
+    return 1
+  fi
+
+  if [[ "$rawPath" == *$'\n'* ]]; then
+    sbx_error "the host path has a line break"
+    return 1
+  fi
+
+  hostPath=$rawPath
+
+  while [ "${#hostPath}" -gt 1 ] && [ "${hostPath%/}" != "$hostPath" ]; do
+    hostPath=${hostPath%/}
+  done
+
+  if [ "$hostPath" = "/" ]; then
+    return 0
+  fi
+
+  case "$hostPath/" in
+    *//* | */./* | */../*)
+      sbx_error "'$rawPath' has an empty, . or .. part"
+      return 1
+      ;;
+  esac
+}
+
+# ------------------------------------------------------------------------------
+# locate_folder PATH: sets locatedBase and locatedTail from an absolute PATH
+# ------------------------------------------------------------------------------
+# locatedBase is the deepest folder of PATH that exists, with every symlink
+# resolved. locatedTail is the rest, as /part/part, empty when PATH exists.
+# ------------------------------------------------------------------------------
+locate_folder() {
+  local walkPath=$1
+
+  if [[ "$walkPath" != /* ]]; then
+    return 1
+  fi
+
+  locatedTail=""
+
+  while [ "${#walkPath}" -gt 1 ] && [ "${walkPath%/}" != "$walkPath" ]; do
+    walkPath=${walkPath%/}
+  done
+
+  while [ ! -d "$walkPath" ]; do
+    locatedTail=/${walkPath##*/}$locatedTail
+    walkPath=${walkPath%/*}
+
+    if [ -z "$walkPath" ]; then
+      walkPath=/
+    fi
+  done
+
+  locatedBase=$(cd -P "$walkPath" && pwd -P) || return 1
+}
+
+# ------------------------------------------------------------------------------
+# folder_within FOLDER ANCESTOR: true when ANCESTOR is FOLDER or a folder above it
+# ------------------------------------------------------------------------------
+# FOLDER is a resolved path. Each step compares the two folders themselves with
+# -ef, not their spelling.
+# ------------------------------------------------------------------------------
+folder_within() {
+  local walkPath=$1
+
+  while true; do
+    if [ "$walkPath" -ef "$2" ]; then
+      return 0
+    fi
+
+    if [ "$walkPath" = "/" ]; then
+      return 1
+    fi
+
+    walkPath=${walkPath%/*}
+
+    if [ -z "$walkPath" ]; then
+      walkPath=/
+    fi
+  done
+}
+
+# ------------------------------------------------------------------------------
+# tails_overlap FIRST SECOND: true when one tail is the other or holds it
+# ------------------------------------------------------------------------------
+# Both tails are below the same existing folder. They are compared per segment
+# and without letter case, because the Mac's disk ignores case: /x/sbx and
+# /x/sbx-other do not overlap, and an empty tail holds every tail.
+# ------------------------------------------------------------------------------
+tails_overlap() {
+  local LC_ALL=C
+  local firstTail
+  local secondTail
+
+  firstTail=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')/
+  secondTail=$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')/
+
+  case "$secondTail" in
+    "$firstTail"*)
+      return 0
+      ;;
+  esac
+
+  case "$firstTail" in
+    "$secondTail"*)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
+# ------------------------------------------------------------------------------
+# paths_overlap A B: true when A and B are one folder or one holds the other
+# ------------------------------------------------------------------------------
+# Folders are compared as folders, not as text, so a symlink, /tmp against
+# /private/tmp and a different letter case on the Mac's disk all count as the
+# same folder. A part that does not exist yet is compared as text below the
+# deepest part that does. Whatever cannot be resolved counts as an overlap.
+# ------------------------------------------------------------------------------
+paths_overlap() {
+  local firstBase
+  local firstTail
+  local secondBase
+  local secondTail
+
+  locate_folder "$1" || return 0
+  firstBase=$locatedBase
+  firstTail=$locatedTail
+
+  locate_folder "$2" || return 0
+  secondBase=$locatedBase
+  secondTail=$locatedTail
+
+  if [ "$firstBase" -ef "$secondBase" ]; then
+    tails_overlap "$firstTail" "$secondTail"
+    return
+  fi
+
+  if [ -z "$secondTail" ] && folder_within "$firstBase" "$secondBase"; then
+    return 0
+  fi
+
+  if [ -z "$firstTail" ] && folder_within "$secondBase" "$firstBase"; then
+    return 0
+  fi
+
+  return 1
+}
+
+# ------------------------------------------------------------------------------
+# refuse_registered NAME: fails when NAME already has an entry
+# ------------------------------------------------------------------------------
+refuse_registered() {
+  if [ -e "$registryDir/$1" ]; then
+    sbx_error "$1 is already registered in $registryDir/$1; nothing was changed"
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# refuse_registry_overlap PATH: fails when PATH is, holds or is in the registry
+# ------------------------------------------------------------------------------
+# A sandbox that reaches the registry could rewrite its own entry. This also
+# refuses / and the Mac home, which hold it.
+# ------------------------------------------------------------------------------
+refuse_registry_overlap() {
+  if paths_overlap "$1" "$configDir"; then
+    sbx_error "'$1' overlaps the registry folder $configDir; a sandbox there could change the registry. Pick another folder."
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# refuse_repo_overlap PATH: fails when PATH is, holds or is in the repo folder
+# ------------------------------------------------------------------------------
+# The Mac runs the repo's scripts, compose.yml and build.sh. A sandbox that
+# reaches them could change what the Mac runs next. This also refuses the
+# folders that hold the repo, such as the folder it was cloned into.
+# ------------------------------------------------------------------------------
+refuse_repo_overlap() {
+  if paths_overlap "$1" "$repoDir"; then
+    sbx_error "'$1' overlaps the repo folder $repoDir; a sandbox there could change the scripts the Mac runs. Pick another folder."
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# refuse_sandbox_overlap PATH: fails when PATH overlaps a registered sandbox
+# ------------------------------------------------------------------------------
+# Two sandboxes on one folder, or one inside the other, would share a state/
+# folder and its logins. A broken entry stops the check with its own error.
+# ------------------------------------------------------------------------------
+refuse_sandbox_overlap() {
+  local entryPath
+  local otherName
+
+  for entryPath in "$registryDir"/*; do
+    if [ ! -f "$entryPath" ]; then
+      continue
+    fi
+
+    otherName=${entryPath##*/}
+    read_registry_entry "$otherName" || return 1
+
+    if paths_overlap "$1" "$entryDir"; then
+      sbx_error "'$1' overlaps the folder of sandbox $otherName ($entryDir); each sandbox needs its own folder."
+      return 1
+    fi
+  done
+}
+
+# ------------------------------------------------------------------------------
+# create_folders NAME: makes hostPath, hostPath/NAME and hostPath/state
+# ------------------------------------------------------------------------------
+create_folders() {
+  if ! mkdir -p "$hostPath/$1" "$hostPath/state"; then
+    sbx_error "could not create $hostPath/$1 and $hostPath/state"
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# write_entry NAME: writes the two-line entry, only when the file is new
+# ------------------------------------------------------------------------------
+# Noclobber creates the file only when it does not exist, so a second sbx-add of
+# the same name at the same time is refused.
+# ------------------------------------------------------------------------------
+write_entry() {
+  local newEntry=$registryDir/$1
+
+  if ! mkdir -p "$registryDir" || ! ( set -C; printf 'SBX_DIR=%s\nSBX_AGENT=%s\n' "$hostPath" claude >"$newEntry" ) 2>/dev/null; then
+    sbx_error "could not write $newEntry; nothing was registered"
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+[ "$#" -eq 2 ] || sbx_usage 'NAME HOST_PATH'
+sbx_init
+check_name "$1"
+refuse_registered "$1"
+check_host_path "$2"
+refuse_registry_overlap "$hostPath"
+refuse_repo_overlap "$hostPath"
+refuse_sandbox_overlap "$hostPath"
+create_folders "$1"
+write_entry "$1"
+echo "sbx-add: registered $1 at $hostPath (agent claude)"
+echo "sbx-add: next, sbx-upgrade $1 builds the images and starts it; sbx-start $1 starts it on the images you have"
