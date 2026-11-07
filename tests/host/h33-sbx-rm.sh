@@ -16,21 +16,32 @@ sbxDir=""
 sbxPath=""
 sbxStatus=0
 volumesBefore=""
+volumesBeforeRead=no
 othersBefore=""
+othersBeforeRead=no
 closingLine=""
 
 # ------------------------------------------------------------------------------
 # list_project_volumes: the volume names of the Compose project sbx-hosttest
 # ------------------------------------------------------------------------------
+# Docker's errors go to the listings log, never into the list, so a failed
+# call can never be compared as a list. Its exit status is docker's.
+# ------------------------------------------------------------------------------
 list_project_volumes() {
-  docker volume ls -q --filter label=com.docker.compose.project=sbx-hosttest </dev/null 2>&1
+  docker volume ls -q --filter label=com.docker.compose.project=sbx-hosttest </dev/null 2>>"$RUN/logs/h33-listings.err"
 }
 
 # ------------------------------------------------------------------------------
 # list_other_containers: name, id and state of every sbx- container but ours
 # ------------------------------------------------------------------------------
+# Returns 1 when docker ps fails. The filter runs only on what docker printed,
+# so grep finding no other container is not a failure.
+# ------------------------------------------------------------------------------
 list_other_containers() {
-  docker ps -a --filter name=sbx- --format '{{.Names}} {{.ID}} {{.State}}' </dev/null 2>&1 | grep -v '^sbx-hosttest ' | sort || true
+  local containerText
+
+  containerText=$(docker ps -a --filter name=sbx- --format '{{.Names}} {{.ID}} {{.State}}' </dev/null 2>>"$RUN/logs/h33-listings.err") || return 1
+  printf '%s\n' "$containerText" | grep -v '^sbx-hosttest ' | sort
 }
 
 # ------------------------------------------------------------------------------
@@ -142,8 +153,19 @@ plant_and_snapshot() {
   printf '%s\n' "$sentinelText" >"$sbxDir/hosttest/h33-sentinel.txt"
   printf '%s\n' "$sentinelText" >"$sbxDir/state/claude/h33-sentinel.txt"
   printf '%s\n' "$sentinelText" >>"$sbxDir/state/shell/bash_history"
-  volumesBefore=$(list_project_volumes)
-  othersBefore=$(list_other_containers)
+
+  if volumesBefore=$(list_project_volumes); then
+    volumesBeforeRead=yes
+  else
+    add_problem "docker volume ls failed before sbx-rm, so the volumes cannot be compared; log: $RUN/logs/h33-listings.err"
+  fi
+
+  if othersBefore=$(list_other_containers); then
+    othersBeforeRead=yes
+  else
+    add_problem "docker ps failed before sbx-rm, so the other sandboxes cannot be compared; log: $RUN/logs/h33-listings.err"
+  fi
+
   closingLine="sbx-rm: the container sbx-hosttest is gone; nothing in $sbxDir was changed"
 
   if ! network_exists; then
@@ -152,11 +174,57 @@ plant_and_snapshot() {
 }
 
 # ------------------------------------------------------------------------------
+# compare_volumes_after: the volume list is as before sbx-rm
+# ------------------------------------------------------------------------------
+# A failed docker volume ls is a problem of its own, never a list to compare.
+# ------------------------------------------------------------------------------
+compare_volumes_after() {
+  local volumesAfter
+
+  if ! volumesAfter=$(list_project_volumes); then
+    add_problem "docker volume ls failed after sbx-rm, so the volumes cannot be compared; log: $RUN/logs/h33-listings.err"
+    return
+  fi
+
+  if [ "$volumesBeforeRead" != "yes" ]; then
+    return
+  fi
+
+  if [ "$volumesBefore" != "$volumesAfter" ]; then
+    add_problem "the volume list changed during sbx-rm"
+    add_problem "before: $(join_lines "$volumesBefore")"
+    add_problem "after:  $(join_lines "$volumesAfter")"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# compare_others_after: the other sbx- containers are as before sbx-rm
+# ------------------------------------------------------------------------------
+# A failed docker ps is a problem of its own, never a list to compare.
+# ------------------------------------------------------------------------------
+compare_others_after() {
+  local othersAfter
+
+  if ! othersAfter=$(list_other_containers); then
+    add_problem "docker ps failed after sbx-rm, so the other sandboxes cannot be compared; log: $RUN/logs/h33-listings.err"
+    return
+  fi
+
+  if [ "$othersBeforeRead" != "yes" ]; then
+    return
+  fi
+
+  if [ "$othersBefore" != "$othersAfter" ]; then
+    add_problem "another sbx- container changed during sbx-rm"
+    add_problem "before: $(join_lines "$othersBefore" ';')"
+    add_problem "after:  $(join_lines "$othersAfter" ';')"
+  fi
+}
+
+# ------------------------------------------------------------------------------
 # Checks sbx-rm of the running sandbox: the container and network go, no more
 # ------------------------------------------------------------------------------
 check_remove_running() {
-  local volumesAfter
-
   run_sbx h33-rm sbx-rm hosttest
   expect_exit_zero h33-rm "sbx-rm of the running sandbox"
 
@@ -188,19 +256,8 @@ check_remove_running() {
     add_problem "the image sbx-base:local is gone after sbx-rm"
   fi
 
-  volumesAfter=$(list_project_volumes)
-
-  if [ "$volumesBefore" != "$volumesAfter" ]; then
-    add_problem "the volume list changed during sbx-rm"
-    add_problem "before: $(join_lines "$volumesBefore")"
-    add_problem "after:  $(join_lines "$volumesAfter")"
-  fi
-
-  if [ "$othersBefore" != "$(list_other_containers)" ]; then
-    add_problem "another sbx- container changed during sbx-rm"
-    add_problem "before: $(join_lines "$othersBefore" ';')"
-    add_problem "after:  $(join_lines "$(list_other_containers)" ';')"
-  fi
+  compare_volumes_after
+  compare_others_after
 }
 
 # ------------------------------------------------------------------------------
