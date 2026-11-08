@@ -119,7 +119,11 @@ sed "s|\"project\":\"/home/sandbox/$CODE\"|\"project\":\"/home/sandbox/workspace
 
 ```bash
 sbx-add "$NAME" "$NEW"
+find "$NEW" -type f ! -perm -u+w -print0 > "${TMPDIR:-/tmp}/sbx-readonly.list"
+[ ! -s "${TMPDIR:-/tmp}/sbx-readonly.list" ] || xargs -0 chmod u+w < "${TMPDIR:-/tmp}/sbx-readonly.list"
 docker run --rm --network none -u root --entrypoint chown -v "$NEW:/move" sbx-claude:local -R 1000:1000 /move
+[ ! -s "${TMPDIR:-/tmp}/sbx-readonly.list" ] || xargs -0 chmod u-w < "${TMPDIR:-/tmp}/sbx-readonly.list"
+rm "${TMPDIR:-/tmp}/sbx-readonly.list"
 sbx-shell "$NAME"
 ```
 
@@ -127,8 +131,9 @@ sbx-shell "$NAME"
 - The old container ran as uid 1001; the new one runs as `sandbox` (uid 1000). Docker Desktop keeps the container owner of each file, and `cp -p` copies it, so the copies still belong to 1001.
 - Without the `chown` line, files the old container kept private (mode 600, such as `.git/config`) give `Permission denied` in the new sandbox.
 - The `chown` runs in a throwaway container: the sandbox drops every capability, so even its root cannot change owners.
+- macOS refuses the owner change on a read-only file, such as a git object. The `find` and `xargs` lines make those files writable for the `chown` only, then make them read-only again.
 - Afterwards some files show mode 777 inside the sandbox. That is Docker Desktop's view only; on the Mac the modes stay as they were.
-- For a sandbox already moved without the `chown` line, set `NEW` and run that line once.
+- For a sandbox already moved without these lines, set `NEW` and run the five lines between `sbx-add` and `sbx-shell` once.
 - If `sbx-shell` says `sbx-claude:local` is not built, run `sbx-upgrade "$NAME"` once.
 - The first start syncs GSD into `state/claude` and relinks the bundle clone, or tells you to run `sbx-bundle-clone`.
 - The shell opens in `/home/sandbox/workspace/$NAME`, the folder the renamed history belongs to.
