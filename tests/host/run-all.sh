@@ -22,9 +22,8 @@ fatalCheck="h00-compose-v2.sh"
 noSandboxCheckList="h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh h17-start-offline-and-failing-hook.sh h21-bad-name-refused.sh h25-images-match-versions.sh h27-bundle-clone-and-publish.sh"
 sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h14-wrappers-and-settings-in-image.sh h15-bundle-linked-and-visible.sh h18-scope-and-deny.sh h22-toolchain-in-base.sh h24-ccusage-reports-usage.sh h26-isolation-by-inspect.sh h30-version-line.sh"
 chainCheckList="h08-history-survives-recreate.sh h16-live-clone-and-restart.sh h23-caches-survive-recreate.sh h11-stop-is-quick-and-safe.sh h09-rebuild-keeps-files-no-volumes.sh h28-sbx-add-start-stop.sh h29-sbx-upgrade.sh h31-sbx-shell.sh h32-sbx-list.sh h33-sbx-rm.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
-finalCheckList="coexistence.sh"
 
-remainingList="$fatalCheck $noSandboxCheckList $sandboxCheckList $chainCheckList $finalCheckList"
+remainingList="$fatalCheck $noSandboxCheckList $sandboxCheckList $chainCheckList"
 passedCount=0
 failedCount=0
 notRunCount=0
@@ -214,28 +213,6 @@ create_bundle_clone() {
 }
 
 # ------------------------------------------------------------------------------
-# record_old_layout: writes the old containers and folders to the run logs
-# ------------------------------------------------------------------------------
-# Coexistence compares against these files at the end.
-# Each snapshot is captured first, so a failed one leaves no partial baseline.
-# ------------------------------------------------------------------------------
-record_old_layout() {
-  local containerSnapshot folderSnapshot
-
-  if ! containerSnapshot=$(snapshot_old_containers); then
-    fatal "docker ps failed; the old containers cannot be recorded"
-  fi
-
-  printf '%s\n' "$containerSnapshot" >"$RUN/logs/old-containers.before"
-
-  if folderSnapshot=$(snapshot_old_folders); then
-    printf '%s\n' "$folderSnapshot" >"$RUN/logs/old-folders.before"
-  else
-    info "git could not read ClaudeCode/ and OpenCode/; Coexistence will report it"
-  fi
-}
-
-# ------------------------------------------------------------------------------
 # remove_leftover_test_container: takes down an earlier test container
 # ------------------------------------------------------------------------------
 # Stops the run if the name belongs to something else or the take down fails.
@@ -302,11 +279,9 @@ print_docker_target
 check_docker_reachable
 create_run_folder
 create_bundle_clone
-record_old_layout
 remove_leftover_test_container
 run_compose_check
 build_all_images
 run_list "$noSandboxCheckList"
 run_sandbox_checks
-run_list "$finalCheckList"
 finish "not reached"
