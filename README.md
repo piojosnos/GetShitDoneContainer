@@ -11,6 +11,21 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 - Nothing is mounted over the container's home directory, so everything the image provides stays visible.
 - Moving a sandbox from the old layout (the whole home mounted at `/home/sandbox`): see [`MIGRATION.md`](MIGRATION.md).
 
+## Quick start
+
+| Step | Where | Command | What it does |
+|---|---|---|---|
+| 1 | Mac | `git clone https://github.com/piojosnos/GetShitDoneContainer.git "$HOME/sbx-tools/GetShitDoneContainer"` | The tools clone. |
+| 2 | Mac | `echo 'export PATH="$HOME/sbx-tools/GetShitDoneContainer/bin:$PATH"' >> ~/.zshrc` | Puts its `bin/` on PATH. Open a new terminal. |
+| 3 | Mac | `sbx-add demo /Users/you/sbx-demo` | Registers the sandbox and creates its folders. |
+| 4 | Mac | `sbx-upgrade demo` | Builds both images and starts it. |
+| 5 | Mac | `sbx-shell demo` | Opens bash in the project folder. |
+| 6 | Sandbox | `sbx-gh-login` | gh and git login. |
+| 7 | Sandbox | `sbx-bundle-clone` | The best-practices clone. |
+| 8 | Sandbox | `sbx-claude` | Claude. Log in once. |
+
+Each step is explained below in "Scripts", "Register a sandbox" and "Best-practices bundle".
+
 ## What the images hold
 
 | Image | Holds |
