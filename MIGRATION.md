@@ -134,9 +134,29 @@ sbx-shell "$NAME"
 - macOS refuses the owner change on a read-only file, such as a git object. The `find` and `xargs` lines make those files writable for the `chown` only, then make them read-only again.
 - Afterwards some files show mode 777 inside the sandbox. That is Docker Desktop's view only; on the Mac the modes stay as they were.
 - For a sandbox already moved without these lines, set `NEW` and run the five lines between `sbx-add` and `sbx-shell` once.
+- For now, paste step 6 one line at a time and run the [mode diagnostic](#temporary-mode-diagnostic) twice: before the `find` line and again before `sbx-shell`.
 - If `sbx-shell` says `sbx-claude:local` is not built, run `sbx-upgrade "$NAME"` once.
 - The first start syncs GSD into `state/claude` and relinks the bundle clone, or tells you to run `sbx-bundle-clone`.
 - The shell opens in `/home/sandbox/workspace/$NAME`, the folder the renamed history belongs to.
+
+## Temporary: mode diagnostic
+
+After the `chown` line, the sandbox may show many files as mode 777 and git may report mode changes. These lines record how Docker Desktop stores owners and modes, so the recipe can be fixed. Remove this section once it is.
+
+```bash
+{
+  f="$NEW/$NAME/$(git -C "$NEW/$NAME" ls-files | head -n 1)"
+  for g in "$f" "$NEW/$NAME/.git/config" "$NEW/state/claude/history.jsonl"; do
+    stat -f '%Lp %Su %N' "$g"
+    xattr -l "$g"
+  done
+  docker run --rm --network none --entrypoint stat -v "$NEW:/move" sbx-claude:local -c '%a %U %n' "/move${f#"$NEW"}" "/move/$NAME/.git/config" /move/state/claude/history.jsonl
+} 2>&1 | tee -a "$HOME/sbx-migrate-diag.log"
+```
+
+- The first lines show the Mac mode, owner and extended attributes; the `docker run` line shows what the sandbox sees.
+- Afterwards, in the sandbox shell, run `git status -s | head` (the shell opens in the project folder) and note whether it lists mode changes.
+- Send `~/sbx-migrate-diag.log` and that note to Claude. Do not clean up the modes before that.
 
 ## Check
 
