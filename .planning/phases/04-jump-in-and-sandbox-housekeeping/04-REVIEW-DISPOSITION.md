@@ -52,16 +52,16 @@ recorded: 2026-11-07T23:45:47.296Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
-| WR-03 | warning | open | - |
-| WR-04 | warning | open | - |
-| WR-05 | warning | open | - |
-| IN-01 | info | open | - |
-| IN-02 | info | open | - |
-| IN-03 | info | open | - |
-| IN-04 | info | open | - |
-| IN-05 | info | open | - |
+| WR-01 | warning | fixed | 73474f5; see 04-REVIEW-FIX.md |
+| WR-02 | warning | fixed | 41437c8; see 04-REVIEW-FIX.md |
+| WR-03 | warning | fixed | 2e0e14c; see 04-REVIEW-FIX.md |
+| WR-04 | warning | fixed | 2ee102f; see 04-REVIEW-FIX.md |
+| WR-05 | warning | fixed | 63de7d2; see 04-REVIEW-FIX.md |
+| IN-01 | info | deferred | follow-up; not a defect on its own |
+| IN-02 | info | deferred | follow-up; not a defect on its own |
+| IN-03 | info | deferred | follow-up; not a defect on its own |
+| IN-04 | info | fixed | bd38b74; see 04-REVIEW-FIX.md |
+| IN-05 | info | deferred | follow-up; not a defect on its own |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
