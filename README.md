@@ -9,6 +9,7 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 | `$SBX_DIR/state/` | Claude login, settings and sessions; bash history; gh login; git identity; npm, uv and Maven caches |
 
 - Nothing is mounted over the container's home directory, so everything the image provides stays visible.
+- Moving a sandbox from the old layout (the whole home mounted at `/home/sandbox`): see [`MIGRATION.md`](MIGRATION.md).
 
 ## What the images hold
 
