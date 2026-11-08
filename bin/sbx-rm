@@ -2,9 +2,10 @@
 # ------------------------------------------------------------------------------
 # Removes a sandbox's container; with --unregister also its registry entry
 # ------------------------------------------------------------------------------
-# Usage: sbx-rm NAME [--unregister]
+# Usage: sbx-rm NAME [--unregister] [--yes]
 # Compose takes the container and its network, never volumes or images. Nothing
-# in the sandbox folder is read, written or deleted.
+# in the sandbox folder is read, written or deleted. A running sandbox goes only
+# after a y on the terminal, or with --yes.
 # ------------------------------------------------------------------------------
 
 # The library sets entryFile and entryDir.
@@ -15,40 +16,88 @@ set -eu
 
 sandboxName=""
 unregisterEntry=no
+skipConfirmation=no
+usageText='NAME [--unregister] [--yes]'
 
 # ------------------------------------------------------------------------------
-# parse_arguments ARG...: sets sandboxName and unregisterEntry from the line
+# parse_arguments ARG...: sets sandboxName, unregisterEntry and skipConfirmation
 # ------------------------------------------------------------------------------
-# --unregister may come before or after the name; anything else is the usage.
+# --unregister and --yes may come before or after the name, once each. A second
+# name, or anything else after the name, is the usage.
 # ------------------------------------------------------------------------------
 parse_arguments() {
-  if [ "$#" -eq 1 ] && [ "$1" != "--unregister" ]; then
-    sandboxName=$1
-    return 0
+  local argument
+
+  if [ "$#" -lt 1 ] || [ "$#" -gt 3 ]; then
+    sbx_usage "$usageText"
   fi
 
-  if [ "$#" -eq 2 ] && [ "$2" = "--unregister" ]; then
-    sandboxName=$1
-    unregisterEntry=yes
-    return 0
-  fi
+  for argument in "$@"; do
+    case "$argument" in
+      --unregister)
+        if [ "$unregisterEntry" = "yes" ]; then
+          sbx_usage "$usageText"
+        fi
 
-  if [ "$#" -eq 2 ] && [ "$1" = "--unregister" ]; then
-    sandboxName=$2
-    unregisterEntry=yes
-    return 0
-  fi
+        unregisterEntry=yes
+        ;;
+      --yes)
+        if [ "$skipConfirmation" = "yes" ]; then
+          sbx_usage "$usageText"
+        fi
 
-  sbx_usage 'NAME [--unregister]'
+        skipConfirmation=yes
+        ;;
+      *)
+        if [ -n "$sandboxName" ]; then
+          sbx_usage "$usageText"
+        fi
+
+        sandboxName=$argument
+        ;;
+    esac
+  done
+
+  if [ -z "$sandboxName" ]; then
+    sbx_usage "$usageText"
+  fi
 }
 
 # ------------------------------------------------------------------------------
-# warn_if_running NAME: warns before a running sandbox loses its sessions
+# confirm_if_running NAME: a running sandbox goes only after a y or with --yes
 # ------------------------------------------------------------------------------
-warn_if_running() {
-  if sandbox_is_running "$1"; then
-    warn_sessions_close "$1" "is running; removing it"
+# The question is read from stdin, and only when stdin is a terminal; a script
+# without --yes is refused, so a pipe can never answer for the user. Anything
+# but y or Y, an empty line included, keeps the sandbox.
+# ------------------------------------------------------------------------------
+confirm_if_running() {
+  local answer=""
+
+  if ! sandbox_is_running "$1"; then
+    return 0
   fi
+
+  warn_sessions_close "$1" "is running; removing it"
+
+  if [ "$skipConfirmation" = "yes" ]; then
+    return 0
+  fi
+
+  if [ ! -t 0 ]; then
+    sbx_error "sbx-$1 is running and there is no terminal to confirm on; add --yes to remove it anyway. Nothing was changed"
+    return 1
+  fi
+
+  read -r -p "Remove the running sbx-$1? [y/N] " answer || answer=""
+
+  case "$answer" in
+    y|Y)
+      return 0
+      ;;
+  esac
+
+  sbx_error "sbx-$1 was not removed; it still runs and nothing was changed"
+  return 1
 }
 
 # ------------------------------------------------------------------------------
@@ -80,7 +129,7 @@ parse_arguments "$@"
 sbx_init
 check_name "$sandboxName"
 read_registry_entry "$sandboxName"
-warn_if_running "$sandboxName"
+confirm_if_running "$sandboxName"
 remove_container "$sandboxName"
 
 if [ "$unregisterEntry" = "yes" ]; then

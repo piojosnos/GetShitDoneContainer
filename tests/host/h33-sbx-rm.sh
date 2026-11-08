@@ -4,7 +4,8 @@
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; takes it down and restores it
 # A real compose down on a folder with a space, then sbx-add of the same folder
-# after --unregister.
+# after --unregister. The running sandbox is first refused without a terminal,
+# then removed with --yes.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -222,11 +223,39 @@ compare_others_after() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks sbx-rm of the running sandbox: the container and network go, no more
+# Checks that the running sandbox is refused without a terminal and --yes
+# ------------------------------------------------------------------------------
+# run_sbx closes stdin, so sbx-rm has no terminal to ask on. The sandbox, its
+# entry and its files must stay as they were.
+# ------------------------------------------------------------------------------
+check_refused_without_yes() {
+  run_sbx h33-rm-noterm sbx-rm hosttest --unregister
+
+  if [ "$sbxStatus" -ne 1 ]; then
+    add_problem "sbx-rm of the running sandbox without a terminal or --yes exited $sbxStatus, not 1; log: $RUN/logs/h33-rm-noterm.err"
+  fi
+
+  if ! grep -qF -- 'add --yes' "$RUN/logs/h33-rm-noterm.err"; then
+    add_problem "sbx-rm without a terminal did not name --yes; log: $RUN/logs/h33-rm-noterm.err"
+  fi
+
+  if [ "$(sandbox_field '{{.State.Running}}')" != "true" ]; then
+    add_problem "$CONTAINER is not running after sbx-rm was refused"
+  fi
+
+  if ! entry_is_registered; then
+    add_problem "the refused sbx-rm changed the registry entry $SBX_CONFIG_DIR/sandboxes/hosttest"
+  fi
+
+  sentinels_intact "after the refused sbx-rm"
+}
+
+# ------------------------------------------------------------------------------
+# Checks sbx-rm --yes of the running sandbox: the container and network go
 # ------------------------------------------------------------------------------
 check_remove_running() {
-  run_sbx h33-rm sbx-rm hosttest
-  expect_exit_zero h33-rm "sbx-rm of the running sandbox"
+  run_sbx h33-rm sbx-rm hosttest --yes
+  expect_exit_zero h33-rm "sbx-rm --yes of the running sandbox"
 
   if ! grep -qF 'will close its open shells and Claude sessions' "$RUN/logs/h33-rm.out"; then
     add_problem "the running sandbox got no warning before the removal; log: $RUN/logs/h33-rm.out"
@@ -366,6 +395,7 @@ sbx_test_setup H-33 h33 || exit 1
 prepare || exit 1
 check_lookup
 plant_and_snapshot
+check_refused_without_yes
 check_remove_running
 check_remove_again
 check_moved_folder
@@ -373,4 +403,4 @@ check_unregister
 check_add_again
 restore_test_sandbox h33
 report_check H-33 "sbx-rm did not remove the sandbox safely, or sbx-add did not bring it back" \
-  "sbx-rm took the container and its network and kept the folder, the entry, the volumes, the images and the other sandboxes; it ran again with no container and with the folder moved; --unregister deleted only the entry; sbx-add of the same folder brought back state/claude and the history"
+  "sbx-rm without a terminal or --yes refused the running sandbox and kept it; with --yes it took the container and its network and kept the folder, the entry, the volumes, the images and the other sandboxes; it ran again with no container and with the folder moved; --unregister deleted only the entry; sbx-add of the same folder brought back state/claude and the history"

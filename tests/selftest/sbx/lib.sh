@@ -169,6 +169,59 @@ run_sbx_scripted() {
 }
 
 # ------------------------------------------------------------------------------
+# run_sbx_in_terminal LABEL ANSWER SCRIPT ARG...: run_sbx_scripted on a terminal
+# ------------------------------------------------------------------------------
+# script(1) gives bin/SCRIPT a terminal as stdin and types ANSWER and Enter.
+# Output still goes to WORK/LABEL.out and .err; the exit status is written to
+# WORK/LABEL.rc, because what script returns differs between its versions. The
+# input stays open until that file exists, because some versions of script end
+# with their input. util-linux script takes one command string, BSD script the
+# words. SBX_RC is 99 when no status was written.
+# ------------------------------------------------------------------------------
+run_sbx_in_terminal() {
+  local label=$1
+  local answerText=$2
+  local savedPath=$PATH
+  local commandText
+  local waitedTenths=0
+
+  shift 2
+  rm -f "$WORK/$label.rc"
+  {
+    printf '%s\n' '#!/bin/sh'
+    printf '%s\n' 'label=$1'
+    printf '%s\n' 'scriptFile=$2'
+    printf '%s\n' 'shift 2'
+    printf '%s\n' "bash \"$BIN/\$scriptFile\" \"\$@\" >\"$WORK/\$label.out\" 2>\"$WORK/\$label.err\""
+    printf '%s\n' "echo \$? >\"$WORK/\$label.rc\""
+  } >"$WORK/in-terminal"
+  chmod 755 "$WORK/in-terminal"
+
+  PATH=$WORK/scripted:$PATH
+
+  {
+    printf '%s\n' "$answerText"
+
+    while [ ! -s "$WORK/$label.rc" ] && [ "$waitedTenths" -lt 300 ]; do
+      sleep 0.1
+      waitedTenths=$((waitedTenths + 1))
+    done
+  } | if script --version >/dev/null 2>&1; then
+    commandText=$(printf '%q ' "$WORK/in-terminal" "$label" "$@")
+    SHELL=/bin/sh script -q -c "$commandText" /dev/null
+  else
+    script -q /dev/null "$WORK/in-terminal" "$label" "$@"
+  fi >/dev/null 2>&1
+
+  PATH=$savedPath
+  SBX_RC=$(cat "$WORK/$label.rc" 2>/dev/null) || SBX_RC=99
+
+  if [ -z "$SBX_RC" ]; then
+    SBX_RC=99
+  fi
+}
+
+# ------------------------------------------------------------------------------
 # run_sbx LABEL SCRIPT ARG...: runs bin/SCRIPT, sets SBX_RC
 # ------------------------------------------------------------------------------
 # Output goes to WORK/LABEL.out and WORK/LABEL.err; stdin is closed.

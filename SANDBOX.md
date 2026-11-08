@@ -54,7 +54,7 @@ export PATH="/path/to/GetShitDoneContainer/bin:$PATH"
 ```
 
 - Put `bin/` on PATH; do not copy or link the scripts. They find `compose.yml` and `build.sh` from their own folder.
-- Every script but `sbx-list` takes the name; `sbx-rm` also takes `--unregister`. They run with the Mac's stock bash and accept a folder with spaces.
+- Every script but `sbx-list` takes the name; `sbx-rm` also takes `--unregister` and `--yes`. They run with the Mac's stock bash and accept a folder with spaces.
 
 | Command | What it does |
 |---|---|
@@ -63,7 +63,7 @@ export PATH="/path/to/GetShitDoneContainer/bin:$PATH"
 | `sbx-shell NAME` | Starts the sandbox when it does not run (the same checks and wait as `sbx-start`), then opens bash in its project folder. A running sandbox is entered as it is. |
 | `sbx-list` | Lists every registered sandbox with its status and folder, from one `docker ps -a` call. |
 | `sbx-stop NAME` | Runs `docker compose stop`. The container stays; nothing in the folder changes. |
-| `sbx-rm NAME [--unregister]` | Runs `docker compose down`: the container and its network go; volumes, images and the folder stay. `--unregister` also deletes the registry entry. |
+| `sbx-rm NAME [--unregister] [--yes]` | Runs `docker compose down`: the container and its network go; volumes, images and the folder stay. A running sandbox asks first; `--yes` skips the question. `--unregister` also deletes the registry entry. |
 | `sbx-upgrade NAME [BUILD_OPTION...]` | Builds both images with `./build.sh`, then recreates this sandbox and waits for it. Prints the tool versions last. |
 
 ## Register a sandbox
@@ -231,12 +231,17 @@ Containers with the sbx.name label but no registry entry (sbx-add NAME HOST_PATH
 ```bash
 sbx-rm demo
 sbx-rm demo --unregister
+sbx-rm demo --yes
 ```
 
 - `sbx-rm` runs `docker compose down` for that one sandbox. Its container and its network go. It never removes volumes or images, which the other sandboxes use.
-- A running sandbox is removed without a question, after one line warning that its open shells and Claude sessions close. Nothing on disk is lost.
+- A running sandbox is removed only after a question. One line warns that its open shells and Claude sessions close, then `sbx-rm` asks `Remove the running sbx-demo? [y/N]`. `y` or `Y` removes it; any other answer, or Enter alone, keeps it and changes nothing.
+- `--yes` skips the question, for scripts. It goes before or after the name, with or without `--unregister`.
+- Without a terminal (a pipe or a script) and without `--yes`, a running sandbox is refused and nothing changes.
+- Compose stops a running container with a 10 s grace, then kills it. A write in progress at that moment can be cut off, so close Claude and the shells before you answer `y`.
+- A stopped sandbox, or one with no container, is removed with no question.
 - Nothing in `$SBX_DIR` is read, written or deleted, and the last line says so. The folder may even have been moved away.
-- A sandbox with no container is removed quietly, so running it twice is fine.
+- Running it twice is fine: the second run finds no container and is quiet.
 - `--unregister` also deletes the registry entry `~/.config/sbx/sandboxes/NAME`, only after the down worked. When the down fails, the entry stays and `sbx-rm` can run again.
 - To bring a sandbox back, run `sbx-add demo /Users/you/sbx-demo` with the same folder, then `sbx-start demo` or `sbx-shell demo`. The login, history and caches come back from `state/`.
 - `sbx-rm` needs the registry entry. A container that `sbx-list` shows as not registered is registered again with `sbx-add`, or handled with plain `docker`.
@@ -440,6 +445,7 @@ Rebuilds and host-test runs pile up images, build cache and run folders. From th
 | `sbx-claude:local is not built` | Run `sbx-upgrade NAME`. |
 | `the input device is not a TTY` or `stdin is not a terminal` from `sbx-shell` | Run it in a terminal, not through a pipe or a script. The sandbox has already started. |
 | `broken entry` in `sbx-list` | `sbx-start NAME` prints what is wrong with the entry. Fix the file, or delete it and run `sbx-add` again. |
+| `sbx-NAME is running and there is no terminal to confirm on` from `sbx-rm` | Run it in a terminal and answer `y`, or add `--yes`. Nothing was changed. |
 | `docker compose down failed for sbx-NAME; the registry entry stays` | Read the Compose output above it, then run `sbx-rm NAME` again. |
 | `cannot read the containers from Docker` or `cannot reach Docker; is Docker running?` | Start Docker Desktop. |
 | `the build failed; sbx-NAME was left as it was` | Read the build output above it. The sandbox still runs on the old image. |
