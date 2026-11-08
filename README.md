@@ -71,7 +71,7 @@ export PATH="$HOME/sbx-tools/GetShitDoneContainer/bin:$PATH"
 | `sbx-stop NAME` | Runs `docker compose stop`. The container stays; nothing in the folder changes. |
 | `sbx-rm NAME [--unregister] [--yes]` | Runs `docker compose down`: the container and its network go; volumes, images and the folder stay. |
 | `sbx-upgrade NAME [BUILD_OPTION...]` | Builds both images with `./build.sh`, then recreates this sandbox and waits for it. Prints the tool versions last. |
-| `sbx-fix-modes NAME` | Sets the exec bit of every file git tracks in the project folder to what git committed, on the Mac and in the sandbox. Prints how many it changed. |
+| `sbx-fix-modes NAME` | Sets every file git tracks in the project folder to 644 or 755, as git committed, on the Mac and in the sandbox. Prints how many it changed. |
 
 In the sandbox: `sbx-gh-login`, `sbx-bundle-clone` and `sbx-claude` (see "Best-practices bundle").
 

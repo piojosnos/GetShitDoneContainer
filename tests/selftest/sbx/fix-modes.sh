@@ -46,18 +46,21 @@ attribute_of() {
 }
 
 # ------------------------------------------------------------------------------
-# is_executable PATH / not_executable PATH / not_writable PATH: mode checks
+# has_mode PATH TEXT: true when the mode ls prints for PATH starts with TEXT
 # ------------------------------------------------------------------------------
-is_executable() { [ -x "$1" ]; }
-not_executable() { [ ! -x "$1" ]; }
-not_writable() { [ ! -w "$1" ]; }
+has_mode() {
+  local listLine
+
+  listLine=$(ls -ld "$1") || return 1
+  [ "${listLine:0:10}" = "$2" ]
+}
 
 # ------------------------------------------------------------------------------
 # make_repo DIR: commits run.sh and ro.sh as 755, doc.md as 644, then drifts
 # ------------------------------------------------------------------------------
-# After the drift the Mac modes disagree with git on run.sh and doc.md, ro.sh
-# is read-only, and run.sh and ro.sh carry an attribute the sandbox would read
-# as 644. plain.sh has no attribute.
+# After the drift the Mac modes disagree with git on run.sh (600), doc.md (755)
+# and ro.sh (read-only), and run.sh and ro.sh carry an attribute the sandbox
+# would read as 644. plain.sh has no attribute and matches git.
 # ------------------------------------------------------------------------------
 make_repo() {
   local repoDir=$1
@@ -72,7 +75,7 @@ make_repo() {
   git -C "$repoDir" add . || return 1
   git -C "$repoDir" -c user.name=test -c user.email=test@example.com commit -q -m init || return 1
 
-  chmod 644 "$repoDir/run.sh"
+  chmod 600 "$repoDir/run.sh"
   chmod 755 "$repoDir/doc.md"
   chmod 444 "$repoDir/ro.sh"
   PATH=$WORK/xattr-bin:$PATH xattr -w user.containers.override_stat 1001:1001:0100644 "$repoDir/run.sh"
@@ -121,11 +124,12 @@ case_fix_modes_sets_both_sides() {
 
   PATH=$WORK/xattr-bin:$PATH run_sbx modes5 sbx-fix-modes fixed
   expect "sbx-fix-modes: it exits 0" equals "$SBX_RC" 0
-  expect "sbx-fix-modes: a file committed as 755 is executable on the Mac" is_executable "$repoDir/run.sh"
-  expect "sbx-fix-modes: a file committed as 644 is not executable on the Mac" not_executable "$repoDir/doc.md"
+  expect "sbx-fix-modes: a file committed as 755 is 755 on the Mac" has_mode "$repoDir/run.sh" -rwxr-xr-x
+  expect "sbx-fix-modes: a file committed as 644 is 644 on the Mac" has_mode "$repoDir/doc.md" -rw-r--r--
+  expect "sbx-fix-modes: a read-only file gets the git mode on the Mac" has_mode "$repoDir/ro.sh" -rwxr-xr-x
+  expect "sbx-fix-modes: a file that matches git keeps its mode" has_mode "$repoDir/plain.sh" -rwxr-xr-x
   expect "sbx-fix-modes: the attribute takes the git mode and keeps the owner" equals "$(attribute_of "$repoDir/run.sh")" 1001:1001:0100755
   expect "sbx-fix-modes: a read-only file gets the git mode in its attribute" equals "$(attribute_of "$repoDir/ro.sh")" 1001:1001:0100755
-  expect "sbx-fix-modes: a read-only file stays read-only" not_writable "$repoDir/ro.sh"
   expect "sbx-fix-modes: a file without an attribute does not get one" equals "$(attribute_of "$repoDir/plain.sh")" ""
   expect "sbx-fix-modes: the counts are printed" has_text "$WORK/modes5.out" "set 3 Mac modes and 2 sandbox modes from git"
 
@@ -154,7 +158,7 @@ case_fix_modes_without_xattr() {
 
   run_sbx modes7 sbx-fix-modes bare
   expect "sbx-fix-modes: without xattr it exits 0" equals "$SBX_RC" 0
-  expect "sbx-fix-modes: without xattr the Mac modes still follow git" is_executable "$repoDir/run.sh"
+  expect "sbx-fix-modes: without xattr the Mac modes still follow git" has_mode "$repoDir/run.sh" -rwxr-xr-x
   expect "sbx-fix-modes: without xattr the skip is said" has_text "$WORK/modes7.out" "xattr is not installed"
 }
 

@@ -7,8 +7,9 @@
 # Docker Desktop keeps the mode the sandbox sees in the extended attribute
 # user.containers.override_stat (uid:gid:mode) of the Mac file. A chmod in the
 # sandbox changes only that attribute, so the two sides drift apart. This sets
-# the Mac exec bit and the attribute's mode from the git index, so the Mac, the
-# sandbox and git agree. Files without the attribute keep only the Mac change.
+# the Mac mode and the attribute's mode to 644 or 755 from the git index, so the
+# Mac, the sandbox and git agree. A file without the attribute gets the Mac
+# mode only.
 # ------------------------------------------------------------------------------
 
 # The library sets entryDir.
@@ -22,14 +23,23 @@ macCount=0
 sandboxCount=0
 
 # ------------------------------------------------------------------------------
-# fix_mac_mode PATH GIT_MODE: sets the Mac exec bit of PATH to GIT_MODE
+# fix_mac_mode PATH GIT_MODE: sets the Mac mode of PATH to 644 or 755 from git
+# ------------------------------------------------------------------------------
+# The mode is read from ls, the same on macOS and Linux; macOS appends @ or + to
+# it when the file has attributes, so only its first ten characters count.
 # ------------------------------------------------------------------------------
 fix_mac_mode() {
-  if [ "$2" = 100755 ] && [ ! -x "$1" ]; then
-    chmod +x "$1"
-    macCount=$((macCount + 1))
-  elif [ "$2" = 100644 ] && [ -x "$1" ]; then
-    chmod -x "$1"
+  local wantedText=-rw-r--r--
+  local listLine
+
+  if [ "$2" = 100755 ]; then
+    wantedText=-rwxr-xr-x
+  fi
+
+  listLine=$(ls -ld "$1")
+
+  if [ "${listLine:0:10}" != "$wantedText" ]; then
+    chmod "${2#100}" "$1"
     macCount=$((macCount + 1))
   fi
 }
@@ -37,33 +47,20 @@ fix_mac_mode() {
 # ------------------------------------------------------------------------------
 # fix_sandbox_mode PATH GIT_MODE: sets the attribute's mode of PATH to GIT_MODE
 # ------------------------------------------------------------------------------
-# The uid and gid stay. macOS refuses to write an attribute on a read-only
-# file, so such a file is made writable for the write only.
+# The uid and gid stay. It runs after fix_mac_mode, so the file is writable:
+# macOS refuses to write an attribute on a read-only file.
 # ------------------------------------------------------------------------------
 fix_sandbox_mode() {
   local currentValue
   local wantedValue
-  local readOnly=false
 
   currentValue=$(xattr -p "$overrideName" "$1" 2>/dev/null) || return 0
   wantedValue=${currentValue%:*}:0$2
 
-  if [ "$currentValue" = "$wantedValue" ]; then
-    return 0
+  if [ "$currentValue" != "$wantedValue" ]; then
+    xattr -w "$overrideName" "$wantedValue" "$1"
+    sandboxCount=$((sandboxCount + 1))
   fi
-
-  if [ ! -w "$1" ]; then
-    readOnly=true
-    chmod u+w "$1"
-  fi
-
-  xattr -w "$overrideName" "$wantedValue" "$1"
-
-  if [ "$readOnly" = true ]; then
-    chmod u-w "$1"
-  fi
-
-  sandboxCount=$((sandboxCount + 1))
 }
 
 # ------------------------------------------------------------------------------
@@ -106,11 +103,11 @@ while IFS= read -r -d '' indexEntry; do
     continue
   fi
 
+  fix_mac_mode "$filePath" "$gitMode"
+
   if [ "$hasXattr" = true ]; then
     fix_sandbox_mode "$filePath" "$gitMode"
   fi
-
-  fix_mac_mode "$filePath" "$gitMode"
 done < <(git -C "$codeDir" ls-files -s -z)
 
 echo "sbx-fix-modes: set $macCount Mac modes and $sandboxCount sandbox modes from git in $codeDir"

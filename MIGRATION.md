@@ -134,7 +134,7 @@ sbx-shell "$NAME"
 - The `chown` runs in a throwaway container: the sandbox drops every capability, so even its root cannot change owners.
 - macOS refuses the owner change on a read-only file, such as a git object. The `find` and `xargs` lines make those files writable for the `chown` only, then make them read-only again.
 - Docker Desktop keeps the owner and mode the sandbox sees in the attribute `user.containers.override_stat` of each Mac file, and the `chown` resets those modes.
-- `sbx-fix-modes` then sets the exec bit of every file git tracks back to what git committed, on both sides.
+- `sbx-fix-modes` then sets every file git tracks to 644 or 755, as git committed, on both sides.
 - For a sandbox already moved without these lines, set `NEW` and run the six lines between `sbx-add` and `sbx-shell` once.
 - If `sbx-shell` says `sbx-claude:local` is not built, run `sbx-upgrade "$NAME"` once.
 - The first start syncs GSD into `state/claude` and relinks the bundle clone, or tells you to run `sbx-bundle-clone`.
