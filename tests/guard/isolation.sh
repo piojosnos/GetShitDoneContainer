@@ -1,20 +1,12 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Guard rules on isolation: no socket, no privileges, data kept, old layout kept
+# Guard rules on isolation: no socket, no privileges, data kept
 # ------------------------------------------------------------------------------
 # Usage: bash tests/guard/isolation.sh (exit 0 = every rule holds)
 # Mounts and effective privileges are checked on the running sandbox by H-26.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
-
-# ------------------------------------------------------------------------------
-# Constants: the commit the old layout is compared with
-# ------------------------------------------------------------------------------
-# Used by old_layout_untouched: the old ClaudeCode/ layout as it is on main.
-# Remove both when the old layout is retired.
-# ------------------------------------------------------------------------------
-OLD_LAYOUT_COMMIT=304f80d1a0705d9ab668ef2ed4acd9fcf65060ac
 
 # ------------------------------------------------------------------------------
 # no_docker_socket_or_privileges: no Docker socket, no sudo, no extra privilege
@@ -63,19 +55,10 @@ host_scripts_keep_sandbox_data() {
 }
 
 # ------------------------------------------------------------------------------
-# old_layout_untouched: no change to the old layout until it is retired
-# ------------------------------------------------------------------------------
-old_layout_untouched() {
-  git diff --quiet "$OLD_LAYOUT_COMMIT" -- ClaudeCode OpenCode \
-    && [ -z "$(git ls-files --others --exclude-standard -- ClaudeCode OpenCode)" ]
-}
-
-# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 enter_repo_root || exit 1
 run_rules \
   no_docker_socket_or_privileges \
-  host_scripts_keep_sandbox_data \
-  old_layout_untouched || exit 1
+  host_scripts_keep_sandbox_data || exit 1

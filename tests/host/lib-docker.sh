@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Docker beyond the test sandbox: images, facts about them, old-layout snapshots
+# Docker beyond the test sandbox: images and facts about them
 # ------------------------------------------------------------------------------
 # Sourced by tests/host/lib.sh; runs nothing. Reads RUN and REPO_DIR.
 # Removes no image and no container.
@@ -56,44 +56,4 @@ pin_of() {
 # ------------------------------------------------------------------------------
 claude_pin() {
   pin_of CLAUDE_CODE_VERSION
-}
-
-# ------------------------------------------------------------------------------
-# snapshot_old_containers: one sorted line per old container; 1 if ps fails
-# ------------------------------------------------------------------------------
-# docker ps runs first, so a failed call is a failure, never an empty list.
-snapshot_old_containers() {
-  local psOutput
-
-  if ! psOutput=$(docker ps -a --format '{{.ID}} {{.Names}} {{.State}}' </dev/null 2>/dev/null); then
-    return 1
-  fi
-
-  printf '%s\n' "$psOutput" | grep -E '^[0-9a-f]+ cc_' | sort
-
-  return 0
-}
-
-# ------------------------------------------------------------------------------
-# snapshot_old_folders: old-folder tree hashes and git status; 1 if git fails
-# ------------------------------------------------------------------------------
-# Tree hashes, not HEAD: a commit made elsewhere during a run changes nothing.
-snapshot_old_folders() {
-  local treeHashes statusOutput
-
-  if ! treeHashes=$(git -C "$REPO_DIR" rev-parse HEAD:ClaudeCode HEAD:OpenCode 2>/dev/null </dev/null); then
-    return 1
-  fi
-
-  if ! statusOutput=$(git -C "$REPO_DIR" status --porcelain --untracked-files=all -- ClaudeCode OpenCode 2>/dev/null </dev/null); then
-    return 1
-  fi
-
-  printf '%s\n' "$treeHashes"
-
-  if [ -n "$statusOutput" ]; then
-    printf '%s\n' "$statusOutput"
-  fi
-
-  return 0
 }
