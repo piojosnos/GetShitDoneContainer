@@ -24,6 +24,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login (completed 2026-11-07)
 - [x] **Phase 4: Jump-In and Sandbox Housekeeping** - One command drops you into a sandbox shell or Claude, and you can list and clean up sandboxes safely (completed 2026-11-08)
 - [ ] **Phase 5: Migration, Docs, and Old-Layout Retirement** - Existing sandboxes move over with history intact, the old `cc-*` layout is gone, and the README matches the repo
+- [ ] **Phase 5.1: Sandbox doctor** (INSERTED) - One command inside a sandbox checks owners, modes, logins, bundle and tools after a migration or upgrade, and a skill explains the results
 - [ ] **Phase 6: Automated checks (CI)** - GitHub runs the guard on every PR push and shows it as a PR check
 - [ ] **Phase 7: Start readiness** - `up --wait` returns only once every start hook has finished, and a failing hook fails `up`
 
@@ -478,6 +479,23 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 05-05-PLAN.md: Retirement PR gate: Linux gate (18 rules), branch chore/retire-old-layout, Mac run (32 checks), validation and criteria maps, the CLAUDE.md follow-up
+
+### Phase 05.1: Sandbox doctor (INSERTED)
+
+**Goal:** One command inside a sandbox tells you whether it is healthy after a migration or an upgrade: a `sbx-doctor` script prints one OK/WARN/FAIL line per check with the fix, and a thin `sbx-doctor` skill runs it and explains the results in plain words, including any command to run on the Mac.
+**Requirements**: TBD
+**Depends on:** Phase 5
+**Plans:** 0 plans
+
+**TODO** (from the Phase 5 migrations, 2026-11-08):
+- [ ] Script `claude/bin/sbx-doctor`, shipped in the image next to `sbx-claude`, with a self-test. Deterministic checks; the skill only runs and explains it.
+- [ ] Skill shipped with the image, not the best-practices bundle: the checks follow the sandbox layout, so they version and test with this repo.
+- [ ] Checks to start with: files owned by uid 1001 or root (the root `state/claude/sessions` seen once), private files `sandbox` cannot read, `git status` mode changes (fix: `sbx-fix-modes NAME` on the Mac), Claude login present, gh logged in, git identity, the gh credential helper path, bundle linked, GSD installed, tool versions, `state/` writable, stale `@AGENTS.md` / `@code-conventions.md` lines in `state/claude/CLAUDE.md`.
+- [ ] Limit: inside the container it cannot see Mac-side modes; it reports the symptom and prints the Mac command.
+- [ ] Once it exists, add it as the last step of `MIGRATION.md` "Check" and to the README.
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.1 to break down)
 
 ### Phase 6: Automated checks (CI)
 
