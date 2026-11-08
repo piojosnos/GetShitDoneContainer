@@ -1,43 +1,43 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 04
-current_phase_name: Jump-In and Sandbox Housekeeping
-status: verifying
-stopped_at: Completed 04-05-PLAN.md
-last_updated: "2026-11-07T23:40:31.413Z"
-last_activity: 2026-11-07
-last_activity_desc: Phase 04 execution started
-state_head: c2c0cf773f0eb5fc6c274b6231cdef702f0cc987
+current_phase: 5
+current_phase_name: Migration, Docs, and Old-Layout Retirement
+status: planning
+stopped_at: Phase 04 complete, ready to plan Phase 5
+last_updated: "2026-11-08T00:44:20.452Z"
+last_activity: 2026-11-08
+last_activity_desc: Phase 04 complete, transitioned to Phase 5
+state_head: 0cd844c7abfb53efe0286a707df85f425a0146be
 progress:
   total_phases: 14
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 81
   completed_plans: 81
-  percent: 71
+  percent: 79
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-26)
+See: .planning/PROJECT.md (updated 2026-11-08)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 04 — Jump-In and Sandbox Housekeeping
+**Current focus:** Phase 5: Migration, Docs, and Old-Layout Retirement
 
 ## Current Position
 
-Phase: 04 (Jump-In and Sandbox Housekeeping) — EXECUTING
-Plan: 5 of 5
-Status: Phase complete — ready for verification
-Last activity: 2026-11-07 — Phase 04 execution started
+Phase: 5 — Migration, Docs, and Old-Layout Retirement
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-08 — Phase 04 complete, transitioned to Phase 5
 
-Progress: [████████████████████] 44/44 plans ([███████░░░] 71%)
+Progress: [████████████████████] 44/44 plans ([████████░░] 79%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 76
+- Total plans completed: 81
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -55,6 +55,7 @@ Progress: [████████████████████] 44/44 p
 | 02.1 | 11 | - | - |
 | 02.2 | 8 | - | - |
 | 03 | 4 | - | - |
+| 04 | 5 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -296,6 +297,7 @@ None yet.
 - [Phase 1.4]: Open note: the user's Mac `git status` listed 10 files as modified in the code worktree while the sandbox shows it clean; cause pending
 - [Phase 1.5]: The H-03 gap is closed: plans 12 to 15 added the entrypoint name rule and the Compose name check, and the Mac run of 01.5-16 passed 21 of 21 checks. 01.5 IN-01 to IN-07 stay open. See 01.5-16-SUMMARY.md
 - [Phase 2.2]: UAT passed 3 of 3; two todos from it (H-19 step 6 wording, `sbx-gh-login` re-running the login) plus the review todos in `.planning/todos/pending/`. The code branch `feat/best-practices-from-git` is not pushed yet, so `origin/main` still carries `best-practices/` until its PR is merged
+- [Phase 4]: UAT 4 of 4 and security 26 of 26 threats closed; review findings IN-01, IN-02, IN-03 and IN-05 deferred as follow-ups (see 04-REVIEW-DISPOSITION.md). The code branch `feat/sbx-shell-list-rm` is not pushed yet; it waits for the user's go and PR
 
 ### Quick Tasks Completed
 
@@ -324,6 +326,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-07T23:40:31.215Z
-Stopped at: Completed 04-05-PLAN.md
+Last session: 2026-11-08T00:45:00Z
+Stopped at: Phase 04 complete, ready to plan Phase 5
 Resume file: None
