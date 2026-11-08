@@ -119,10 +119,15 @@ sed "s|\"project\":\"/home/sandbox/$CODE\"|\"project\":\"/home/sandbox/workspace
 
 ```bash
 sbx-add "$NAME" "$NEW"
+sbx-start "$NAME"
+docker exec -u root "sbx-$NAME" chown -R sandbox:sandbox /home/sandbox/workspace/state
 sbx-shell "$NAME"
 ```
 
 - `sbx-add` accepts the filled folder and creates only what is missing.
+- The old container ran as uid 1001 and the new one runs as `sandbox` (uid 1000). The copy keeps the old owner on some folders (`ls -l` shows `1001`).
+- The `chown` line gives all of `state/` to `sandbox`. Docker Desktop rarely blocks writes over a wrong owner, so this keeps `state/` clean rather than fixing a failure.
+- For a sandbox already moved without the `chown` line, run that line once while it runs.
 - If `sbx-shell` says `sbx-claude:local` is not built, run `sbx-upgrade "$NAME"` once.
 - The first start syncs GSD into `state/claude` and relinks the bundle clone, or tells you to run `sbx-bundle-clone`.
 - The shell opens in `/home/sandbox/workspace/$NAME`, the folder the renamed history belongs to.
@@ -145,7 +150,8 @@ ccusage daily
 
 ## After the checks
 
-- For the best-practices bundle, run `sbx-bundle-clone` in the sandbox (the gh login came along). Then remove the `@AGENTS.md` and `@code-conventions.md` lines from `state/claude/CLAUDE.md`, or the same rules load twice.
+- For the best-practices bundle, run `sbx-bundle-clone` in the sandbox (the gh login came along).
+- If `state/claude/CLAUDE.md` exists and holds `@AGENTS.md` or `@code-conventions.md` lines, remove them, or the same rules load twice. The old sandbox loaded its rules that way; the clone now does it.
 - Old memories and `CLAUDE.md` may repeat bundle rules. Paste [`prompts/consolidate-memories.md`](prompts/consolidate-memories.md) into Claude once.
 - After a week of use, set `PROJECT` again, run `docker rm "cc_gsd_$PROJECT"` and delete `OLD` by hand.
 
