@@ -7,7 +7,7 @@ How to use it:
 1. Start the sandbox for the project and open Claude in the project folder.
 2. Paste the prompt below.
 3. Review the sorted list Claude shows, adjust it, then say go.
-4. Turn the "general, not in the bundle" items into a PR against the bundle repo: edit the clone at `/home/sandbox/workspace/best-practices` on a branch (see [`SANDBOX.md`](../SANDBOX.md), "Best-practices bundle").
+4. Turn the "general, not in the bundle" items into a PR against the bundle repo: edit the clone at `/home/sandbox/workspace/best-practices` on a branch (see [`README.md`](../README.md), "Best-practices bundle").
 
 ## Prompt
 

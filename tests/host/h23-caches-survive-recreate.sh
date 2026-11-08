@@ -89,7 +89,7 @@ download_maven_artifact() {
   mvnStatus=$?
 
   if [ "$mvnStatus" -ne 0 ]; then
-    add_problem "mvn $mavenPlugin:get exited with status $mvnStatus; an 'Input/output error' or 'Failed to delete tracking file' means this Maven cannot keep its local repository on the Mac mount (see SANDBOX.md troubleshooting); last lines: $(printf '%s\n' "$mvnOutput" | tail -n 5 | tr '\n' ' ')"
+    add_problem "mvn $mavenPlugin:get exited with status $mvnStatus; an 'Input/output error' or 'Failed to delete tracking file' means this Maven cannot keep its local repository on the Mac mount (see README.md troubleshooting); last lines: $(printf '%s\n' "$mvnOutput" | tail -n 5 | tr '\n' ' ')"
   fi
 }
 
