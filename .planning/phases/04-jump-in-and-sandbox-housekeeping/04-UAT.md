@@ -3,7 +3,7 @@ status: complete
 phase: 04-jump-in-and-sandbox-housekeeping
 source: [04-VERIFICATION.md]
 started: 2026-11-07T23:49:33Z
-updated: 2026-11-08T00:42:45Z
+updated: 2026-11-08T00:44:05Z
 ---
 
 ## Current Test
@@ -22,8 +22,8 @@ result: pass
 
 ### 3. Nothing pushed, merged or opened for the code PR
 expected: feat/sbx-shell-list-rm is local only with no upstream, and no PR exists on GitHub (verifier verdict: holds; remote state is confirmed on GitHub)
-result: skipped
-reason: "User declined further manual UAT; the automated verifier verdict (holds) stands"
+result: pass (checked automatically, as the user declined manual UAT: feat/sbx-shell-list-rm has no upstream and gh pr list --head feat/sbx-shell-list-rm --state all is empty)
+source: automated
 
 ### 4. Disposition of the open code review warnings WR-01 to WR-05
 expected: Each warning is fixed, skipped or deferred; WR-04 (a running sandbox removed after one warning line) bears on "without risking code, login, or history"
@@ -32,10 +32,10 @@ result: pass (WR-01 to WR-05 fixed and verified; IN-01, IN-02, IN-03, IN-05 defe
 ## Summary
 
 total: 4
-passed: 3
+passed: 4
 issues: 0
 pending: 0
-skipped: 1
+skipped: 0
 blocked: 0
 
 ## Gaps
