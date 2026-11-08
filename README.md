@@ -53,7 +53,7 @@ Each step is explained below in "Scripts", "Register a sandbox" and "Best-practi
 
 ## Scripts
 
-Seven scripts in `bin/` register, start, enter, list, stop, remove and upgrade a sandbox by name. Put the tools clone's `bin/` on your PATH once, in `~/.zshrc`:
+Eight scripts in `bin/` register, start, enter, list, stop, remove and upgrade a sandbox by name, and set its file modes from git. Put the tools clone's `bin/` on your PATH once, in `~/.zshrc`:
 
 ```bash
 export PATH="$HOME/sbx-tools/GetShitDoneContainer/bin:$PATH"
@@ -71,6 +71,7 @@ export PATH="$HOME/sbx-tools/GetShitDoneContainer/bin:$PATH"
 | `sbx-stop NAME` | Runs `docker compose stop`. The container stays; nothing in the folder changes. |
 | `sbx-rm NAME [--unregister] [--yes]` | Runs `docker compose down`: the container and its network go; volumes, images and the folder stay. |
 | `sbx-upgrade NAME [BUILD_OPTION...]` | Builds both images with `./build.sh`, then recreates this sandbox and waits for it. Prints the tool versions last. |
+| `sbx-fix-modes NAME` | Sets the exec bit of every file git tracks in the project folder to what git committed, on the Mac and in the sandbox. Prints how many it changed. |
 
 In the sandbox: `sbx-gh-login`, `sbx-bundle-clone` and `sbx-claude` (see "Best-practices bundle").
 
@@ -369,6 +370,7 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 | "Mounts denied" or "path is not shared" | Add the parent of `SBX_DIR` in Docker Desktop, Settings, Resources, File sharing. |
 | `sbx-...: NAME is not registered` | Run `sbx-add NAME HOST_PATH`. |
 | `sbx-claude:local is not built` | Run `sbx-upgrade NAME`. |
+| A script is executable in the sandbox but not on the Mac, or git shows mode changes on one side | Docker Desktop keeps the mode the sandbox sees in the attribute `user.containers.override_stat` of the Mac file; a `chmod` in the sandbox changes only that. Run `sbx-fix-modes NAME` on the Mac. |
 | `the input device is not a TTY` or `stdin is not a terminal` from `sbx-shell` | Run it in a terminal, not through a pipe or a script. The sandbox has already started. |
 | `broken entry` in `sbx-list` | `sbx-start NAME` prints what is wrong with the entry. Fix the file, or run `sbx-rm NAME --unregister` and then `sbx-add` again. |
 | `sbx-NAME is running and there is no terminal to confirm on` from `sbx-rm` | Run it in a terminal and answer `y`, or add `--yes`. Nothing was changed. |
