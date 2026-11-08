@@ -153,6 +153,10 @@ case_host_script_rule() {
   plant_case "host scripts: a folder delete in sbx-rm fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm" append_scratch_line bin/sbx-rm 'rm -rf "$entryDir"'
   plant_case "host scripts: a delete of another path in sbx-rm fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm" append_scratch_line bin/sbx-rm '  if ! rm -- "$entryDir"; then'
   plant_case "host scripts: a second operand to the entry delete fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm" append_scratch_line bin/sbx-rm '  if ! rm -- "$entryFile" "$entryDir"; then'
+  plant_case "host scripts: a volume flag on the removal by name in sbx-rm fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm" append_scratch_line bin/sbx-rm '  if ! docker rm -v "sbx-$1" >/dev/null </dev/null; then'
+  plant_case "host scripts: a forced removal by name in sbx-rm fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm" append_scratch_line bin/sbx-rm '  if ! docker rm -f "sbx-$1" >/dev/null </dev/null; then'
+  plant_case "host scripts: a removal of another container in sbx-rm fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm" append_scratch_line bin/sbx-rm '  if ! docker rm "$containerName" >/dev/null </dev/null; then'
+  plant_case "host scripts: a volume removal in sbx-rm fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm" append_scratch_line bin/sbx-rm '  docker volume rm "sbx-$1"'
   plant_case "host scripts: the word rm in sbx-list fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-list" append_scratch_line bin/sbx-list '# docker rm the leftovers'
   plant_case "host scripts: the word down in sbx-shell fails" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-shell" append_scratch_line bin/sbx-shell '# take the sandbox down'
   plant_case "host scripts: a missing sbx-rm fails the data rule" isolation.sh host_scripts_keep_sandbox_data "bin/sbx-rm is missing" rm -f "$WORK/repo/bin/sbx-rm"

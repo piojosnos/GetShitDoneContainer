@@ -52,6 +52,7 @@ start_group() {
 #   ps-lines           set: docker ps prints this file; unset: prints nothing
 #   ps-fail            set: docker ps exits 1
 #   docker-down        set: every call fails, as with Docker not running
+#   stop-fail, rm-fail set: docker stop or docker rm exits 1; else they exit 0
 # Without container-image, every container inspect fails and the id is gone.
 # ------------------------------------------------------------------------------
 make_scripted_docker() {
@@ -66,6 +67,9 @@ make_scripted_docker() {
     printf '%s\n' 'fi'
     printf '%s\n' 'case "$1" in'
     printf '%s\n' '  info)'
+    printf '%s\n' '    exit 0 ;;'
+    printf '%s\n' '  stop|rm)'
+    printf '%s\n' '    [ -f "$state/$1-fail" ] && exit 1'
     printf '%s\n' '    exit 0 ;;'
     printf '%s\n' '  ps)'
     printf '%s\n' '    [ -f "$state/ps-fail" ] && exit 1'

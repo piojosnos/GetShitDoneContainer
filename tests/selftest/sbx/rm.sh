@@ -150,6 +150,37 @@ removed_unasked() {
 }
 
 # ------------------------------------------------------------------------------
+# by_name_calls: the docker stop and docker rm calls, one line each, in order
+# ------------------------------------------------------------------------------
+by_name_calls() {
+  grep -E '^docker (stop|rm) ' "$WORK/standin-calls" || true
+}
+
+# ------------------------------------------------------------------------------
+# broken_kept LABEL TEXT COPY: exit 1, TEXT, no take-down, the entry as in COPY
+# ------------------------------------------------------------------------------
+broken_kept() {
+  [ "$SBX_RC" -eq 1 ] || return 1
+  has_text "$WORK/$1.err" "$2" || return 1
+  no_compose_call || return 1
+  [ -z "$(by_name_calls)" ] || return 1
+
+  cmp -s "$SBX_CONFIG_DIR/sandboxes/broken" "$3"
+}
+
+# ------------------------------------------------------------------------------
+# broken_cleared LABEL: exit 0, the entry broken is gone, no compose call
+# ------------------------------------------------------------------------------
+broken_cleared() {
+  [ "$SBX_RC" -eq 0 ] || return 1
+  [ ! -e "$SBX_CONFIG_DIR/sandboxes/broken" ] || return 1
+  no_compose_call || return 1
+  has_text "$WORK/$1.out" "deleted the registry entry $SBX_CONFIG_DIR/sandboxes/broken; sbx-add broken HOST_PATH registers the sandbox again" || return 1
+
+  [ "$(tail -n 1 "$WORK/$1.out")" = "sbx-rm: the container sbx-broken is gone; nothing in the sandbox folder was changed" ]
+}
+
+# ------------------------------------------------------------------------------
 # ran_compose_down NAME: the scripted docker saw the down call of sbx-NAME
 # ------------------------------------------------------------------------------
 ran_compose_down() {
@@ -377,6 +408,85 @@ case_rm_confirm() {
 }
 
 # ------------------------------------------------------------------------------
+# Case: a broken entry is cleared only with --unregister, its container by name
+# ------------------------------------------------------------------------------
+# The container is stopped and removed by its exact name, so sbx-broken-two is
+# never named. A running one gets the same question as with Compose.
+# ------------------------------------------------------------------------------
+case_rm_broken_entry() {
+  local entryCopy=$WORK/entry-broken.before
+  local byNameText
+  local answerText
+
+  SBX_CONFIG_DIR=$WORK/cfg-rm-broken
+  export SBX_CONFIG_DIR
+
+  echo '--- sbx-rm broken entry'
+
+  plant_entry broken "SBX_DIR=relative/folder" "SBX_AGENT=claude"
+  cp "$SBX_CONFIG_DIR/sandboxes/broken" "$entryCopy"
+  byNameText=$(printf '%s\n' 'docker stop sbx-broken' 'docker rm sbx-broken')
+
+  set_standin_state sha256:new sha256:new true yes
+  reset_standin_calls
+  run_sbx_scripted brokenplain sbx-rm broken --yes
+  expect "sbx-rm: a broken entry without --unregister is refused with the --unregister hint" broken_kept brokenplain "sbx-rm broken --unregister removes the container by name and clears the entry" "$entryCopy"
+  expect "sbx-rm: the refusal says what is wrong with the entry" has_text "$WORK/brokenplain.err" "has no absolute SBX_DIR"
+
+  reset_standin_calls
+  run_sbx_scripted brokennoterm sbx-rm broken --unregister
+  expect "sbx-rm: a running broken sandbox without a terminal or --yes is refused and kept" broken_kept brokennoterm "add --yes" "$entryCopy"
+
+  set_standin_state sha256:new sha256:new true yes
+  set_standin_knob docker-down
+  reset_standin_calls
+  run_sbx_scripted brokendown sbx-rm broken --unregister --yes
+  expect "sbx-rm: a broken entry with Docker not answering is kept" broken_kept brokendown "cannot reach Docker; is Docker running?" "$entryCopy"
+
+  set_standin_state sha256:new sha256:new true yes
+  set_standin_knob rm-fail
+  reset_standin_calls
+  run_sbx_scripted brokenrmfail sbx-rm broken --unregister --yes
+  expect "sbx-rm: a failed removal by name exits 1 and keeps the entry" equals "$SBX_RC:$(cmp -s "$SBX_CONFIG_DIR/sandboxes/broken" "$entryCopy" && echo kept)" "1:kept"
+  expect "sbx-rm: a failed removal by name says the entry stays" has_text "$WORK/brokenrmfail.err" "Docker could not remove the container sbx-broken; the registry entry stays"
+
+  for answerText in n ""; do
+    set_standin_state sha256:new sha256:new true yes
+    reset_standin_calls
+    run_sbx_in_terminal brokenno "$answerText" sbx-rm broken --unregister
+    expect "sbx-rm: the answer '$answerText' keeps a running broken sandbox and its entry" broken_kept brokenno "sbx-broken was not removed" "$entryCopy"
+  done
+
+  set_standin_state sha256:new sha256:new true yes
+  reset_standin_calls
+  run_sbx_in_terminal brokenyes y sbx-rm broken --unregister
+  expect "sbx-rm: the answer y clears a running broken sandbox" broken_cleared brokenyes
+  expect "sbx-rm: the container is stopped and removed by its exact name, with no option" equals "$(by_name_calls)" "$byNameText"
+  expect "sbx-rm: the adjacent name sbx-broken-two is never named" lacks_text "$WORK/standin-calls" "sbx-broken-"
+
+  plant_entry broken "SBX_DIR=$WORK/rm dir/broken" "SBX_AGENT=other"
+  set_standin_state sha256:new sha256:new false yes
+  reset_standin_calls
+  run_sbx_scripted brokenagent sbx-rm --unregister broken
+  expect "sbx-rm: a broken entry with a stopped container is cleared with no question" broken_cleared brokenagent
+  expect "sbx-rm: a stopped broken sandbox gets no question" lacks_text "$WORK/brokenagent.err" "[y/N]"
+  expect "sbx-rm: the stopped container is removed by its exact name only" equals "$(by_name_calls)" "$byNameText"
+
+  plant_entry broken "SBX_AGENT=claude"
+  set_standin_state sha256:new "" "" yes
+  reset_standin_calls
+  run_sbx_scripted brokengone sbx-rm broken --unregister
+  expect "sbx-rm: a broken entry with no container is cleared" broken_cleared brokengone
+  expect "sbx-rm: with no container nothing is stopped or removed" equals "$(by_name_calls)" ""
+
+  plant_entry Bad_Name "SBX_AGENT=claude"
+  reset_standin_calls
+  run_sbx_scripted brokenbadname sbx-rm Bad_Name --unregister --yes
+  expect "sbx-rm: an entry file with a name that breaks the rule is refused and kept" equals "$SBX_RC:$([ -f "$SBX_CONFIG_DIR/sandboxes/Bad_Name" ] && echo kept)" "1:kept"
+  expect "sbx-rm: the bad name is refused before any docker call" equals "$(cat "$WORK/standin-calls")" ""
+}
+
+# ------------------------------------------------------------------------------
 # Case: a failed down exits 1 and the entry stays as it was
 # ------------------------------------------------------------------------------
 case_rm_down_fails() {
@@ -432,6 +542,7 @@ case_rm_running
 case_rm_stopped_and_gone
 case_rm_unregister
 case_rm_confirm
+case_rm_broken_entry
 case_rm_down_fails
 case_rm_no_folder_or_image
 expect "sbx-rm: no case reached the refusing docker" no_docker_call

@@ -33,7 +33,8 @@ no_docker_socket_or_privileges() {
 # host_scripts_keep_sandbox_data: only sbx-rm takes a sandbox down; data stays
 # ------------------------------------------------------------------------------
 # sbx-rm runs a plain compose down and deletes only its registry entry; volumes
-# stay, because removing them is how the old layout lost data.
+# stay, because removing them is how the old layout lost data. For a broken
+# entry it removes the one container sbx-NAME by name, with no option.
 # ------------------------------------------------------------------------------
 host_scripts_keep_sandbox_data() {
   local hostFile
@@ -55,7 +56,9 @@ host_scripts_keep_sandbox_data() {
 
   {
     grep -nE '\b(rmdir|prune|kill)\b|--(volumes|rmi|remove-orphans)|[[:space:]]-v([^A-Za-z0-9-]|$)|\bdown[[:space:]]+-' bin/sbx-rm
-    grep -nE '(^|[^A-Za-z-])rm([[:space:]]|$)' bin/sbx-rm | grep -vE '^[0-9]+:  if ! rm -- "\$entryFile"; then$'
+    grep -nE '(^|[^A-Za-z-])rm([[:space:]]|$)' bin/sbx-rm \
+      | grep -vE '^[0-9]+:  if ! rm -- "\$entryFile"; then$' \
+      | grep -vE '^[0-9]+:  if ! docker rm "sbx-\$1" >/dev/null </dev/null; then$'
   } | report_lines 'bin/sbx-rm:'
 }
 

@@ -190,9 +190,12 @@ SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo docker compose --env-file /dev/null -p
 SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo docker compose --env-file /dev/null -p sbx-demo -f compose.yml down
 docker exec -it -w /home/sandbox/workspace/demo sbx-demo bash
 docker ps -a --filter label=sbx.name --format '{{.Names}} {{.State}}'
+docker stop sbx-demo
+docker rm sbx-demo
 ```
 
 - `down` is what `sbx-rm` runs. It never carries an option that removes volumes or images.
+- `docker stop` and `docker rm` are what `sbx-rm --unregister` runs for a broken entry instead of `down`, by the exact container name and never with `-v` or `-f`.
 - `docker exec` is what `sbx-shell` runs, after the `sbx-start` steps when the sandbox does not run. `-w` starts the shell in your project folder; without it a shell starts in `/home/sandbox/workspace`.
 - `docker ps` is what `sbx-list` reads.
 - `up` returns before the start hooks finish, so it does not report a failing hook: the container exits afterwards. `sbx-start` waits for them.
@@ -219,7 +222,7 @@ Containers with the sbx.name label but no registry entry (sbx-add NAME HOST_PATH
 - The status of every sandbox comes from one `docker ps -a` call.
 - `running` is running. Every other Docker state (exited, created, paused, and so on) reads `stopped`. A sandbox Docker has no container for reads `no container`.
 - `running, older image` means the container runs on an older build of `sbx-claude:local`, for example after `sbx-upgrade` of another sandbox. Its next `sbx-start` recreates it on the current image, after the sessions warning. `sbx-shell` enters it as it is.
-- An entry the scripts cannot read shows `broken entry` and the entry file's path. `sbx-start NAME` prints what is wrong.
+- An entry the scripts cannot read shows `broken entry` and the entry file's path. `sbx-start NAME` prints what is wrong; `sbx-rm NAME --unregister` clears it (see "Remove a sandbox").
 - Rows are sorted by name.
 - A line under the table explains `running, older image`, and only when a row has it.
 - After that, `Containers with the sbx.name label but no registry entry` lists, for example, the host-test sandbox `sbx-hosttest` or a sandbox whose entry was deleted by hand. `sbx-add NAME HOST_PATH` registers one again; anything else is plain `docker`.
@@ -244,6 +247,8 @@ sbx-rm demo --yes
 - Running it twice is fine: the second run finds no container and is quiet.
 - `--unregister` also deletes the registry entry `~/.config/sbx/sandboxes/NAME`, only after the down worked. When the down fails, the entry stays and `sbx-rm` can run again.
 - To bring a sandbox back, run `sbx-add demo /Users/you/sbx-demo` with the same folder, then `sbx-start demo` or `sbx-shell demo`. The login, history and caches come back from `state/`.
+- A `broken entry` in `sbx-list` gives Compose no folder. `sbx-rm demo --unregister` then stops and removes the container `sbx-demo` by its exact name with plain `docker`, after the same question when it runs, and deletes the entry. Volumes stay. The network `sbx-demo_default` stays too; `docker network rm sbx-demo_default` removes it.
+- Without `--unregister`, a broken entry is refused and nothing changes.
 - `sbx-rm` needs the registry entry. A container that `sbx-list` shows as not registered is registered again with `sbx-add`, or handled with plain `docker`.
 
 ## Upgrade
@@ -444,7 +449,7 @@ Rebuilds and host-test runs pile up images, build cache and run folders. From th
 | `sbx-...: NAME is not registered` | Run `sbx-add NAME HOST_PATH`. |
 | `sbx-claude:local is not built` | Run `sbx-upgrade NAME`. |
 | `the input device is not a TTY` or `stdin is not a terminal` from `sbx-shell` | Run it in a terminal, not through a pipe or a script. The sandbox has already started. |
-| `broken entry` in `sbx-list` | `sbx-start NAME` prints what is wrong with the entry. Fix the file, or delete it and run `sbx-add` again. |
+| `broken entry` in `sbx-list` | `sbx-start NAME` prints what is wrong with the entry. Fix the file, or run `sbx-rm NAME --unregister` and then `sbx-add` again. |
 | `sbx-NAME is running and there is no terminal to confirm on` from `sbx-rm` | Run it in a terminal and answer `y`, or add `--yes`. Nothing was changed. |
 | `docker compose down failed for sbx-NAME; the registry entry stays` | Read the Compose output above it, then run `sbx-rm NAME` again. |
 | `cannot read the containers from Docker` or `cannot reach Docker; is Docker running?` | Start Docker Desktop. |
