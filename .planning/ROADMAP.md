@@ -461,7 +461,7 @@ Plans:
   4. The README has a short threat-model section covering what's isolated, the credential-exfiltration risk under skip-permissions, and files the agent can plant that the Mac later executes (git hooks, IDE run configs).
   5. A host-side verification checklist exists, and the user can run it end-to-end on the Mac. It confirms that login survives a rebuild, versions match the pins, ccusage works, and the home directory is not hidden.
 
-**Plans:** 2/5 plans executed
+**Plans:** 3/5 plans executed
 
 Plans:
 **Wave 1**
@@ -471,7 +471,7 @@ Plans:
 - [x] 05-02-PLAN.md: README rewrite pass: a quick start, every section compressed with every fact kept, the threat model and the verify table
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 05-03-PLAN.md: Docs PR gate: Linux gate, branch chore/readme-and-migration, Mac run (33 checks, h29 helper) and the smallest old sandbox moved with MIGRATION.md
+- [x] 05-03-PLAN.md: Docs PR gate: Linux gate, branch chore/readme-and-migration, Mac run (33 checks, h29 helper) and the smallest old sandbox moved with MIGRATION.md
 
 **Wave 4** *(blocked on Wave 3 completion, the docs PR merged and every old sandbox moved)*
 - [ ] 05-04-PLAN.md: After the user's go: delete ClaudeCode/ and OpenCode/ with the old-layout guard rule, the coexistence step and their doc lines
@@ -525,7 +525,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 2.2 → 3 �
 | 2.2. Best-practices from git, editable from any sandbox | 8/8 | Complete    | 2026-10-26 |
 | 3. Remembered Sandboxes and One-Command Upgrade | 4/4 | Complete    | 2026-11-07 |
 | 4. Jump-In and Sandbox Housekeeping | 5/5 | Complete    | 2026-11-08 |
-| 5. Migration, Docs, and Old-Layout Retirement | 2/5 | In Progress|  |
+| 5. Migration, Docs, and Old-Layout Retirement | 3/5 | In Progress|  |
 | 6. Automated checks (CI) | 0/TBD | Not started | - |
 | 7. Start readiness | 0/TBD | Not started | - |
 

@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 05
 current_phase_name: Migration, Docs, and Old-Layout Retirement
 status: executing
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-11-08T02:41:56.051Z"
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-11-08T06:34:02.642Z"
 last_activity: 2026-11-08
 last_activity_desc: Phase 05 execution started
-state_head: d2d372310341e8905266bc64963a021e0a265343
+state_head: ed52ad7282eb81bb839cb48f3266d7c0775a5237
 progress:
   total_phases: 14
   completed_phases: 11
   total_plans: 86
-  completed_plans: 83
+  completed_plans: 84
   percent: 79
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-11-08)
 ## Current Position
 
 Phase: 05 (Migration, Docs, and Old-Layout Retirement) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-11-08 — Phase 05 execution started
 
@@ -148,6 +148,7 @@ Progress: [████████████████████] 44/44 p
 | Phase 04 P05 | n/a (spans a user Mac run) | 3 tasks | 2 files |
 | Phase 05 P01 | 12 min | 3 tasks | 11 files |
 | Phase 05 P02 | 25 min | 3 tasks | 1 files |
+| Phase 05 P03 | n/a (spans a user Mac run) | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -284,6 +285,7 @@ Recent decisions affecting current work:
 - [Phase 05]: Migration recipe stops the old container with docker stop (not cc-down) so it stays as the rollback
 - [Phase 05]: History folder rename uses the encoded name (non letter or digit becomes hyphen), derived as ENC
 - [Phase 05]: README threat model states its rules with no timing exception; raw Docker commands and start refusals sit below daily use
+- [Phase 05]: 05-03: Mac host checklist deferred by the user to plan 05; sbx-fix-modes added to the docs PR after the real migration
 
 ### Pending Todos
 
@@ -331,6 +333,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-08T02:41:55.845Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-11-08T06:34:02.374Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None

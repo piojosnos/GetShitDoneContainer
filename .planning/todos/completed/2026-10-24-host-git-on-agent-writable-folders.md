@@ -3,6 +3,8 @@ created: 2026-10-24
 title: Host git on agent-writable project folders needs its own design
 area: security
 source: .planning/phases/02.2-best-practices-from-git-editable-from-any-sandbox/02.2-REVIEW.md (CR-01, follow-up)
+completed: 2026-11-08
+status: completed
 ---
 
 Running git, or an IDE's git integration, on the Mac in `$SBX_DIR/$SBX_NAME` executes hooks and config the agent can plant in the folder's `.git`: `.git/hooks/*`, and config such as `core.fsmonitor`, `core.pager`, `diff.external`, `credential.helper`, `core.sshCommand`. That breaks "Agents never run on the host".
