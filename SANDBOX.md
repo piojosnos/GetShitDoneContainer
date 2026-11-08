@@ -47,20 +47,23 @@ From the repo root:
 
 ## Scripts
 
-Four scripts in `bin/` register, start, stop and upgrade a sandbox by name. Put `bin/` on your PATH once, in `~/.zshrc`:
+Seven scripts in `bin/` register, start, enter, list, stop, remove and upgrade a sandbox by name. Put `bin/` on your PATH once, in `~/.zshrc`:
 
 ```bash
 export PATH="/path/to/GetShitDoneContainer/bin:$PATH"
 ```
 
 - Put `bin/` on PATH; do not copy or link the scripts. They find `compose.yml` and `build.sh` from their own folder.
-- Every script takes the name only. They run with the Mac's stock bash and accept a folder with spaces.
+- Every script but `sbx-list` takes the name; `sbx-rm` also takes `--unregister` and `--yes`. They run with the Mac's stock bash and accept a folder with spaces.
 
 | Command | What it does |
 |---|---|
 | `sbx-add NAME HOST_PATH` | Registers the sandbox once. Creates the folder, its project folder and `state/`, and writes the registry entry. The agent is claude. |
 | `sbx-start NAME` | Checks the folders, runs `docker compose up -d --wait`, then waits up to 120 s for the start hooks. |
+| `sbx-shell NAME` | Starts the sandbox when it does not run (the same checks and wait as `sbx-start`), then opens bash in its project folder. A running sandbox is entered as it is. |
+| `sbx-list` | Lists every registered sandbox with its status and folder, from one `docker ps -a` call. |
 | `sbx-stop NAME` | Runs `docker compose stop`. The container stays; nothing in the folder changes. |
+| `sbx-rm NAME [--unregister] [--yes]` | Runs `docker compose down`: the container and its network go; volumes, images and the folder stay. A running sandbox asks first; `--yes` skips the question. `--unregister` also deletes the registry entry. |
 | `sbx-upgrade NAME [BUILD_OPTION...]` | Builds both images with `./build.sh`, then recreates this sandbox and waits for it. Prints the tool versions last. |
 
 ## Register a sandbox
@@ -79,7 +82,7 @@ sbx-add demo /Users/you/sbx-demo
   - a folder that is, holds or sits inside this repo's folder, because the Mac runs the repo's scripts and a sandbox there could change them
   - a folder that is, holds or sits inside another sandbox's folder
 - Those folder checks compare folders, not spelling: a symlink, `/tmp` against `/private/tmp`, or another letter case on the Mac's disk is still the same folder.
-- Registering a folder you already used with the raw commands keeps its login and history.
+- Registering a folder you already used with the raw commands, or one you unregistered with `sbx-rm --unregister`, keeps its login and history.
 
 The registry is one file per sandbox, `~/.config/sbx/sandboxes/NAME`, with two lines:
 
@@ -130,17 +133,17 @@ Start:
 sbx-start demo
 ```
 
-- It returns when the start hooks (the GSD sync and the bundle links) are done, and prints the command to open a shell.
+- It returns when the start hooks (the GSD sync and the bundle links) are done, and prints `sbx-shell demo`.
 - A hook that fails stops the container, and `sbx-start` says so.
 - A running sandbox on an older image is recreated by `sbx-start`, after a warning (see "Upgrade").
 
 Open a shell. Open as many as you like:
 
 ```bash
-docker exec -it -w /home/sandbox/workspace/demo sbx-demo bash
+sbx-shell demo
 ```
 
-`-w` starts the shell in your project folder; without it a shell starts in `/home/sandbox/workspace`. The shell prints the tool versions line when it opens, for example:
+It opens bash in your project folder, `/home/sandbox/workspace/demo`. The shell prints the tool versions line when it opens, for example:
 
 ```text
 claude 2.1.285 | gsd 1.15.0 | ccusage 20.0.26 | node 24.21.0 | jdk 21.0.12 | mvn 3.9.11 | python 3.12.3
@@ -148,6 +151,11 @@ claude 2.1.285 | gsd 1.15.0 | ccusage 20.0.26 | node 24.21.0 | jdk 21.0.12 | mvn
 
 - Scripts and one-off `docker exec` commands stay quiet.
 - `sbx-upgrade` ends with the same line.
+- A sandbox that is stopped or has no container is started first, with the same checks and wait as `sbx-start`.
+- A running sandbox is entered as it is: no restart and no recreate, even when it runs on an older image (`sbx-list` shows that). Its other shells and Claude sessions stay open.
+- It does not wait for the start hooks of a sandbox that already runs. A sandbox just started with the raw `docker compose up` may still be in its hooks for a few seconds; one started by `sbx-start` or `sbx-shell` is ready.
+- It needs a terminal. From a pipe or a script Docker refuses the shell (`the input device is not a TTY`, or on newer Docker `stdin is not a terminal`) after the sandbox has started.
+- Its exit status is the shell's.
 
 Start Claude there:
 
@@ -160,6 +168,7 @@ sbx-claude
 - Log in once with a claude.ai account: Claude prints a URL, the browser shows a code, you paste it at the prompt.
 - The login is written to `$SBX_DIR/state/claude` on the Mac.
 - Sessions are keyed by directory: run `claude --continue` or `claude --resume` from the same directory as before.
+- There is no command that starts Claude from the Mac. Open a shell with `sbx-shell`, then run `sbx-claude`.
 
 Stop:
 
@@ -178,10 +187,69 @@ For the user who wants the raw commands. From the repo root:
 ```bash
 SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo docker compose --env-file /dev/null -p sbx-demo -f compose.yml up -d --wait
 SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo docker compose --env-file /dev/null -p sbx-demo -f compose.yml stop
+SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo docker compose --env-file /dev/null -p sbx-demo -f compose.yml down
+docker exec -it -w /home/sandbox/workspace/demo sbx-demo bash
+docker ps -a --filter label=sbx.name --format '{{.Names}} {{.State}}'
+docker stop sbx-demo
+docker rm sbx-demo
 ```
 
+- `down` is what `sbx-rm` runs. It never carries an option that removes volumes or images.
+- `docker stop` and `docker rm` are what `sbx-rm --unregister` runs for a broken entry instead of `down`, by the exact container name and never with `-v` or `-f`.
+- `docker exec` is what `sbx-shell` runs, after the `sbx-start` steps when the sandbox does not run. `-w` starts the shell in your project folder; without it a shell starts in `/home/sandbox/workspace`.
+- `docker ps` is what `sbx-list` reads.
 - `up` returns before the start hooks finish, so it does not report a failing hook: the container exits afterwards. `sbx-start` waits for them.
 - The hooks are done when the container runs its command. `docker exec sbx-demo pgrep -x sleep` succeeds then, and fails when the container has exited (`docker logs sbx-demo` shows why).
+
+## List sandboxes
+
+```bash
+sbx-list
+```
+
+```text
+NAME                            STATUS               PATH
+demo                            running              /Users/you/sbx-demo
+docs                            running, older image /Users/you/my docs
+scratch                         stopped              /Users/you/sbx-scratch
+tryout                          no container         /Users/you/sbx-tryout
+older image: sbx-start NAME recreates it on the current image; that closes its open shells and Claude sessions
+
+Containers with the sbx.name label but no registry entry (sbx-add NAME HOST_PATH registers one again):
+  sbx-hosttest                        stopped
+```
+
+- The status of every sandbox comes from one `docker ps -a` call.
+- `running` is running. Every other Docker state (exited, created, paused, and so on) reads `stopped`. A sandbox Docker has no container for reads `no container`.
+- `running, older image` means the container runs on an older build of `sbx-claude:local`, for example after `sbx-upgrade` of another sandbox. Its next `sbx-start` recreates it on the current image, after the sessions warning. `sbx-shell` enters it as it is.
+- An entry the scripts cannot read shows `broken entry` and the entry file's path. `sbx-start NAME` prints what is wrong; `sbx-rm NAME --unregister` clears it (see "Remove a sandbox").
+- Rows are sorted by name.
+- A line under the table explains `running, older image`, and only when a row has it.
+- After that, `Containers with the sbx.name label but no registry entry` lists, for example, the host-test sandbox `sbx-hosttest` or a sandbox whose entry was deleted by hand. `sbx-add NAME HOST_PATH` registers one again; anything else is plain `docker`.
+- The old `cc_` containers never show.
+- It only reads and changes nothing.
+
+## Remove a sandbox
+
+```bash
+sbx-rm demo
+sbx-rm demo --unregister
+sbx-rm demo --yes
+```
+
+- `sbx-rm` runs `docker compose down` for that one sandbox. Its container and its network go. It never removes volumes or images, which the other sandboxes use.
+- A running sandbox is removed only after a question. One line warns that its open shells and Claude sessions close, then `sbx-rm` asks `Remove the running sbx-demo? [y/N]`. `y` or `Y` removes it; any other answer, or Enter alone, keeps it and changes nothing.
+- `--yes` skips the question, for scripts. It goes before or after the name, with or without `--unregister`.
+- Without a terminal (a pipe or a script) and without `--yes`, a running sandbox is refused and nothing changes.
+- Compose stops a running container with a 10 s grace, then kills it. A write in progress at that moment can be cut off, so close Claude and the shells before you answer `y`.
+- A stopped sandbox, or one with no container, is removed with no question.
+- Nothing in `$SBX_DIR` is read, written or deleted, and the last line says so. The folder may even have been moved away.
+- Running it twice is fine: the second run finds no container and is quiet.
+- `--unregister` also deletes the registry entry `~/.config/sbx/sandboxes/NAME`, only after the down worked. When the down fails, the entry stays and `sbx-rm` can run again.
+- To bring a sandbox back, run `sbx-add demo /Users/you/sbx-demo` with the same folder, then `sbx-start demo` or `sbx-shell demo`. The login, history and caches come back from `state/`.
+- A `broken entry` in `sbx-list` gives Compose no folder. `sbx-rm demo --unregister` then stops and removes the container `sbx-demo` by its exact name with plain `docker`, after the same question when it runs, and deletes the entry. Volumes stay. The network `sbx-demo_default` stays too; `docker network rm sbx-demo_default` removes it.
+- Without `--unregister`, a broken entry is refused and nothing changes.
+- `sbx-rm` needs the registry entry. A container that `sbx-list` shows as not registered is registered again with `sbx-add`, or handled with plain `docker`.
 
 ## Upgrade
 
@@ -198,7 +266,7 @@ Add `--no-cache` for a clean build: `sbx-upgrade demo --no-cache`.
 - It ends running, even when it was stopped.
 - The login and history live in `state/` on the Mac, so they stay.
 - It ends by printing the tool versions line of the new container.
-- Other sandboxes keep their old image until their next `sbx-start`, which recreates them on the new one. For a running sandbox, `sbx-start` prints the same warning as `sbx-upgrade` first (the recreate closes its open shells and Claude sessions) and then goes on; it does not wait for an answer. Finish your sessions before you run `sbx-start` on a running sandbox.
+- Other sandboxes keep their old image until their next `sbx-start`, which recreates them on the new one; `sbx-list` marks them `running, older image`. For a running sandbox, `sbx-start` prints the same warning as `sbx-upgrade` first (the recreate closes its open shells and Claude sessions) and then goes on; it does not wait for an answer. Finish your sessions before you run `sbx-start` on a running sandbox.
 - Each upgrade leaves the old images untagged. `./clean.sh` shows them and `./clean.sh --yes` frees them (see "Free disk space").
 
 ## Bump a version or add a tool
@@ -347,7 +415,7 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 
 ## Verify a new build
 
-After building, or after changing anything under `base/`, `claude/` or `compose.yml`, run `./host-test.sh` on the Mac. It runs `tests/host/run-all.sh` and the other Docker checks and keeps the output in `host-test.log`. When it passes, the automated checks hold. Claude's login and Claude's own behaviour are checked only by the helpers in `tests/host/manual/`: H-07 (login), the second half of H-09 (login and session survive a rebuild), the `claude doctor` part of H-13, the GSD bump part of H-16 (`manual/h16-gsd-bump.sh`), H-19 (the real bundle flow: login, clone, read, amend, refuse), and `h29-upgrade-resume.sh` (login and session survive `sbx-upgrade`). Run them after a Claude Code or GSD pin change, a change to the managed settings, or a change to login handling. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers.
+After building, or after changing anything under `base/`, `claude/` or `compose.yml`, run `./host-test.sh` on the Mac. It runs `tests/host/run-all.sh` and the other Docker checks and keeps the output in `host-test.log`. When it passes, the automated checks hold. Claude's login and Claude's own behaviour are checked only by the helpers in `tests/host/manual/`: H-07 (login), the second half of H-09 (login and session survive a rebuild), the `claude doctor` part of H-13, the GSD bump part of H-16 (`manual/h16-gsd-bump.sh`), H-19 (the real bundle flow: login, clone, read, amend, refuse), `h29-upgrade-resume.sh` (login and session survive `sbx-upgrade`), and `h31-jump-in.sh` (a real shell through `sbx-shell`, and `sbx-claude` there still logged in after a stop). Run them after a Claude Code or GSD pin change, a change to the managed settings, or a change to login handling. [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers.
 
 It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes. [`tests/README.md`](tests/README.md) lists every test suite, where it runs and what it catches.
 
@@ -380,6 +448,11 @@ Rebuilds and host-test runs pile up images, build cache and run folders. From th
 | "Mounts denied" or "path is not shared" | Add the parent of `SBX_DIR` in Docker Desktop, Settings, Resources, File sharing. |
 | `sbx-...: NAME is not registered` | Run `sbx-add NAME HOST_PATH`. |
 | `sbx-claude:local is not built` | Run `sbx-upgrade NAME`. |
+| `the input device is not a TTY` or `stdin is not a terminal` from `sbx-shell` | Run it in a terminal, not through a pipe or a script. The sandbox has already started. |
+| `broken entry` in `sbx-list` | `sbx-start NAME` prints what is wrong with the entry. Fix the file, or run `sbx-rm NAME --unregister` and then `sbx-add` again. |
+| `sbx-NAME is running and there is no terminal to confirm on` from `sbx-rm` | Run it in a terminal and answer `y`, or add `--yes`. Nothing was changed. |
+| `docker compose down failed for sbx-NAME; the registry entry stays` | Read the Compose output above it, then run `sbx-rm NAME` again. |
+| `cannot read the containers from Docker` or `cannot reach Docker; is Docker running?` | Start Docker Desktop. |
 | `the build failed; sbx-NAME was left as it was` | Read the build output above it. The sandbox still runs on the old image. |
 | `the start hooks of sbx-NAME did not finish within 120 s` or `sbx-NAME stopped during its start` | Run `docker logs sbx-NAME`. |
 | `overlaps the registry folder`, `overlaps the repo folder` or `overlaps the folder of sandbox` | Pick a folder of its own for the sandbox. |

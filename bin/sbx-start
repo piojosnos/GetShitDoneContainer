@@ -3,48 +3,14 @@
 # Starts a registered sandbox by name and waits until its start hooks are done
 # ------------------------------------------------------------------------------
 # Usage: sbx-start NAME
-# The folders are checked first, so a wrong entry never reaches Docker. A running
-# sandbox on an older image is recreated on the current one, after a warning.
+# The folders are checked first, so a wrong entry never reaches Docker. A
+# running sandbox on an older image is recreated on the current one, after a
+# warning.
 # ------------------------------------------------------------------------------
 
-# The library sets claudeImage.
-# shellcheck disable=SC2154
 set -eu
 
 . "$(dirname "$0")/sbx-lib.sh"
-
-# ------------------------------------------------------------------------------
-# warn_if_older_image NAME: says so when a running sandbox is on an older image
-# ------------------------------------------------------------------------------
-# Compose recreates a running container whose image changed, for example after
-# sbx-upgrade of another sandbox. That closes its open shells and Claude sessions.
-# A failed inspect skips the warning; the start itself does not depend on it.
-# ------------------------------------------------------------------------------
-warn_if_older_image() {
-  local runningImage
-  local currentImage
-
-  if ! sandbox_is_running "$1"; then
-    return 0
-  fi
-
-  runningImage=$(docker container inspect --format '{{.Image}}' "sbx-$1" 2>/dev/null </dev/null) || return 0
-  currentImage=$(docker image inspect --format '{{.Id}}' "$claudeImage" 2>/dev/null </dev/null) || return 0
-
-  if [ "$runningImage" != "$currentImage" ]; then
-    warn_sessions_close "$1" "runs on an older image; recreating it on the new one"
-  fi
-}
-
-# ------------------------------------------------------------------------------
-# start_sandbox NAME: creates or restarts the container and waits for its health
-# ------------------------------------------------------------------------------
-start_sandbox() {
-  if ! run_compose "$1" up -d --wait; then
-    sbx_error "docker compose up failed; docker logs sbx-$1 shows why"
-    return 1
-  fi
-}
 
 # ------------------------------------------------------------------------------
 # Main / Entry Point
@@ -53,10 +19,6 @@ start_sandbox() {
 sbx_init
 check_name "$1"
 read_registry_entry "$1"
-check_sandbox_folders "$1"
-require_images "$1"
-warn_if_older_image "$1"
-start_sandbox "$1"
-wait_until_ready "$1"
+bring_up_sandbox "$1"
 echo "sbx-start: sbx-$1 is running"
-echo "sbx-start: open a shell with: docker exec -it -w /home/sandbox/workspace/$1 sbx-$1 bash"
+echo "sbx-start: open a shell with: sbx-shell $1"

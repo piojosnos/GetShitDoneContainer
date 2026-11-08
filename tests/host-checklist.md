@@ -1,8 +1,8 @@
-# Host checklist (H-00..H-30)
+# Host checklist (H-00..H-33)
 
-The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them. Six short helpers in `tests/host/manual/` check what the script cannot: Claude's login, Claude's own behaviour, `claude doctor`, a real GSD pin bump and the login after `sbx-upgrade`. Run them after a change the script cannot see, or when a check fails and you want to look closer.
+The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them. Seven short helpers in `tests/host/manual/` check what the script cannot: Claude's login, Claude's own behaviour, `claude doctor`, a real GSD pin bump, the login after `sbx-upgrade` and a real shell through `sbx-shell`. Run them after a change the script cannot see, or when a check fails and you want to look closer.
 
-- **IDs:** each check has an ID, H-00 to H-30 (H for host), so results can be reported by ID ("H-10 failed").
+- **IDs:** each check has an ID, H-00 to H-33 (H for host), so results can be reported by ID ("H-10 failed").
 - **When:** once after building a new version of the images or `compose.yml`.
 - **Setup and daily use:** see [`SANDBOX.md`](../SANDBOX.md).
 - Commands run from the repo root.
@@ -66,6 +66,9 @@ What each check proves:
 | H-28 | sbx-add registers a sandbox on a folder with a space in its path and refuses it twice; sbx-start and sbx-stop work by name with /bin/bash, ignore SBX_DIR, SBX_NAME and COMPOSE_PROJECT_NAME from your terminal, and keep the container and the files; the test sandbox is restored on the run folder | h28-sbx-add-start-stop.sh | automatic |
 | H-29 | sbx-upgrade with a bogus build option fails and leaves the sandbox as it was; sbx-upgrade rebuilds, recreates only sbx-hosttest (new container, other sbx containers unchanged), keeps the files in the project folder, state/ and state/claude, keeps one bind mount and no volume, warns that open shells close, and starts a stopped sandbox; the login and session survive in the helper | h29-sbx-upgrade.sh, manual/h29-upgrade-resume.sh | automatic; helper for the rest |
 | H-30 | The tool versions line in sbx-claude:local matches versions.env (jdk from the TEMURIN_IMAGE tag, python from the image); an interactive shell prints it once, bash -c and bash -lc print nothing; sbx-upgrade ends with it (H-29) | h30-version-line.sh | automatic |
+| H-31 | sbx-shell on a sandbox with no container starts it and waits for its start hooks, then (with no terminal) Docker refuses the shell; through a terminal it opens bash in /home/sandbox/workspace/hosttest on a running sandbox without recreating it, and on a stopped one after starting it again; the helper logs in with sbx-claude in that shell and finds Claude still logged in after a stop and a new sbx-shell | `h31-sbx-shell.sh`, `manual/h31-jump-in.sh` | automatic; helper for the rest |
+| H-32 | sbx-list with an empty registry says so and lists the running sbx-hosttest as a labelled container with no entry, with no cc_ container; after sbx-add, sbx-start and sbx-stop the hosttest row reads no container, running and stopped with its folder (a space in its path), each matching docker ps -a; a sandbox on the current image is not marked | `h32-sbx-list.sh` | automatic |
+| H-33 | sbx-rm of the running test sandbox without a terminal or --yes is refused and the sandbox, its entry and its files stay; with --yes it warns, takes its container and its network, and keeps its folder (a space in its path), its registry entry, the volumes, the images and the other sbx containers; it runs again with no container, and with the folder moved away; --unregister deletes only the entry; sbx-add of the same folder and sbx-start bring back a file in state/claude and a line in the bash history | `h33-sbx-rm.sh` | automatic |
 | Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |
 
 ## Manual helpers (when something looks wrong)
@@ -79,6 +82,7 @@ bash tests/host/manual/h13-doctor.sh
 bash tests/host/manual/h16-gsd-bump.sh
 bash tests/host/manual/h19-bundle-behaviour.sh
 bash tests/host/manual/h29-upgrade-resume.sh
+bash tests/host/manual/h31-jump-in.sh
 ```
 
 | Helper | You do | What it proves |
@@ -89,8 +93,9 @@ bash tests/host/manual/h29-upgrade-resume.sh
 | `h16-gsd-bump.sh` | Set `GSD_CORE_VERSION` in `versions.env` to the approved bump target when asked, confirm the session resumes in `claude --continue`, then put the pin back | After a GSD pin bump and a rebuild the new GSD is synced into `state/claude`, the login survives and `claude --continue` resumes |
 | `h19-bundle-behaviour.sh` | Run `sbx-gh-login`, `sbx-bundle-clone` (the private repo) and `sbx-claude`; then ask, read and amend a rule on a branch, try an edit through `~/.claude/skills`, check `/status`, and optionally push and open a PR | The clone works with a real login, the skills are listed, a rule is followed, a language rule loads on demand, a rule is amended on a branch in the clone, an edit through `~/.claude/skills` is refused, and `/status` shows the managed settings |
 | `h29-upgrade-resume.sh` | Log in to Claude in the helper's own sandbox, send one message, /exit; after sbx-upgrade confirm the session resumes in claude --continue, then /exit | sbx-upgrade keeps the Claude login and claude --continue resumes the earlier session in a registered sandbox |
+| `h31-jump-in.sh` | In the shell sbx-shell opens, run pwd, then sbx-claude: log in, send one message, /exit, exit; after it stops and reopens the sandbox, run sbx-claude again and confirm there is no login prompt | sbx-shell starts a sandbox and opens a real shell in its project folder, and sbx-claude in that shell starts Claude already logged in after a stop and a new start |
 
-- `h09-rebuild-resume.sh`, `h16-gsd-bump.sh` and `h19-bundle-behaviour.sh` need a Claude login in the test sandbox. `h07-login.sh` makes one. `h29-upgrade-resume.sh` makes its own.
+- `h09-rebuild-resume.sh`, `h16-gsd-bump.sh` and `h19-bundle-behaviour.sh` need a Claude login in the test sandbox. `h07-login.sh` makes one. `h29-upgrade-resume.sh` and `h31-jump-in.sh` make their own.
 - Add `--no-cache` to `h09-rebuild-resume.sh` for a clean rebuild: `bash tests/host/manual/h09-rebuild-resume.sh --no-cache`. It is slow. `h29-upgrade-resume.sh` takes `--no-cache` the same way.
 - Each helper prints `PASS` or `FAIL` lines and exits 0 only when every line is `PASS`.
 - A helper run without a terminal, or when the test sandbox is not running, stops before it does anything.
@@ -98,11 +103,12 @@ bash tests/host/manual/h29-upgrade-resume.sh
 ## Reading a failure
 
 - **FAIL line:** shows the check ID and what went wrong, with detail lines under it.
-- **NOT RUN:** an earlier step failed: the setup, or an earlier link of the chain H-08, H-16, H-23, H-11, H-09, H-28, H-29, H-20, H-10. Fix that one first.
+- **NOT RUN:** an earlier step failed: the setup, or an earlier link of the chain H-08, H-16, H-23, H-11, H-09, H-28, H-29, H-31, H-32, H-33, H-20, H-10. Fix that one first.
 - **Build failure:** the output names the log path, inside the run folder's `logs/`.
-- **H-28 or H-29 failure:** their logs are `h28-*` and `h29-*` in the run folder's `logs/`.
-  - Both run on their own folder with a space in its path and their own registry inside the run folder.
-  - Both restore the test sandbox on the run folder at the end.
+- **H-28, H-29, H-31, H-32 or H-33 failure:** their logs are `h28-*`, `h29-*`, `h31-*`, `h32-*` and `h33-*` in the run folder's `logs/`.
+  - Each runs on its own folder with a space in its path and its own registry inside the run folder.
+  - Each restores the test sandbox on the run folder at the end.
+- **H-31 says `script` may not give sbx-shell a terminal:** run `tests/host/manual/h31-jump-in.sh`, which checks the same shell by hand, and paste the FAIL line.
 - **H-27 failure:** H-27 runs offline in its own folder under the run folder, and its logs are next to its `run.log` there.
 - **"Mounts denied" during setup:** Docker Desktop does not share `$TMPDIR`. Add it in Settings, Resources, File sharing.
 - **H-10 says Docker created the missing folder:** Compose ignored `create_host_path: false`. That is a real finding, not a script bug.
@@ -125,7 +131,7 @@ bash tests/host/manual/h29-upgrade-resume.sh
 
 Run the cleanup command that `run-all.sh` printed. It stops `sbx-hosttest` and deletes the run folder.
 
-- Do it when you are done, including any helper runs. After `h07-login.sh` or `h29-upgrade-resume.sh` the folder holds a real Claude login.
+- Do it when you are done, including any helper runs. After `h07-login.sh`, `h29-upgrade-resume.sh` or `h31-jump-in.sh` the folder holds a real Claude login.
 - The images stay.
 
 ## Record your results

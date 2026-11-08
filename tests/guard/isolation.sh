@@ -30,13 +30,36 @@ no_docker_socket_or_privileges() {
 }
 
 # ------------------------------------------------------------------------------
-# host_scripts_keep_sandbox_data: bin/ has no delete, prune, kill or take-down
+# host_scripts_keep_sandbox_data: only sbx-rm takes a sandbox down; data stays
 # ------------------------------------------------------------------------------
-# Stop is compose stop and upgrade is up --force-recreate, so no host script
-# needs any of them; removing volumes is how the old layout lost data.
+# sbx-rm runs a plain compose down and deletes only its registry entry; volumes
+# stay, because removing them is how the old layout lost data. For a broken
+# entry it removes the one container sbx-NAME by name, with no option.
 # ------------------------------------------------------------------------------
 host_scripts_keep_sandbox_data() {
-  nowhere_matches '\b(rm|rmdir|prune|kill|down)\b|--volumes' bin/*
+  local hostFile
+  local otherFileList=""
+
+  if [ ! -f bin/sbx-rm ]; then
+    echo "    bin/sbx-rm is missing"
+    return 1
+  fi
+
+  for hostFile in bin/*; do
+    if [ "$hostFile" != bin/sbx-rm ]; then
+      otherFileList="$otherFileList $hostFile"
+    fi
+  done
+
+  # No bin/ file name holds a space, so the list is split on purpose.
+  nowhere_matches '\b(rm|rmdir|prune|kill|down)\b|--volumes' $otherFileList || return 1
+
+  {
+    grep -nE '\b(rmdir|prune|kill)\b|--(volumes|rmi|remove-orphans)|[[:space:]]-v([^A-Za-z0-9-]|$)|\bdown[[:space:]]+-' bin/sbx-rm
+    grep -nE '(^|[^A-Za-z-])rm([[:space:]]|$)' bin/sbx-rm \
+      | grep -vE '^[0-9]+:  if ! rm -- "\$entryFile"; then$' \
+      | grep -vE '^[0-9]+:  if ! docker rm "sbx-\$1" >/dev/null </dev/null; then$'
+  } | report_lines 'bin/sbx-rm:'
 }
 
 # ------------------------------------------------------------------------------

@@ -21,9 +21,9 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 | | |
 |---|---|
-| Runs | 19 rules that read the files only: pins and supply chain, start hooks, isolation greps, host scripts that never delete data, shellcheck and hadolint |
+| Runs | 19 rules that read the files only: pins and supply chain, start hooks, isolation greps, host scripts that never delete data (only `sbx-rm` takes a sandbox down, and it deletes only its registry entry), shellcheck and hadolint |
 | Where | New-layout sandbox: every rule passes, because sbx-base holds both linters. Old dev sandbox or a Mac shell by hand without the linters: the two linter rules FAIL as "not installed" and every other rule must PASS. `./host-test.sh` gives the Mac shell stand-ins that run both linters from `sbx-base`, so there every rule passes |
-| Catches | An unpinned or floating version, a pipe-to-shell install, the compromised GSD package, a mounted Docker socket or privileged mode, a host script that deletes or takes a sandbox down, a badly named start hook, a shell or Dockerfile lint error |
+| Catches | An unpinned or floating version, a pipe-to-shell install, the compromised GSD package, a mounted Docker socket or privileged mode, a host script other than `sbx-rm` that deletes a file or takes a sandbox down, an `sbx-rm` that deletes more than its registry entry or removes volumes or images, a badly named start hook, a shell or Dockerfile lint error |
 | Does not catch | Whether an image builds or behaves (`tests/host/` does) |
 
 ## tests/selftest/entrypoint/
@@ -48,16 +48,16 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 | | |
 |---|---|
-| Runs | The real `bin/` scripts as plain bash in a temp folder, with a stand-in `docker` that refuses every call (the `start.sh` group swaps in a scripted one for the start wait) and a registry in the work folder |
+| Runs | The real `bin/` scripts as plain bash in a temp folder, with a stand-in `docker` that refuses every call (the start, shell, list and rm groups swap in a scripted one that answers from files) and a registry in the work folder |
 | Where | Linux and the Mac shell. `./host-test.sh` runs it under `/bin/bash` |
-| Catches | A name, path or registry entry the scripts should refuse, a registry value that would run, a refusal that comes too late |
-| Does not catch | Anything Docker does. H-28 to H-30 cover it |
+| Catches | A name, path or registry entry the scripts should refuse, a registry value that would run, a refusal that comes too late, a sandbox entered, listed or removed the wrong way (a recreate on entry, a wrong status, a delete before a good down, a running sandbox removed without a yes) |
+| Does not catch | Anything Docker does. H-28 to H-33 cover it |
 
 ## tests/host/ and tests/host/manual/
 
 | | |
 |---|---|
-| Runs | H-00 to H-30 and Coexistence against real Docker: builds, mounts, isolation (H-26), persistence, the bundle clone and its links (H-27 covers the wrappers and a push), the GSD sync, the `sbx-*` scripts (H-28, H-29) and the tool versions line (H-30) |
+| Runs | H-00 to H-33 and Coexistence against real Docker: builds, mounts, isolation (H-26), persistence, the bundle clone and its links (H-27 covers the wrappers and a push), the GSD sync, the `sbx-*` scripts (H-28, H-29 and H-31 to H-33) and the tool versions line (H-30) |
 | Where | The Mac. `run-all.sh` is unattended; the helpers in `manual/` need a real terminal |
 | Catches | Anything that only shows on the real images and mounts |
 | Does not catch | Claude's login and behaviour; only the helpers in `manual/` cover them |

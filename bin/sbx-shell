@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# Opens a bash shell in a registered sandbox, starting it when needed
+# ------------------------------------------------------------------------------
+# Usage: sbx-shell NAME
+# A running sandbox is entered as it is, never recreated, so its other shells
+# and Claude sessions stay open. Claude starts in the shell with sbx-claude.
+# ------------------------------------------------------------------------------
+
+set -eu
+
+. "$(dirname "$0")/sbx-lib.sh"
+
+# ------------------------------------------------------------------------------
+# open_shell NAME: replaces this script with bash in the project folder
+# ------------------------------------------------------------------------------
+# The one docker call that keeps stdin, because the terminal is the shell's.
+# exec hands over the exit status of the shell and its Ctrl-C.
+# ------------------------------------------------------------------------------
+open_shell() {
+  exec docker exec -it -w "/home/sandbox/workspace/$1" "sbx-$1" bash
+}
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+[ "$#" -eq 1 ] || sbx_usage 'NAME'
+sbx_init
+check_name "$1"
+read_registry_entry "$1"
+
+if ! sandbox_is_running "$1"; then
+  bring_up_sandbox "$1"
+fi
+
+open_shell "$1"

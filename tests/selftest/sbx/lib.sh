@@ -37,7 +37,7 @@ start_group() {
 }
 
 # ------------------------------------------------------------------------------
-# make_scripted_docker: makes WORK/scripted/docker, a stand-in that follows files
+# make_scripted_docker: makes WORK/scripted/docker, a stand-in fed by files
 # ------------------------------------------------------------------------------
 # For the cases that must get past the pre-Docker checks. It answers from the
 # files in WORK/standin-state and logs to WORK/standin-calls, so the refusing
@@ -45,7 +45,14 @@ start_group() {
 #   container-image    set: the container exists and this is its image id
 #   container-running  true or false, what container inspect prints for State
 #   image-id           the id of the current image
-#   exec-ok            set: docker exec succeeds
+#   exec-ok            set: docker exec succeeds (the start-hook wait)
+#   shell-status       set: docker exec -it exits with this number; else 0
+#   compose-fail       set: compose prints its usual line, then exits 1
+#   image-missing      set: docker image inspect exits 1
+#   ps-lines           set: docker ps prints this file; unset: prints nothing
+#   ps-fail            set: docker ps exits 1
+#   docker-down        set: every call fails, as with Docker not running
+#   stop-fail, rm-fail set: docker stop or docker rm exits 1; else they exit 0
 # Without container-image, every container inspect fails and the id is gone.
 # ------------------------------------------------------------------------------
 make_scripted_docker() {
@@ -54,10 +61,32 @@ make_scripted_docker() {
     printf '%s\n' '#!/bin/sh'
     printf '%s\n' "state=\"$WORK/standin-state\""
     printf '%s\n' "echo \"docker \$*\" >>\"$WORK/standin-calls\""
+    printf '%s\n' 'if [ -f "$state/docker-down" ]; then'
+    printf '%s\n' '  echo "standin: cannot connect to the Docker daemon" >&2'
+    printf '%s\n' '  exit 1'
+    printf '%s\n' 'fi'
     printf '%s\n' 'case "$1" in'
-    printf '%s\n' '  compose) echo "standin: compose $*"; exit 0 ;;'
-    printf '%s\n' '  exec) [ -f "$state/exec-ok" ]; exit $? ;;'
+    printf '%s\n' '  info)'
+    printf '%s\n' '    exit 0 ;;'
+    printf '%s\n' '  stop|rm)'
+    printf '%s\n' '    [ -f "$state/$1-fail" ] && exit 1'
+    printf '%s\n' '    exit 0 ;;'
+    printf '%s\n' '  ps)'
+    printf '%s\n' '    [ -f "$state/ps-fail" ] && exit 1'
+    printf '%s\n' '    [ -f "$state/ps-lines" ] && cat "$state/ps-lines"'
+    printf '%s\n' '    exit 0 ;;'
+    printf '%s\n' '  compose)'
+    printf '%s\n' '    echo "standin: compose $*"'
+    printf '%s\n' '    [ -f "$state/compose-fail" ] && exit 1'
+    printf '%s\n' '    exit 0 ;;'
+    printf '%s\n' '  exec)'
+    printf '%s\n' '    if [ "$2" = "-it" ]; then'
+    printf '%s\n' '      [ -f "$state/shell-status" ] && exit "$(cat "$state/shell-status")"'
+    printf '%s\n' '      exit 0'
+    printf '%s\n' '    fi'
+    printf '%s\n' '    [ -f "$state/exec-ok" ]; exit $? ;;'
     printf '%s\n' '  image)'
+    printf '%s\n' '    [ -f "$state/image-missing" ] && exit 1'
     printf '%s\n' '    case "$*" in'
     printf '%s\n' "      *'{{.Id}}'*) cat \"\$state/image-id\" ;;"
     printf '%s\n' '    esac'
@@ -95,6 +124,44 @@ set_standin_state() {
 }
 
 # ------------------------------------------------------------------------------
+# set_standin_knob NAME [VALUE]: writes VALUE (default empty) to the knob NAME
+# ------------------------------------------------------------------------------
+# Call it after set_standin_state, which empties the state folder first.
+# ------------------------------------------------------------------------------
+set_standin_knob() {
+  printf '%s\n' "${2:-}" >"$WORK/standin-state/$1"
+}
+
+# ------------------------------------------------------------------------------
+# set_standin_ps LINE...: sets what docker ps prints, one line for each LINE
+# ------------------------------------------------------------------------------
+# Call it after set_standin_state, which empties the state folder first.
+# ------------------------------------------------------------------------------
+set_standin_ps() {
+  printf '%s\n' "$@" >"$WORK/standin-state/ps-lines"
+}
+
+# ------------------------------------------------------------------------------
+# reset_standin_calls: empties the log of the calls the scripted docker saw
+# ------------------------------------------------------------------------------
+reset_standin_calls() {
+  : >"$WORK/standin-calls"
+}
+
+# ------------------------------------------------------------------------------
+# appears_before FILE FIRST SECOND: true when FIRST is on an earlier line
+# ------------------------------------------------------------------------------
+appears_before() {
+  local firstLine
+  local secondLine
+
+  firstLine=$(grep -Fn -m1 -- "$2" "$1" | cut -d: -f1)
+  secondLine=$(grep -Fn -m1 -- "$3" "$1" | cut -d: -f1)
+
+  [ -n "$firstLine" ] && [ -n "$secondLine" ] && [ "$firstLine" -lt "$secondLine" ]
+}
+
+# ------------------------------------------------------------------------------
 # run_sbx_scripted LABEL SCRIPT ARG...: run_sbx with the scripted docker first
 # ------------------------------------------------------------------------------
 run_sbx_scripted() {
@@ -103,6 +170,59 @@ run_sbx_scripted() {
   PATH=$WORK/scripted:$PATH
   run_sbx "$@"
   PATH=$savedPath
+}
+
+# ------------------------------------------------------------------------------
+# run_sbx_in_terminal LABEL ANSWER SCRIPT ARG...: run_sbx_scripted on a terminal
+# ------------------------------------------------------------------------------
+# script(1) gives bin/SCRIPT a terminal as stdin and types ANSWER and Enter.
+# Output still goes to WORK/LABEL.out and .err; the exit status is written to
+# WORK/LABEL.rc, because what script returns differs between its versions. The
+# input stays open until that file exists, because some versions of script end
+# with their input. util-linux script takes one command string, BSD script the
+# words. SBX_RC is 99 when no status was written.
+# ------------------------------------------------------------------------------
+run_sbx_in_terminal() {
+  local label=$1
+  local answerText=$2
+  local savedPath=$PATH
+  local commandText
+  local waitedTenths=0
+
+  shift 2
+  rm -f "$WORK/$label.rc"
+  {
+    printf '%s\n' '#!/bin/sh'
+    printf '%s\n' 'label=$1'
+    printf '%s\n' 'scriptFile=$2'
+    printf '%s\n' 'shift 2'
+    printf '%s\n' "bash \"$BIN/\$scriptFile\" \"\$@\" >\"$WORK/\$label.out\" 2>\"$WORK/\$label.err\""
+    printf '%s\n' "echo \$? >\"$WORK/\$label.rc\""
+  } >"$WORK/in-terminal"
+  chmod 755 "$WORK/in-terminal"
+
+  PATH=$WORK/scripted:$PATH
+
+  {
+    printf '%s\n' "$answerText"
+
+    while [ ! -s "$WORK/$label.rc" ] && [ "$waitedTenths" -lt 300 ]; do
+      sleep 0.1
+      waitedTenths=$((waitedTenths + 1))
+    done
+  } | if script --version >/dev/null 2>&1; then
+    commandText=$(printf '%q ' "$WORK/in-terminal" "$label" "$@")
+    SHELL=/bin/sh script -q -c "$commandText" /dev/null
+  else
+    script -q /dev/null "$WORK/in-terminal" "$label" "$@"
+  fi >/dev/null 2>&1
+
+  PATH=$savedPath
+  SBX_RC=$(cat "$WORK/$label.rc" 2>/dev/null) || SBX_RC=99
+
+  if [ -z "$SBX_RC" ]; then
+    SBX_RC=99
+  fi
 }
 
 # ------------------------------------------------------------------------------

@@ -22,7 +22,7 @@ sbx_error() {
 # It runs before sbx_init, so the script name is read here when it is not set.
 # ------------------------------------------------------------------------------
 sbx_usage() {
-  echo "Usage: ${scriptName:-${0##*/}} $1" >&2
+  echo "Usage: ${scriptName:-${0##*/}}${1:+ $1}" >&2
   exit 2
 }
 
@@ -189,10 +189,26 @@ run_compose() {
 }
 
 # ------------------------------------------------------------------------------
+# require_docker: Docker must answer before a missing image or container counts
+# ------------------------------------------------------------------------------
+# With Docker stopped every image and container looks missing.
+# ------------------------------------------------------------------------------
+require_docker() {
+  if ! docker info >/dev/null 2>&1 </dev/null; then
+    sbx_error "cannot reach Docker; is Docker running?"
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
 # require_images NAME: the Claude image must exist before the sandbox starts
+# ------------------------------------------------------------------------------
+# Docker must answer first, or sbx-upgrade would be the wrong advice.
 # ------------------------------------------------------------------------------
 require_images() {
   local sandboxName=$1
+
+  require_docker || return 1
 
   if ! docker image inspect "$claudeImage" >/dev/null 2>&1 </dev/null; then
     sbx_error "$claudeImage is not built; run: sbx-upgrade $sandboxName (it builds the images and starts the sandbox)"
@@ -214,10 +230,30 @@ sandbox_is_running() {
 }
 
 # ------------------------------------------------------------------------------
-# warn_sessions_close NAME LEAD: warns that a recreate of sbx-NAME ends its sessions
+# runs_older_image NAME: true when sbx-NAME runs on another image than current
 # ------------------------------------------------------------------------------
-# LEAD says why and ends with the recreate, for example "is running; recreating it".
-# One wording for every script that recreates a running sandbox.
+# A missing or stopped container, a failed inspect or an empty id is false, so
+# no caller warns or marks by mistake. It prints nothing.
+# ------------------------------------------------------------------------------
+runs_older_image() {
+  local runningImage
+  local currentImage
+
+  if ! sandbox_is_running "$1"; then
+    return 1
+  fi
+
+  runningImage=$(docker container inspect --format '{{.Image}}' "sbx-$1" 2>/dev/null </dev/null) || return 1
+  currentImage=$(docker image inspect --format '{{.Id}}' "$claudeImage" 2>/dev/null </dev/null) || return 1
+
+  [ -n "$runningImage" ] && [ -n "$currentImage" ] && [ "$runningImage" != "$currentImage" ]
+}
+
+# ------------------------------------------------------------------------------
+# warn_sessions_close NAME LEAD: warns that sbx-NAME loses its open sessions
+# ------------------------------------------------------------------------------
+# LEAD says why and ends with the recreate or the removal, e.g. "is running;
+# removing it". One wording for every script that recreates or removes one.
 # ------------------------------------------------------------------------------
 warn_sessions_close() {
   echo "$scriptName: sbx-$1 $2 will close its open shells and Claude sessions"
@@ -228,8 +264,8 @@ warn_sessions_close() {
 # ------------------------------------------------------------------------------
 # The entrypoint runs sleep after its last start hook, so a running sleep means
 # done. A compose healthcheck that waits for the hooks should replace this poll.
-# A container that is gone counts as stopped: the failed inspect must not end the
-# caller, which runs under set -e, before the error is printed.
+# A container that is gone counts as stopped: the failed inspect must not end
+# the caller, which runs under set -e, before the error is printed.
 # ------------------------------------------------------------------------------
 wait_until_ready() {
   local sandboxName=$1
@@ -254,4 +290,28 @@ wait_until_ready() {
 
   sbx_error "the start hooks of sbx-$sandboxName did not finish within $startLimitSeconds s; docker logs sbx-$sandboxName shows them"
   return 1
+}
+
+# ------------------------------------------------------------------------------
+# bring_up_sandbox NAME: folders, image, then up and the start-hook wait
+# ------------------------------------------------------------------------------
+# The caller read the registry entry. A running sandbox on an older image is
+# recreated by up, after the sessions warning.
+# ------------------------------------------------------------------------------
+bring_up_sandbox() {
+  local sandboxName=$1
+
+  check_sandbox_folders "$sandboxName" || return 1
+  require_images "$sandboxName" || return 1
+
+  if runs_older_image "$sandboxName"; then
+    warn_sessions_close "$sandboxName" "runs on an older image; recreating it on the new one"
+  fi
+
+  if ! run_compose "$sandboxName" up -d --wait; then
+    sbx_error "docker compose up failed; docker logs sbx-$sandboxName shows why"
+    return 1
+  fi
+
+  wait_until_ready "$sandboxName"
 }
