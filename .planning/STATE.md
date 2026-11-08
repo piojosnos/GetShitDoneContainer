@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: 05
 current_phase_name: Migration, Docs, and Old-Layout Retirement
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-11-08T02:35:53.966Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-11-08T02:41:56.051Z"
 last_activity: 2026-11-08
 last_activity_desc: Phase 05 execution started
-state_head: 8eee9c4dce31a570fe5c37719a3393182927a610
+state_head: d2d372310341e8905266bc64963a021e0a265343
 progress:
   total_phases: 14
   completed_phases: 11
   total_plans: 86
-  completed_plans: 82
+  completed_plans: 83
   percent: 79
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-11-08)
 ## Current Position
 
 Phase: 05 (Migration, Docs, and Old-Layout Retirement) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-11-08 — Phase 05 execution started
 
@@ -147,6 +147,7 @@ Progress: [████████████████████] 44/44 p
 | Phase 04 P04 | 2 min | 2 tasks | 4 files |
 | Phase 04 P05 | n/a (spans a user Mac run) | 3 tasks | 2 files |
 | Phase 05 P01 | 12 min | 3 tasks | 11 files |
+| Phase 05 P02 | 25 min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -282,6 +283,7 @@ Recent decisions affecting current work:
 - [Phase 04]: Phase 4 gate passed on the Mac as written (33 host checks, bash 3.2 self-test, attended helper); no gap-closure plan needed
 - [Phase 05]: Migration recipe stops the old container with docker stop (not cc-down) so it stays as the rollback
 - [Phase 05]: History folder rename uses the encoded name (non letter or digit becomes hyphen), derived as ENC
+- [Phase 05]: README threat model states its rules with no timing exception; raw Docker commands and start refusals sit below daily use
 
 ### Pending Todos
 
@@ -329,6 +331,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-08T02:35:53.746Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-11-08T02:41:55.845Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
