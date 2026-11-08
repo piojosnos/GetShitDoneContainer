@@ -20,6 +20,7 @@
 | `state/claude/projects/-home-sandbox-$ENC` | renamed to `-home-sandbox-workspace-$NAME` |
 
 - Not carried: `.npm`, `.cache`, `.local` and `.initialized`. The tools fetch them again.
+- Not carried either: anything else next to `$CODE` in `OLD`, such as documents, a `package.json` or an `.idea` folder. Check with `ls -la "$OLD"` and copy what you need into `$NEW/$NAME/` by hand.
 - The new name follows the sandbox name rule: lowercase letters, digits and hyphens, starting with a letter, 31 characters at most. So `MyCode` becomes `mycode`.
 - On the Mac, reopen the project in your IDE at `$NEW/$NAME`, not at `$NEW`: `state/` holds credentials.
 
@@ -102,7 +103,9 @@ mv "$NEW/state/claude/projects/-home-sandbox-$ENC" "$NEW/state/claude/projects/-
 - Claude Code names a session folder after the working folder. `/home/sandbox/MyCode` is `-home-sandbox-MyCode`, and `/home/sandbox/workspace/mycode` is `-home-sandbox-workspace-mycode`.
 - The folder holds the sessions for `/resume`, the auto memory and what `ccusage` counts.
 - Check it first with `ls "$NEW/state/claude/projects"`. If no session ever ran in the code folder, there is nothing to rename; skip this step.
-- Sessions started in `/home/sandbox` itself sit in `-home-sandbox`. `ccusage` still counts them; `/resume` from the project folder does not list them.
+- Sessions started in `/home/sandbox` itself sit in `-home-sandbox`. If `ls` shows only that folder and the old sandbox held only this project, rename that one instead, so `/resume` lists them.
+- That rename is `mv "$NEW/state/claude/projects/-home-sandbox" "$NEW/state/claude/projects/-home-sandbox-workspace-$NAME"`.
+- After that rename, skip step 5: its lines look for `/home/sandbox/$CODE`, and those sessions ran in `/home/sandbox`.
 
 ### 5. Optional: keep trust, MCP servers and up-arrow history
 
