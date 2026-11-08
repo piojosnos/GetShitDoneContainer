@@ -69,7 +69,6 @@ What each check proves:
 | H-31 | sbx-shell on a sandbox with no container starts it and waits for its start hooks, then (with no terminal) Docker refuses the shell; through a terminal it opens bash in /home/sandbox/workspace/hosttest on a running sandbox without recreating it, and on a stopped one after starting it again; the helper logs in with sbx-claude in that shell and finds Claude still logged in after a stop and a new sbx-shell | `h31-sbx-shell.sh`, `manual/h31-jump-in.sh` | automatic; helper for the rest |
 | H-32 | sbx-list with an empty registry says so and lists the running sbx-hosttest as a labelled container with no entry, with no cc_ container; after sbx-add, sbx-start and sbx-stop the hosttest row reads no container, running and stopped with its folder (a space in its path), each matching docker ps -a; a sandbox on the current image is not marked | `h32-sbx-list.sh` | automatic |
 | H-33 | sbx-rm of the running test sandbox without a terminal or --yes is refused and the sandbox, its entry and its files stay; with --yes it warns, takes its container and its network, and keeps its folder (a space in its path), its registry entry, the volumes, the images and the other sbx containers; it runs again with no container, and with the folder moved away; --unregister deletes only the entry; sbx-add of the same folder and sbx-start bring back a file in state/claude and a line in the bash history | `h33-sbx-rm.sh` | automatic |
-| Coexistence | Old-layout containers and files are untouched | `coexistence.sh` | automatic |
 
 ## Manual helpers (when something looks wrong)
 
@@ -124,7 +123,6 @@ bash tests/host/manual/h31-jump-in.sh
   - `manual/h19-bundle-behaviour.sh` still covers both behaviours by hand.
   - To drop H-18, delete its script and its entry in `tests/host/run-all.sh`. No other check depends on it.
 - **After the managed settings landed:** run `manual/h13-doctor.sh` once to see that `claude doctor` still reports updates disabled.
-- **Coexistence fails:** if you started or stopped a `cc_` container during the run, run it again.
 - **Rebuilding retags the images:** your running sandboxes keep their old image until their next `docker compose up`. That is safe: all their data is in their folder.
 
 ## Clean up
