@@ -558,3 +558,14 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 2.2 → 3 �
 **Options:**
 - [ ] Docker-in-Docker in the dev sandbox, accepting the isolation trade-off and changing only that container.
 - [ ] GitHub Actions on each PR, which ties in with Phase 6.
+
+### Phase 999.3: More tools in the image (BACKLOG)
+
+**Goal:** The image grows the tools real projects ask for, each pinned in `versions.env` like the rest, so an agent can build in the sandbox what today only builds on the Mac.
+**Source phase:** 05 (the RadioPractice migration)
+**Deferred at:** 2026-11-08
+**First request:** audio for RadioPractice. Its MP3s need `ffmpeg` and Piper (`pip install piper-tts`). The project's `.venv` is the Mac's and does not run in the container, so Piper needs its own Python environment there.
+**Options:**
+- [ ] Bake `ffmpeg` and `piper-tts` into the image, pinned; Piper in its own venv under the image home so it never clashes with a project's `.venv`.
+- [ ] Keep `sbx-claude` small and add an opt-in tool layer (a second image or a build option) for heavy or project-specific tools.
+- [ ] Gather other missing tools before planning, so one phase covers them together.
