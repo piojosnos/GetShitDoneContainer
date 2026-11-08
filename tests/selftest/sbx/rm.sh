@@ -508,6 +508,46 @@ case_rm_down_fails() {
 }
 
 # ------------------------------------------------------------------------------
+# Case: a failed entry delete exits 1, says so and changes nothing else
+# ------------------------------------------------------------------------------
+# A registry folder without write permission makes the delete fail. root may
+# write there anyway, so the case runs only for another user.
+# ------------------------------------------------------------------------------
+case_rm_delete_fails() {
+  local lockedDir="$WORK/rm dir/locked"
+  local registryDir
+  local listingBefore
+
+  SBX_CONFIG_DIR=$WORK/cfg-rm-locked
+  export SBX_CONFIG_DIR
+  registryDir=$SBX_CONFIG_DIR/sandboxes
+
+  echo '--- sbx-rm failed entry delete'
+
+  if [ "$(id -u)" -eq 0 ]; then
+    echo "INFO: root may delete in a read-only folder; the failed entry delete check runs for another user only"
+    return 0
+  fi
+
+  run_sbx lockedadd sbx-add locked "$lockedDir"
+  plant_sandbox_files "$lockedDir" locked
+  listingBefore=$(folder_listing "$lockedDir")
+
+  set_standin_state sha256:new sha256:new false yes
+  reset_standin_calls
+  chmod a-w "$registryDir"
+  run_sbx_scripted lockedrun sbx-rm locked --unregister
+  chmod u+w "$registryDir"
+
+  expect "sbx-rm: a failed entry delete exits 1" equals "$SBX_RC" 1
+  expect "sbx-rm: a failed entry delete says the entry could not go and the container did" has_text "$WORK/lockedrun.err" "could not delete $registryDir/locked; the container is gone and nothing in $lockedDir was changed"
+  expect "sbx-rm: a failed entry delete prints no deleted line" lacks_text "$WORK/lockedrun.out" "deleted the registry entry"
+  expect "sbx-rm: a failed entry delete prints no closing line" lacks_text "$WORK/lockedrun.out" "is gone"
+  expect "sbx-rm: a failed entry delete keeps the entry" test -f "$registryDir/locked"
+  expect "sbx-rm: a failed entry delete leaves the folder untouched" equals "$(folder_listing "$lockedDir")" "$listingBefore"
+}
+
+# ------------------------------------------------------------------------------
 # Case: a moved folder or a missing image does not stop the removal
 # ------------------------------------------------------------------------------
 case_rm_no_folder_or_image() {
@@ -544,6 +584,7 @@ case_rm_unregister
 case_rm_confirm
 case_rm_broken_entry
 case_rm_down_fails
+case_rm_delete_fails
 case_rm_no_folder_or_image
 expect "sbx-rm: no case reached the refusing docker" no_docker_call
 finish_cases
