@@ -24,6 +24,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login (completed 2026-11-07)
 - [x] **Phase 4: Jump-In and Sandbox Housekeeping** - One command drops you into a sandbox shell or Claude, and you can list and clean up sandboxes safely (completed 2026-11-08)
 - [ ] **Phase 5: Migration, Docs, and Old-Layout Retirement** - Existing sandboxes move over with history intact, the old `cc-*` layout is gone, and the README matches the repo
+- [ ] **Phase 5.1: Sandbox doctor** (INSERTED) - One command inside a sandbox checks owners, modes, logins, bundle and tools after a migration or upgrade, and a skill explains the results
 - [ ] **Phase 6: Automated checks (CI)** - GitHub runs the guard on every PR push and shows it as a PR check
 - [ ] **Phase 7: Start readiness** - `up --wait` returns only once every start hook has finished, and a failing hook fails `up`
 
@@ -461,7 +462,40 @@ Plans:
   4. The README has a short threat-model section covering what's isolated, the credential-exfiltration risk under skip-permissions, and files the agent can plant that the Mac later executes (git hooks, IDE run configs).
   5. A host-side verification checklist exists, and the user can run it end-to-end on the Mac. It confirms that login survives a rebuild, versions match the pins, ccusage works, and the home directory is not hidden.
 
-**Plans**: TBD
+**Plans:** 3/5 plans executed
+
+Plans:
+**Wave 1**
+- [x] 05-01-PLAN.md: Tracer: SANDBOX.md becomes README.md (guard pathspec and supply-chain list follow), every reference points at it, and MIGRATION.md gives the copy/paste recipe for one old sandbox, proven by a dry run
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 05-02-PLAN.md: README rewrite pass: a quick start, every section compressed with every fact kept, the threat model and the verify table
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 05-03-PLAN.md: Docs PR gate: Linux gate, branch chore/readme-and-migration, Mac run (33 checks, h29 helper) and the smallest old sandbox moved with MIGRATION.md
+
+**Wave 4** *(blocked on Wave 3 completion, the docs PR merged and every old sandbox moved)*
+- [ ] 05-04-PLAN.md: After the user's go: delete ClaudeCode/ and OpenCode/ with the old-layout guard rule, the coexistence step and their doc lines
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 05-05-PLAN.md: Retirement PR gate: Linux gate (18 rules), branch chore/retire-old-layout, Mac run (32 checks), validation and criteria maps, the CLAUDE.md follow-up
+
+### Phase 05.1: Sandbox doctor (INSERTED)
+
+**Goal:** One command inside a sandbox tells you whether it is healthy after a migration or an upgrade: a `sbx-doctor` script prints one OK/WARN/FAIL line per check with the fix, and a thin `sbx-doctor` skill runs it and explains the results in plain words, including any command to run on the Mac.
+**Requirements**: TBD
+**Depends on:** Phase 5
+**Plans:** 0 plans
+
+**TODO** (from the Phase 5 migrations, 2026-11-08):
+- [ ] Script `claude/bin/sbx-doctor`, shipped in the image next to `sbx-claude`, with a self-test. Deterministic checks; the skill only runs and explains it.
+- [ ] Skill shipped with the image, not the best-practices bundle: the checks follow the sandbox layout, so they version and test with this repo.
+- [ ] Checks to start with: files owned by uid 1001 or root (the root `state/claude/sessions` seen once), private files `sandbox` cannot read, `git status` mode changes (fix: `sbx-fix-modes NAME` on the Mac), Claude login present, gh logged in, git identity, the gh credential helper path, bundle linked, GSD installed, tool versions, `state/` writable, stale `@AGENTS.md` / `@code-conventions.md` lines in `state/claude/CLAUDE.md`.
+- [ ] Limit: inside the container it cannot see Mac-side modes; it reports the symptom and prints the Mac command.
+- [ ] Once it exists, add it as the last step of `MIGRATION.md` "Check" and to the README.
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.1 to break down)
 
 ### Phase 6: Automated checks (CI)
 
@@ -509,7 +543,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 2.2 → 3 �
 | 2.2. Best-practices from git, editable from any sandbox | 8/8 | Complete    | 2026-10-26 |
 | 3. Remembered Sandboxes and One-Command Upgrade | 4/4 | Complete    | 2026-11-07 |
 | 4. Jump-In and Sandbox Housekeeping | 5/5 | Complete    | 2026-11-08 |
-| 5. Migration, Docs, and Old-Layout Retirement | 0/TBD | Not started | - |
+| 5. Migration, Docs, and Old-Layout Retirement | 3/5 | In Progress|  |
 | 6. Automated checks (CI) | 0/TBD | Not started | - |
 | 7. Start readiness | 0/TBD | Not started | - |
 
@@ -524,3 +558,14 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 2.2 → 3 �
 **Options:**
 - [ ] Docker-in-Docker in the dev sandbox, accepting the isolation trade-off and changing only that container.
 - [ ] GitHub Actions on each PR, which ties in with Phase 6.
+
+### Phase 999.3: More tools in the image (BACKLOG)
+
+**Goal:** The image grows the tools real projects ask for, each pinned in `versions.env` like the rest, so an agent can build in the sandbox what today only builds on the Mac.
+**Source phase:** 05 (the RadioPractice migration)
+**Deferred at:** 2026-11-08
+**First request:** audio for RadioPractice. Its MP3s need `ffmpeg` and Piper (`pip install piper-tts`). The project's `.venv` is the Mac's and does not run in the container, so Piper needs its own Python environment there.
+**Options:**
+- [ ] Bake `ffmpeg` and `piper-tts` into the image, pinned; Piper in its own venv under the image home so it never clashes with a project's `.venv`.
+- [ ] Keep `sbx-claude` small and add an opt-in tool layer (a second image or a build option) for heavy or project-specific tools.
+- [ ] Gather other missing tools before planning, so one phase covers them together.

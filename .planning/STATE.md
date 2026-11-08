@@ -1,18 +1,18 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 5
+current_phase: 05
 current_phase_name: Migration, Docs, and Old-Layout Retirement
-status: planning
-stopped_at: Phase 04 complete, ready to plan Phase 5
-last_updated: "2026-11-08T00:44:20.452Z"
+status: executing
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-11-08T06:34:02.642Z"
 last_activity: 2026-11-08
-last_activity_desc: Phase 04 complete, transitioned to Phase 5
-state_head: 0cd844c7abfb53efe0286a707df85f425a0146be
+last_activity_desc: Phase 05 execution started
+state_head: ed52ad7282eb81bb839cb48f3266d7c0775a5237
 progress:
   total_phases: 14
   completed_phases: 11
-  total_plans: 81
-  completed_plans: 81
+  total_plans: 86
+  completed_plans: 84
   percent: 79
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-08)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 5: Migration, Docs, and Old-Layout Retirement
+**Current focus:** Phase 05 — Migration, Docs, and Old-Layout Retirement
 
 ## Current Position
 
-Phase: 5 — Migration, Docs, and Old-Layout Retirement
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-11-08 — Phase 04 complete, transitioned to Phase 5
+Phase: 05 (Migration, Docs, and Old-Layout Retirement) — EXECUTING
+Plan: 4 of 5
+Status: Ready to execute
+Last activity: 2026-11-08 — Phase 05 execution started
 
 Progress: [████████████████████] 44/44 plans ([████████░░] 79%)
 
@@ -146,6 +146,9 @@ Progress: [████████████████████] 44/44 p
 | Phase 04 P03 | 15 min | 3 tasks | 8 files |
 | Phase 04 P04 | 2 min | 2 tasks | 4 files |
 | Phase 04 P05 | n/a (spans a user Mac run) | 3 tasks | 2 files |
+| Phase 05 P01 | 12 min | 3 tasks | 11 files |
+| Phase 05 P02 | 25 min | 3 tasks | 1 files |
+| Phase 05 P03 | n/a (spans a user Mac run) | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -279,6 +282,10 @@ Recent decisions affecting current work:
 - [Phase 04]: sbx-rm runs exactly run_compose NAME down (no volumes, images or orphans) and deletes the registry entry only after a good down; the guard pins that one delete to an exact line
 - [Phase 04]: sbx-list example in SANDBOX.md is the full output (rows, older-image note, unregistered section); docs follow bin/ as plans 01 to 03 left it
 - [Phase 04]: Phase 4 gate passed on the Mac as written (33 host checks, bash 3.2 self-test, attended helper); no gap-closure plan needed
+- [Phase 05]: Migration recipe stops the old container with docker stop (not cc-down) so it stays as the rollback
+- [Phase 05]: History folder rename uses the encoded name (non letter or digit becomes hyphen), derived as ENC
+- [Phase 05]: README threat model states its rules with no timing exception; raw Docker commands and start refusals sit below daily use
+- [Phase 05]: 05-03: Mac host checklist deferred by the user to plan 05; sbx-fix-modes added to the docs PR after the real migration
 
 ### Pending Todos
 
@@ -326,6 +333,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-08T00:45:00Z
-Stopped at: Phase 04 complete, ready to plan Phase 5
+Last session: 2026-11-08T06:34:02.374Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None
