@@ -46,6 +46,7 @@ NAME=mycode
 CODE=MyCode
 PROJECT=ssg
 ENC=$(printf '%s' "$CODE" | LC_ALL=C sed 's/[^a-zA-Z0-9]/-/g')
+printf '%s\n' "$NAME" | LC_ALL=C grep -Eqx '[a-z][a-z0-9-]{0,30}' && echo "NAME ok" || echo "NAME breaks the name rule"
 ```
 
 | Value | Meaning |
@@ -57,7 +58,8 @@ ENC=$(printf '%s' "$CODE" | LC_ALL=C sed 's/[^a-zA-Z0-9]/-/g')
 | `PROJECT` | The project name you gave to `cc-up.sh`. The container is `cc_gsd_$PROJECT`; `docker ps -a --format '{{.Names}}'` lists them. |
 | `ENC` | How Claude Code names the history folder of `/home/sandbox/$CODE`: every character other than a letter or digit becomes `-`. Derived, not typed. |
 
-- Replace the first five values with yours. Leave the last line as it is.
+- Replace the first five values with yours. Leave the last two lines as they are.
+- The last line checks `NAME`. If it prints `NAME breaks the name rule`, fix `NAME` and paste the block again before step 2: `sbx-add` in step 6 refuses the name, and by then it is in the copied folders. `state` and `best-practices` are taken too.
 - Every command below pastes unchanged in the same terminal.
 - To redo a move, delete `NEW` and start again at "3. Copy". `OLD` still has everything.
 - An interrupted move is redone the same way.

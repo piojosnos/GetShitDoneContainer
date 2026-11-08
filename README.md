@@ -131,6 +131,7 @@ SBX_AGENT=claude
 - It does not wait for the start hooks of a sandbox that already runs. One started with the raw `docker compose up` may still be in its hooks for a few seconds.
 - It needs a terminal. From a pipe or a script Docker refuses the shell (`the input device is not a TTY`, or on newer Docker `stdin is not a terminal`) after the sandbox has started. Its exit status is the shell's.
 - `sbx-claude` runs `claude`, after a warning when no best-practices clone is linked (see "Best-practices bundle"). Plain `claude` works too. Nothing starts Claude from the Mac.
+- `sbx-claude` passes its arguments to `claude`. `sbx-claude --dangerously-skip-permissions` runs without permission prompts; Claude can then read and send out the tokens in `state/` (see "Threat model").
 - Log in once with a claude.ai account: Claude prints a URL, the browser shows a code, you paste it at the prompt. The login is written to `$SBX_DIR/state/claude` on the Mac.
 - Sessions are keyed by directory: run `claude --continue` or `claude --resume` from the same directory as before.
 - `sbx-stop` keeps the container, and the next `sbx-start` reuses it. Everything in `$SBX_DIR` stays.
