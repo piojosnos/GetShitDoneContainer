@@ -10,6 +10,7 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 
 - Nothing is mounted over the container's home directory, so everything the image provides stays visible.
 - Moving a sandbox from the old layout (the whole home mounted at `/home/sandbox`): see [`MIGRATION.md`](MIGRATION.md).
+- What the sandbox does and does not protect: see "Threat model".
 
 ## Quick start
 
@@ -257,15 +258,42 @@ In a sandbox shell, run `ccusage daily`, `ccusage monthly` or `ccusage session`.
 - By default it fetches the current price table from the network when it runs. `--offline` uses the table it ships with.
 - Starting the sandbox needs no network either way.
 
+## Threat model
+
+| Isolated | Not isolated |
+|---|---|
+| One bind mount: `$SBX_DIR` at `/home/sandbox/workspace`. No Mac home, no `~/.ssh`, no Docker socket. | Outbound network: normal, with no allowlist. |
+| User `sandbox` (uid 1000), not root. | The tokens in `state/` (`state/claude/.credentials.json`, `state/gh/hosts.yml` in plain text, `state/git/config`). Claude can read and send them out when it runs with permissions bypassed (`--dangerously-skip-permissions`). |
+| All capabilities dropped (`cap_drop: ALL`) and `no-new-privileges`. | Files the agent writes in `$SBX_DIR/<name>` that a Mac tool later runs. |
+| The registry and the repo folder whose `bin/` the Mac runs cannot sit inside a sandbox folder (`sbx-add` refuses). | |
+
+Files the agent can plant that the Mac runs:
+
+- `.git/hooks/*`, and the git config keys `core.fsmonitor`, `core.pager`, `diff.external`, `credential.helper` and `core.sshCommand`.
+- IDE run configurations and tasks: `.idea/`, `.vscode/tasks.json`, `.vscode/launch.json`.
+- Build files and scripts you run on the Mac: `Makefile`, `package.json` scripts, `.mvn/`, `.envrc`.
+
+Rules. They hold whatever the timing: an agent working while Mac-side git or an IDE runs can plant any of these at any moment.
+
+- Run git inside the sandbox (`sbx-shell`) and review changes on GitHub.
+- Treat Mac-side git, IDE git integration and IDE run configurations on `$SBX_DIR/<name>` as running agent code.
+- Open only `$SBX_DIR/<name>` in an IDE, never `state/`.
+- Give `sbx-gh-login` a fine-grained token limited to the repos the sandbox needs.
+- The bundle trade and the limit of the Edit protection are in "Best-practices bundle".
+
 ## Verify a new build
 
-Run `./host-test.sh` on the Mac after building, or after changing anything under `base/`, `claude/` or `compose.yml`.
+Run `./host-test.sh` on the Mac after building, or after a change under `base/`, `claude/` or `compose.yml`. It keeps its output in `host-test.log` and uses its own test sandbox, `sbx-hosttest`.
 
-- It runs `tests/host/run-all.sh` and the other Docker checks, and keeps the output in `host-test.log`.
-- It uses its own test sandbox, `sbx-hosttest`, and does not touch your sandboxes.
-- Claude's login and Claude's own behaviour are checked only by the helpers in `tests/host/manual/`. Run them after a Claude Code or GSD pin change, a change to the managed settings, or a change to login handling.
-- [`tests/host-checklist.md`](tests/host-checklist.md) explains the result and the helpers.
-- [`tests/README.md`](tests/README.md) lists every test suite, where it runs and what it catches.
+| Question | Proven by | Run |
+|---|---|---|
+| Login survives a rebuild | H-09 (files and memory), `tests/host/manual/h29-upgrade-resume.sh` (login and session after `sbx-upgrade`) | `./host-test.sh --keep`, then `bash tests/host/manual/h29-upgrade-resume.sh` |
+| Versions match the pins | H-25 (images match `versions.env`), H-30 (tool versions line), the pin digests step | `./host-test.sh` |
+| ccusage works | H-24 | `./host-test.sh` |
+| The home is not hidden | H-05 (`.bashrc` and `.local` in `/home/sandbox`) | `./host-test.sh` |
+
+- The other helpers in `tests/host/manual/` and when to run them are in [`tests/host-checklist.md`](tests/host-checklist.md).
+- Every suite is listed in [`tests/README.md`](tests/README.md).
 
 ## Free disk space
 
