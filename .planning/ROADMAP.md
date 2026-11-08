@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2.1: Shell diet** (INSERTED) - The guard keeps only the rules that protect the images and the sandbox, the fake docker and host self-tests are gone, and comments are schematic (completed 2026-10-16)
 - [x] **Phase 2.2: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs (completed 2026-10-26)
 - [x] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login (completed 2026-11-07)
-- [ ] **Phase 4: Jump-In and Sandbox Housekeeping** - One command drops you into a sandbox shell or Claude, and you can list and clean up sandboxes safely
+- [x] **Phase 4: Jump-In and Sandbox Housekeeping** - One command drops you into a sandbox shell or Claude, and you can list and clean up sandboxes safely (completed 2026-11-08)
 - [ ] **Phase 5: Migration, Docs, and Old-Layout Retirement** - Existing sandboxes move over with history intact, the old `cc-*` layout is gone, and the README matches the repo
 - [ ] **Phase 6: Automated checks (CI)** - GitHub runs the guard on every PR push and shows it as a PR check
 - [ ] **Phase 7: Start readiness** - `up --wait` returns only once every start hook has finished, and a failing hook fails `up`
@@ -426,11 +426,27 @@ Plans:
 **Requirements**: SCR-04, SCR-05, SCR-06
 **Success Criteria** (what must be TRUE):
   1. On a stopped sandbox, the jump-in command starts it and opens a bash shell in `/home/sandbox/workspace/<name>`. On a running sandbox, it just opens the shell.
-  2. The same command can launch `claude` directly instead of a shell, already logged in.
+  2. In that shell, `sbx-claude` starts Claude already logged in. There is no separate command that launches Claude from the Mac.
   3. The user lists all registered sandboxes with their host path and running or stopped status, and the status matches what `docker ps -a` shows.
   4. The user removes a sandbox's container, and optionally its registration. Its `<name>/` and `state/` folders on the Mac are left untouched, and re-registering the same path brings back the login and history.
 
-**Plans**: TBD
+**Plans:** 5/5 plans complete
+
+Plans:
+**Wave 1**
+- [x] 04-01-PLAN.md: Tracer: sbx-shell starts a sandbox when needed and opens bash in its project folder (start steps shared with sbx-start in the library, sbx-start's sbx-shell hint); docker-free self-test; H-31 and the attended jump-in helper
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 04-02-PLAN.md: sbx-list: one row per registered sandbox with its folder and status from one docker ps call, the older-image mark, broken entries, labelled containers with no entry; self-test; H-32
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 04-03-PLAN.md: sbx-rm: a plain compose down and the optional unregister after a good down, the data guard rule narrowed for it in the same commit; self-test; H-33 with the re-register round trip
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 04-04-PLAN.md: SANDBOX.md teaches the three commands; the test docs name H-31 to H-33 and the seventh helper
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 04-05-PLAN.md: Final gate, planning-ID scan, feat/sbx-shell-list-rm for one code PR, then the Mac run with 33 checks and the attended helper (checkpoint)
 
 ### Phase 5: Migration, Docs, and Old-Layout Retirement
 
@@ -492,7 +508,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 2.2 → 3 �
 | 2.1. Shell diet | 11/11 | Complete    | 2026-10-16 |
 | 2.2. Best-practices from git, editable from any sandbox | 8/8 | Complete    | 2026-10-26 |
 | 3. Remembered Sandboxes and One-Command Upgrade | 4/4 | Complete    | 2026-11-07 |
-| 4. Jump-In and Sandbox Housekeeping | 0/TBD | Not started | - |
+| 4. Jump-In and Sandbox Housekeeping | 5/5 | Complete    | 2026-11-08 |
 | 5. Migration, Docs, and Old-Layout Retirement | 0/TBD | Not started | - |
 | 6. Automated checks (CI) | 0/TBD | Not started | - |
 | 7. Start readiness | 0/TBD | Not started | - |

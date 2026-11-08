@@ -1,43 +1,43 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 4
-current_phase_name: Jump-In and Sandbox Housekeeping
+current_phase: 5
+current_phase_name: Migration, Docs, and Old-Layout Retirement
 status: planning
-stopped_at: Phase 03 complete, ready to plan Phase 4
-last_updated: "2026-11-07T01:04:00.526Z"
-last_activity: 2026-11-07
-last_activity_desc: Phase 03 complete, transitioned to Phase 4
-state_head: eb04e2ca49d5bf2af31b50e01258ef26e1d9f87e
+stopped_at: Phase 04 complete, ready to plan Phase 5
+last_updated: "2026-11-08T00:44:20.452Z"
+last_activity: 2026-11-08
+last_activity_desc: Phase 04 complete, transitioned to Phase 5
+state_head: 0cd844c7abfb53efe0286a707df85f425a0146be
 progress:
   total_phases: 14
-  completed_phases: 10
-  total_plans: 76
-  completed_plans: 76
-  percent: 71
+  completed_phases: 11
+  total_plans: 81
+  completed_plans: 81
+  percent: 79
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-26)
+See: .planning/PROJECT.md (updated 2026-11-08)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 03 — Remembered Sandboxes and One-Command Upgrade
+**Current focus:** Phase 5: Migration, Docs, and Old-Layout Retirement
 
 ## Current Position
 
-Phase: 4 — Jump-In and Sandbox Housekeeping
+Phase: 5 — Migration, Docs, and Old-Layout Retirement
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-11-07 — Phase 03 complete, transitioned to Phase 4
+Last activity: 2026-11-08 — Phase 04 complete, transitioned to Phase 5
 
-Progress: [████████████████████] 44/44 plans ([███████░░░] 71%)
+Progress: [████████████████████] 44/44 plans ([████████░░] 79%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 76
+- Total plans completed: 81
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -55,6 +55,7 @@ Progress: [████████████████████] 44/44 p
 | 02.1 | 11 | - | - |
 | 02.2 | 8 | - | - |
 | 03 | 4 | - | - |
+| 04 | 5 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -140,6 +141,11 @@ Progress: [████████████████████] 44/44 p
 | Phase 03 P02 | 20 min | 3 tasks | 10 files |
 | Phase 03 P03 | 7 min | 3 tasks | 10 files |
 | Phase 03 P04 | 45min | 3 tasks | 2 files |
+| Phase 04 P01 | 68 min | 3 tasks | 10 files |
+| Phase 04 P02 | 11 min | 3 tasks | 7 files |
+| Phase 04 P03 | 15 min | 3 tasks | 8 files |
+| Phase 04 P04 | 2 min | 2 tasks | 4 files |
+| Phase 04 P05 | n/a (spans a user Mac run) | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -267,6 +273,12 @@ Recent decisions affecting current work:
 - [Phase 03]: sbx-upgrade prints the open-sessions warning before the build, worded 'after the build', and passes options after the name to build.sh
 - [Phase 03]: tool versions line is a build-time file /etc/sbx/tool-versions printed by /etc/bash.bashrc (interactive shells only) and as the last line of sbx-upgrade
 - [Phase 03]: UBUNTU_IMAGE pin digest drift found by the Mac pin check is out of scope for phase 3; bump versions.env in a separate small PR
+- [Phase 04]: bring_up_sandbox lives in bin/sbx-lib.sh (not sbx-shell calling sbx-start): the jump-in prints no start lines and never warns about an image it will not recreate
+- [Phase 04]: sbx-shell always runs check_name and read_registry_entry, also for a running sandbox; a running sandbox gets one inspect and the exec only
+- [Phase 04]: sbx-list: paused and restarting read stopped; a broken registry entry is a row, not a failure; leftover hint names only sbx-add; fixed-width printf instead of column
+- [Phase 04]: sbx-rm runs exactly run_compose NAME down (no volumes, images or orphans) and deletes the registry entry only after a good down; the guard pins that one delete to an exact line
+- [Phase 04]: sbx-list example in SANDBOX.md is the full output (rows, older-image note, unregistered section); docs follow bin/ as plans 01 to 03 left it
+- [Phase 04]: Phase 4 gate passed on the Mac as written (33 host checks, bash 3.2 self-test, attended helper); no gap-closure plan needed
 
 ### Pending Todos
 
@@ -285,6 +297,7 @@ None yet.
 - [Phase 1.4]: Open note: the user's Mac `git status` listed 10 files as modified in the code worktree while the sandbox shows it clean; cause pending
 - [Phase 1.5]: The H-03 gap is closed: plans 12 to 15 added the entrypoint name rule and the Compose name check, and the Mac run of 01.5-16 passed 21 of 21 checks. 01.5 IN-01 to IN-07 stay open. See 01.5-16-SUMMARY.md
 - [Phase 2.2]: UAT passed 3 of 3; two todos from it (H-19 step 6 wording, `sbx-gh-login` re-running the login) plus the review todos in `.planning/todos/pending/`. The code branch `feat/best-practices-from-git` is not pushed yet, so `origin/main` still carries `best-practices/` until its PR is merged
+- [Phase 4]: UAT 4 of 4 and security 26 of 26 threats closed; review findings IN-01, IN-02, IN-03 and IN-05 deferred as follow-ups (see 04-REVIEW-DISPOSITION.md). The code branch `feat/sbx-shell-list-rm` is not pushed yet; it waits for the user's go and PR
 
 ### Quick Tasks Completed
 
@@ -313,6 +326,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-06T23:57:34.189Z
-Stopped at: Phase 03 complete, ready to plan Phase 4
+Last session: 2026-11-08T00:45:00Z
+Stopped at: Phase 04 complete, ready to plan Phase 5
 Resume file: None

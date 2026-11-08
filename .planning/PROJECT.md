@@ -34,6 +34,8 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 - ✓ `ccusage` (e.g. `ccusage`, `ccusage daily`) runs from the container shell and reports real usage for that project's Claude sessions. (Phase 2)
 - ✓ Every pin lives in `versions.env` and `build.sh` passes it to both builds; a build without `build.sh` stops and names the missing pin; the npm, uv and Maven caches live in `<sandbox>/state` and survive recreate; host checks are proven with 25 of 25 passing (Phase 2)
 - ✓ The best-practices bundle lives in its own private GitHub repo; each sandbox keeps its own clone in `<sandbox>/best-practices` (via `sbx-gh-login` and `sbx-bundle-clone`), a start links it without network, and an edit goes back as a PR from inside the sandbox with the persisted gh login; proven by 27 of 27 host checks and an attended push and PR (Phase 2.2)
+- ✓ `sbx-shell NAME` starts a registered sandbox when needed and opens bash in its project folder without recreating a running one; Claude starts in that shell with `sbx-claude`, and no Mac command launches it (Phase 4)
+- ✓ `sbx-list` shows every registered sandbox with its folder and a status that matches `docker ps -a`; `sbx-rm NAME [--unregister]` takes a sandbox down with a plain compose down and keeps its folder, so registering the same path again brings back login and history; proven by 33 of 33 host checks (Phase 4)
 
 ### Active
 
@@ -44,8 +46,6 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 **Helper scripts (problem 5), in priority order and kept small**
 - [ ] Scripts remember a project's arguments (name → host path), so you don't have to pass them on every call.
 - [ ] Simple rebuild/upgrade script.
-- [ ] One command to jump in: start the container if needed, then open a shell (optionally launching `claude`).
-- [ ] See which sandboxes exist or are running, and clean up old ones.
 
 **Migration**
 - [ ] The README documents how to move an existing sandbox (about 4 today, e.g. `GSD_StaticSiteGenerator` with code at `/home/sandbox/MyCode`) to the new layout while keeping login and history.
@@ -104,6 +104,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 | One `versions.env` holds every pin; `build.sh` is the only build path and the Dockerfiles have no defaults; every pin gets a human supply-chain review | One place to bump; a stale default can never be built by accident | Good: H-25 proves the images match `versions.env` and a bare build stops (Phase 2) |
 | Hold Maven at 3.9.11 | Maven 3.9.12 and later fail with an Input/output error when the local repository is on the Docker Desktop for Mac mount | Good: H-23 downloads into `state/m2` on the Mac; lift the hold once a release passes H-23 (Phase 2) |
 | Each sandbox keeps its own clone of the bundle repo inside its sandbox folder, linked into Claude's config by a start hook; the Mac never runs git on the clone | No compose change and no folder shared between sandboxes; a change reaches another sandbox only through a merged PR and a pull; the clone's `.git` is agent-writable, so host git on it is unsafe | Good: H-14 to H-19 and H-27 pass on the Mac, and PR #2 was opened from a new-layout sandbox (Phase 2.2) |
+| `sbx-rm` is the only `bin/` script allowed to take a sandbox down or delete a file, and it runs only a plain `compose down` plus the delete of its own registry entry | Removing a sandbox must never cost code, login or history; a guard rule pins the one allowed delete line and refuses volume or image removal | Good: H-33 shows folders, volumes and images kept and the re-register round trip restores login and history (Phase 4) |
 
 ## Evolution
 
@@ -123,4 +124,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-26 after Phase 2.2*
+*Last updated: 2026-11-08 after Phase 4*
