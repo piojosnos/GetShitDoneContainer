@@ -461,7 +461,23 @@ Plans:
   4. The README has a short threat-model section covering what's isolated, the credential-exfiltration risk under skip-permissions, and files the agent can plant that the Mac later executes (git hooks, IDE run configs).
   5. A host-side verification checklist exists, and the user can run it end-to-end on the Mac. It confirms that login survives a rebuild, versions match the pins, ccusage works, and the home directory is not hidden.
 
-**Plans**: TBD
+**Plans:** 5 plans
+
+Plans:
+**Wave 1**
+- [ ] 05-01-PLAN.md: Tracer: SANDBOX.md becomes README.md (guard pathspec and supply-chain list follow), every reference points at it, and MIGRATION.md gives the copy/paste recipe for one old sandbox, proven by a dry run
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 05-02-PLAN.md: README rewrite pass: a quick start, every section compressed with every fact kept, the threat model and the verify table
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 05-03-PLAN.md: Docs PR gate: Linux gate, branch chore/readme-and-migration, Mac run (33 checks, h29 helper) and the smallest old sandbox moved with MIGRATION.md
+
+**Wave 4** *(blocked on Wave 3 completion, the docs PR merged and every old sandbox moved)*
+- [ ] 05-04-PLAN.md: After the user's go: delete ClaudeCode/ and OpenCode/ with the old-layout guard rule, the coexistence step and their doc lines
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 05-05-PLAN.md: Retirement PR gate: Linux gate (18 rules), branch chore/retire-old-layout, Mac run (32 checks), validation and criteria maps, the CLAUDE.md follow-up
 
 ### Phase 6: Automated checks (CI)
 

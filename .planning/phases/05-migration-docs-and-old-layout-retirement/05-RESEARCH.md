@@ -413,7 +413,7 @@ git clone https://github.com/piojosnos/GetShitDoneContainer.git      # plain clo
 echo 'export PATH="$HOME/sbx-tools/GetShitDoneContainer/bin:$PATH"' >> ~/.zshrc
 ```
 
-The remote URL above is [ASSUMED]: the origin is not recorded in the files read; the planner should take it from `git remote -v` on the Mac. Then do the normal recipe with `CODE=GetShitDoneContainer` (the history folder encodes to itself, `-home-sandbox-GetShitDoneContainer`, because it has only letters), a legal `NAME` such as `gsd-container`, and `sbx-add` from the tools clone's `bin/`. The copy of the repo at `$NEW/$NAME` is the agent's working copy; it must never be the clone whose `bin/` is on `PATH`.
+The remote URL above is [VERIFIED: `git remote -v` in this checkout prints `https://github.com/piojosnos/GetShitDoneContainer.git` for fetch and push, checked at planning time]; plans 05-01 and 05-02 use it. Then do the normal recipe with `CODE=GetShitDoneContainer` (the history folder encodes to itself, `-home-sandbox-GetShitDoneContainer`, because it has only letters), a legal `NAME` such as `gsd-container`, and `sbx-add` from the tools clone's `bin/`. The copy of the repo at `$NEW/$NAME` is the agent's working copy; it must never be the clone whose `bin/` is on `PATH`.
 
 ## State of the Art
 
@@ -438,24 +438,28 @@ The remote URL above is [ASSUMED]: the origin is not recorded in the files read;
 | A6 | `ccusage daily/monthly` ignore the folder name; `session` may label by it | Facts table | A user sees a different session label; docs must not promise a label |
 | A7 | IDE run configs and build files (`.idea/`, `.vscode/`, `Makefile`, `.mvn/`, `.envrc`) are valid planted-file examples | Threat model | Threat list slightly off; low risk, reviewer can trim |
 | A8 | Rewriting `cwd` inside transcripts is unnecessary for `/resume` | Facts table | If resume filters on in-file `cwd`, old sessions would not list; the D-18 run tests this directly |
-| A9 | The GitHub remote URL for the Mac tools clone | Dev-sandbox section | Wrong command in the doc; take it from `git remote -v` |
+| A9 | The GitHub remote URL for the Mac tools clone | Dev-sandbox section | RESOLVED: verified at planning time with `git remote -v` (`https://github.com/piojosnos/GetShitDoneContainer.git`), the URL plans 05-01 and 05-02 use |
 | A10 | The optional `.claude.json` and `history.jsonl` `sed` edits are safe on real, larger files (only tested on a small fake) | Code Examples | Corrupt JSON; mitigated by writing to a temp file and keeping `$OLD` untouched |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does the first start sync duplicate GSD hooks in a copied `settings.json`? (Pitfall 8, A4)**
    - Known: the old `settings.json` has GSD hooks at `/home/sandbox/.claude/hooks/...`; the sync runs `gsd-core --claude --global --config-dir /home/sandbox/workspace/state/claude`.
    - Unclear: whether GSD's installer recognises the old entries as its own.
    - Recommendation: plan the D-18 smallest-sandbox run to include "count GSD hook entries in `state/claude/settings.json` after the first start" and, if doubled, add one recipe step. Do not pre-emptively delete settings.
+   - RESOLVED: measured on the Mac in plan 05-03 Task 2 (the blocking checkpoint). Its step 6 appends `grep -c '"command"' "$NEW/state/claude/settings.json"` to `migrate-05.log` before and after the first start, and the assumption table row A4 reads the two counts. Equal counts confirm A4; a doubled count goes under "Gaps" in 05-03-SUMMARY.md and is closed through `/gsd-plan-phase 5 --gaps` with one recipe step that removes the old GSD hook entries before the first start. MIGRATION.md (plan 05-01 Task 3) deletes no settings up front.
 
 2. **Who updates `.claude/CLAUDE.md`, and when?**
    - Known: it is tracked, generated, and describes the old layout and the Coexistence constraint throughout; after PR B it names files that do not exist. Project memory says `.claude/` changes never share a branch or PR with code or `.planning/`.
    - Unclear: whether the user wants it regenerated in this phase (SC2 only covers the README).
    - Recommendation: add a third small `.claude/`-only PR (`/gsd-docs-update` or regenerate sections) after PR B, or record it as a follow-up; flag to the user, do not fold into the code PRs.
+   - RESOLVED: deferred to its own `.claude/`-only PR, outside this phase. Plan 05-05 Task 3 creates `.planning/todos/pending/2026-11-08-refresh-claude-md-for-the-new-layout.md` and lists it under "Follow-ups" for the user. Plans 05-03 Task 1, 05-05 Task 1 and 05-05 Task 3 check that `.claude/` is unchanged, so no phase PR carries it.
 
 3. **Rollback after PR B.** Once `cc-*` and the old compose are deleted, a user who wants to roll back relies on the untouched old container (`docker start`/`docker exec`). If that container was already removed with `cc-down`, rebuilding the old image needs the deleted files from git history. Recommendation: MIGRATION.md says "stop with `docker stop`, do not `cc-down`", and PR B's description names the last commit that holds `ClaudeCode/`.
+   - RESOLVED: both parts are planned. Plan 05-01 Task 3 stops the old container with `docker stop "cc_gsd_$PROJECT"` (a bullet says `cc-down.sh` would delete it), and its "If something is wrong" section gives the undo (`docker start`, `docker exec`). Plan 05-05 Task 1 records `git rev-parse origin/main` as the last commit that holds `ClaudeCode/` and `OpenCode/` and names it in the retirement PR description draft. Token rotation on rollback (A3, Pitfall 6) stays an accepted, hedged assumption: the hedge is the 05-01 Task 3 bullet "if Claude there asks to log in again, log in", and plan 05-03 Task 2 records A3 as confirmed or not exercised.
 
 4. **`NAME` for existing sandboxes.** The roadmap example keeps `MyCode`; the name rule forces lowercase. Recommendation: the example shows `CODE=MyCode`, `NAME=mycode`, so the rename is visible.
+   - RESOLVED: plan 05-01 Task 3 sets `CODE=MyCode` and `NAME=mycode` in "1. Set once", "What moves where" states the name rule and that `MyCode` becomes `mycode`, and the Task 3 verify checks both lines.
 
 ## Environment Availability
 
