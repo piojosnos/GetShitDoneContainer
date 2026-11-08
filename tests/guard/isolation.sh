@@ -66,7 +66,7 @@ host_scripts_keep_sandbox_data() {
 # old_layout_untouched: no change to the old layout until it is retired
 # ------------------------------------------------------------------------------
 old_layout_untouched() {
-  git diff --quiet "$OLD_LAYOUT_COMMIT" -- ClaudeCode OpenCode README.md \
+  git diff --quiet "$OLD_LAYOUT_COMMIT" -- ClaudeCode OpenCode \
     && [ -z "$(git ls-files --others --exclude-standard -- ClaudeCode OpenCode)" ]
 }
 

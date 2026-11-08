@@ -4,7 +4,7 @@ The test plan for the sbx sandbox: checks that can only be proven on your Mac, b
 
 - **IDs:** each check has an ID, H-00 to H-33 (H for host), so results can be reported by ID ("H-10 failed").
 - **When:** once after building a new version of the images or `compose.yml`.
-- **Setup and daily use:** see [`SANDBOX.md`](../SANDBOX.md).
+- **Setup and daily use:** see [`README.md`](../README.md).
 - Commands run from the repo root.
 
 How to run it:
@@ -113,9 +113,9 @@ bash tests/host/manual/h31-jump-in.sh
 - **"Mounts denied" during setup:** Docker Desktop does not share `$TMPDIR`. Add it in Settings, Resources, File sharing.
 - **H-10 says Docker created the missing folder:** Compose ignored `create_host_path: false`. That is a real finding, not a script bug.
   - Do not change `compose.yml`.
-  - See the env_file follow-up in [`SANDBOX.md`, Troubleshooting](../SANDBOX.md#troubleshooting-and-known-limits). It needs your approval.
+  - See the env_file follow-up in [`README.md`, Troubleshooting](../README.md#troubleshooting-and-known-limits). It needs your approval.
 - **H-20 says the sandbox started, or a folder appeared:** the start folder in `compose.yml` or the project-folder check in `base/sbx-start-lib.sh` changed. Do not create the folder by hand.
-- **H-03 says an uppercase `SBX_NAME` was not refused:** `docker compose up` got past the `name-check` service in `compose.yml`. Paste the FAIL line; the refusal before anything is created needs another design, and SANDBOX.md must not promise it until then.
+- **H-03 says an uppercase `SBX_NAME` was not refused:** `docker compose up` got past the `name-check` service in `compose.yml`. Paste the FAIL line; the refusal before anything is created needs another design, and README.md must not promise it until then.
 - **H-21 says a name was not refused:** the image's entrypoint has no name check. Rebuild the images and run again; if it still fails, the check in `base/sbx-start-lib.sh` changed.
 - **H-15 fails after a Claude Code pin change:** the format of `/context` may have changed. Compare with what `manual/h19-bundle-behaviour.sh` shows before suspecting the bundle.
 - **H-15 and a login:** H-15 runs Claude without a login, so `state/claude/.claude.json` exists before `h07-login.sh` runs. The login proof in `h07-login.sh` is `.credentials.json` and `claude auth status`.

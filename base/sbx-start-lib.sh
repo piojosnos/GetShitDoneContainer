@@ -31,7 +31,7 @@ is_mount() { awk -v p="$1" '$5==p { f=1 } END { exit !f }' /proc/self/mountinfo;
 # ------------------------------------------------------------------------------
 start_error() {
   echo "[sbx] ERROR: $1" >&2
-  echo "[sbx]        Start the sandbox with 'docker compose up' (see SANDBOX.md)." >&2
+  echo "[sbx]        Start the sandbox with 'docker compose up' (see README.md)." >&2
 }
 
 # ------------------------------------------------------------------------------
