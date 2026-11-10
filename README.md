@@ -51,6 +51,49 @@ Each step is explained below in "Scripts", "Register a sandbox" and "Best-practi
 - A `.dockerignore` lets only `base/`, `claude/` and `versions.env` into the build.
 - `versions.env` also holds `BUNDLE_REPO_URL`, the repo `sbx-bundle-clone` clones. It is a setting, not a version; change it and rebuild.
 
+## Behind a company HTTPS proxy
+
+A proxy such as Zscaler opens HTTPS and signs it again with its own root certificate. It does so for `release-assets.githubusercontent.com`, where the `gh` release download lives, and IT does not allow turning it off. The Mac trusts that root through the Keychain; the images do not. So the base build stops at the `gh` download with `curl: (60) SSL certificate problem`.
+
+`SBX_CA_CERT` names a PEM file on the Mac. When it is set, `./build.sh` adds every certificate in it to both images. Unset or empty, the images are built exactly as without it.
+
+| Step | Where | Command | What it does |
+|---|---|---|---|
+| 1 | Mac | `security find-certificate -a -c "Zscaler Root CA" -p /Library/Keychains/System.keychain > "$HOME/zscaler-root-ca.pem"` | Exports the root as PEM. Certificates only, no key. |
+| 2 | Mac | `echo 'export SBX_CA_CERT="$HOME/zscaler-root-ca.pem"' >> ~/.zshrc` | Must be exported, and an absolute path. Open a new terminal. |
+| 3 | Mac | `sbx-upgrade NAME` | Builds with the root and recreates the sandbox. A banner of `*` lines before and after names the file, subject and fingerprint. |
+
+- A shell without the variable builds images without the root, and behind the proxy that build stops with `curl: (60)`. Keep the `export` in `~/.zshrc`.
+- The first build with a root, or after it changes or goes away, rebuilds every layer after the apt step once.
+
+What trusts the root, and how:
+
+| Tool | How it trusts the root |
+|---|---|
+| curl, git, gh, Python, system pip, Claude Code | The system store (`update-ca-certificates`) |
+| Java and Maven | The JDK `cacerts`, one `sbx-extra-ca-N` alias per certificate |
+| npm and GSD | `cafile` in `/usr/local/etc/npmrc` |
+| pip in a venv | `cert` in `/etc/pip.conf` |
+| uv | `system-certs = true` in `/etc/uv/uv.toml` |
+| Node programs | `NODE_EXTRA_CA_CERTS`, set by `/etc/bash.bashrc` |
+
+- `/etc/sbx/extra-ca.pem` holds the added certificates. It exists only in an image built with a root.
+- The trade-off: the images trust anything the proxy signs (see "Threat model").
+- Known limit: a Node program run by a non-interactive `docker exec` does not get `NODE_EXTRA_CA_CERTS`. Run it from `sbx-shell`.
+
+Check a new build by hand: run these in a sandbox shell. Each prints a status code, a version or a login. None may print `curl: (60)`, `UNABLE_TO_VERIFY_LEAF_SIGNATURE`, `CERTIFICATE_VERIFY_FAILED` or `PKIX path building failed`.
+
+| Tool | Command |
+|---|---|
+| curl | `curl -sS -o /dev/null -w '%{http_code}\n' https://release-assets.githubusercontent.com/` |
+| gh | `gh api user --jq .login` (after `sbx-gh-login`) |
+| npm | `npm view left-pad version` |
+| Node | `node -e "fetch('https://registry.npmjs.org/').then(r => console.log(r.status))"` |
+| Maven | `mvn -q dependency:get -Dartifact=junit:junit:4.13.2` |
+| pip in a venv | `python3 -m venv /tmp/v && /tmp/v/bin/pip install requests` |
+| uv | `uv venv /tmp/u && uv pip install --python /tmp/u/bin/python requests` |
+| Claude Code | `sbx-claude`, log in and send one message |
+
 ## Scripts
 
 Eight scripts in `bin/` register, start, enter, list, stop, remove and upgrade a sandbox by name, and set its file modes from git. Put the tools clone's `bin/` on your PATH once, in `~/.zshrc`:
