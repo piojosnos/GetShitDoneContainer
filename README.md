@@ -10,6 +10,7 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 
 - Nothing is mounted over the container's home directory, so everything the image provides stays visible.
 - Moving a sandbox from the old layout (the whole home mounted at `/home/sandbox`): see [`MIGRATION.md`](MIGRATION.md).
+- Setting up a sandbox on a computer behind Zscaler: see [`ZSCALER.md`](ZSCALER.md).
 - What the sandbox does and does not protect: see "Threat model".
 
 ## Quick start
