@@ -24,6 +24,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login (completed 2026-11-07)
 - [x] **Phase 4: Jump-In and Sandbox Housekeeping** - One command drops you into a sandbox shell or Claude, and you can list and clean up sandboxes safely (completed 2026-11-08)
 - [x] **Phase 5: Migration, Docs, and Old-Layout Retirement** - Existing sandboxes move over with history intact, the old `cc-*` layout is gone, and the README matches the repo (completed 2026-11-08)
+- [ ] **Phase 5.2: Trust a company root certificate** (INSERTED) - A sandbox builds and runs behind a company HTTPS proxy (Zscaler) by trusting one optional root certificate; runs before 5.1
 - [ ] **Phase 5.1: Sandbox doctor** (INSERTED) - One command inside a sandbox checks owners, modes, logins, bundle and tools after a migration or upgrade, and a skill explains the results
 - [ ] **Phase 6: Automated checks (CI)** - GitHub runs the guard on every PR push and shows it as a PR check
 - [ ] **Phase 7: Start readiness** - `up --wait` returns only once every start hook has finished, and a failing hook fails `up`
@@ -479,6 +480,25 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [x] 05-05-PLAN.md: Retirement PR gate: Linux gate (18 rules), branch chore/retire-old-layout, Mac run (32 checks), validation and criteria maps, the CLAUDE.md follow-up
+
+### Phase 05.2: Trust a company root certificate (INSERTED)
+
+**Goal:** A sandbox builds and runs on a Mac behind a company HTTPS proxy (Zscaler) by trusting one optional root certificate file; without the file, the image is unchanged. Runs before 5.1: it blocks every build on the work Mac.
+**Requirements**: TBD
+**Depends on:** Phase 5
+**Plans:** 0 plans
+
+**Found** (2026-11-10, work Mac): the base build fails at the `gh` download with `curl: (60) SSL certificate problem`. Zscaler re-signs `release-assets.githubusercontent.com` (not `github.com`); the Mac trusts the Zscaler root through the Keychain, the image does not. IT does not allow turning Zscaler off.
+
+**TODO** (keep it small):
+- [ ] One optional PEM file, for example exported with `security find-certificate -a -c "Zscaler Root CA" -p /Library/Keychains/System.keychain`. `build.sh` passes it to the base build only when it is set; with no file, the image is unchanged.
+- [ ] The base image adds it to the system store right after the apt step, before any download (curl, git, gh, apt).
+- [ ] Runtime tools with their own store: `NODE_EXTRA_CA_CERTS` for Node (Claude Code, npm), the Java `cacerts` for Maven; check Python and uv against the system store.
+- [ ] README: how to set it up, and the trade-off (that image trusts whatever the proxy signs).
+- [ ] Proof on the work Mac: the build passes, and Claude, npm, gh and Maven reach the network from inside the sandbox.
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.2 to break down)
 
 ### Phase 05.1: Sandbox doctor (INSERTED)
 

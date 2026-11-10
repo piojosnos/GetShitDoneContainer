@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
-current_phase: "05.1"
-current_phase_name: Sandbox doctor
+current_phase: "05.2"
+current_phase_name: Trust a company root certificate
 status: planning
-stopped_at: Phase 5 complete, ready to plan Phase 05.1
-last_updated: "2026-11-08T08:35:44.543Z"
+stopped_at: Phase 05.2 inserted, ready to discuss
+last_updated: "2026-11-10T01:12:18.100Z"
 last_activity: 2026-11-08
 last_activity_desc: Phase 5 complete, transitioned to Phase 05.1
-state_head: c4e987927c851fa01f3b207b143a799a20ecade8
+state_head: 93ff0f29edc5a92222863d4f3a71f5dbcf673196
 progress:
-  total_phases: 15
+  total_phases: 16
   completed_phases: 12
   total_plans: 86
   completed_plans: 86
-  percent: 86
+  percent: 75
 ---
 
 # Project State
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-11-08)
 
 ## Current Position
 
-Phase: 05.1 — Sandbox doctor
+Phase: 05.2 — Trust a company root certificate
 Plan: Not started
 Status: Ready to plan
 Last activity: 2026-11-08 — Phase 5 complete, transitioned to Phase 05.1
 
-Progress: [████████████████████] 44/44 plans ([█████████░] 86%)
+Progress: [████████████████████] 44/44 plans ([████████░░] 75%)
 
 ## Performance Metrics
 
@@ -323,6 +323,7 @@ None yet.
 - Phase 01.5 inserted after Phase 1.4: Host test fixes (open Phase 1 and 1.1 review findings, proven with real Docker), from the Phase 1.3 discussion
 - Phase 02.1 inserted after Phase 2: Shell diet (cut the guard to its security rules, retire the fake docker and host self-tests, schematic comments), from the PR #17 review; the best-practices phase moves from 02.1 to 02.2
 - Phase 7 added: Start readiness (`up --wait` waits for the start hooks), from the Phase 2 code review
+- Phase 05.2 inserted after Phase 5: Trust a company root certificate (Zscaler blocks the build on the work Mac); runs before 5.1 (URGENT)
 
 ## Deferred Items
 
@@ -335,5 +336,5 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-11-08T06:34:02.374Z
-Stopped at: Phase 5 complete, ready to plan Phase 05.1
+Stopped at: Phase 05.2 inserted, ready to discuss
 Resume file: None
