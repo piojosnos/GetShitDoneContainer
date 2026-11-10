@@ -114,12 +114,15 @@ pins_are_exact() {
 # ------------------------------------------------------------------------------
 # dockerfile_args_have_no_defaults: no ARG default, every FROM takes a pin
 # ------------------------------------------------------------------------------
+# The one literal stage, FROM scratch AS cacert, is the empty default of the
+# optional root certificate folder that build.sh passes when SBX_CA_CERT is set.
+# ------------------------------------------------------------------------------
 dockerfile_args_have_no_defaults() {
   local ok=0
 
   grep -E '^ARG .*=' $BASE | report_lines "$BASE: an ARG with a default value: " || ok=1
   grep -E '^ARG .*=' $CLAUDE | grep -Fvx 'ARG BASE_IMAGE=sbx-base:local' | report_lines "$CLAUDE: an ARG with a default value: " || ok=1
-  grep -E '^FROM ' $BASE | grep -Ev '^FROM \$\{[A-Z_]+\}( AS [a-z]+)?$' | report_lines "$BASE: FROM must take its image from a pin: " || ok=1
+  grep -E '^FROM ' $BASE | grep -Ev '^FROM \$\{[A-Z_]+\}( AS [a-z]+)?$' | grep -Fvx 'FROM scratch AS cacert' | report_lines "$BASE: FROM must take its image from a pin: " || ok=1
 
   return "$ok"
 }

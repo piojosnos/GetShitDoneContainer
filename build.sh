@@ -4,6 +4,8 @@
 # ------------------------------------------------------------------------------
 # Usage: ./build.sh [DOCKER_BUILD_OPTION...]
 # Extra options go to both builds, for example --no-cache.
+# With SBX_CA_CERT set to a PEM file, both images also trust its root
+# certificates.
 # ------------------------------------------------------------------------------
 set -eu
 
@@ -67,6 +69,29 @@ build_image() {
 }
 
 # ------------------------------------------------------------------------------
+# prepare_extra_cert: with SBX_CA_CERT set, splits it into extraCertDir
+# ------------------------------------------------------------------------------
+# extraCertDir holds one .crt file per certificate. Only certificate blocks are
+# kept, so a key in the same file never reaches the build. It stays empty when
+# the variable is unset or empty.
+# ------------------------------------------------------------------------------
+prepare_extra_cert() {
+  extraCertDir=""
+
+  if [ -z "${SBX_CA_CERT:-}" ]; then
+    return 0
+  fi
+
+  extraCertDir=$(mktemp -d "${TMPDIR:-/tmp}/sbx-cacert.XXXXXX") || return 1
+  trap 'rm -rf "$extraCertDir"' EXIT
+
+  if ! awk -v dir="$extraCertDir" '/-----BEGIN CERTIFICATE-----/ { count++; out = sprintf("%s/sbx-extra-ca-%d.crt", dir, count); inCert = 1 } inCert { print > out } /-----END CERTIFICATE-----/ { inCert = 0; close(out) } END { if (count == 0) { exit 1 } }' "$SBX_CA_CERT"; then
+    echo "build.sh: SBX_CA_CERT holds no PEM certificate: $SBX_CA_CERT" >&2
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 cd "$(dirname "$0")"
@@ -74,5 +99,12 @@ cd "$(dirname "$0")"
 check_versions_file
 load_versions
 collect_build_args
-build_image base/Dockerfile sbx-base:local "$@"
+prepare_extra_cert || exit 1
+
+if [ -n "$extraCertDir" ]; then
+  build_image base/Dockerfile sbx-base:local --build-context "cacert=$extraCertDir" "$@"
+else
+  build_image base/Dockerfile sbx-base:local "$@"
+fi
+
 build_image claude/Dockerfile sbx-claude:local "$@"
