@@ -14,6 +14,7 @@ FROM ${TEMURIN_IMAGE} AS jdk
 FROM ${UV_IMAGE} AS uv
 FROM ${SHELLCHECK_IMAGE} AS shellcheck
 FROM ${HADOLINT_IMAGE} AS hadolint
+FROM scratch AS cacert
 FROM ${UBUNTU_IMAGE}
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -29,6 +30,22 @@ RUN apt-get update \
        jq ripgrep unzip zip openssh-client make build-essential tzdata \
        python3 python3-venv python3-pip \
     && rm -rf /var/lib/apt/lists/*
+
+# ------------------------------------------------------------------------------
+# Optional extra root certificate: the system store, before any download
+# ------------------------------------------------------------------------------
+# build.sh mounts a folder of one-certificate .crt files as the cacert context
+# when SBX_CA_CERT is set; without it the empty stage above is mounted and this
+# step changes nothing.
+# ------------------------------------------------------------------------------
+RUN --mount=type=bind,from=cacert,target=/mnt \
+    if compgen -G '/mnt/*.crt' >/dev/null; then \
+      install -m 644 /mnt/*.crt /usr/local/share/ca-certificates/ \
+      && update-ca-certificates \
+      && mkdir -p /etc/sbx \
+      && cat /mnt/*.crt > /etc/sbx/extra-ca.pem \
+      && chmod 644 /etc/sbx/extra-ca.pem; \
+    fi
 
 # ------------------------------------------------------------------------------
 # Node.js from the official tarball
@@ -83,6 +100,24 @@ RUN : "${MAVEN_VERSION:?MAVEN_VERSION is not set; build with ./build.sh}" \
     && tar -xzf "$mavenArchive" -C /opt/maven --strip-components=1 --no-same-owner \
     && rm "$mavenArchive" \
     && ln -s /opt/maven/bin/mvn /usr/local/bin/mvn
+
+# ------------------------------------------------------------------------------
+# Optional extra root certificate: the tools that keep their own store
+# ------------------------------------------------------------------------------
+# Only when the step above found a certificate. Java: cacerts. npm: cafile.
+# pip and uv: their own config files. Node programs: the variable, for
+# interactive shells.
+# ------------------------------------------------------------------------------
+RUN if [ -f /etc/sbx/extra-ca.pem ]; then \
+      for certFile in /usr/local/share/ca-certificates/sbx-extra-ca-*.crt; do \
+        keytool -importcert -noprompt -cacerts -storepass changeit -alias "$(basename "$certFile" .crt)" -file "$certFile" || exit 1; \
+      done \
+      && mkdir -p /usr/local/etc /etc/uv \
+      && echo 'cafile=/etc/ssl/certs/ca-certificates.crt' >> /usr/local/etc/npmrc \
+      && printf '[global]\ncert = /etc/ssl/certs/ca-certificates.crt\n' > /etc/pip.conf \
+      && echo 'system-certs = true' > /etc/uv/uv.toml \
+      && echo 'export NODE_EXTRA_CA_CERTS=/etc/sbx/extra-ca.pem' >> /etc/bash.bashrc; \
+    fi
 
 # ------------------------------------------------------------------------------
 # uv from the pinned image
