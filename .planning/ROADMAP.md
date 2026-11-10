@@ -23,7 +23,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2.2: Best-practices from git, editable from any sandbox** (INSERTED) - The bundle moves to its own repo; each sandbox keeps its own clone, starts with the latest, and sends changes back as PRs (completed 2026-10-26)
 - [x] **Phase 3: Remembered Sandboxes and One-Command Upgrade** - Register a sandbox once, start and stop it by name, and upgrade everything with one command without losing login (completed 2026-11-07)
 - [x] **Phase 4: Jump-In and Sandbox Housekeeping** - One command drops you into a sandbox shell or Claude, and you can list and clean up sandboxes safely (completed 2026-11-08)
-- [ ] **Phase 5: Migration, Docs, and Old-Layout Retirement** - Existing sandboxes move over with history intact, the old `cc-*` layout is gone, and the README matches the repo
+- [x] **Phase 5: Migration, Docs, and Old-Layout Retirement** - Existing sandboxes move over with history intact, the old `cc-*` layout is gone, and the README matches the repo (completed 2026-11-08)
 - [ ] **Phase 5.1: Sandbox doctor** (INSERTED) - One command inside a sandbox checks owners, modes, logins, bundle and tools after a migration or upgrade, and a skill explains the results
 - [ ] **Phase 6: Automated checks (CI)** - GitHub runs the guard on every PR push and shows it as a PR check
 - [ ] **Phase 7: Start readiness** - `up --wait` returns only once every start hook has finished, and a failing hook fails `up`
@@ -462,7 +462,7 @@ Plans:
   4. The README has a short threat-model section covering what's isolated, the credential-exfiltration risk under skip-permissions, and files the agent can plant that the Mac later executes (git hooks, IDE run configs).
   5. A host-side verification checklist exists, and the user can run it end-to-end on the Mac. It confirms that login survives a rebuild, versions match the pins, ccusage works, and the home directory is not hidden.
 
-**Plans:** 3/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 **Wave 1**
@@ -475,10 +475,10 @@ Plans:
 - [x] 05-03-PLAN.md: Docs PR gate: Linux gate, branch chore/readme-and-migration, Mac run (33 checks, h29 helper) and the smallest old sandbox moved with MIGRATION.md
 
 **Wave 4** *(blocked on Wave 3 completion, the docs PR merged and every old sandbox moved)*
-- [ ] 05-04-PLAN.md: After the user's go: delete ClaudeCode/ and OpenCode/ with the old-layout guard rule, the coexistence step and their doc lines
+- [x] 05-04-PLAN.md: After the user's go: delete ClaudeCode/ and OpenCode/ with the old-layout guard rule, the coexistence step and their doc lines
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 05-05-PLAN.md: Retirement PR gate: Linux gate (18 rules), branch chore/retire-old-layout, Mac run (32 checks), validation and criteria maps, the CLAUDE.md follow-up
+- [x] 05-05-PLAN.md: Retirement PR gate: Linux gate (18 rules), branch chore/retire-old-layout, Mac run (32 checks), validation and criteria maps, the CLAUDE.md follow-up
 
 ### Phase 05.1: Sandbox doctor (INSERTED)
 
@@ -492,7 +492,9 @@ Plans:
 - [ ] Skill shipped with the image, not the best-practices bundle: the checks follow the sandbox layout, so they version and test with this repo.
 - [ ] Checks to start with: files owned by uid 1001 or root (the root `state/claude/sessions` seen once), private files `sandbox` cannot read, `git status` mode changes (fix: `sbx-fix-modes NAME` on the Mac), Claude login present, gh logged in, git identity, the gh credential helper path, bundle linked, GSD installed, tool versions, `state/` writable, stale `@AGENTS.md` / `@code-conventions.md` lines in `state/claude/CLAUDE.md`.
 - [ ] Limit: inside the container it cannot see Mac-side modes; it reports the symptom and prints the Mac command.
+- [ ] The GSD sync leaves 313 files owned by root in `state/claude` at every start (Docker Desktop lets `copyFileSync` keep the root owner). Harmless; decide here whether the doctor reports them as expected or `05-gsd` gives them back to `sandbox`. See `.planning/todos/pending/2026-11-08-gsd-sync-leaves-root-owned-files.md`.
 - [ ] Once it exists, add it as the last step of `MIGRATION.md` "Check" and to the README.
+- [ ] Fold in the two wording nits from the phase 5 code review (`tests/guard/isolation.sh:28` comment, `tests/README.md:25` guard row). See `.planning/todos/pending/2026-11-08-retirement-review-nits.md`.
 
 Plans:
 - [ ] TBD (run /gsd-plan-phase 05.1 to break down)
@@ -543,7 +545,7 @@ Phases execute in numeric order: 1 → 1.1 → 1.2 → 2 → 2.1 → 2.2 → 3 �
 | 2.2. Best-practices from git, editable from any sandbox | 8/8 | Complete    | 2026-10-26 |
 | 3. Remembered Sandboxes and One-Command Upgrade | 4/4 | Complete    | 2026-11-07 |
 | 4. Jump-In and Sandbox Housekeeping | 5/5 | Complete    | 2026-11-08 |
-| 5. Migration, Docs, and Old-Layout Retirement | 3/5 | In Progress|  |
+| 5. Migration, Docs, and Old-Layout Retirement | 5/5 | Complete    | 2026-11-08 |
 | 6. Automated checks (CI) | 0/TBD | Not started | - |
 | 7. Start readiness | 0/TBD | Not started | - |
 

@@ -36,6 +36,8 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 - ✓ The best-practices bundle lives in its own private GitHub repo; each sandbox keeps its own clone in `<sandbox>/best-practices` (via `sbx-gh-login` and `sbx-bundle-clone`), a start links it without network, and an edit goes back as a PR from inside the sandbox with the persisted gh login; proven by 27 of 27 host checks and an attended push and PR (Phase 2.2)
 - ✓ `sbx-shell NAME` starts a registered sandbox when needed and opens bash in its project folder without recreating a running one; Claude starts in that shell with `sbx-claude`, and no Mac command launches it (Phase 4)
 - ✓ `sbx-list` shows every registered sandbox with its folder and a status that matches `docker ps -a`; `sbx-rm NAME [--unregister]` takes a sandbox down with a plain compose down and keeps its folder, so registering the same path again brings back login and history; proven by 33 of 33 host checks (Phase 4)
+- ✓ `MIGRATION.md` moves an old-layout sandbox to the new layout with its code, Claude login and sessions, ccusage history, gh login, git identity and bash history; all four old sandboxes moved with it (Phase 5)
+- ✓ The repo holds only the new layout: `ClaudeCode/`, `OpenCode/` and the `cc-*` scripts are gone, and `README.md` is the one main doc and matches what exists, including its security limits; proven by 32 of 32 host checks (Phase 5)
 
 ### Active
 
@@ -46,12 +48,6 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 **Helper scripts (problem 5), in priority order and kept small**
 - [ ] Scripts remember a project's arguments (name → host path), so you don't have to pass them on every call.
 - [ ] Simple rebuild/upgrade script.
-
-**Migration**
-- [ ] The README documents how to move an existing sandbox (about 4 today, e.g. `GSD_StaticSiteGenerator` with code at `/home/sandbox/MyCode`) to the new layout while keeping login and history.
-
-**Housekeeping**
-- [ ] README matches reality. For example, it currently documents a `cc-upgrade.sh` that doesn't exist.
 
 ### Out of Scope
 
@@ -80,7 +76,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 - **Simplicity**: Keep shell scripts short and plain bash. Why: the user wants to grow the tooling slowly and keep it understandable.
 - **Toolchains**: JDK 21 LTS, Maven, Node.js, and Python in the shared base. Why: these are the stacks the user develops in.
 - **Verification**: Docker isn't available inside the dev sandbox, so plans must include host-side manual verification steps.
-- **Coexistence**: The old layout (`ClaudeCode/`, `cc-*` scripts, the whole-home mount) stays untouched until Phase 5. New work goes in new directories, and new containers, images, and compose projects use a name prefix different from `cc_gsd_<name>` / `cc_<name>`, so old and new sandboxes can run side by side. Why: the user keeps working in existing sandboxes (including the one this repo is developed in) while the new layout is built.
+- **Coexistence** (retired in Phase 5): the old layout ran side by side with the new one until every old sandbox moved; it is now deleted, and old `cc_` containers left on the Mac are plain stopped containers.
 
 ## Key Decisions
 
@@ -92,7 +88,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 | One container per project | Matches the current `cc-up.sh` model and the isolation goal | — Pending |
 | Shared base image for common tools, with thin per-agent images on top | One place for Linux tools, JDK, Maven, etc. Sets up OpenCode and future agents | Good: H-22 proves the toolchain sits in `sbx-base:local`; the Claude image adds only Claude Code, GSD and ccusage (Phase 2) |
 | ClaudeCode first, OpenCode next, pluggable later | Get one sandbox solid before generalizing | — Pending |
-| Migration is documented, not scripted | Only about 4 existing sandboxes. Script only if it proves painful | — Pending |
+| Migration is documented, not scripted | Only about 4 existing sandboxes. Script only if it proves painful | Good: all four old sandboxes moved with `MIGRATION.md` on 2026-11-08; no script needed (Phase 5) |
 | One unattended host test run (`tests/host/run-all.sh`) plus a short manual pass verifies every image change on the Mac | The manual checklist was too slow, and Docker cannot run in the dev sandbox | Good: 14 of 14 checks and the 3 helpers passed on the Mac (2026-10-03) |
 | Ship the best-practices bundle as plain files in this repo, baked into the image and synced into the Claude config by a start hook | Stopgap until the bundle gets its own repo (Phase 2.2); every change is a reviewed diff, and a rebuild plus restart delivers it | Superseded in Phase 2.2 by the per-sandbox clone; it served from Phase 1.2 (19 of 19 host checks and the attended h19) |
 | Guard the synced bundle with managed Edit deny rules, documented as not a security boundary | Stops Claude from rewriting the instructions every later session loads; a script can still write until the next start recopies | Good: deny proven in the real image (H-18) and with a negative control at the pinned Claude |
@@ -124,4 +120,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-08 after Phase 4*
+*Last updated: 2026-11-08 after Phase 5*

@@ -65,7 +65,7 @@ Generic `sbx-*` scripts: short, plain bash, and runnable with macOS's stock bash
 - [x] **SCR-05**: The user can list all registered sandboxes with their host path and running status
 - [x] **SCR-06**: The user can remove a sandbox's container (and optionally its registration) without touching its workspace or state
 - [x] **SCR-07**: Tool versions (Claude, GSD, ccusage, Node, JDK, Maven, Python) are printed after a rebuild and on shell entry
-- [ ] **SCR-08**: The old `cc-*` scripts and the whole-home-mount layout are removed from the repo
+- [x] **SCR-08**: The old `cc-*` scripts and the whole-home-mount layout are removed from the repo
 
 ### Automation
 
@@ -73,10 +73,10 @@ Generic `sbx-*` scripts: short, plain bash, and runnable with macOS's stock bash
 
 ### Documentation
 
-- [ ] **DOC-01**: The README describes the new layout, scripts, and upgrade flow, and matches what's in the repo (no phantom `cc-upgrade.sh`)
-- [ ] **DOC-02**: The README documents how to migrate an existing sandbox: move code into `<name>/`, move state (including `.claude.json`) into `state/claude`, and rename the history project path so old sessions still show up
-- [ ] **DOC-03**: The README has a short threat-model section covering what's isolated, the credential-exfiltration risk under skip-permissions, and files the agent can plant that the Mac later executes (git hooks, IDE run configs)
-- [ ] **DOC-04**: A host-side verification checklist exists for the Mac: login survives rebuild, versions match pins, ccusage works, home is not hidden
+- [x] **DOC-01**: The README describes the new layout, scripts, and upgrade flow, and matches what's in the repo (no phantom `cc-upgrade.sh`)
+- [x] **DOC-02**: The README documents how to migrate an existing sandbox: move code into `<name>/`, move state (including `.claude.json`) into `state/claude`, and rename the history project path so old sessions still show up
+- [x] **DOC-03**: The README has a short threat-model section covering what's isolated, the credential-exfiltration risk under skip-permissions, and files the agent can plant that the Mac later executes (git hooks, IDE run configs)
+- [x] **DOC-04**: A host-side verification checklist exists for the Mac: login survives rebuild, versions match pins, ccusage works, home is not hidden
 
 ## v2 Requirements
 
@@ -155,11 +155,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SCR-05 | Phase 4 | Complete |
 | SCR-06 | Phase 4 | Complete |
 | SCR-07 | Phase 3 | Complete |
-| SCR-08 | Phase 5 | Pending |
-| DOC-01 | Phase 5 | Pending |
-| DOC-02 | Phase 5 | Pending |
-| DOC-03 | Phase 5 | Pending |
-| DOC-04 | Phase 5 | Pending |
+| SCR-08 | Phase 5 | Complete |
+| DOC-01 | Phase 5 | Complete |
+| DOC-02 | Phase 5 | Complete |
+| DOC-03 | Phase 5 | Complete |
+| DOC-04 | Phase 5 | Complete |
 | CI-01 | Phase 6 | Pending |
 
 **Coverage:**
