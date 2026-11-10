@@ -1,18 +1,18 @@
 ---
 gsd_state_version: "1.0"
 current_phase: "05.2"
-current_phase_name: Trust a company root certificate
+current_phase_name: Trust a company root certificate (INSERTED)
 status: executing
-stopped_at: Phase 5.2 context gathered
-last_updated: "2026-11-10T02:35:38.038Z"
-last_activity: 2026-11-08
-last_activity_desc: Phase 5 complete, transitioned to Phase 05.1
-state_head: ba1913789f4d1f01d18baf6714592128831c6c5e
+stopped_at: Completed 05.2-01-PLAN.md
+last_updated: "2026-11-10T03:05:07.828Z"
+last_activity: 2026-11-10
+last_activity_desc: Phase 05.2 execution started
+state_head: b324fc4c31db7e33eab057f743fc16dfeef604a6
 progress:
   total_phases: 16
   completed_phases: 12
   total_plans: 89
-  completed_plans: 86
+  completed_plans: 87
   percent: 75
 ---
 
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-08)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 05 — Migration, Docs, and Old-Layout Retirement
+**Current focus:** Phase 05.2 — Trust a company root certificate (INSERTED)
 
 ## Current Position
 
-Phase: 05.2 (Trust a company root certificate) — READY TO EXECUTE
-Plan: Not started
+Phase: 05.2 (Trust a company root certificate (INSERTED)) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-11-08 — Phase 5 complete, transitioned to Phase 05.1
+Last activity: 2026-11-10 — Phase 05.2 execution started
 
 Progress: [████████████████████] 44/44 plans ([████████░░] 75%)
 
@@ -150,6 +150,7 @@ Progress: [████████████████████] 44/44 p
 | Phase 05 P01 | 12 min | 3 tasks | 11 files |
 | Phase 05 P02 | 25 min | 3 tasks | 1 files |
 | Phase 05 P03 | n/a (spans a user Mac run) | 3 tasks | 4 files |
+| Phase 05.2 P01 | 12 min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -287,6 +288,7 @@ Recent decisions affecting current work:
 - [Phase 05]: History folder rename uses the encoded name (non letter or digit becomes hyphen), derived as ENC
 - [Phase 05]: README threat model states its rules with no timing exception; raw Docker commands and start refusals sit below daily use
 - [Phase 05]: 05-03: Mac host checklist deferred by the user to plan 05; sbx-fix-modes added to the docs PR after the real migration
+- [Phase 05.2]: SBX_CA_CERT root certificate is delivered as a BuildKit named context (cacert) with no ENV; build.sh splits it on the Mac so a private key never reaches the build
 
 ### Pending Todos
 
@@ -335,6 +337,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-10T01:28:32.281Z
-Stopped at: Phase 5.2 context gathered
-Resume file: .planning/phases/05.2-trust-a-company-root-certificate/05.2-CONTEXT.md
+Last session: 2026-11-10T03:05:07.663Z
+Stopped at: Completed 05.2-01-PLAN.md
+Resume file: None
