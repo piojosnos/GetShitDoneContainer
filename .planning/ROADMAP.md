@@ -486,7 +486,7 @@ Plans:
 **Goal:** A sandbox builds and runs on a Mac behind a company HTTPS proxy (Zscaler) by trusting one optional root certificate file; without the file, the image is unchanged. Runs before 5.1: it blocks every build on the work Mac.
 **Requirements**: TBD
 **Depends on:** Phase 5
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 **Found** (2026-11-10, work Mac): the base build fails at the `gh` download with `curl: (60) SSL certificate problem`. Zscaler re-signs `release-assets.githubusercontent.com` (not `github.com`); the Mac trusts the Zscaler root through the Keychain, the image does not. IT does not allow turning Zscaler off.
 
@@ -498,7 +498,14 @@ Plans:
 - [ ] Proof on the work Mac: the build passes, and Claude, npm, gh and Maven reach the network from inside the sandbox.
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 05.2 to break down)
+**Wave 1**
+- [ ] 05.2-01-PLAN.md: build.sh reads SBX_CA_CERT and passes it as a named build context; base/Dockerfile adds the root to the system store and the Java, npm, pip, uv and Node stores; guard carve-out; refusals and banner
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 05.2-02-PLAN.md: README section "Behind a company HTTPS proxy" (why, setup, trade-off, checklist) and SBX_CA_CERT in every spot that describes the build
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 05.2-03-PLAN.md: Linux gate, clean code branch from origin/main, home Mac run (image unchanged, host-test, throwaway roots), work Mac run behind Zscaler
 
 ### Phase 05.1: Sandbox doctor (INSERTED)
 
