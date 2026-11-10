@@ -48,7 +48,8 @@ Each step is explained below in "Scripts", "Register a sandbox" and "Best-practi
 - Every version (base OS image, toolchains, Claude Code) lives in `versions.env`. The Dockerfiles have no default versions, so a plain `docker build` stops and names the missing pin.
 - Plain apt packages are not pinned. They follow the pinned Ubuntu release and pick up its security fixes at each rebuild.
 - In a sandbox shell, `cat /etc/sbx/versions.env` shows the pins the image was built with.
-- A `.dockerignore` lets only `base/`, `claude/` and `versions.env` into the build.
+- A `.dockerignore` lets only `base/`, `claude/` and `versions.env` into the build. The root of `SBX_CA_CERT` comes in as its own named build context, `cacert`, from a temporary folder, never through the repo folder.
+- `SBX_CA_CERT`, when set, makes `./build.sh` add that root certificate to both images (see "Behind a company HTTPS proxy"). Unset or empty changes nothing.
 - `versions.env` also holds `BUNDLE_REPO_URL`, the repo `sbx-bundle-clone` clones. It is a setting, not a version; change it and rebuild.
 
 ## Behind a company HTTPS proxy
@@ -113,7 +114,7 @@ export PATH="$HOME/sbx-tools/GetShitDoneContainer/bin:$PATH"
 | `sbx-list` | Lists every registered sandbox with its status and folder, from one `docker ps -a` call. |
 | `sbx-stop NAME` | Runs `docker compose stop`. The container stays; nothing in the folder changes. |
 | `sbx-rm NAME [--unregister] [--yes]` | Runs `docker compose down`: the container and its network go; volumes, images and the folder stay. |
-| `sbx-upgrade NAME [BUILD_OPTION...]` | Builds both images with `./build.sh`, then recreates this sandbox and waits for it. Prints the tool versions last. |
+| `sbx-upgrade NAME [BUILD_OPTION...]` | Builds both images with `./build.sh`, which reads `SBX_CA_CERT` from your shell, then recreates this sandbox and waits for it. Prints the tool versions last. |
 | `sbx-fix-modes NAME` | Sets every file git tracks in the project folder to 644 or 755, as git committed, on the Mac and in the sandbox. Prints how many it changed. |
 
 In the sandbox: `sbx-gh-login`, `sbx-bundle-clone` and `sbx-claude` (see "Best-practices bundle").
@@ -210,6 +211,7 @@ SBX_AGENT=claude
 2. Run `sbx-upgrade NAME`, for example `sbx-upgrade demo`. Add `--no-cache` for a clean build.
 
 - `sbx-upgrade` builds both images with `./build.sh` from that clone, so it reads that clone's `versions.env`.
+- `sbx-upgrade` passes on `SBX_CA_CERT` from the shell it runs in. Without it the images lose the extra root, and behind a company proxy the build stops with `curl: (60)`. Keep the `export` in `~/.zshrc` (see "Behind a company HTTPS proxy").
 - The build runs while the sandbox keeps running. A failed build leaves it as it was.
 - On success the sandbox is recreated without asking, after one line warning that its open shells and Claude sessions close. It ends running, even when it was stopped.
 - The login and history live in `state/` on the Mac, so they stay.
@@ -310,7 +312,7 @@ In a sandbox shell, run `ccusage daily`, `ccusage monthly` or `ccusage session`.
 | One bind mount: `$SBX_DIR` at `/home/sandbox/workspace`. No Mac home, no `~/.ssh`, no Docker socket. | Outbound network: normal, with no allowlist. |
 | User `sandbox` (uid 1000), not root. | The tokens in `state/` (`state/claude/.credentials.json`, `state/gh/hosts.yml` in plain text, `state/git/config`). Claude can read and send them out when it runs with permissions bypassed (`--dangerously-skip-permissions`). |
 | All capabilities dropped (`cap_drop: ALL`) and `no-new-privileges`. | Files the agent writes in `$SBX_DIR/<name>` that a Mac tool later runs. |
-| The registry and the repo folder whose `bin/` the Mac runs cannot sit inside a sandbox folder (`sbx-add` refuses). | |
+| The registry and the repo folder whose `bin/` the Mac runs cannot sit inside a sandbox folder (`sbx-add` refuses). | With `SBX_CA_CERT` set, the images trust anything the proxy signs. Its operator can read and change the sandbox's HTTPS traffic, Claude API requests included, and the release downloads and checksum files that `base/Dockerfile` fetches through it. Pinned image digests still hold. |
 
 Files the agent can plant that the Mac runs:
 
@@ -336,6 +338,7 @@ Run `./host-test.sh` on the Mac after building, or after a change under `base/`,
 | Versions match the pins | H-25 (images match `versions.env`), H-30 (tool versions line), the pin digests step | `./host-test.sh` |
 | ccusage works | H-24 | `./host-test.sh` |
 | The home is not hidden | H-05 (`.bashrc` and `.local` in `/home/sandbox`) | `./host-test.sh` |
+| Works behind a company proxy | The checklist in "Behind a company HTTPS proxy", by hand | Set `SBX_CA_CERT`, run `sbx-upgrade NAME`, then the checklist in a sandbox shell |
 
 - The other helpers in `tests/host/manual/` and when to run them are in [`tests/host-checklist.md`](tests/host-checklist.md).
 - Every suite is listed in [`tests/README.md`](tests/README.md).
@@ -420,6 +423,10 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 | `docker compose down failed for sbx-NAME; the registry entry stays` | Read the Compose output above it, then run `sbx-rm NAME` again. |
 | `cannot read the containers from Docker` or `cannot reach Docker; is Docker running?` | Start Docker Desktop. |
 | `the build failed; sbx-NAME was left as it was` | Read the build output above it. The sandbox still runs on the old image. |
+| `curl: (60) SSL certificate problem` during the build | Behind a company proxy, set `SBX_CA_CERT` (see "Behind a company HTTPS proxy"). If it is set, run `echo "$SBX_CA_CERT"` in the shell that ran the build: a missing `export`, or another terminal, loses it. |
+| `build.sh: SBX_CA_CERT ...` | The rest of the line says what is wrong with the variable or the file. It must be an absolute path to a readable PEM file. Nothing was built. |
+| `UNABLE_TO_VERIFY_LEAF_SIGNATURE` from a Node program run with `docker exec` | Run it from `sbx-shell`, or pass `-e NODE_EXTRA_CA_CERTS=/etc/sbx/extra-ca.pem` to `docker exec`. |
+| `ccusage` cannot fetch its price table behind a company proxy | Add `--offline`. |
 | `the start hooks of sbx-NAME did not finish within 120 s` or `sbx-NAME stopped during its start` | Run `docker logs sbx-NAME`. |
 | `overlaps the registry folder`, `overlaps the repo folder` or `overlaps the folder of sandbox` | Pick a folder of its own for the sandbox. |
 | `required variable SBX_DIR is missing a value` | Only the raw Compose commands read `SBX_NAME` and `SBX_DIR` from your terminal; export both, or use the `sbx-*` scripts. |
