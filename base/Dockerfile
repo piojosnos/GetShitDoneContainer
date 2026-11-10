@@ -102,6 +102,24 @@ RUN : "${MAVEN_VERSION:?MAVEN_VERSION is not set; build with ./build.sh}" \
     && ln -s /opt/maven/bin/mvn /usr/local/bin/mvn
 
 # ------------------------------------------------------------------------------
+# Optional extra root certificate: the tools that keep their own store
+# ------------------------------------------------------------------------------
+# Only when the step above found a certificate. Java: cacerts. npm: cafile.
+# pip and uv: their own config files. Node programs: the variable, for
+# interactive shells.
+# ------------------------------------------------------------------------------
+RUN if [ -f /etc/sbx/extra-ca.pem ]; then \
+      for certFile in /usr/local/share/ca-certificates/sbx-extra-ca-*.crt; do \
+        keytool -importcert -noprompt -cacerts -storepass changeit -alias "$(basename "$certFile" .crt)" -file "$certFile" || exit 1; \
+      done \
+      && mkdir -p /usr/local/etc /etc/uv \
+      && echo 'cafile=/etc/ssl/certs/ca-certificates.crt' >> /usr/local/etc/npmrc \
+      && printf '[global]\ncert = /etc/ssl/certs/ca-certificates.crt\n' > /etc/pip.conf \
+      && echo 'system-certs = true' > /etc/uv/uv.toml \
+      && echo 'export NODE_EXTRA_CA_CERTS=/etc/sbx/extra-ca.pem' >> /etc/bash.bashrc; \
+    fi
+
+# ------------------------------------------------------------------------------
 # uv from the pinned image
 # ------------------------------------------------------------------------------
 COPY --from=uv /uv /uvx /usr/local/bin/
