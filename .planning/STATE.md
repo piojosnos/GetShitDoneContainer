@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 current_phase: "05.2"
 current_phase_name: Trust a company root certificate (INSERTED)
 status: executing
-stopped_at: Completed 05.2-01-PLAN.md
-last_updated: "2026-11-10T03:05:07.828Z"
+stopped_at: Completed 05.2-02-PLAN.md
+last_updated: "2026-11-10T03:07:30.777Z"
 last_activity: 2026-11-10
 last_activity_desc: Phase 05.2 execution started
-state_head: b324fc4c31db7e33eab057f743fc16dfeef604a6
+state_head: 2fdc14fcdd6b6e8947a4c0c62ea8776cdb15e29a
 progress:
   total_phases: 16
   completed_phases: 12
   total_plans: 89
-  completed_plans: 87
+  completed_plans: 88
   percent: 75
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-11-08)
 ## Current Position
 
 Phase: 05.2 (Trust a company root certificate (INSERTED)) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-11-10 — Phase 05.2 execution started
 
@@ -151,6 +151,7 @@ Progress: [████████████████████] 44/44 p
 | Phase 05 P02 | 25 min | 3 tasks | 1 files |
 | Phase 05 P03 | n/a (spans a user Mac run) | 3 tasks | 4 files |
 | Phase 05.2 P01 | 12 min | 3 tasks | 3 files |
+| Phase 05.2 P02 | 8 min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -289,6 +290,7 @@ Recent decisions affecting current work:
 - [Phase 05]: README threat model states its rules with no timing exception; raw Docker commands and start refusals sit below daily use
 - [Phase 05]: 05-03: Mac host checklist deferred by the user to plan 05; sbx-fix-modes added to the docs PR after the real migration
 - [Phase 05.2]: SBX_CA_CERT root certificate is delivered as a BuildKit named context (cacert) with no ENV; build.sh splits it on the Mac so a private key never reaches the build
+- [Phase 05.2]: README proxy example file is $HOME/zscaler-root-ca.pem; the manual checklist lives in the proxy section and Verify a new build points at it
 
 ### Pending Todos
 
@@ -337,6 +339,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-10T03:05:07.663Z
-Stopped at: Completed 05.2-01-PLAN.md
+Last session: 2026-11-10T03:07:30.609Z
+Stopped at: Completed 05.2-02-PLAN.md
 Resume file: None
