@@ -76,10 +76,30 @@ build_image() {
 # the variable is unset or empty.
 # ------------------------------------------------------------------------------
 prepare_extra_cert() {
+  local certPath
+
   extraCertDir=""
 
   if [ -z "${SBX_CA_CERT:-}" ]; then
     return 0
+  fi
+
+  case "$SBX_CA_CERT" in
+    /*) ;;
+    *)
+      echo "build.sh: SBX_CA_CERT must be an absolute path: $SBX_CA_CERT" >&2
+      return 1
+      ;;
+  esac
+
+  if [ ! -f "$SBX_CA_CERT" ] || [ ! -r "$SBX_CA_CERT" ]; then
+    echo "build.sh: SBX_CA_CERT is not a readable file: $SBX_CA_CERT" >&2
+    return 1
+  fi
+
+  if ! command -v openssl >/dev/null 2>&1; then
+    echo "build.sh: SBX_CA_CERT is set, but openssl is missing to check it" >&2
+    return 1
   fi
 
   extraCertDir=$(mktemp -d "${TMPDIR:-/tmp}/sbx-cacert.XXXXXX") || return 1
@@ -89,6 +109,39 @@ prepare_extra_cert() {
     echo "build.sh: SBX_CA_CERT holds no PEM certificate: $SBX_CA_CERT" >&2
     return 1
   fi
+
+  for certPath in "$extraCertDir"/*.crt; do
+    if ! openssl x509 -noout -in "$certPath" >/dev/null 2>&1; then
+      echo "build.sh: SBX_CA_CERT holds a block that is not a valid certificate: $SBX_CA_CERT" >&2
+      return 1
+    fi
+  done
+}
+
+# ------------------------------------------------------------------------------
+# print_cert_banner: prints a starred banner naming the extra root, if any
+# ------------------------------------------------------------------------------
+# Printed before the first build and after the last. openssl output is only
+# shown, never parsed, because LibreSSL and OpenSSL 3 format it differently.
+# ------------------------------------------------------------------------------
+print_cert_banner() {
+  local certPath
+  local starLine="******************************************************************************"
+
+  if [ -z "$extraCertDir" ]; then
+    return 0
+  fi
+
+  echo "$starLine"
+  echo "* build.sh: sbx-base and sbx-claude trust an EXTRA ROOT CERTIFICATE"
+  echo "* file: $SBX_CA_CERT"
+
+  for certPath in "$extraCertDir"/*.crt; do
+    openssl x509 -noout -subject -fingerprint -sha256 -in "$certPath" | sed 's/^/* /'
+  done
+
+  echo "* Whoever holds its key can read and change HTTPS traffic in the sandbox. See README.md."
+  echo "$starLine"
 }
 
 # ------------------------------------------------------------------------------
@@ -100,6 +153,7 @@ check_versions_file
 load_versions
 collect_build_args
 prepare_extra_cert || exit 1
+print_cert_banner
 
 if [ -n "$extraCertDir" ]; then
   build_image base/Dockerfile sbx-base:local --build-context "cacert=$extraCertDir" "$@"
@@ -108,3 +162,4 @@ else
 fi
 
 build_image claude/Dockerfile sbx-claude:local "$@"
+print_cert_banner
