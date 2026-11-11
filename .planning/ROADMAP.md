@@ -25,6 +25,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Jump-In and Sandbox Housekeeping** - One command drops you into a sandbox shell or Claude, and you can list and clean up sandboxes safely (completed 2026-11-08)
 - [x] **Phase 5: Migration, Docs, and Old-Layout Retirement** - Existing sandboxes move over with history intact, the old `cc-*` layout is gone, and the README matches the repo (completed 2026-11-08)
 - [x] **Phase 5.2: Trust a company root certificate** (INSERTED) - A sandbox builds and runs behind a company HTTPS proxy (Zscaler) by trusting one optional root certificate; runs before 5.1 (completed 2026-11-11)
+- [ ] **Phase 5.3: Tests for the extra root certificate** (INSERTED) - The extra root certificate feature gets automated tests that run without Docker where they can; runs before 5.1
 - [ ] **Phase 5.1: Sandbox doctor** (INSERTED) - One command inside a sandbox checks owners, modes, logins, bundle and tools after a migration or upgrade, and a skill explains the results
 - [ ] **Phase 6: Automated checks (CI)** - GitHub runs the guard on every PR push and shows it as a PR check
 - [ ] **Phase 7: Start readiness** - `up --wait` returns only once every start hook has finished, and a failing hook fails `up`
@@ -506,6 +507,16 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [x] 05.2-03-PLAN.md: Linux gate, clean code branch from origin/main, home Mac run (image unchanged, host-test, throwaway roots), work Mac run behind Zscaler
+
+### Phase 05.3: Tests for the extra root certificate (INSERTED)
+
+**Goal:** The extra root certificate feature from Phase 5.2 (`SBX_CA_CERT`) gets automated tests, so a later change that breaks it fails a test instead of a build on the work Mac. Prefer tests that run on Linux without Docker; checks that need real Docker go through `./host-test.sh`. Runs before 5.1.
+**Requirements**: TBD
+**Depends on:** Phase 5.2
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.3 to break down)
 
 ### Phase 05.1: Sandbox doctor (INSERTED)
 

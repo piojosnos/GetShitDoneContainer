@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
-current_phase: "5.1"
-current_phase_name: Sandbox doctor
-status: planning
-stopped_at: Phase 05.2 complete, ready to plan Phase 5.1
-last_updated: "2026-11-11T05:24:27.577Z"
+current_phase: "5.3"
+current_phase_name: Tests for the extra root certificate
+status: Ready to discuss
+stopped_at: Phase 5.3 inserted, ready to discuss Phase 5.3
+last_updated: "2026-11-11T06:07:58.550Z"
 last_activity: 2026-11-11
-last_activity_desc: Phase 05.2 complete, transitioned to Phase 5.1
-state_head: 744969a6d50abdce026aa7dfadd7906a86e90dfa
+last_activity_desc: Phase 5.3 inserted after Phase 5.2
+state_head: 6b9426330480e1050919e18fa87fd0d0bb2db2fc
 progress:
-  total_phases: 16
+  total_phases: 17
   completed_phases: 12
   total_plans: 89
   completed_plans: 89
-  percent: 86
+  percent: 71
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-11)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 5.1 — Sandbox doctor
+**Current focus:** Phase 5.3 — Tests for the extra root certificate
 
 ## Current Position
 
-Phase: 5.1 — Sandbox doctor
+Phase: 5.3 — Tests for the extra root certificate
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-11-11 — Phase 05.2 complete, transitioned to Phase 5.1
+Status: Ready to discuss
+Last activity: 2026-11-11 — Phase 5.3 inserted after Phase 5.2
 
-Progress: [████████████████████] 44/44 plans ([█████████░] 86%)
+Progress: [████████████████████] 44/44 plans ([███████░░░] 71%)
 
 ## Performance Metrics
 
@@ -333,6 +333,7 @@ None yet.
 - Phase 02.1 inserted after Phase 2: Shell diet (cut the guard to its security rules, retire the fake docker and host self-tests, schematic comments), from the PR #17 review; the best-practices phase moves from 02.1 to 02.2
 - Phase 7 added: Start readiness (`up --wait` waits for the start hooks), from the Phase 2 code review
 - Phase 05.2 inserted after Phase 5: Trust a company root certificate (Zscaler blocks the build on the work Mac); runs before 5.1 (URGENT)
+- Phase 05.3 inserted after Phase 5.2: Tests for the extra root certificate (automated tests for the Phase 5.2 feature; runs before 5.1) (URGENT)
 
 ## Deferred Items
 
