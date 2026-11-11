@@ -25,7 +25,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Jump-In and Sandbox Housekeeping** - One command drops you into a sandbox shell or Claude, and you can list and clean up sandboxes safely (completed 2026-11-08)
 - [x] **Phase 5: Migration, Docs, and Old-Layout Retirement** - Existing sandboxes move over with history intact, the old `cc-*` layout is gone, and the README matches the repo (completed 2026-11-08)
 - [x] **Phase 5.2: Trust a company root certificate** (INSERTED) - A sandbox builds and runs behind a company HTTPS proxy (Zscaler) by trusting one optional root certificate; runs before 5.1 (completed 2026-11-11)
-- [ ] **Phase 5.3: Tests for the extra root certificate** (INSERTED) - The extra root certificate feature gets automated tests that run without Docker where they can; runs before 5.1
+- [ ] **Phase 5.3: Separate test images from prod images** (INSERTED) - `./host-test.sh` builds and tests its own images and never replaces the ones the sandboxes run; runs before 5.4
+- [ ] **Phase 5.4: Tests for the extra root certificate** (INSERTED) - One automatic host check builds the test base image with a throwaway root certificate and finds it in the stores; runs before 5.1
 - [ ] **Phase 5.1: Sandbox doctor** (INSERTED) - One command inside a sandbox checks owners, modes, logins, bundle and tools after a migration or upgrade, and a skill explains the results
 - [ ] **Phase 6: Automated checks (CI)** - GitHub runs the guard on every PR push and shows it as a PR check
 - [ ] **Phase 7: Start readiness** - `up --wait` returns only once every start hook has finished, and a failing hook fails `up`
@@ -508,15 +509,32 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 - [x] 05.2-03-PLAN.md: Linux gate, clean code branch from origin/main, home Mac run (image unchanged, host-test, throwaway roots), work Mac run behind Zscaler
 
-### Phase 05.3: Tests for the extra root certificate (INSERTED)
+### Phase 05.3: Separate test images from prod images (INSERTED)
 
-**Goal:** The extra root certificate feature from Phase 5.2 (`SBX_CA_CERT`) gets automated tests, so a later change that breaks it fails a test instead of a build on the work Mac. Prefer tests that run on Linux without Docker; checks that need real Docker go through `./host-test.sh`. Runs before 5.1.
+**Goal:** `./host-test.sh` builds and tests its own images, so a test run never replaces the `sbx-base:local` and `sbx-claude:local` images that the user's sandboxes run. Today `tests/host/lib-docker.sh` runs plain `build.sh`, and the host checks, `compose.yml` and `bin/sbx-lib.sh` all name the `:local` tags. Runs before 5.4.
 **Requirements**: TBD
 **Depends on:** Phase 5.2
 **Plans:** 0 plans
 
 Plans:
 - [ ] TBD (run /gsd-plan-phase 05.3 to break down)
+
+### Phase 05.4: Tests for the extra root certificate (INSERTED)
+
+**Goal:** The extra root certificate feature from Phase 5.2 (`SBX_CA_CERT`) gets one simple, fully automatic sanity check, so a later change that breaks it fails `./host-test.sh` instead of a build on the work Mac. Runs before 5.1.
+**Requirements**: TBD
+**Depends on:** Phase 5.3
+**Plans:** 0 plans
+
+**Settled in discussion (2026-11-11):**
+- One host check (H-34), run by `./host-test.sh`, nothing interactive.
+- A throwaway root certificate made with `openssl` during the run; nothing committed.
+- It builds the test base image (from Phase 5.3) with that certificate and checks the build passes and the certificate is in the system bundle and in Java's `cacerts`. No HTTPS test server, no per-tool checks.
+- No test of `build.sh` itself and no fake `docker`. The fake `docker` in `tests/selftest/sbx/` is quasi deprecated and must not be extended; `tests/README.md` says so.
+- The eight open 5.2 review findings stay out of scope.
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.4 to break down)
 
 ### Phase 05.1: Sandbox doctor (INSERTED)
 

@@ -1,15 +1,15 @@
 ---
 gsd_state_version: "1.0"
 current_phase: "5.3"
-current_phase_name: Tests for the extra root certificate
+current_phase_name: Separate test images from prod images
 status: Ready to discuss
-stopped_at: Phase 5.3 inserted, ready to discuss Phase 5.3
+stopped_at: Phase 5.3 repurposed, Phase 5.4 added, ready to discuss Phase 5.3
 last_updated: "2026-11-11T06:07:58.550Z"
 last_activity: 2026-11-11
-last_activity_desc: Phase 5.3 inserted after Phase 5.2
+last_activity_desc: Phase 5.3 repurposed to separate test images; cert tests moved to 5.4
 state_head: 6b9426330480e1050919e18fa87fd0d0bb2db2fc
 progress:
-  total_phases: 17
+  total_phases: 18
   completed_phases: 12
   total_plans: 89
   completed_plans: 89
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-11)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 5.3 — Tests for the extra root certificate
+**Current focus:** Phase 5.3 — Separate test images from prod images
 
 ## Current Position
 
-Phase: 5.3 — Tests for the extra root certificate
+Phase: 5.3 — Separate test images from prod images
 Plan: Not started
 Status: Ready to discuss
-Last activity: 2026-11-11 — Phase 5.3 inserted after Phase 5.2
+Last activity: 2026-11-11 — Phase 5.3 repurposed; cert tests moved to 5.4
 
 Progress: [████████████████████] 44/44 plans ([███████░░░] 71%)
 
@@ -334,6 +334,7 @@ None yet.
 - Phase 7 added: Start readiness (`up --wait` waits for the start hooks), from the Phase 2 code review
 - Phase 05.2 inserted after Phase 5: Trust a company root certificate (Zscaler blocks the build on the work Mac); runs before 5.1 (URGENT)
 - Phase 05.3 inserted after Phase 5.2: Tests for the extra root certificate (automated tests for the Phase 5.2 feature; runs before 5.1) (URGENT)
+- Phase 05.3 repurposed to Separate test images from prod images (host-test replaces the :local images the sandboxes run, found while discussing the cert tests); the cert tests move to the new Phase 05.4, one automatic host check that runs after 5.3
 
 ## Deferred Items
 
