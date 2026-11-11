@@ -1,18 +1,18 @@
 ---
 gsd_state_version: "1.0"
-current_phase: "05.1"
+current_phase: "5.1"
 current_phase_name: Sandbox doctor
 status: planning
-stopped_at: Phase 5 complete, ready to plan Phase 05.1
-last_updated: "2026-11-08T08:35:44.543Z"
-last_activity: 2026-11-08
-last_activity_desc: Phase 5 complete, transitioned to Phase 05.1
-state_head: c4e987927c851fa01f3b207b143a799a20ecade8
+stopped_at: Phase 05.2 complete, ready to plan Phase 5.1
+last_updated: "2026-11-11T05:24:27.577Z"
+last_activity: 2026-11-11
+last_activity_desc: Phase 05.2 complete, transitioned to Phase 5.1
+state_head: 744969a6d50abdce026aa7dfadd7906a86e90dfa
 progress:
-  total_phases: 15
+  total_phases: 16
   completed_phases: 12
-  total_plans: 86
-  completed_plans: 86
+  total_plans: 89
+  completed_plans: 89
   percent: 86
 ---
 
@@ -20,24 +20,24 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-08)
+See: .planning/PROJECT.md (updated 2026-11-11)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 05 — Migration, Docs, and Old-Layout Retirement
+**Current focus:** Phase 5.1 — Sandbox doctor
 
 ## Current Position
 
-Phase: 05.1 — Sandbox doctor
+Phase: 5.1 — Sandbox doctor
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-11-08 — Phase 5 complete, transitioned to Phase 05.1
+Last activity: 2026-11-11 — Phase 05.2 complete, transitioned to Phase 5.1
 
 Progress: [████████████████████] 44/44 plans ([█████████░] 86%)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 86
+- Total plans completed: 89
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -57,6 +57,7 @@ Progress: [████████████████████] 44/44 p
 | 03 | 4 | - | - |
 | 04 | 5 | - | - |
 | 5 | 5 | - | - |
+| 05.2 | 3 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -150,6 +151,9 @@ Progress: [████████████████████] 44/44 p
 | Phase 05 P01 | 12 min | 3 tasks | 11 files |
 | Phase 05 P02 | 25 min | 3 tasks | 1 files |
 | Phase 05 P03 | n/a (spans a user Mac run) | 3 tasks | 4 files |
+| Phase 05.2 P01 | 12 min | 3 tasks | 3 files |
+| Phase 05.2 P02 | 8 min | 2 tasks | 1 files |
+| Phase 05.2 P03 | 2 days (Mac waits included) | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -287,6 +291,8 @@ Recent decisions affecting current work:
 - [Phase 05]: History folder rename uses the encoded name (non letter or digit becomes hyphen), derived as ENC
 - [Phase 05]: README threat model states its rules with no timing exception; raw Docker commands and start refusals sit below daily use
 - [Phase 05]: 05-03: Mac host checklist deferred by the user to plan 05; sbx-fix-modes added to the docs PR after the real migration
+- [Phase 05.2]: SBX_CA_CERT root certificate is delivered as a BuildKit named context (cacert) with no ENV; build.sh splits it on the Mac so a private key never reaches the build
+- [Phase 05.2]: README proxy example file is $HOME/zscaler-root-ca.pem; the manual checklist lives in the proxy section and Verify a new build points at it
 
 ### Pending Todos
 
@@ -306,6 +312,9 @@ None yet.
 - [Phase 1.5]: The H-03 gap is closed: plans 12 to 15 added the entrypoint name rule and the Compose name check, and the Mac run of 01.5-16 passed 21 of 21 checks. 01.5 IN-01 to IN-07 stay open. See 01.5-16-SUMMARY.md
 - [Phase 2.2]: UAT passed 3 of 3; two todos from it (H-19 step 6 wording, `sbx-gh-login` re-running the login) plus the review todos in `.planning/todos/pending/`. The code branch `feat/best-practices-from-git` is not pushed yet, so `origin/main` still carries `best-practices/` until its PR is merged
 - [Phase 4]: UAT 4 of 4 and security 26 of 26 threats closed; review findings IN-01, IN-02, IN-03 and IN-05 deferred as follow-ups (see 04-REVIEW-DISPOSITION.md). The code branch `feat/sbx-shell-list-rm` is not pushed yet; it waits for the user's go and PR
+- [Phase 5.2]: Code review left 8 findings open (WR-01 keytool step depends on build.sh file names, WR-02 Node trusts the root only in interactive shells, WR-03 README overstates "exactly unchanged", IN-01 to IN-05). See 05.2-REVIEW-DISPOSITION.md
+- [Phase 5.2]: The root certificate feature has no automated tests yet; the user now wants tests for new behavior. Next work, before or alongside 5.1
+- [Phase 5.2]: The sandbox does not start under Docker Desktop's Apple Virtualization Framework (05-gsd start hook, EACCES in GSD's file copy); Docker VMM works and ZSCALER.md says so. Making the hook work under both needs a probe on a Mac set to Apple Virtualization
 
 ### Quick Tasks Completed
 
@@ -323,6 +332,7 @@ None yet.
 - Phase 01.5 inserted after Phase 1.4: Host test fixes (open Phase 1 and 1.1 review findings, proven with real Docker), from the Phase 1.3 discussion
 - Phase 02.1 inserted after Phase 2: Shell diet (cut the guard to its security rules, retire the fake docker and host self-tests, schematic comments), from the PR #17 review; the best-practices phase moves from 02.1 to 02.2
 - Phase 7 added: Start readiness (`up --wait` waits for the start hooks), from the Phase 2 code review
+- Phase 05.2 inserted after Phase 5: Trust a company root certificate (Zscaler blocks the build on the work Mac); runs before 5.1 (URGENT)
 
 ## Deferred Items
 
@@ -334,6 +344,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-08T06:34:02.374Z
-Stopped at: Phase 5 complete, ready to plan Phase 05.1
+Last session: 2026-11-11T05:18:25.281Z
+Stopped at: Phase 05.2 complete, ready to plan Phase 5.1
 Resume file: None
