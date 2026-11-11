@@ -20,10 +20,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-08)
+See: .planning/PROJECT.md (updated 2026-11-11)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 05.2 — Trust a company root certificate (INSERTED)
+**Current focus:** Phase 5.1 — Sandbox doctor
 
 ## Current Position
 
@@ -312,6 +312,9 @@ None yet.
 - [Phase 1.5]: The H-03 gap is closed: plans 12 to 15 added the entrypoint name rule and the Compose name check, and the Mac run of 01.5-16 passed 21 of 21 checks. 01.5 IN-01 to IN-07 stay open. See 01.5-16-SUMMARY.md
 - [Phase 2.2]: UAT passed 3 of 3; two todos from it (H-19 step 6 wording, `sbx-gh-login` re-running the login) plus the review todos in `.planning/todos/pending/`. The code branch `feat/best-practices-from-git` is not pushed yet, so `origin/main` still carries `best-practices/` until its PR is merged
 - [Phase 4]: UAT 4 of 4 and security 26 of 26 threats closed; review findings IN-01, IN-02, IN-03 and IN-05 deferred as follow-ups (see 04-REVIEW-DISPOSITION.md). The code branch `feat/sbx-shell-list-rm` is not pushed yet; it waits for the user's go and PR
+- [Phase 5.2]: Code review left 8 findings open (WR-01 keytool step depends on build.sh file names, WR-02 Node trusts the root only in interactive shells, WR-03 README overstates "exactly unchanged", IN-01 to IN-05). See 05.2-REVIEW-DISPOSITION.md
+- [Phase 5.2]: The root certificate feature has no automated tests yet; the user now wants tests for new behavior. Next work, before or alongside 5.1
+- [Phase 5.2]: The sandbox does not start under Docker Desktop's Apple Virtualization Framework (05-gsd start hook, EACCES in GSD's file copy); Docker VMM works and ZSCALER.md says so. Making the hook work under both needs a probe on a Mac set to Apple Virtualization
 
 ### Quick Tasks Completed
 

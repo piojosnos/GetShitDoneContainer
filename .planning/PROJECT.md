@@ -38,6 +38,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 - ✓ `sbx-list` shows every registered sandbox with its folder and a status that matches `docker ps -a`; `sbx-rm NAME [--unregister]` takes a sandbox down with a plain compose down and keeps its folder, so registering the same path again brings back login and history; proven by 33 of 33 host checks (Phase 4)
 - ✓ `MIGRATION.md` moves an old-layout sandbox to the new layout with its code, Claude login and sessions, ccusage history, gh login, git identity and bash history; all four old sandboxes moved with it (Phase 5)
 - ✓ The repo holds only the new layout: `ClaudeCode/`, `OpenCode/` and the `cc-*` scripts are gone, and `README.md` is the one main doc and matches what exists, including its security limits; proven by 32 of 32 host checks (Phase 5)
+- ✓ A sandbox builds and runs behind a company HTTPS proxy (Zscaler): `SBX_CA_CERT` names one root certificate file that the system store, Java, npm, pip, uv and Node trust; unset, the image content is unchanged; `ZSCALER.md` is the setup guide (Phase 5.2)
 
 ### Active
 
@@ -101,6 +102,9 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 | Hold Maven at 3.9.11 | Maven 3.9.12 and later fail with an Input/output error when the local repository is on the Docker Desktop for Mac mount | Good: H-23 downloads into `state/m2` on the Mac; lift the hold once a release passes H-23 (Phase 2) |
 | Each sandbox keeps its own clone of the bundle repo inside its sandbox folder, linked into Claude's config by a start hook; the Mac never runs git on the clone | No compose change and no folder shared between sandboxes; a change reaches another sandbox only through a merged PR and a pull; the clone's `.git` is agent-writable, so host git on it is unsafe | Good: H-14 to H-19 and H-27 pass on the Mac, and PR #2 was opened from a new-layout sandbox (Phase 2.2) |
 | `sbx-rm` is the only `bin/` script allowed to take a sandbox down or delete a file, and it runs only a plain `compose down` plus the delete of its own registry entry | Removing a sandbox must never cost code, login or history; a guard rule pins the one allowed delete line and refuses volume or image removal | Good: H-33 shows folders, volumes and images kept and the re-register round trip restores login and history (Phase 4) |
+| An optional root certificate reaches the image only through `SBX_CA_CERT` and a named build context, never a file in the repo | The certificate is company specific and changes the trust boundary; an unset variable must leave the image content as it was | Good: home Mac snapshot diff 0 lines with no root, two test roots reached every store, and the work Mac built and ran behind Zscaler (Phase 5.2) |
+| Docker Desktop must use Docker VMM, not the Apple Virtualization Framework | Under Apple Virtualization the GSD start hook stops with EACCES in its file copy into `state/claude` | Revisit: documented in `ZSCALER.md`; making the hook work under both is a follow-up (Phase 5.2) |
+| Write automated tests for new behavior | Reverses the earlier preference for manual README checks; the root certificate feature shipped without tests and that was a gap | — Pending: root certificate tests are the next work (Phase 5.2) |
 
 ## Evolution
 
@@ -120,4 +124,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-08 after Phase 5*
+*Last updated: 2026-11-11 after Phase 5.2*
