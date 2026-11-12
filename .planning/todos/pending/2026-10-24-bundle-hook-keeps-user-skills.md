@@ -3,6 +3,9 @@ created: 2026-10-24
 title: Bundle hook silently deletes a user skill that shares a bundle skill's name
 area: claude
 source: .planning/phases/02.2-best-practices-from-git-editable-from-any-sandbox/02.2-REVIEW.md (WR-01)
+audit_acknowledged:
+  milestone: v1.0
+  at: 2026-11-12
 ---
 
 File: `claude/start.d/10-best-practices:44` and `:70`.

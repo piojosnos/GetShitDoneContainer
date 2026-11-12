@@ -3,6 +3,9 @@ created: 2026-10-24
 title: sbx-claude waits 5 seconds when nothing is linked, also in non-interactive use
 area: claude
 source: .planning/phases/02.2-best-practices-from-git-editable-from-any-sandbox/02.2-REVIEW.md (IN-04)
+audit_acknowledged:
+  milestone: v1.0
+  at: 2026-11-12
 ---
 
 File: `claude/bin/sbx-claude:23`.

@@ -3,6 +3,9 @@ created: 2026-10-26
 title: sbx-gh-login runs the whole gh device login again when gh is already logged in
 area: claude
 source: .planning/phases/02.2-best-practices-from-git-editable-from-any-sandbox/02.2-UAT.md (test 3)
+audit_acknowledged:
+  milestone: v1.0
+  at: 2026-11-12
 ---
 
 Files: `claude/bin/sbx-gh-login:51`.

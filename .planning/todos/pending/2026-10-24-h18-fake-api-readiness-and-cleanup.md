@@ -3,6 +3,9 @@ created: 2026-10-24
 title: H-18 waits a fixed second for the fake API and can leave a stale server behind
 area: tests
 source: .planning/phases/02.2-best-practices-from-git-editable-from-any-sandbox/02.2-REVIEW.md (WR-03)
+audit_acknowledged:
+  milestone: v1.0
+  at: 2026-11-12
 ---
 
 File: `tests/host/h18-scope-and-deny.sh:36-40`.

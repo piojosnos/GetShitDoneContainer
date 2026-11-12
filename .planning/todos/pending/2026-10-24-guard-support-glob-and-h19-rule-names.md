@@ -3,6 +3,9 @@ created: 2026-10-24
 title: Guard glob narrowed to tests/host/support/*.*, and H-19 hard-codes external rule file names
 area: tests
 source: .planning/phases/02.2-best-practices-from-git-editable-from-any-sandbox/02.2-REVIEW.md (IN-06)
+audit_acknowledged:
+  milestone: v1.0
+  at: 2026-11-12
 ---
 
 Files: `tests/guard/supply-chain.sh:14`, `tests/host/manual/h19-bundle-behaviour.sh:75` and `:161`.

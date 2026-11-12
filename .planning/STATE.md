@@ -1,38 +1,34 @@
 ---
 gsd_state_version: "1.0"
-current_phase: "5.3"
-current_phase_name: Separate test images from prod images
-status: Ready to discuss
-stopped_at: Phase 5.3 repurposed, Phase 5.4 added, ready to discuss Phase 5.3
-last_updated: "2026-11-11T06:07:58.550Z"
-last_activity: 2026-11-11
-last_activity_desc: Phase 5.3 repurposed to separate test images; cert tests moved to 5.4
-state_head: 6b9426330480e1050919e18fa87fd0d0bb2db2fc
+status: Awaiting next milestone
+stopped_at: Milestone v1.0 archived, ready for /gsd-new-milestone v2.0
+last_updated: "2026-11-12T06:32:18.959Z"
+last_activity: 2026-11-12
+last_activity_desc: Milestone v1.0 completed and archived
+state_head: 4641de8064137cae696ca7f36896810ac8b06500
 progress:
-  total_phases: 18
-  completed_phases: 12
+  total_phases: 13
+  completed_phases: 13
   total_plans: 89
   completed_plans: 89
-  percent: 71
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-11)
+See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 5.3 — Separate test images from prod images
+**Current focus:** Planning milestone v2.0 Simple tooling
 
 ## Current Position
 
-Phase: 5.3 — Separate test images from prod images
-Plan: Not started
-Status: Ready to discuss
-Last activity: 2026-11-11 — Phase 5.3 repurposed; cert tests moved to 5.4
-
-Progress: [████████████████████] 44/44 plans ([███████░░░] 71%)
+Phase: Milestone v1.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-11-12 — Milestone v1.0 completed and archived
 
 ## Performance Metrics
 
@@ -320,7 +316,6 @@ None yet.
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
-| 261005-7zj | Start hooks: refuse non-regular entries and check bad hooks in H-17 | 2026-10-05 | 6664206 | [261005-7zj-start-hooks-refuse-non-regular-entries-a](./quick/261005-7zj-start-hooks-refuse-non-regular-entries-a/) |
 
 ### Roadmap Evolution
 
@@ -342,10 +337,28 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 | Category | Item | Status | Deferred At | Milestone |
 |----------|------|--------|-------------|-----------|
-| *(none)* | | | | |
+| todo | 2026-10-16-shell-diet-second-pr | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-bundle-clone-error-hint-and-option-guard | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-bundle-hook-atomic-and-verified | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-bundle-hook-keeps-user-skills | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-bundle-skill-list-locale-order | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-guard-support-glob-and-h19-rule-names | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-h18-fake-api-readiness-and-cleanup | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-h19-step6-wording | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-sbx-claude-no-wait-when-non-interactive | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-26-sbx-gh-login-skip-when-logged-in | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-11-08-gsd-sync-leaves-root-owned-files | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-11-08-limit-token-exposure-in-bypass-mode | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-11-08-migration-recipe-follow-ups | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-11-08-refresh-claude-md-for-the-new-layout | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-11-08-retirement-review-nits | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
 
 ## Session Continuity
 
 Last session: 2026-11-11T05:18:25.281Z
 Stopped at: Phase 05.2 complete, ready to plan Phase 5.1
 Resume file: None
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

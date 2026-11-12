@@ -3,6 +3,9 @@ created: 2026-10-24
 title: Bundle hook is not atomic and verifies only the rules link
 area: claude
 source: .planning/phases/02.2-best-practices-from-git-editable-from-any-sandbox/02.2-REVIEW.md (WR-04)
+audit_acknowledged:
+  milestone: v1.0
+  at: 2026-11-12
 ---
 
 File: `claude/start.d/10-best-practices:35-77`.
@@ -13,9 +16,13 @@ Suggested fix: verify before writing, and build the list in a temp file that rep
 
 ```bash
 [ -d "$bundleDir/rules" ] || ...
+
 # after each ln:
+
 [ -d "$configDir/skills/$skillName" ] || { echo "[sbx] ERROR: link for $skillName is broken" >&2; exit 1; }
+
 # write names to "$skillList.new", then: mv "$skillList.new" "$skillList"
+
 ```
 
 Alternative: create the new links first, then remove only the listed names that are no longer in the clone.

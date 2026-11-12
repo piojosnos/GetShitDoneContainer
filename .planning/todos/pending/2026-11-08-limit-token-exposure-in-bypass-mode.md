@@ -3,6 +3,9 @@ created: 2026-11-08
 title: Limit what a leaked token costs when Claude runs with permissions bypassed
 area: security
 source: conversation during the Phase 5 migration test
+audit_acknowledged:
+  milestone: v1.0
+  at: 2026-11-12
 ---
 
 Things to think about. No work is decided yet.
