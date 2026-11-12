@@ -6,6 +6,7 @@ source: .planning/phases/02.2-best-practices-from-git-editable-from-any-sandbox/
 audit_acknowledged:
   milestone: v1.0
   at: 2026-11-12
+resolves_phase: 9
 ---
 
 File: `claude/bin/sbx-claude:23`.

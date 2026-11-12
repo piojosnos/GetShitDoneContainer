@@ -6,6 +6,9 @@ source: .planning/phases/02.1-shell-diet/02.1-RESCAN.md
 audit_acknowledged:
   milestone: v1.0
   at: 2026-11-12
+completed: 2026-11-12
+status: completed
+resolution: obsolete; superseded by the v2.0 test diet (Phase 6)
 ---
 
 Plan and ship the second code PR from Phase 2.1's re-scan, on a branch cut from main after PR #20 merges.

@@ -6,6 +6,7 @@ source: sanity check after moving this repo's sandbox (conversation)
 audit_acknowledged:
   milestone: v1.0
   at: 2026-11-12
+resolves_phase: 9
 ---
 
 After each start, 313 of the 820 files the GSD sync writes under `state/claude` (`gsd-core/`, `hooks/`, `scripts/`) show owner `root`, mode 644 or 755. Everything in the container runs as `sandbox` (uid 1000). A `chown` of `state/claude` to 1000 followed by `sbx-stop` and `sbx-start` brought the same 313 back, with the restart's timestamp.
