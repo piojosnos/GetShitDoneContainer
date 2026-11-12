@@ -3,6 +3,9 @@ created: 2026-11-08
 title: MIGRATION.md follow-ups from the EmailIntel move
 area: docs
 source: Phase 5 migrations (conversation)
+audit_acknowledged:
+  milestone: v1.0
+  at: 2026-11-12
 ---
 
 Two cases seen while moving the third old sandbox, handled by hand then:

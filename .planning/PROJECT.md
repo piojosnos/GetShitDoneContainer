@@ -42,13 +42,13 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 
 ### Active
 
-
-**Upgrade flow (problem 2)**
-- [ ] One command does the whole upgrade: rebuild the image with fresh tool versions, then restart the container. Login and history survive.
-
-**Helper scripts (problem 5), in priority order and kept small**
-- [ ] Scripts remember a project's arguments (name → host path), so you don't have to pass them on every call.
-- [ ] Simple rebuild/upgrade script.
+v2.0 Simple tooling (requirements come from `/gsd-new-milestone`; decisions in `.planning/research/v2-simple-tooling-decisions.md`):
+- [ ] Tests check our setup, not Claude, GSD or Docker behaviour; nothing interactive; no fake docker.
+- [ ] Test runs use their own image tags and never replace the images the sandboxes run.
+- [ ] One self-check inside the image (also the sandbox doctor) replaces most host probes.
+- [ ] `sbx-init`, run by the user, replaces the start hooks and the readiness poll.
+- [ ] The host side (`bin/sbx-*`, `build.sh`, `host-test.sh`, host tests) is Python run through `uv`, with a JSON registry.
+- [ ] CI on GitHub builds the test images and runs the checks that do not need the Mac (carries v1 requirement CI-01).
 
 ### Out of Scope
 
@@ -69,12 +69,20 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 - The codebase map is in `.planning/codebase/`. `CONCERNS.md` lists floating tags, unpinned packages, `curl | bash` installers, the hardcoded path in the OpenCode compose file, and the compromised GSD package in OpenCode.
 - This repo is itself developed inside one of these sandboxes (`/home/sandbox/GetShitDoneContainer`), so the dev environment can't run Docker. Verification has to happen on the host.
 
+## Current State
+
+v1.0 shipped 2026-11-12 (tag `v1.0`): two-mount Claude sandboxes with a pinned toolchain, GSD and ccusage baked in, the best-practices bundle from its own repo, the `sbx-*` host scripts, and an optional company root certificate. About 2.1k lines of product shell and about 10.9k lines of test shell. The user runs v1.0 on the Mac while v2.0 is built.
+
+## Next Milestone Goals
+
+v2.0 Simple tooling: make the tests and the tooling they test simple. Delete tests of other people's software and all interactive helpers, separate test images from prod, move image checks into one in-image self-check, replace start hooks with a user-run `sbx-init`, move host logic to Python, and widen CI.
+
 ## Constraints
 
 - **Security**: Agents never run on the host, and each container sees only its project's mount. Why: this isolation is the reason the project exists.
 - **Security**: GSD comes only from `@opengsd/gsd-core`. Never use `get-shit-done-cc` or `gsd-build`. Why: the old package was compromised.
 - **Platform**: Must work on macOS + Docker Desktop (likely arm64), with bind mounts. Why: that's the user's only host.
-- **Simplicity**: Keep shell scripts short and plain bash. Why: the user wants to grow the tooling slowly and keep it understandable.
+- **Simplicity**: Anything with logic is Python (through `uv` on the host, the image's `python3` inside); shell stays only for thin `exec` wrappers and Dockerfile `RUN` lines. Why: the v1 bash tooling grew about 10.9k lines of test shell around about 2.1k lines of product shell.
 - **Toolchains**: JDK 21 LTS, Maven, Node.js, and Python in the shared base. Why: these are the stacks the user develops in.
 - **Verification**: Docker isn't available inside the dev sandbox, so plans must include host-side manual verification steps.
 - **Coexistence** (retired in Phase 5): the old layout ran side by side with the new one until every old sandbox moved; it is now deleted, and old `cc_` containers left on the Mac are plain stopped containers.
@@ -103,8 +111,9 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 | Each sandbox keeps its own clone of the bundle repo inside its sandbox folder, linked into Claude's config by a start hook; the Mac never runs git on the clone | No compose change and no folder shared between sandboxes; a change reaches another sandbox only through a merged PR and a pull; the clone's `.git` is agent-writable, so host git on it is unsafe | Good: H-14 to H-19 and H-27 pass on the Mac, and PR #2 was opened from a new-layout sandbox (Phase 2.2) |
 | `sbx-rm` is the only `bin/` script allowed to take a sandbox down or delete a file, and it runs only a plain `compose down` plus the delete of its own registry entry | Removing a sandbox must never cost code, login or history; a guard rule pins the one allowed delete line and refuses volume or image removal | Good: H-33 shows folders, volumes and images kept and the re-register round trip restores login and history (Phase 4) |
 | An optional root certificate reaches the image only through `SBX_CA_CERT` and a named build context, never a file in the repo | The certificate is company specific and changes the trust boundary; an unset variable must leave the image content as it was | Good: home Mac snapshot diff 0 lines with no root, two test roots reached every store, and the work Mac built and ran behind Zscaler (Phase 5.2) |
+| Close v1.0 at tag `v1.0` and rebuild the tooling as v2.0 on `main` | The user keeps running v1.0 on the Mac while v2 is built; configs can be recreated, so there is little migration | — Pending (v1.0 close) |
 | Docker Desktop must use Docker VMM, not the Apple Virtualization Framework | Under Apple Virtualization the GSD start hook stops with EACCES in its file copy into `state/claude` | Revisit: documented in `ZSCALER.md`; making the hook work under both is a follow-up (Phase 5.2) |
-| Write automated tests for new behavior | Reverses the earlier preference for manual README checks; the root certificate feature shipped without tests and that was a gap | — Pending: root certificate tests are the next work (Phase 5.2) |
+| Write automated tests for new behavior | Reverses the earlier preference for manual README checks; the root certificate feature shipped without tests and that was a gap | ⚠️ Revisit: v1 tests grew larger than the code; v2.0 keeps the rule but tests only our setup, with proxies and real Docker (v1.0 close) |
 
 ## Evolution
 
@@ -124,4 +133,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-11 after Phase 5.2*
+*Last updated: 2026-11-12 after v1.0 milestone*

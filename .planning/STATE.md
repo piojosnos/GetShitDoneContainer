@@ -1,38 +1,34 @@
 ---
 gsd_state_version: "1.0"
-current_phase: "5.1"
-current_phase_name: Sandbox doctor
-status: planning
-stopped_at: Phase 05.2 complete, ready to plan Phase 5.1
-last_updated: "2026-11-11T05:24:27.577Z"
-last_activity: 2026-11-11
-last_activity_desc: Phase 05.2 complete, transitioned to Phase 5.1
-state_head: 744969a6d50abdce026aa7dfadd7906a86e90dfa
+status: Awaiting next milestone
+stopped_at: Milestone v1.0 archived, ready for /gsd-new-milestone v2.0
+last_updated: "2026-11-12T06:32:18.959Z"
+last_activity: 2026-11-12
+last_activity_desc: Milestone v1.0 completed and archived
+state_head: 4641de8064137cae696ca7f36896810ac8b06500
 progress:
-  total_phases: 16
-  completed_phases: 12
+  total_phases: 13
+  completed_phases: 13
   total_plans: 89
   completed_plans: 89
-  percent: 86
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-11)
+See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 5.1 — Sandbox doctor
+**Current focus:** Planning milestone v2.0 Simple tooling
 
 ## Current Position
 
-Phase: 5.1 — Sandbox doctor
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-11-11 — Phase 05.2 complete, transitioned to Phase 5.1
-
-Progress: [████████████████████] 44/44 plans ([█████████░] 86%)
+Phase: Milestone v1.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-11-12 — Milestone v1.0 completed and archived
 
 ## Performance Metrics
 
@@ -320,7 +316,6 @@ None yet.
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
-| 261005-7zj | Start hooks: refuse non-regular entries and check bad hooks in H-17 | 2026-10-05 | 6664206 | [261005-7zj-start-hooks-refuse-non-regular-entries-a](./quick/261005-7zj-start-hooks-refuse-non-regular-entries-a/) |
 
 ### Roadmap Evolution
 
@@ -333,6 +328,8 @@ None yet.
 - Phase 02.1 inserted after Phase 2: Shell diet (cut the guard to its security rules, retire the fake docker and host self-tests, schematic comments), from the PR #17 review; the best-practices phase moves from 02.1 to 02.2
 - Phase 7 added: Start readiness (`up --wait` waits for the start hooks), from the Phase 2 code review
 - Phase 05.2 inserted after Phase 5: Trust a company root certificate (Zscaler blocks the build on the work Mac); runs before 5.1 (URGENT)
+- Phase 05.3 inserted after Phase 5.2: Tests for the extra root certificate (automated tests for the Phase 5.2 feature; runs before 5.1) (URGENT)
+- Phase 05.3 repurposed to Separate test images from prod images (host-test replaces the :local images the sandboxes run, found while discussing the cert tests); the cert tests move to the new Phase 05.4, one automatic host check that runs after 5.3
 
 ## Deferred Items
 
@@ -340,10 +337,28 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 | Category | Item | Status | Deferred At | Milestone |
 |----------|------|--------|-------------|-----------|
-| *(none)* | | | | |
+| todo | 2026-10-16-shell-diet-second-pr | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-bundle-clone-error-hint-and-option-guard | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-bundle-hook-atomic-and-verified | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-bundle-hook-keeps-user-skills | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-bundle-skill-list-locale-order | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-guard-support-glob-and-h19-rule-names | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-h18-fake-api-readiness-and-cleanup | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-h19-step6-wording | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-24-sbx-claude-no-wait-when-non-interactive | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-10-26-sbx-gh-login-skip-when-logged-in | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-11-08-gsd-sync-leaves-root-owned-files | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-11-08-limit-token-exposure-in-bypass-mode | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-11-08-migration-recipe-follow-ups | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-11-08-refresh-claude-md-for-the-new-layout | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
+| todo | 2026-11-08-retirement-review-nits | acknowledged, triage in v2.0 | 2026-11-12 | v1.0 |
 
 ## Session Continuity
 
 Last session: 2026-11-11T05:18:25.281Z
 Stopped at: Phase 05.2 complete, ready to plan Phase 5.1
 Resume file: None
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

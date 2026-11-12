@@ -3,6 +3,9 @@ created: 2026-10-24
 title: Bash glob order differs between the container and the Mac in the skill list check
 area: tests
 source: .planning/phases/02.2-best-practices-from-git-editable-from-any-sandbox/02.2-REVIEW.md (IN-05)
+audit_acknowledged:
+  milestone: v1.0
+  at: 2026-11-12
 ---
 
 File: `tests/host/lib-bundle.sh:83-87`.

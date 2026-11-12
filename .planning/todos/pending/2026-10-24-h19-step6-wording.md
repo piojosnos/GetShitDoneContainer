@@ -3,6 +3,9 @@ created: 2026-10-24
 title: H-19 step 6 says Claude must refuse, but Claude rightly edits the real file in the clone
 area: tests
 source: .planning/phases/02.2-best-practices-from-git-editable-from-any-sandbox/02.2-UAT.md (test 1)
+audit_acknowledged:
+  milestone: v1.0
+  at: 2026-11-12
 ---
 
 Files: `tests/host/manual/h19-bundle-behaviour.sh:87` and `:207-209`.

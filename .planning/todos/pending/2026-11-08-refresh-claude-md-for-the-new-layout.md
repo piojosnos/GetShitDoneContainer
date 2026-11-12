@@ -3,6 +3,9 @@ created: 2026-11-08
 title: Refresh .claude/CLAUDE.md for the new layout
 area: docs
 source: .planning/phases/05-migration-docs-and-old-layout-retirement/05-RESEARCH.md (open question 2)
+audit_acknowledged:
+  milestone: v1.0
+  at: 2026-11-12
 ---
 
 `.claude/CLAUDE.md` still describes ClaudeCode/, OpenCode/, the cc-* scripts, the whole-home mount and the Coexistence constraint. None of these exist any more after the retirement PR.
