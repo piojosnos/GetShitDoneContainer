@@ -73,12 +73,36 @@ Tracked, not in this roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| DIET-01 | Phase 6 | Pending |
+| DIET-02 | Phase 6 | Pending |
+| DIET-03 | Phase 6 | Pending |
+| DIET-04 | Phase 6 | Pending |
+| DIET-05 | Phase 6 | Pending |
+| IMG-01 | Phase 7 | Pending |
+| IMG-02 | Phase 7 | Pending |
+| CHECK-01 | Phase 8 | Pending |
+| CHECK-02 | Phase 8 | Pending |
+| CHECK-03 | Phase 8 | Pending |
+| CHECK-04 | Phase 8 | Pending |
+| INIT-01 | Phase 9 | Pending |
+| INIT-02 | Phase 9 | Pending |
+| INIT-03 | Phase 9 | Pending |
+| INIT-04 | Phase 9 | Pending |
+| INIT-05 | Phase 9 | Pending |
+| INIT-06 | Phase 9 | Pending |
+| HOST-01 | Phase 10 | Pending |
+| HOST-02 | Phase 10 | Pending |
+| HOST-03 | Phase 10 | Pending |
+| HOST-04 | Phase 10 | Pending |
+| HOST-05 | Phase 10 | Pending |
+| CI-01 | Phase 11 | Pending |
+| CI-02 | Phase 11 | Pending |
 
 **Coverage:**
-- v2.0 requirements: 26 total
-- Mapped to phases: 0
-- Unmapped: 26
+- v2.0 requirements: 24 total
+- Mapped to phases: 24
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-11-12*
-*Last updated: 2026-11-12 after initial definition*
+*Last updated: 2026-11-12 after the v2.0 roadmap (phases 6 to 11)*

@@ -2,11 +2,15 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
+current_phase: 6
+current_phase_name: Test diet
 status: planning
-last_updated: "2026-11-12T06:57:35.947Z"
+stopped_at: Roadmap for v2.0 created, ready to discuss Phase 6
+last_updated: "2026-11-12T07:09:38.089Z"
 last_activity: 2026-11-12
+state_head: 485d64ef3db1bd47298963b30312c3f2a0cdf4ec
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Planning milestone v2.0 Simple tooling
+**Current focus:** Phase 6: Test diet (milestone v2.0 Simple tooling)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-11-12 — Milestone v2.0 started
+Phase: 6 (Test diet), not started
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-12
 
 ## Performance Metrics
 
@@ -288,6 +292,7 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-03: Mac host checklist deferred by the user to plan 05; sbx-fix-modes added to the docs PR after the real migration
 - [Phase 05.2]: SBX_CA_CERT root certificate is delivered as a BuildKit named context (cacert) with no ENV; build.sh splits it on the Mac so a private key never reaches the build
 - [Phase 05.2]: README proxy example file is $HOME/zscaler-root-ca.pem; the manual checklist lives in the proxy section and Verify a new build points at it
+- [Roadmap v2.0]: Six phases in the agreed order, each on the one before: 6 Test diet, 7 Separate test images, 8 In-image self-check, 9 sbx-init replaces the start hooks, 10 Host side to Python, 11 CI widened; criteria that need Docker are proven by `./host-test.sh` on the Mac
 
 ### Pending Todos
 
@@ -329,6 +334,7 @@ None yet.
 - Phase 05.2 inserted after Phase 5: Trust a company root certificate (Zscaler blocks the build on the work Mac); runs before 5.1 (URGENT)
 - Phase 05.3 inserted after Phase 5.2: Tests for the extra root certificate (automated tests for the Phase 5.2 feature; runs before 5.1) (URGENT)
 - Phase 05.3 repurposed to Separate test images from prod images (host-test replaces the :local images the sandboxes run, found while discussing the cert tests); the cert tests move to the new Phase 05.4, one automatic host check that runs after 5.3
+- Phase 999.2 removed from the backlog: Retire the fake docker; fully covered by DIET-05 (Phase 6) and HOST-05 (Phase 10)
 
 ## Deferred Items
 
@@ -354,10 +360,10 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-11T05:18:25.281Z
-Stopped at: Phase 05.2 complete, ready to plan Phase 5.1
+Last session: 2026-11-12T07:09:05.014Z
+Stopped at: Roadmap for v2.0 created, ready to discuss Phase 6
 Resume file: None
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Discuss Phase 6 (Test diet) with /gsd-discuss-phase 6
