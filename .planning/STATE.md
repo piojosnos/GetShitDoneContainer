@@ -1,17 +1,16 @@
 ---
 gsd_state_version: "1.0"
-status: Awaiting next milestone
-stopped_at: Milestone v1.0 archived, ready for /gsd-new-milestone v2.0
-last_updated: "2026-11-12T06:32:18.959Z"
+milestone: v2.0
+milestone_name: Simple tooling
+status: planning
+last_updated: "2026-11-12T06:57:35.947Z"
 last_activity: 2026-11-12
-last_activity_desc: Milestone v1.0 completed and archived
-state_head: 4641de8064137cae696ca7f36896810ac8b06500
 progress:
-  total_phases: 13
-  completed_phases: 13
-  total_plans: 89
-  completed_plans: 89
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 
 ## Current Position
 
-Phase: Milestone v1.0 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-11-12 — Milestone v1.0 completed and archived
+Status: Defining requirements
+Last activity: 2026-11-12 — Milestone v2.0 started
 
 ## Performance Metrics
 
