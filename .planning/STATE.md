@@ -2,19 +2,19 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
-current_phase: 6
-current_phase_name: test-diet
+current_phase: 06
+current_phase_name: Test diet
 status: executing
-stopped_at: Phase 6 context gathered
-last_updated: "2026-11-13T08:02:39.815Z"
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-11-13T08:11:46.329Z"
 last_activity: 2026-11-13
-last_activity_desc: Phase 6 planning complete
-state_head: 452daea49d7df82ff998bb2de1c76e127515319f
+last_activity_desc: Phase 06 execution started
+state_head: d9bb8bbfaafb96bd34f4ea36d5368bf9fa0a8945
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -25,14 +25,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 6: Test diet (milestone v2.0 Simple tooling)
+**Current focus:** Phase 06 — Test diet
 
 ## Current Position
 
-Phase: 6 (test-diet) — READY TO EXECUTE
-Plan: Not started
+Phase: 06 (Test diet) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-11-13 — Phase 6 planning complete
+Last activity: 2026-11-13 — Phase 06 execution started
 
 ## Performance Metrics
 
@@ -154,6 +154,7 @@ Last activity: 2026-11-13 — Phase 6 planning complete
 | Phase 05.2 P01 | 12 min | 3 tasks | 3 files |
 | Phase 05.2 P02 | 8 min | 2 tasks | 1 files |
 | Phase 05.2 P03 | 2 days (Mac waits included) | 3 tasks | 2 files |
+| Phase 06 P01 | 2 min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -294,6 +295,8 @@ Recent decisions affecting current work:
 - [Phase 05.2]: SBX_CA_CERT root certificate is delivered as a BuildKit named context (cacert) with no ENV; build.sh splits it on the Mac so a private key never reaches the build
 - [Phase 05.2]: README proxy example file is $HOME/zscaler-root-ca.pem; the manual checklist lives in the proxy section and Verify a new build points at it
 - [Roadmap v2.0]: Six phases in the agreed order, each on the one before: 6 Test diet, 7 Separate test images, 8 In-image self-check, 9 sbx-init replaces the start hooks, 10 Host side to Python, 11 CI widened; criteria that need Docker are proven by `./host-test.sh` on the Mac
+- [Phase 06]: sbx self-test points DOCKER_HOST at a missing socket and unsets DOCKER_CONTEXT; no stand-in docker remains
+- [Phase 06]: Bad_Name rm case asserts the name-rule text to prove the check order without a call log
 
 ### Pending Todos
 
@@ -362,9 +365,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-13T05:43:32.005Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-test-diet/06-CONTEXT.md
+Last session: 2026-11-13T08:11:46.304Z
+Stopped at: Completed 06-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 

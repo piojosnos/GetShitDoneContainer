@@ -56,11 +56,11 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
   4. The guard asserts the managed deny entries and the one-FROM rule, and no longer carries the `sbx-rm` source-line rule or the three start rules H-20 covers.
   5. On the Mac, `./host-test.sh` runs from start to end without asking anything and passes; in the dev sandbox, the guard and the remaining self-tests pass.
 
-**Plans**: 6 plans
+**Plans**: 1/6 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 06-01-PLAN.md: sbx self-test with no stand-in docker; refusal cases run with `DOCKER_HOST` pointing nowhere (wave 1)
+- [x] 06-01-PLAN.md: sbx self-test with no stand-in docker; refusal cases run with `DOCKER_HOST` pointing nowhere (wave 1)
 - [ ] 06-03-PLAN.md: `tests/host/lib-login.sh`; H-09 and H-29 plant and check fake credentials and session files (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
@@ -162,7 +162,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 6. Test diet | v2.0 | 0/TBD | Not started | - |
+| 6. Test diet | v2.0 | 1/6 | In Progress|  |
 | 7. Separate test images | v2.0 | 0/TBD | Not started | - |
 | 8. In-image self-check | v2.0 | 0/TBD | Not started | - |
 | 9. sbx-init replaces the start hooks | v2.0 | 0/TBD | Not started | - |
