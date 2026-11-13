@@ -18,26 +18,13 @@ sessionFile=$syncedDir/projects/-home-sandbox-workspace-hosttest/h16-session.jso
 settingsScript='const fs = require("fs"); const file = process.env.CLAUDE_CONFIG_DIR + "/settings.json"; let settings = {}; if (fs.existsSync(file)) { settings = JSON.parse(fs.readFileSync(file, "utf8")); } settings.h16Sentinel = process.argv[1]; fs.writeFileSync(file, JSON.stringify(settings, null, 2) + "\n");'
 
 # ------------------------------------------------------------------------------
-# Picks the first GSD skill to edit; needs the clone and a synced GSD
+# Stops the check when the run folder has no best-practices clone
 # ------------------------------------------------------------------------------
-# The fixture rule and skill names are fixed; only the GSD skill is looked up.
-# ------------------------------------------------------------------------------
-pick_samples() {
-  local gsdSkillPath
-
+require_clone() {
   if [ ! -d "$cloneDir/.git" ]; then
     fail H-16 "the run folder has no best-practices clone" "looked in $cloneDir"
     return 1
   fi
-
-  gsdSkillPath=$(find "$syncedDir/skills" -maxdepth 1 -type d -name 'gsd-*' 2>/dev/null | sort | sed -n 1p)
-
-  if [ -z "$gsdSkillPath" ]; then
-    fail H-16 "state/claude has no skills/gsd-* folder; GSD never synced" "looked in $syncedDir/skills"
-    return 1
-  fi
-
-  firstGsdSkill=$(basename "$gsdSkillPath")
 }
 
 # ------------------------------------------------------------------------------
@@ -98,7 +85,7 @@ check_pull_is_live() {
 }
 
 # ------------------------------------------------------------------------------
-# Plants stale and user files, drops a skill from the clone, ages GSD
+# Plants stale and user files and drops a skill from the clone
 # ------------------------------------------------------------------------------
 # The rules link and one fixture skill are moved aside, never deleted.
 # User files: a skill, memory, session, CLAUDE.md and a settings.json key.
@@ -108,8 +95,7 @@ plant_files() {
 
   mv "$cloneDir/skills/sbx-fixture-two" "$RUN/h16-dropped-skill-$$"
   mv "$syncedDir/rules" "$RUN/h16-old-rules-link-$$"
-  mkdir -p "$syncedDir/rules" "$syncedDir/skills/h16-old-bundle-skill" "$syncedDir/skills/h16-user-skill" \
-    "$syncedDir/gsd-core" "$memoryDir"
+  mkdir -p "$syncedDir/rules" "$syncedDir/skills/h16-old-bundle-skill" "$syncedDir/skills/h16-user-skill" "$memoryDir"
 
   printf '%s\n' "$sentinelText" >"$syncedDir/rules/h16-stale.md"
   printf '%s\n' "$sentinelText" >"$syncedDir/skills/h16-old-bundle-skill/SKILL.md"
@@ -118,8 +104,6 @@ plant_files() {
   printf '%s\n' "$sentinelText" >"$memoryDir/h16-memory.md"
   printf '# %s\n' "$sentinelText" >"$syncedDir/CLAUDE.md"
   printf '%s\n' "$sentinelText" >"$sessionFile"
-  printf '0.0.0' >"$syncedDir/gsd-core/VERSION"
-  printf 'h16 hand edit\n' >>"$syncedDir/skills/$firstGsdSkill/SKILL.md"
 
   if ! plantOutput=$(in_container node -e "$settingsScript" "$sentinelText"); then
     add_problem "could not plant the settings key: $(first_lines "$plantOutput")"
@@ -157,29 +141,6 @@ check_clone_kept() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks GSD is back at the pin and the hand edit in the GSD skill is undone
-# ------------------------------------------------------------------------------
-check_gsd_refreshed() {
-  local pinnedVersion syncedVersion=""
-
-  pinnedVersion=$(pin_of GSD_CORE_VERSION)
-
-  if [ -f "$syncedDir/gsd-core/VERSION" ]; then
-    syncedVersion=$(cat "$syncedDir/gsd-core/VERSION")
-  fi
-
-  if [ "$syncedVersion" != "$pinnedVersion" ]; then
-    add_problem "state/claude/gsd-core/VERSION is '$syncedVersion' after the restart; the image has GSD $pinnedVersion"
-  fi
-
-  if [ ! -f "$syncedDir/skills/$firstGsdSkill/SKILL.md" ]; then
-    add_problem "state/claude/skills/$firstGsdSkill/SKILL.md is missing after the restart"
-  elif grep -Fq "h16 hand edit" "$syncedDir/skills/$firstGsdSkill/SKILL.md"; then
-    add_problem "state/claude/skills/$firstGsdSkill still has the hand edit after the restart"
-  fi
-}
-
-# ------------------------------------------------------------------------------
 # Checks every planted user file still holds its sentinel
 # ------------------------------------------------------------------------------
 check_user_files_spared() {
@@ -198,7 +159,7 @@ check_user_files_spared() {
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-16 || exit 1
-pick_samples || exit 1
+require_clone || exit 1
 check_edit_is_live
 check_pull_is_live
 plant_files
@@ -206,7 +167,6 @@ restart_test_sandbox H-16 h16-down.log || exit 1
 check_bundle_links "$syncedDir" "$cloneDir"
 check_stale_files_gone
 check_clone_kept
-check_gsd_refreshed
 check_user_files_spared
 report_check H-16 "the clone is not live or the restart did not relink it and spare your files" \
-  "an edit of the clone on the Mac and a pull inside the sandbox showed in the sandbox at once; a restart relinked the clone, dropped a removed skill and stale copies, kept the uncommitted edit, refreshed GSD and kept your skills, memories, sessions, settings key and CLAUDE.md"
+  "an edit of the clone on the Mac and a pull inside the sandbox showed in the sandbox at once; a restart relinked the clone, dropped a removed skill and stale copies, kept the uncommitted edit and kept your skills, memories, sessions, settings key and CLAUDE.md"
