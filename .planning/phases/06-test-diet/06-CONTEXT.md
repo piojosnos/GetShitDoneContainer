@@ -38,6 +38,12 @@ The test suite checks only our own setup and runs with nobody at the keyboard. D
 - **D-10:** `--keep` stays, reworded as "leave the test sandbox up to look around after a failure". The `tests/host/manual/` hint and the "holds a Claude login if a helper logged in" text in the cleanup output go (`host-test.sh` header and `tests/host/run-all.sh` `print_next_block`).
 - **D-11:** H-00 becomes one preflight line in `host-test.sh` (Compose v2 present); `h00-compose-v2.sh` and its fatal slot in `tests/host/run-all.sh` go.
 
+### Resolved after research (DIET-04, DIET-05)
+- **D-12:** The three start rules dropped from `tests/guard/start.sh` are `compose_starts_in_the_workspace`, `agent_image_keeps_base_state_folders` and `no_installs_at_container_start`. The two hook rules stay.
+- **D-13:** In `host_scripts_keep_sandbox_data` (`tests/guard/isolation.sh`) only the `bin/sbx-rm` exact-line pin goes (the second block that greps `bin/sbx-rm` with its two whitelisted lines). The ban on `rm`, `rmdir`, `prune`, `kill`, `down` and `--volumes` in every other `bin/` script stays: the user wants protection from a stray host `rm`.
+- **D-14:** The four "Docker not answering" refusal cases (`sbx-start`, `sbx-shell`, `sbx-list`, and `sbx-rm` on a broken entry) stay; with `DOCKER_HOST` at a missing socket they exercise the real failure, no mock.
+- **D-15:** `start_group` sets `DOCKER_HOST=unix:///nonexistent` and also unsets `DOCKER_CONTEXT`, which would otherwise override it.
+
 ### Claude's Discretion
 - Which self-test cases count as "refuses before Docker" when sorting `start.sh`, `shell.sh`, `list.sh` and `rm.sh`; a group left with no case is deleted with its `run-all.sh` entry.
 - The exact guard rule shape for the managed deny entries and the one-FROM rule (DIET-04), and which three `tests/guard/start.sh` rules H-20 covers.
