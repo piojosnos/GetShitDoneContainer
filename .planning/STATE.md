@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 06
 current_phase_name: Test diet
 status: executing
-stopped_at: Completed 06-02-PLAN.md
-last_updated: "2026-11-13T08:17:27.918Z"
+stopped_at: Completed 06-04-PLAN.md
+last_updated: "2026-11-13T08:20:52.879Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 06 execution started
-state_head: 89c2b96857bec8c282ffaeb8c2940fe075ffdd22
+state_head: 3d715ba1fbe6d8265b110527818c8a02f5d9fc5a
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 06 (Test diet) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 06 execution started
 
@@ -157,6 +157,7 @@ Last activity: 2026-11-13 — Phase 06 execution started
 | Phase 06 P01 | 2 min | 3 tasks | 10 files |
 | Phase 06 P03 | 3 min | 2 tasks | 5 files |
 | Phase 06 P02 | 15 min | 3 tasks | 12 files |
+| Phase 06 P04 | 15min | 3 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -301,6 +302,7 @@ Recent decisions affecting current work:
 - [Phase 06]: Bad_Name rm case asserts the name-rule text to prove the check order without a call log
 - [Phase 06]: H-09 and H-29 share tests/host/lib-login.sh to plant and check a fake credentials file and a fake session file; presence only, never a real credential
 - [Phase 06]: 06-02: guard deny rule in isolation.sh and one-FROM rule in supply-chain.sh are plain greps; name rule stays covered by the sbx-add self-test
+- [Phase 06]: H-11 folds into H-28 as a sbx-stop timing (10 s threshold); the Compose v2 preflight lives only in host-test.sh; H-17 stays as is
 
 ### Pending Todos
 
@@ -369,8 +371,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-13T08:17:27.892Z
-Stopped at: Completed 06-02-PLAN.md
+Last session: 2026-11-13T08:20:52.852Z
+Stopped at: Completed 06-04-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
