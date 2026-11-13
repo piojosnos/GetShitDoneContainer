@@ -9,7 +9,7 @@ Milestone v2.0 Simple tooling. Decisions behind them: `.planning/research/v2-sim
 
 ### Test diet
 
-- [ ] **DIET-01**: No test needs a person at the keyboard: `tests/host/manual/` and every interactive helper are gone.
+- [x] **DIET-01**: No test needs a person at the keyboard: `tests/host/manual/` and every interactive helper are gone.
 - [x] **DIET-02**: No test drives Claude or checks Claude, GSD, Docker or Maven Central behaviour: H-18, `fake-claude-api.js`, H-21, H-24, H-02 and those parts of H-13, H-15, H-16 and H-23 are gone; H-00 becomes one preflight line in `host-test.sh`; H-11 merges into H-28.
 - [ ] **DIET-03**: Proxies replace the manual helpers: a planted fake credentials file and a fake session file survive recreate and `sbx-upgrade`; `DISABLE_UPDATES` is set; managed settings are present; bundle links resolve.
 - [ ] **DIET-04**: Guard rules assert the managed deny entries and the one-FROM rule; the guard self-test, the `sbx-rm` source-line rule and the three start rules H-20 covers are gone.
@@ -73,7 +73,7 @@ Tracked, not in this roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DIET-01 | Phase 6 | Pending |
+| DIET-01 | Phase 6 | Complete |
 | DIET-02 | Phase 6 | Complete |
 | DIET-03 | Phase 6 | Pending |
 | DIET-04 | Phase 6 | Pending |
