@@ -1,8 +1,8 @@
-# Host checklist (H-00..H-33)
+# Host checklist (H-01 to H-33)
 
 The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them. Seven short helpers in `tests/host/manual/` check what the script cannot: Claude's login, Claude's own behaviour, `claude doctor`, a real GSD pin bump, the login after `sbx-upgrade` and a real shell through `sbx-shell`. Run them after a change the script cannot see, or when a check fails and you want to look closer.
 
-- **IDs:** each check has an ID, H-00 to H-33 (H for host), so results can be reported by ID ("H-10 failed").
+- **IDs:** each check has an ID, H-01 to H-33 (H for host), so results can be reported by ID ("H-10 failed"). The IDs keep their gaps: a check that was dropped leaves its number unused.
 - **When:** once after building a new version of the images or `compose.yml`.
 - **Setup and daily use:** see [`README.md`](../README.md).
 - Commands run from the repo root.
@@ -24,6 +24,7 @@ What it does:
 - Makes a fresh folder under `$TMPDIR` named `sbx-hosttest-...` and starts a test sandbox named `sbx-hosttest` on it.
 - Prints `PASS`, `FAIL` or `NOT RUN` per check, then a summary. Exit status 0 means every check passed.
 - Never waits for input and never deletes files.
+- Does not check the Compose version. `./host-test.sh` checks it before any step and stops when Compose v2 is missing.
 - Leaves the test sandbox running, so a helper can use it.
 - Ends by printing the cleanup command and where the helpers are.
 
@@ -35,7 +36,6 @@ What each check proves:
 
 | ID | What it proves | Script (in `tests/host/`) | Run |
 |---|---|---|---|
-| H-00 | Compose v2 or newer is installed | `h00-compose-v2.sh` | automatic |
 | H-01 | Images build natively (arm64 on Apple silicon) | `h01-native-arch.sh` | automatic |
 | H-02 | The Claude image sits on the base image | `h02-claude-on-base.sh` | automatic |
 | H-03 | Name and folder variables are required; `up` refuses an uppercase name before it creates anything | `h03-variable-interpolation.sh` | automatic |

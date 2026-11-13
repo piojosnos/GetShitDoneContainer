@@ -49,7 +49,7 @@ show_context() {
 }
 
 # ------------------------------------------------------------------------------
-# host_checks: H-00 to H-33; builds both images first
+# host_checks: H-01 to H-33; builds both images first
 # ------------------------------------------------------------------------------
 host_checks() {
   bash tests/host/run-all.sh
@@ -199,9 +199,23 @@ remove_sandbox() {
 }
 
 # ------------------------------------------------------------------------------
+# require_compose_v2: stops the run before any step when Compose v2 is missing
+# ------------------------------------------------------------------------------
+# Compose 2.x and the later 5.x pass; 1.x and a missing docker fail.
+# ------------------------------------------------------------------------------
+require_compose_v2() {
+  if ! docker compose version --short </dev/null 2>&1 | grep -Eq '^v?([2-9]|[1-9][0-9])\.'; then
+    echo "Docker Compose v2 or newer is required; install Docker Desktop"
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
 # main: every step in order, then the summary
 # ------------------------------------------------------------------------------
 main() {
+  require_compose_v2 || exit 1
+
   run_step "context" show_context
   run_step "sbx self-test in the Mac shell" mac_sbx_selftest
   run_step "host checks" host_checks

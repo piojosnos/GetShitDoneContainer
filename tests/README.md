@@ -12,7 +12,7 @@ A new check needs a real failure it would have caught, not a hypothetical one.
 | `tests/host/` and `tests/host/manual/` | `bash tests/host/run-all.sh` | the Mac, with Docker |
 | `tests/host-checklist.md` | read it | the Mac, by hand |
 
-On the Mac, `./host-test.sh` runs everything that needs Docker in one go: the host checks, the pin digests against the registry, the guard and the entrypoint self-test inside `sbx-hosttest`, the guard and the sbx self-test in the Mac shell (the guard with shellcheck and hadolint run from `sbx-base`, the self-test under `/bin/bash`). It writes all output to `host-test.log` in the repo root and ends with one OK or FAIL line per step. Pass `--keep` to leave the test sandbox up for `tests/host/manual/`.
+On the Mac, `./host-test.sh` first checks that Docker Compose v2 is there and stops when it is not. Then it runs everything that needs Docker in one go: the host checks, the pin digests against the registry, the guard and the entrypoint self-test inside `sbx-hosttest`, the guard and the sbx self-test in the Mac shell (the guard with shellcheck and hadolint run from `sbx-base`, the self-test under `/bin/bash`). It writes all output to `host-test.log` in the repo root and ends with one OK or FAIL line per step. Pass `--keep` to leave the test sandbox up for `tests/host/manual/`.
 
 There is no CI yet. Docs and shell portability have no automated check; PR review covers them.
 
@@ -47,7 +47,7 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 | | |
 |---|---|
-| Runs | H-00 to H-33 against real Docker: builds, mounts, isolation (H-26), persistence, the bundle clone and its links (H-27 covers the wrappers and a push), the GSD sync, the `sbx-*` scripts (H-28, H-29 and H-31 to H-33) and the tool versions line (H-30) |
+| Runs | H-01 to H-33 against real Docker: builds, mounts, isolation (H-26), persistence, the bundle clone and its links (H-27 covers the wrappers and a push), the GSD sync, the `sbx-*` scripts (H-28, H-29 and H-31 to H-33) and the tool versions line (H-30) |
 | Where | The Mac. `run-all.sh` is unattended; the helpers in `manual/` need a real terminal |
 | Catches | Anything that only shows on the real images and mounts |
 | Does not catch | Claude's login and behaviour; only the helpers in `manual/` cover them |
