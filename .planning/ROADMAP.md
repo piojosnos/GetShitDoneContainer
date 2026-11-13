@@ -81,8 +81,8 @@ Plans:
 **Depends on**: Phase 6
 **Requirements**: TBD
 **Success Criteria** (what must be TRUE):
-  1. `build.sh` builds `sbx-cursor:local` from `cursor/Dockerfile` (FROM the base image) next to `sbx-claude:local`; the Cursor CLI is installed by download then run, never piped to a shell.
-  2. `sbx-add` records the sandbox's agent (`claude` by default, or `cursor`), Compose starts the matching image, and `sbx-shell` runs `claude` or `cursor-agent`.
+  1. `build.sh` builds `sbx-cursor:local` from `cursor/Dockerfile` (FROM the base image) next to `sbx-claude:local`; the Cursor CLI is pinned in `versions.env` and installed by download, never piped to a shell. GSD, `sbx-gh-login` and `sbx-bundle-clone` move to the base image, so both agent images share them.
+  2. `sbx-add NAME HOST_PATH [claude|cursor]` records the sandbox's agent (`claude` by default), Compose starts the matching image, and `sbx-shell` opens bash in both, where the user starts `claude` or `cursor-agent`.
   3. The Cursor login and settings live under `state/`, so they survive a recreate and `sbx-upgrade`.
   4. GSD is installed for Cursor in a Cursor sandbox, and existing Claude sandboxes work as before.
   5. On the Mac, a Cursor sandbox logs in, answers a prompt in its workspace, and `./host-test.sh` still passes.
@@ -139,6 +139,7 @@ Plans:
   3. `sbx-add` refuses a folder that is, holds or sits inside another sandbox's folder, also when it is given through a symlink or a `..` path, because both paths are resolved before they are compared.
   4. On the Mac, the pytest suite runs one persistence group (planted files survive one `sbx-upgrade`), one refusal group and smoke tests for add, start, stop, shell, list and rm; a failing group stops at its first failure and names the step.
   5. No bash host script, bash host test or fake docker is left in the repo, and `./host-test.sh` passes on the Mac.
+  6. The host tests are one shared harness run for each agent: the checks common to both agents are written once, and only a few small checks differ between Claude and Cursor.
 
 **Plans**: TBD
 
