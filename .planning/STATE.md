@@ -5,10 +5,10 @@ milestone_name: Simple tooling
 current_phase: 6
 current_phase_name: Test diet
 status: planning
-stopped_at: Roadmap for v2.0 created, ready to discuss Phase 6
-last_updated: "2026-11-12T07:09:38.089Z"
+stopped_at: Phase 6 context gathered
+last_updated: "2026-11-13T05:43:32.024Z"
 last_activity: 2026-11-12
-state_head: 485d64ef3db1bd47298963b30312c3f2a0cdf4ec
+state_head: d0b63f0c6048b607c1ee49338af27e31dfb7d2e7
 progress:
   total_phases: 6
   completed_phases: 0
@@ -360,9 +360,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-12T07:09:05.014Z
-Stopped at: Roadmap for v2.0 created, ready to discuss Phase 6
-Resume file: None
+Last session: 2026-11-13T05:43:32.005Z
+Stopped at: Phase 6 context gathered
+Resume file: .planning/phases/06-test-diet/06-CONTEXT.md
 
 ## Operator Next Steps
 
