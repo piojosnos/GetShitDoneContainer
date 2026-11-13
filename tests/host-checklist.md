@@ -45,7 +45,7 @@ What each check proves:
 | H-09 | Files, a planted memory, a fake credentials file and a fake session file survive a rebuild, no volumes exist | `h09-rebuild-keeps-files-no-volumes.sh` | automatic |
 | H-10 | A missing folder is refused | `h10-missing-folder-refused.sh` | automatic |
 | H-12 | A plain `docker run` is refused; the pinned Claude is installed | `h12-plain-run-refused-pin-installed.sh` | automatic |
-| H-13 | The environment is visible (`DISABLE_UPDATES` among the variables) and no Claude copy sits in `~/.local` | `h13-env-and-no-self-update.sh` | automatic |
+| H-13 | The environment is visible (`DISABLE_UPDATES=1` among the variables) and no Claude copy sits in `~/.local` | `h13-env-and-no-self-update.sh` | automatic |
 | H-14 | The wrappers, hooks and managed settings in the image are root-owned, read-only to the sandbox user and unmounted; the image holds no bundle copy; `BUNDLE_REPO_URL` and `SBX_BUNDLE_DIR` match; the clone is the one additional directory | `h14-wrappers-and-settings-in-image.sh` | automatic |
 | H-15 | `state/claude` links into the clone; the container reads the clone through `~/.claude/rules` | `h15-bundle-linked-and-visible.sh` | automatic |
 | H-16 | The clone is live: an edit on the Mac and a pull inside the sandbox show in the sandbox at once (the Mac never runs git on the clone). A restart relinks the clone, drops a removed skill and stale copies, keeps an uncommitted edit and keeps your own skills, memories, sessions, settings keys and `CLAUDE.md` | `h16-live-clone-and-restart.sh` | automatic |

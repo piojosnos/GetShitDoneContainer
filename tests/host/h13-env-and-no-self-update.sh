@@ -30,6 +30,10 @@ check_variables_set() {
       add_problem "$envName is not set in docker exec"
     fi
   done
+
+  if ! printf '%s\n' "$envOutput" | grep -qx 'DISABLE_UPDATES=1'; then
+    add_problem "DISABLE_UPDATES is not 1 in docker exec"
+  fi
 }
 
 # ------------------------------------------------------------------------------
