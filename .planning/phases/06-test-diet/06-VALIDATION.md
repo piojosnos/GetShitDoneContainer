@@ -49,6 +49,26 @@ Filled by the planner per task; the requirement-level map lives in `06-RESEARCH.
 
 *Status: pending, green, red, flaky*
 
+Per task (from the plans):
+
+| Task | Requirement | Automated command (dev sandbox) | Status |
+|------|-------------|---------------------------------|--------|
+| 06-01-1 | DIET-05 | `bash tests/selftest/sbx/run-all.sh`; start 3 and upgrade 5 PASS; `DOCKER_HOST` and `unset DOCKER_CONTEXT` in `start_group` | pending |
+| 06-01-2 | DIET-05 | `bash tests/selftest/sbx/run-all.sh`; shell 9, list 2, add 48, entry 19 PASS | pending |
+| 06-01-3 | DIET-05 | sbx suite 121 PASS; no stand-in helper under `tests/selftest` | pending |
+| 06-02-1 | DIET-04 | `bash tests/guard/run-all.sh` (20 rules); scratch-copy negative control for both new rules | pending |
+| 06-02-2 | DIET-04 | guard 17 PASS, three start rules absent; planted rm in `bin/sbx-list` still fails | pending |
+| 06-02-3 | DIET-05 | `bash tests/selftest/entrypoint/run-all.sh` 43 PASS; sbx-add name cases pass | pending |
+| 06-03-1 | DIET-03 | `bash -n`, guard, `lib-login.sh` probe (plant, missing, changed, empty dir) | pending |
+| 06-03-2 | DIET-03 | `bash -n`, guard, awk region greps for H-29 plant and check | pending |
+| 06-04-1 | DIET-02 | `bash -n`, guard, preflight probe on a scratch copy of `host-test.sh`, list-consistency loop | pending |
+| 06-04-2 | DIET-02 | list-consistency loop (26 checks), H-28 stop timing grep | pending |
+| 06-04-3 | DIET-02 | no-Claude and no-Maven grep over `tests/host/*.sh`, kept-parts grep | pending |
+| 06-05-1 | DIET-01 | guard with `PASS: no_compromised_gsd_package`, `test ! -e tests/host/manual`, no prompt constructs | pending |
+| 06-05-2 | DIET-01 | `git grep` sweep for every helper name outside `.planning` | pending |
+| 06-06-1 | all | full dev-sandbox gate and sweeps | pending |
+| 06-06-2 | all | Mac: `./host-test.sh`, then read `host-test.log` (checkpoint) | pending |
+
 ---
 
 ## Wave 0 Requirements

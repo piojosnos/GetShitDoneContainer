@@ -54,7 +54,15 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
   3. A host check plants a fake credentials file and a fake session file, and both are still there after a recreate and after `sbx-upgrade`; the same run shows `DISABLE_UPDATES` set, the managed settings present and the bundle links resolving.
   4. The guard asserts the managed deny entries and the one-FROM rule, and no longer carries the `sbx-rm` source-line rule or the three start rules H-20 covers.
   5. On the Mac, `./host-test.sh` runs from start to end without asking anything and passes; in the dev sandbox, the guard and the remaining self-tests pass.
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [ ] 06-01-PLAN.md: sbx self-test with no stand-in docker; refusal cases run with `DOCKER_HOST` pointing nowhere (wave 1)
+- [ ] 06-02-PLAN.md: guard gains the deny-entry and one-FROM rules, drops three start rules and the `sbx-rm` pin; guard self-test, `start-library.sh` and the entrypoint name cases go (wave 2)
+- [ ] 06-03-PLAN.md: `tests/host/lib-login.sh`; H-09 and H-29 plant and check fake credentials and session files (wave 1)
+- [ ] 06-04-PLAN.md: H-00 becomes a preflight; H-02, H-18, H-21, H-24 go; H-11 folds into H-28; H-13, H-15, H-16, H-23 trimmed (wave 3)
+- [ ] 06-05-PLAN.md: `tests/host/manual/` and every pointer to it go (wave 4)
+- [ ] 06-06-PLAN.md: dev-sandbox phase gate, then the Mac run of `./host-test.sh` (wave 5, checkpoint)
 
 ### Phase 7: Separate test images
 
