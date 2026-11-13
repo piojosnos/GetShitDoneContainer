@@ -35,6 +35,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 Each phase depends on the one before. Docker does not run in the dev sandbox, so every criterion that needs Docker is proven by `./host-test.sh` on the Mac.
 
 - [ ] **Phase 6: Test diet**: the tests check only our setup, nothing waits for a person, and the guard self-test and every stand-in docker are gone
+- [ ] **Phase 06.1: Cursor agent image** (INSERTED): a separate Cursor image; a sandbox picks Claude or Cursor when it is added
 - [ ] **Phase 7: Separate test images**: a test run builds and checks its own image tags and never replaces the images the sandboxes run
 - [ ] **Phase 8: In-image self-check**: `sbx-selfcheck` in the image checks the sandbox, replaces most host probes and doubles as the doctor
 - [ ] **Phase 9: sbx-init replaces the start hooks**: the user runs `sbx-init` to sync GSD and link the bundle; a container start runs no hooks
@@ -73,6 +74,20 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 06-06-PLAN.md: dev-sandbox phase gate, then the Mac run of `./host-test.sh` (wave 5, checkpoint)
+
+### Phase 06.1: Cursor agent image (INSERTED)
+
+**Goal**: A sandbox can run Cursor instead of Claude, from its own image, so work can be spread over both subscriptions. Scrappy: few new tests; a login and a short run on the Mac are the gate.
+**Depends on**: Phase 6
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. `build.sh` builds `sbx-cursor:local` from `cursor/Dockerfile` (FROM the base image) next to `sbx-claude:local`; the Cursor CLI is installed by download then run, never piped to a shell.
+  2. `sbx-add` records the sandbox's agent (`claude` by default, or `cursor`), Compose starts the matching image, and `sbx-shell` runs `claude` or `cursor-agent`.
+  3. The Cursor login and settings live under `state/`, so they survive a recreate and `sbx-upgrade`.
+  4. GSD is installed for Cursor in a Cursor sandbox, and existing Claude sandboxes work as before.
+  5. On the Mac, a Cursor sandbox logs in, answers a prompt in its workspace, and `./host-test.sh` still passes.
+
+**Plans**: TBD
 
 ### Phase 7: Separate test images
 

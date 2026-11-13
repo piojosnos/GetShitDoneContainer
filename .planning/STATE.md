@@ -6,12 +6,12 @@ current_phase: 6
 current_phase_name: test-diet
 status: executing
 stopped_at: Phase 6 context gathered
-last_updated: "2026-11-13T07:50:54.290Z"
+last_updated: "2026-11-13T08:02:39.815Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 6 planning complete
-state_head: 780e0c037f61413e9761816001072f87bc33610c
+state_head: 452daea49d7df82ff998bb2de1c76e127515319f
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 0
   total_plans: 6
   completed_plans: 0
@@ -336,6 +336,7 @@ None yet.
 - Phase 05.3 inserted after Phase 5.2: Tests for the extra root certificate (automated tests for the Phase 5.2 feature; runs before 5.1) (URGENT)
 - Phase 05.3 repurposed to Separate test images from prod images (host-test replaces the :local images the sandboxes run, found while discussing the cert tests); the cert tests move to the new Phase 05.4, one automatic host check that runs after 5.3
 - Phase 999.2 removed from the backlog: Retire the fake docker; fully covered by DIET-05 (Phase 6) and HOST-05 (Phase 10)
+- Phase 06.1 inserted after Phase 6: Cursor agent image: separate image, the sandbox picks claude or cursor
 
 ## Deferred Items
 
