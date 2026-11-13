@@ -54,14 +54,24 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
   3. A host check plants a fake credentials file and a fake session file, and both are still there after a recreate and after `sbx-upgrade`; the same run shows `DISABLE_UPDATES` set, the managed settings present and the bundle links resolving.
   4. The guard asserts the managed deny entries and the one-FROM rule, and no longer carries the `sbx-rm` source-line rule or the three start rules H-20 covers.
   5. On the Mac, `./host-test.sh` runs from start to end without asking anything and passes; in the dev sandbox, the guard and the remaining self-tests pass.
+
 **Plans**: 6 plans
 
 Plans:
+**Wave 1**
 - [ ] 06-01-PLAN.md: sbx self-test with no stand-in docker; refusal cases run with `DOCKER_HOST` pointing nowhere (wave 1)
-- [ ] 06-02-PLAN.md: guard gains the deny-entry and one-FROM rules, drops three start rules and the `sbx-rm` pin; guard self-test, `start-library.sh` and the entrypoint name cases go (wave 2)
 - [ ] 06-03-PLAN.md: `tests/host/lib-login.sh`; H-09 and H-29 plant and check fake credentials and session files (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 06-02-PLAN.md: guard gains the deny-entry and one-FROM rules, drops three start rules and the `sbx-rm` pin; guard self-test, `start-library.sh` and the entrypoint name cases go (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 06-04-PLAN.md: H-00 becomes a preflight; H-02, H-18, H-21, H-24 go; H-11 folds into H-28; H-13, H-15, H-16, H-23 trimmed (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 06-05-PLAN.md: `tests/host/manual/` and every pointer to it go (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 06-06-PLAN.md: dev-sandbox phase gate, then the Mac run of `./host-test.sh` (wave 5, checkpoint)
 
 ### Phase 7: Separate test images
@@ -73,6 +83,7 @@ Plans:
   1. `./host-test.sh` builds its own test image tags and runs every host check against them; the log names the test tags, and no host check names a `:local` tag.
   2. On the Mac, the image IDs of `sbx-base:local` and `sbx-claude:local` are the same before and after a full `./host-test.sh` run.
   3. `build.sh`, `sbx-upgrade` and the user's sandboxes still build and run the `:local` tags; only a test run uses the test tags.
+
 **Plans**: TBD
 
 ### Phase 8: In-image self-check
@@ -85,6 +96,7 @@ Plans:
   2. In `./host-test.sh` on the Mac, one host check runs `sbx-selfcheck` with `docker exec` and fails on any FAIL line or on a check count other than the expected one; the probes it absorbs (H-01, H-04, H-05 owners, H-06, H-12 pin part, H-13 env, H-14, H-15 links, H-22, H-25 record, H-30) are deleted.
   3. `./host-test.sh` makes a throwaway root certificate with `openssl`, builds it into the test base image, and the self-check finds it in the system bundle and in Java `cacerts`; no certificate is committed.
   4. Each FAIL line carries a fix hint, with the Mac command when the fix is on the Mac, and a skill shipped in the image runs the self-check and explains the results in plain words.
+
 **Plans**: TBD
 
 ### Phase 9: sbx-init replaces the start hooks
@@ -98,6 +110,7 @@ Plans:
   3. `sbx-claude` in a sandbox where init has not run prints a warning and starts Claude at once; it neither waits nor runs init itself.
   4. A user skill with the same name as a bundle skill is still there after `sbx-init`, and the bundle links are swapped in atomically, so an interrupted run leaves the old links or the new ones, never a mix.
   5. After `sbx-init` on the Mac, every file in `state/claude` is owned by `sandbox`, not root, and `./host-test.sh` passes.
+
 **Plans**: TBD
 
 ### Phase 10: Host side to Python
@@ -111,6 +124,7 @@ Plans:
   3. `sbx-add` refuses a folder that is, holds or sits inside another sandbox's folder, also when it is given through a symlink or a `..` path, because both paths are resolved before they are compared.
   4. On the Mac, the pytest suite runs one persistence group (planted files survive one `sbx-upgrade`), one refusal group and smoke tests for add, start, stop, shell, list and rm; a failing group stops at its first failure and names the step.
   5. No bash host script, bash host test or fake docker is left in the repo, and `./host-test.sh` passes on the Mac.
+
 **Plans**: TBD
 
 ### Phase 11: CI widened
@@ -123,6 +137,7 @@ Plans:
   2. On GitHub, the same PR push builds the test images and runs the self-check and the Linux-runnable host checks against them, and the PR shows the result.
   3. Nothing CI runs touches the Mac or a sandbox: there is no git hook, and nothing the agent can edit is executed by the Mac.
   4. Each check CI runs still works the same way by hand, and `./host-test.sh` on the Mac still passes.
+
 **Plans**: TBD
 
 ## Progress
