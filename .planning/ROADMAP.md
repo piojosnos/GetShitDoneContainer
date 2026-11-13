@@ -34,7 +34,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
 Each phase depends on the one before. Docker does not run in the dev sandbox, so every criterion that needs Docker is proven by `./host-test.sh` on the Mac.
 
-- [ ] **Phase 6: Test diet**: the tests check only our setup, nothing waits for a person, and the guard self-test and the scripted fake docker are gone
+- [ ] **Phase 6: Test diet**: the tests check only our setup, nothing waits for a person, and the guard self-test and every stand-in docker are gone
 - [ ] **Phase 7: Separate test images**: a test run builds and checks its own image tags and never replaces the images the sandboxes run
 - [ ] **Phase 8: In-image self-check**: `sbx-selfcheck` in the image checks the sandbox, replaces most host probes and doubles as the doctor
 - [ ] **Phase 9: sbx-init replaces the start hooks**: the user runs `sbx-init` to sync GSD and link the bundle; a container start runs no hooks
@@ -45,11 +45,11 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
 
 ### Phase 6: Test diet
 
-**Goal**: The test suite checks only our own setup and runs with nobody at the keyboard. The manual helpers, the checks of Claude, GSD, Docker and Maven Central behaviour, the guard self-test and the scripted fake docker are deleted, and simple proxies cover what the helpers used to prove. Deletions only, no rewrite.
+**Goal**: The test suite checks only our own setup and runs with nobody at the keyboard. The manual helpers, the checks of Claude, GSD, Docker and Maven Central behaviour, the guard self-test and every stand-in docker are deleted, and simple proxies cover what the helpers used to prove. Deletions only, no rewrite.
 **Depends on**: Nothing in v2.0 (builds on v1.0 at tag `v1.0`)
 **Requirements**: DIET-01, DIET-02, DIET-03, DIET-04, DIET-05
 **Success Criteria** (what must be TRUE):
-  1. `tests/host/manual/`, `tests/host/support/fake-claude-api.js`, `tests/selftest/guard/`, `tests/selftest/entrypoint/start-library.sh` and the scripted fake docker are gone; the only stand-in `docker` left is the 7-line fence for refusal cases.
+  1. `tests/host/manual/`, `tests/host/support/fake-claude-api.js`, `tests/selftest/guard/`, `tests/selftest/entrypoint/start-library.sh` and both stand-in `docker` scripts (the scripted fake and the fence) are gone; the sbx self-test refusal cases run with `DOCKER_HOST` pointing nowhere.
   2. No host check drives Claude or checks Claude, GSD, Docker or Maven Central behaviour: H-02, H-18, H-21 and H-24 are gone, H-00 is one preflight line in `host-test.sh`, H-11 is part of H-28, and H-13, H-15, H-16 and H-23 keep only the parts that check our setup.
   3. A host check plants a fake credentials file and a fake session file, and both are still there after a recreate and after `sbx-upgrade`; the same run shows `DISABLE_UPDATES` set, the managed settings present and the bundle links resolving.
   4. The guard asserts the managed deny entries and the one-FROM rule, and no longer carries the `sbx-rm` source-line rule or the three start rules H-20 covers.
