@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Guard rules on isolation: no socket, no privileges, data kept
+# Guard rules on isolation: no socket, no privileges, data kept, deny entries
 # ------------------------------------------------------------------------------
 # Usage: bash tests/guard/isolation.sh (exit 0 = every rule holds)
 # Mounts and effective privileges are checked on the running sandbox by H-26.
@@ -55,10 +55,30 @@ host_scripts_keep_sandbox_data() {
 }
 
 # ------------------------------------------------------------------------------
+# managed_settings_deny_skill_edits: the managed settings deny Edit on the synced skills
+# ------------------------------------------------------------------------------
+# Host check H-14 reads the same two entries in the image.
+# ------------------------------------------------------------------------------
+managed_settings_deny_skill_edits() {
+  local ok=0
+  local denyEntry
+
+  for denyEntry in 'Edit(//home/sandbox/workspace/state/claude/.best-practices-skills)' 'Edit(//home/sandbox/workspace/state/claude/skills/**)'; do
+    if ! grep -Fq "\"$denyEntry\"" claude/managed-settings.json; then
+      echo "    claude/managed-settings.json has no deny entry $denyEntry"
+      ok=1
+    fi
+  done
+
+  return "$ok"
+}
+
+# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 enter_repo_root || exit 1
 run_rules \
   no_docker_socket_or_privileges \
-  host_scripts_keep_sandbox_data || exit 1
+  host_scripts_keep_sandbox_data \
+  managed_settings_deny_skill_edits || exit 1

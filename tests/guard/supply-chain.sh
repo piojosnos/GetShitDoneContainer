@@ -128,6 +128,24 @@ dockerfile_args_have_no_defaults() {
 }
 
 # ------------------------------------------------------------------------------
+# claude_image_has_one_from_line: the Claude image is one stage on the base image
+# ------------------------------------------------------------------------------
+# A second stage could pull an image that no pin in versions.env controls.
+# ------------------------------------------------------------------------------
+claude_image_has_one_from_line() {
+  local fromCount
+
+  fromCount=$(grep -c '^FROM' $CLAUDE)
+
+  if [ "$fromCount" -ne 1 ] || ! grep -Fxq 'FROM ${BASE_IMAGE}' $CLAUDE; then
+    echo "    $CLAUDE must have exactly one FROM line, FROM \${BASE_IMAGE} (found $fromCount FROM lines)"
+    return 1
+  fi
+
+  return 0
+}
+
+# ------------------------------------------------------------------------------
 # every_dockerfile_arg_is_pinned: ARGs and versions.env pins match both ways
 # ------------------------------------------------------------------------------
 every_dockerfile_arg_is_pinned() {
@@ -166,4 +184,5 @@ run_rules \
   versions_file_has_one_pin_per_line \
   pins_are_exact \
   dockerfile_args_have_no_defaults \
+  claude_image_has_one_from_line \
   every_dockerfile_arg_is_pinned || exit 1
