@@ -340,7 +340,7 @@ Run `./host-test.sh` on the Mac after building, or after a change under `base/`,
 | The home is not hidden | H-05 (`.bashrc` and `.local` in `/home/sandbox`) | `./host-test.sh` |
 | Works behind a company proxy | The checklist in "Behind a company HTTPS proxy", by hand | Set `SBX_CA_CERT`, run `sbx-upgrade NAME`, then the checklist in a sandbox shell |
 
-- The other helpers in `tests/host/manual/` and when to run them are in [`tests/host-checklist.md`](tests/host-checklist.md).
+- What each host check proves, and how to read a failure, is in [`tests/host-checklist.md`](tests/host-checklist.md).
 - Every suite is listed in [`tests/README.md`](tests/README.md).
 
 ## Free disk space
@@ -352,7 +352,7 @@ Rebuilds and host-test runs pile up images, build cache and run folders. From th
 ./clean.sh --yes    # removes them
 ```
 
-- Removed: the test sandbox `sbx-hosttest` and its network, every host-test run folder (`sbx-hosttest-*` in the macOS temp folder; each may hold a test Claude login), the Docker build cache, and every image no container uses.
+- Removed: the test sandbox `sbx-hosttest` and its network, every host-test run folder (`sbx-hosttest-*` in the macOS temp folder), the Docker build cache, and every image no container uses.
 - Kept: every other container, running or stopped, the images those containers use, all volumes, and every sandbox folder and its `state/`.
 - `sbx-base:local` and `sbx-claude:local` go too when no container uses them. `./build.sh` rebuilds them; the first build after a clean takes a few minutes.
 - A build that fails with `No space left on device` usually means the Docker Desktop disk is full: run `./clean.sh --yes`, or raise the disk limit in Docker Desktop, Settings, Resources.
