@@ -335,7 +335,7 @@ Run `./host-test.sh` on the Mac after building, or after a change under `base/`,
 
 | Question | Proven by | Run |
 |---|---|---|
-| Login survives a rebuild | H-09 (files and memory), `tests/host/manual/h29-upgrade-resume.sh` (login and session after `sbx-upgrade`) | `./host-test.sh --keep`, then `bash tests/host/manual/h29-upgrade-resume.sh` |
+| Login survives a rebuild | H-09 and H-29 (a planted fake credentials file and session file survive a rebuild and `sbx-upgrade`) | `./host-test.sh` |
 | Versions match the pins | H-25 (images match `versions.env`), H-30 (tool versions line), the pin digests step | `./host-test.sh` |
 | ccusage works | H-24 | `./host-test.sh` |
 | The home is not hidden | H-05 (`.bashrc` and `.local` in `/home/sandbox`) | `./host-test.sh` |
