@@ -8,12 +8,11 @@ A new check needs a real failure it would have caught, not a hypothetical one.
 |---|---|---|
 | `tests/guard/` | `bash tests/guard/run-all.sh` | any sandbox or Mac shell |
 | `tests/selftest/entrypoint/` | `bash tests/selftest/entrypoint/run-all.sh` | Linux sandbox, no Docker |
-| `tests/selftest/guard/` | `bash tests/selftest/guard/run-all.sh` | Linux sandbox, no Docker |
 | `tests/selftest/sbx/` | `bash tests/selftest/sbx/run-all.sh` | any Linux sandbox or Mac shell, no Docker |
 | `tests/host/` and `tests/host/manual/` | `bash tests/host/run-all.sh` | the Mac, with Docker |
 | `tests/host-checklist.md` | read it | the Mac, by hand |
 
-On the Mac, `./host-test.sh` runs everything that needs Docker in one go: the host checks, the pin digests against the registry, the guard and the entrypoint and guard self-tests inside `sbx-hosttest`, the guard and the sbx self-test in the Mac shell (the guard with shellcheck and hadolint run from `sbx-base`, the self-test under `/bin/bash`). It writes all output to `host-test.log` in the repo root and ends with one OK or FAIL line per step. Pass `--keep` to leave the test sandbox up for `tests/host/manual/`.
+On the Mac, `./host-test.sh` runs everything that needs Docker in one go: the host checks, the pin digests against the registry, the guard and the entrypoint self-test inside `sbx-hosttest`, the guard and the sbx self-test in the Mac shell (the guard with shellcheck and hadolint run from `sbx-base`, the self-test under `/bin/bash`). It writes all output to `host-test.log` in the repo root and ends with one OK or FAIL line per step. Pass `--keep` to leave the test sandbox up for `tests/host/manual/`.
 
 There is no CI yet. Docs and shell portability have no automated check; PR review covers them.
 
@@ -21,10 +20,10 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 | | |
 |---|---|
-| Runs | 20 rules that read the files only: pins and supply chain, the one-FROM Claude image, start hooks, the managed deny entries, isolation greps, host scripts that never delete data (only `sbx-rm` takes a sandbox down, and it deletes only its registry entry), shellcheck and hadolint |
+| Runs | 17 rules that read the files only: pins and supply chain, the one-FROM Claude image, start hooks, the managed deny entries, isolation greps, host scripts other than `sbx-rm` that never delete data, shellcheck and hadolint |
 | Where | New-layout sandbox: every rule passes, because sbx-base holds both linters. Old dev sandbox or a Mac shell by hand without the linters: the two linter rules FAIL as "not installed" and every other rule must PASS. `./host-test.sh` gives the Mac shell stand-ins that run both linters from `sbx-base`, so there every rule passes |
-| Catches | An unpinned or floating version, a pipe-to-shell install, the compromised GSD package, a mounted Docker socket or privileged mode, a second FROM in the Claude image, a lost skill deny entry in the managed settings, a host script other than `sbx-rm` that deletes a file or takes a sandbox down, an `sbx-rm` that deletes more than its registry entry or removes volumes or images, a badly named start hook, a shell or Dockerfile lint error |
-| Does not catch | Whether an image builds or behaves (`tests/host/` does) |
+| Catches | An unpinned or floating version, a pipe-to-shell install, the compromised GSD package, a mounted Docker socket or privileged mode, a second FROM in the Claude image, a lost skill deny entry in the managed settings, a host script other than `sbx-rm` that deletes a file or takes a sandbox down, a badly named start hook, a shell or Dockerfile lint error |
+| Does not catch | Whether an image builds or behaves (`tests/host/` does), or what `sbx-rm` removes (H-33 covers it) |
 
 ## tests/selftest/entrypoint/
 
@@ -34,15 +33,6 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 | Where | Linux only (needs `/proc`) |
 | Catches | A broken start hook step, the sandbox name rule, the project and state folders, the first GSD sync and its fail-closed stops, the bundle links (no clone, rerun, upgrade from copies) |
 | Does not catch | Anything about the real image: mounts, users, file modes, links and special files in the hook folder. Host checks H-12, H-16, H-17, H-20 and H-21 cover those |
-
-## tests/selftest/guard/
-
-| | |
-|---|---|
-| Runs | The guard against a scratch copy of the repo with one planted problem each |
-| Where | Linux only |
-| Catches | A guard rule that can no longer fail |
-| Does not catch | A missing rule; that is judged in PR review |
 
 ## tests/selftest/sbx/
 
