@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Shared by the sbx self-test groups: work folder, docker stand-in, runners
+# Shared by the sbx self-test groups: work folder, Docker at nothing, runners
 # ------------------------------------------------------------------------------
 # Sourced by the groups, never run directly (functions only).
 # ------------------------------------------------------------------------------
@@ -8,10 +8,12 @@
 . "$(dirname "${BASH_SOURCE[0]}")/../lib-expect.sh"
 
 # ------------------------------------------------------------------------------
-# start_group: enters the repo root, makes WORK, the registry and the stand-in
+# start_group: enters the repo root, makes WORK and the registry, points Docker
+# at a socket that does not exist
 # ------------------------------------------------------------------------------
-# The stand-in docker refuses every call, so no case can reach the Mac's Docker;
-# SBX_CONFIG_DIR keeps the user's registry out.
+# No case can reach a Docker daemon. DOCKER_CONTEXT is unset because the Docker
+# CLI lets it override DOCKER_HOST. SBX_CONFIG_DIR keeps the user's registry
+# out.
 # ------------------------------------------------------------------------------
 start_group() {
   enter_repo_root || return 1
@@ -22,18 +24,10 @@ start_group() {
 
   SBX_CONFIG_DIR=$WORK/cfg
   export SBX_CONFIG_DIR
-  unset SBX_DIR SBX_NAME
+  unset SBX_DIR SBX_NAME DOCKER_CONTEXT
 
-  mkdir -p "$WORK/fence"
-  {
-    printf '%s\n' '#!/bin/sh'
-    printf '%s\n' "echo \"docker \$*\" >>\"$WORK/docker-calls\""
-    printf '%s\n' 'exit 99'
-  } >"$WORK/fence/docker"
-  chmod 755 "$WORK/fence/docker"
-
-  PATH=$WORK/fence:$PATH
-  export PATH
+  DOCKER_HOST=unix:///nonexistent
+  export DOCKER_HOST
 }
 
 # ------------------------------------------------------------------------------
