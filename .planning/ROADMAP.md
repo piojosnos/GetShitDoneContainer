@@ -34,7 +34,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
 Each phase depends on the one before. Docker does not run in the dev sandbox, so every criterion that needs Docker is proven by `./host-test.sh` on the Mac.
 
-- [ ] **Phase 6: Test diet**: the tests check only our setup, nothing waits for a person, and the guard self-test and every stand-in docker are gone
+- [x] **Phase 6: Test diet**: the tests check only our setup, nothing waits for a person, and the guard self-test and every stand-in docker are gone (completed 2026-11-13)
 - [ ] **Phase 06.1: Cursor agent image** (INSERTED): a separate Cursor image; a sandbox picks Claude or Cursor when it is added
 - [ ] **Phase 7: Separate test images**: a test run builds and checks its own image tags and never replaces the images the sandboxes run
 - [ ] **Phase 8: In-image self-check**: `sbx-selfcheck` in the image checks the sandbox, replaces most host probes and doubles as the doctor
@@ -56,7 +56,7 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
   4. The guard asserts the managed deny entries and the one-FROM rule, and no longer carries the `sbx-rm` source-line rule or the three start rules H-20 covers.
   5. On the Mac, `./host-test.sh` runs from start to end without asking anything and passes; in the dev sandbox, the guard and the remaining self-tests pass.
 
-**Plans**: 6/6 plans executed
+**Plans**: 6/6 plans complete
 
 Plans:
 **Wave 1**
@@ -162,7 +162,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 6. Test diet | v2.0 | 6/6 | In Progress|  |
+| 6. Test diet | v2.0 | 6/6 | Complete    | 2026-11-13 |
 | 7. Separate test images | v2.0 | 0/TBD | Not started | - |
 | 8. In-image self-check | v2.0 | 0/TBD | Not started | - |
 | 9. sbx-init replaces the start hooks | v2.0 | 0/TBD | Not started | - |
