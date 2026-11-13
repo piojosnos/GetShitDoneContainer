@@ -134,15 +134,24 @@ check_start() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks sbx-stop: container kept, stopped, files unchanged, a second stop is ok
+# Checks sbx-stop: quick, kept, stopped, files unchanged, a second stop is ok
+# ------------------------------------------------------------------------------
+# Compose waits 10 s for a stop before it kills, so 10 s or more means the
+# stop was not clean.
 # ------------------------------------------------------------------------------
 check_stop() {
-  local sentinelFile
+  local sentinelFile stopStartSeconds stopSeconds
 
+  stopStartSeconds=$(date +%s)
   run_sbx h28-stop sbx-stop hosttest
+  stopSeconds=$(($(date +%s) - stopStartSeconds))
 
   if [ "$sbxStatus" -ne 0 ]; then
     add_problem "sbx-stop exited $sbxStatus; log: $RUN/logs/h28-stop.err"
+  fi
+
+  if [ "$stopSeconds" -ge 10 ]; then
+    add_problem "sbx-stop took $stopSeconds s; 10 s or more means the stop fell through to a kill"
   fi
 
   if [ "$(sandbox_field '{{.State.Running}}')" != "false" ]; then
@@ -219,4 +228,4 @@ check_start_again
 check_start_running
 restore_test_sandbox h28
 report_check H-28 "the sbx scripts did not register, start or stop the sandbox by name" \
-  "sbx-add registered a folder with a space and refused it twice; sbx-start and sbx-stop worked by name with /bin/bash; the container and the files stayed; sbx-start of a running sandbox on the current image printed no warning"
+  "sbx-add registered a folder with a space and refused it twice; sbx-start and sbx-stop worked by name with /bin/bash; sbx-stop returned in under 10 s; the container and the files stayed; sbx-start of a running sandbox on the current image printed no warning"

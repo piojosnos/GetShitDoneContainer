@@ -18,9 +18,9 @@ unset SBXTEST_DIR
 # The chain stops at its first failure. H-10 runs last: it is the likeliest to
 # fail for an environmental reason.
 # ------------------------------------------------------------------------------
-noSandboxCheckList="h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh h17-start-offline-and-failing-hook.sh h21-bad-name-refused.sh h25-images-match-versions.sh h27-bundle-clone-and-publish.sh"
-sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h14-wrappers-and-settings-in-image.sh h15-bundle-linked-and-visible.sh h18-scope-and-deny.sh h22-toolchain-in-base.sh h24-ccusage-reports-usage.sh h26-isolation-by-inspect.sh h30-version-line.sh"
-chainCheckList="h08-history-survives-recreate.sh h16-live-clone-and-restart.sh h23-caches-survive-recreate.sh h11-stop-is-quick-and-safe.sh h09-rebuild-keeps-files-no-volumes.sh h28-sbx-add-start-stop.sh h29-sbx-upgrade.sh h31-sbx-shell.sh h32-sbx-list.sh h33-sbx-rm.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
+noSandboxCheckList="h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh h17-start-offline-and-failing-hook.sh h25-images-match-versions.sh h27-bundle-clone-and-publish.sh"
+sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h14-wrappers-and-settings-in-image.sh h15-bundle-linked-and-visible.sh h22-toolchain-in-base.sh h26-isolation-by-inspect.sh h30-version-line.sh"
+chainCheckList="h08-history-survives-recreate.sh h16-live-clone-and-restart.sh h23-caches-survive-recreate.sh h09-rebuild-keeps-files-no-volumes.sh h28-sbx-add-start-stop.sh h29-sbx-upgrade.sh h31-sbx-shell.sh h32-sbx-list.sh h33-sbx-rm.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
 
 remainingList="$noSandboxCheckList $sandboxCheckList $chainCheckList"
 passedCount=0

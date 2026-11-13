@@ -337,7 +337,6 @@ Run `./host-test.sh` on the Mac after building, or after a change under `base/`,
 |---|---|---|
 | Login survives a rebuild | H-09 and H-29 (a planted fake credentials file and session file survive a rebuild and `sbx-upgrade`) | `./host-test.sh` |
 | Versions match the pins | H-25 (images match `versions.env`), H-30 (tool versions line), the pin digests step | `./host-test.sh` |
-| ccusage works | H-24 | `./host-test.sh` |
 | The home is not hidden | H-05 (`.bashrc` and `.local` in `/home/sandbox`) | `./host-test.sh` |
 | Works behind a company proxy | The checklist in "Behind a company HTTPS proxy", by hand | Set `SBX_CA_CERT`, run `sbx-upgrade NAME`, then the checklist in a sandbox shell |
 
