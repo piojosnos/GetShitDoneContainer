@@ -139,19 +139,17 @@ fatal() {
 }
 
 # ------------------------------------------------------------------------------
-# print_next_block: prints the cleanup command and where the helpers are
+# print_next_block: prints the cleanup command
 # ------------------------------------------------------------------------------
 print_next_block() {
   printf '\nNext\n'
 
   if [ -n "${RUN:-}" ]; then
-    printf '  Cleanup when you are done. The run folder holds a Claude login if a helper logged in:\n'
+    printf '  Cleanup when you are done:\n'
     printf '    cd %q && SBX_NAME=hosttest SBX_DIR=%q docker compose down && rm -rf %q\n' "${REPO_DIR:-}" "$RUN" "$RUN"
   else
     printf '  No run folder was created, so there is nothing to clean up.\n'
   fi
-
-  printf '  If something looks wrong, see tests/host/manual/\n'
 }
 
 # ------------------------------------------------------------------------------

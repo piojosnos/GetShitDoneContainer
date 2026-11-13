@@ -3,7 +3,7 @@
 # Mac test run: every Docker check in one go, all output kept in host-test.log
 # ------------------------------------------------------------------------------
 # Usage: ./host-test.sh [--keep]   (exit 0 = every step passed; sh works too)
-# --keep leaves the test sandbox up for the helpers in tests/host/manual/.
+# --keep leaves the test sandbox up to look around after a failure.
 # ------------------------------------------------------------------------------
 set -u
 

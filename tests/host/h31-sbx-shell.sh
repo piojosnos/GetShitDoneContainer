@@ -141,7 +141,7 @@ check_running_shell() {
   run_shell h31-running h31-running.txt
 
   if ! shell_wrote h31-running.txt; then
-    add_problem "a shell opened through BSD script wrote no h31-running.txt with /home/sandbox/workspace/hosttest; script may not give sbx-shell a terminal on this Mac (log: $RUN/logs/h31-running.log); tests/host/manual/h31-jump-in.sh checks the same by hand"
+    add_problem "a shell opened through BSD script wrote no h31-running.txt with /home/sandbox/workspace/hosttest; script may not give sbx-shell a terminal on this Mac (log: $RUN/logs/h31-running.log)"
   fi
 
   if [ -z "$firstId" ] || [ "$(sandbox_field '{{.Id}}')" != "$firstId" ] || [ "$(sandbox_field '{{.State.StartedAt}}')" != "$firstStart" ]; then
@@ -162,7 +162,7 @@ check_stopped_shell() {
   run_shell h31-stopped h31-stopped.txt
 
   if ! shell_wrote h31-stopped.txt; then
-    add_problem "a shell opened through BSD script wrote no h31-stopped.txt with /home/sandbox/workspace/hosttest; script may not give sbx-shell a terminal on this Mac (log: $RUN/logs/h31-stopped.log); tests/host/manual/h31-jump-in.sh checks the same by hand"
+    add_problem "a shell opened through BSD script wrote no h31-stopped.txt with /home/sandbox/workspace/hosttest; script may not give sbx-shell a terminal on this Mac (log: $RUN/logs/h31-stopped.log)"
   fi
 
   if [ "$(sandbox_field '{{.State.Running}}')" != "true" ]; then
