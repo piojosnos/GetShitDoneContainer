@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 06
 current_phase_name: Test diet
 status: executing
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-11-13T08:14:10.314Z"
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-11-13T08:17:27.918Z"
 last_activity: 2026-11-13
 last_activity_desc: Phase 06 execution started
-state_head: 958e05e3df73c01d0359db5cbffbd872093c83d1
+state_head: 89c2b96857bec8c282ffaeb8c2940fe075ffdd22
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 06 (Test diet) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-11-13 — Phase 06 execution started
 
@@ -156,6 +156,7 @@ Last activity: 2026-11-13 — Phase 06 execution started
 | Phase 05.2 P03 | 2 days (Mac waits included) | 3 tasks | 2 files |
 | Phase 06 P01 | 2 min | 3 tasks | 10 files |
 | Phase 06 P03 | 3 min | 2 tasks | 5 files |
+| Phase 06 P02 | 15 min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -299,6 +300,7 @@ Recent decisions affecting current work:
 - [Phase 06]: sbx self-test points DOCKER_HOST at a missing socket and unsets DOCKER_CONTEXT; no stand-in docker remains
 - [Phase 06]: Bad_Name rm case asserts the name-rule text to prove the check order without a call log
 - [Phase 06]: H-09 and H-29 share tests/host/lib-login.sh to plant and check a fake credentials file and a fake session file; presence only, never a real credential
+- [Phase 06]: 06-02: guard deny rule in isolation.sh and one-FROM rule in supply-chain.sh are plain greps; name rule stays covered by the sbx-add self-test
 
 ### Pending Todos
 
@@ -367,8 +369,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-13T08:14:10.288Z
-Stopped at: Completed 06-03-PLAN.md
+Last session: 2026-11-13T08:17:27.892Z
+Stopped at: Completed 06-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
