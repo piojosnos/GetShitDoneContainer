@@ -73,8 +73,6 @@ show_state() {
 # ------------------------------------------------------------------------------
 # remove_test_runs: removes the test sandbox, its network and the run folders
 # ------------------------------------------------------------------------------
-# Each run folder may hold a test Claude login.
-# ------------------------------------------------------------------------------
 remove_test_runs() {
   local runFolder
 

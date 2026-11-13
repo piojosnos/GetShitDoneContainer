@@ -335,13 +335,12 @@ Run `./host-test.sh` on the Mac after building, or after a change under `base/`,
 
 | Question | Proven by | Run |
 |---|---|---|
-| Login survives a rebuild | H-09 (files and memory), `tests/host/manual/h29-upgrade-resume.sh` (login and session after `sbx-upgrade`) | `./host-test.sh --keep`, then `bash tests/host/manual/h29-upgrade-resume.sh` |
+| Login survives a rebuild | H-09 and H-29 (a planted fake credentials file and session file survive a rebuild and `sbx-upgrade`) | `./host-test.sh` |
 | Versions match the pins | H-25 (images match `versions.env`), H-30 (tool versions line), the pin digests step | `./host-test.sh` |
-| ccusage works | H-24 | `./host-test.sh` |
 | The home is not hidden | H-05 (`.bashrc` and `.local` in `/home/sandbox`) | `./host-test.sh` |
 | Works behind a company proxy | The checklist in "Behind a company HTTPS proxy", by hand | Set `SBX_CA_CERT`, run `sbx-upgrade NAME`, then the checklist in a sandbox shell |
 
-- The other helpers in `tests/host/manual/` and when to run them are in [`tests/host-checklist.md`](tests/host-checklist.md).
+- What each host check proves, and how to read a failure, is in [`tests/host-checklist.md`](tests/host-checklist.md).
 - Every suite is listed in [`tests/README.md`](tests/README.md).
 
 ## Free disk space
@@ -353,7 +352,7 @@ Rebuilds and host-test runs pile up images, build cache and run folders. From th
 ./clean.sh --yes    # removes them
 ```
 
-- Removed: the test sandbox `sbx-hosttest` and its network, every host-test run folder (`sbx-hosttest-*` in the macOS temp folder; each may hold a test Claude login), the Docker build cache, and every image no container uses.
+- Removed: the test sandbox `sbx-hosttest` and its network, every host-test run folder (`sbx-hosttest-*` in the macOS temp folder), the Docker build cache, and every image no container uses.
 - Kept: every other container, running or stopped, the images those containers use, all volumes, and every sandbox folder and its `state/`.
 - `sbx-base:local` and `sbx-claude:local` go too when no container uses them. `./build.sh` rebuilds them; the first build after a clean takes a few minutes.
 - A build that fails with `No space left on device` usually means the Docker Desktop disk is full: run `./clean.sh --yes`, or raise the disk limit in Docker Desktop, Settings, Resources.
@@ -431,7 +430,7 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 | `the start hooks of sbx-NAME did not finish within 120 s` or `sbx-NAME stopped during its start` | Run `docker logs sbx-NAME`. |
 | `overlaps the registry folder`, `overlaps the repo folder` or `overlaps the folder of sandbox` | Pick a folder of its own for the sandbox. |
 | `required variable SBX_DIR is missing a value` | Only the raw Compose commands read `SBX_NAME` and `SBX_DIR` from your terminal; export both, or use the `sbx-*` scripts. |
-| Maven fails with `java.io.IOException: Input/output error` and `Failed to delete tracking file` | Maven 3.9.12 and later cannot keep their local repository on the Docker Desktop for Mac mount. Keep `MAVEN_VERSION` at 3.9.11 until a newer release passes host check H-23. |
+| Maven fails with `java.io.IOException: Input/output error` and `Failed to delete tracking file` | Maven 3.9.12 and later cannot keep their local repository on the Docker Desktop for Mac mount. Keep `MAVEN_VERSION` at 3.9.11. Before raising it, run a Maven build in a sandbox on the Mac by hand; no automatic check covers this. |
 | `up` fails with `... must be lowercase` and names `sbx-<name>-name-check` | `SBX_NAME` has an uppercase letter. Use the lowercase name; see the name rule in Requirements. |
 | `[sbx] ERROR: SBX_NAME "..." breaks the sandbox name rule` | Pick a name that follows the rule and rename the project folder to match. A sandbox named with `_` or `.` before this rule needs the same rename. |
 | `[sbx] ERROR: ... (the project folder) is missing` | Create it: `mkdir -p "$SBX_DIR/$SBX_NAME"`. Or `SBX_DIR` / `SBX_NAME` is mistyped. |

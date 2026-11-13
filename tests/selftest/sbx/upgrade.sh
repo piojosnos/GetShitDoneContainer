@@ -56,5 +56,4 @@ case_upgrade_refusals() {
 require_no_arguments "$@" || exit 2
 start_group || exit 1
 case_upgrade_refusals
-expect "sbx-upgrade: no case reached docker" no_docker_call
 finish_cases

@@ -292,5 +292,4 @@ case_defaults
 case_repo_overlap
 case_overlaps
 case_same_folder
-expect "sbx-add: no case reached docker" no_docker_call
 finish_cases

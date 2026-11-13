@@ -11,7 +11,8 @@
 # ------------------------------------------------------------------------------
 # Constants: the sandbox files, as every group reads them
 # ------------------------------------------------------------------------------
-# SHELL_FILES uses globs, not git ls-files: the self-test copy has no .git.
+# SHELL_FILES uses globs, not git ls-files: it names the scripts without a .sh
+# extension too, and it needs no git repository.
 # ------------------------------------------------------------------------------
 BASE=base/Dockerfile
 CLAUDE=claude/Dockerfile

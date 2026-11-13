@@ -1,8 +1,8 @@
-# Host checklist (H-00..H-33)
+# Host checklist (H-01 to H-33)
 
-The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs almost all of them. Seven short helpers in `tests/host/manual/` check what the script cannot: Claude's login, Claude's own behaviour, `claude doctor`, a real GSD pin bump, the login after `sbx-upgrade` and a real shell through `sbx-shell`. Run them after a change the script cannot see, or when a check fails and you want to look closer.
+The test plan for the sbx sandbox: checks that can only be proven on your Mac, because Docker does not run in the dev sandbox. One script runs all the checks with nobody at the keyboard.
 
-- **IDs:** each check has an ID, H-00 to H-33 (H for host), so results can be reported by ID ("H-10 failed").
+- **IDs:** each check has an ID, H-01 to H-33 (H for host), so results can be reported by ID ("H-10 failed"). The IDs keep their gaps: a check that was dropped leaves its number unused.
 - **When:** once after building a new version of the images or `compose.yml`.
 - **Setup and daily use:** see [`README.md`](../README.md).
 - Commands run from the repo root.
@@ -24,8 +24,9 @@ What it does:
 - Makes a fresh folder under `$TMPDIR` named `sbx-hosttest-...` and starts a test sandbox named `sbx-hosttest` on it.
 - Prints `PASS`, `FAIL` or `NOT RUN` per check, then a summary. Exit status 0 means every check passed.
 - Never waits for input and never deletes files.
-- Leaves the test sandbox running, so a helper can use it.
-- Ends by printing the cleanup command and where the helpers are.
+- Does not check the Compose version. `./host-test.sh` checks it before any step and stops when Compose v2 is missing.
+- Leaves the test sandbox running, so you can look around after a failure.
+- Ends by printing the cleanup command.
 
 It needs no exported variables and ignores `SBX_NAME` and `SBX_DIR` from your terminal, so your own sandboxes are never touched. It uses the Docker your terminal points at (`DOCKER_HOST` or the current context) and prints which one first.
 
@@ -35,79 +36,42 @@ What each check proves:
 
 | ID | What it proves | Script (in `tests/host/`) | Run |
 |---|---|---|---|
-| H-00 | Compose v2 or newer is installed | `h00-compose-v2.sh` | automatic |
 | H-01 | Images build natively (arm64 on Apple silicon) | `h01-native-arch.sh` | automatic |
-| H-02 | The Claude image sits on the base image | `h02-claude-on-base.sh` | automatic |
 | H-03 | Name and folder variables are required; `up` refuses an uppercase name before it creates anything | `h03-variable-interpolation.sh` | automatic |
 | H-04 | The user is non-root (uid 1000) | `h04-nonroot-user.sh` | automatic |
 | H-05 | Workspace and home layout | `h05-workspace-and-home.sh` | automatic |
 | H-06 | Git works and the identity persists | `h06-git-and-identity.sh` | automatic |
-| H-07 | Claude login lands in the state folder | `manual/h07-login.sh` | helper only |
 | H-08 | Shell history survives a recreate | `h08-history-survives-recreate.sh` | automatic |
-| H-09 | Files and a planted memory survive a rebuild, no volumes exist; the login and the session survive too | `h09-rebuild-keeps-files-no-volumes.sh`, `manual/h09-rebuild-resume.sh` | automatic; helper for the rest |
+| H-09 | Files, a planted memory, a fake credentials file and a fake session file survive a rebuild, no volumes exist | `h09-rebuild-keeps-files-no-volumes.sh` | automatic |
 | H-10 | A missing folder is refused | `h10-missing-folder-refused.sh` | automatic |
-| H-11 | Stopping is quick and keeps everything | `h11-stop-is-quick-and-safe.sh` | automatic |
 | H-12 | A plain `docker run` is refused; the pinned Claude is installed | `h12-plain-run-refused-pin-installed.sh` | automatic |
-| H-13 | Environment is visible, self-update is off and no Claude copy sits in `~/.local`; `claude doctor` agrees | `h13-env-and-no-self-update.sh`, `manual/h13-doctor.sh` | automatic; helper for the rest |
+| H-13 | The environment is visible (`DISABLE_UPDATES=1` among the variables) and no Claude copy sits in `~/.local` | `h13-env-and-no-self-update.sh` | automatic |
 | H-14 | The wrappers, hooks and managed settings in the image are root-owned, read-only to the sandbox user and unmounted; the image holds no bundle copy; `BUNDLE_REPO_URL` and `SBX_BUNDLE_DIR` match; the clone is the one additional directory | `h14-wrappers-and-settings-in-image.sh` | automatic |
-| H-15 | `state/claude` links into the clone; Claude lists the always-on rules by their clone path and the skills, not the path-scoped rules; the container reads the clone through `~/.claude/rules` | `h15-bundle-linked-and-visible.sh` | automatic |
-| H-16 | The clone is live: an edit on the Mac and a pull inside the sandbox show in the sandbox at once (the Mac never runs git on the clone). A restart relinks the clone, drops a removed skill and stale copies, keeps an uncommitted edit, refreshes GSD (a stale GSD version and a hand-edited GSD skill are replaced) and keeps your own skills, memories, sessions, settings keys and `CLAUDE.md`; the helper bumps the GSD pin for real with a logged-in sandbox | `h16-live-clone-and-restart.sh`, `manual/h16-gsd-bump.sh` | automatic; helper for the rest |
+| H-15 | `state/claude` links into the clone; the container reads the clone through `~/.claude/rules` | `h15-bundle-linked-and-visible.sh` | automatic |
+| H-16 | The clone is live: an edit on the Mac and a pull inside the sandbox show in the sandbox at once (the Mac never runs git on the clone). A restart relinks the clone, drops a removed skill and stale copies, keeps an uncommitted edit and keeps your own skills, memories, sessions, settings keys and `CLAUDE.md` | `h16-live-clone-and-restart.sh` | automatic |
 | H-17 | A start works with networking off, both with a clone linked and with none (it then says to run `sbx-bundle-clone`); a failing hook, a hook file that is not executable and a dangling hook link each stop the start | `h17-start-offline-and-failing-hook.sh` | automatic |
-| H-18 | In the real image, a path-scoped rule loads only after Claude reads a matching file; the managed deny refuses edits through `~/.claude/skills`, while the clone's rule and skill can be edited by their real path under `bypassPermissions` and `acceptEdits`; no login or network needed | `h18-scope-and-deny.sh` | automatic |
-| H-19 | The real bundle flow: login, clone of the private repo, skills in Claude, a rule followed, a language rule on demand, a rule amended on a branch, a refused edit through `~/.claude/skills`, the managed settings source | `manual/h19-bundle-behaviour.sh` | helper only |
 | H-20 | A sandbox folder without the project folder (a mistyped name) is refused, and nothing is created | `h20-mistyped-name-refused.sh` | automatic |
-| H-21 | An `SBX_NAME` that breaks the sandbox name rule is refused at start; the command never runs | `h21-bad-name-refused.sh` | automatic |
 | H-22 | The base image holds git, gh, Node 24, Python 3, uv, Temurin 21 and Maven at their pins as native binaries, plus the common Linux tools; a login shell in the sandbox finds them | `h22-toolchain-in-base.sh` | automatic |
-| H-23 | The npm, uv and Maven caches live in the state folder and a file in each survives a recreate; a real Maven download (junit 4.13.2 with a pinned plugin, into a new local repository under `state/m2`, needs network) reaches the Mac and survives it | `h23-caches-survive-recreate.sh` | automatic |
-| H-24 | `ccusage daily`, `monthly` and `session` in a sandbox shell report a planted transcript from `state/claude`, as the sandbox user, offline | `h24-ccusage-reports-usage.sh` | automatic |
+| H-23 | The npm, uv and Maven caches live in the state folder and a file in each survives a recreate | `h23-caches-survive-recreate.sh` | automatic |
 | H-25 | The images match versions.env (the record in the Claude image, GSD and ccusage at their pins, nothing under the mount point), and a build without build.sh stops naming the missing pin | `h25-images-match-versions.sh` | automatic |
 | H-26 | The test sandbox has exactly one mount, a bind at /home/sandbox/workspace; it is not privileged, drops every capability, adds none, has no-new-privileges and no unconfined profile, shares no host namespace (network, PID, IPC, UTS, user) and has no device or extra group (read from docker inspect) | `h26-isolation-by-inspect.sh` | automatic |
 | H-27 | In a fresh sandbox folder, offline: `sbx-claude` warns when nothing is linked and runs `claude`; `sbx-bundle-clone` links the clone at once and refuses a second run; a branch is pushed to the origin; a failed clone leaves no folder | `h27-bundle-clone-and-publish.sh` | automatic |
-| H-28 | sbx-add registers a sandbox on a folder with a space in its path and refuses it twice; sbx-start and sbx-stop work by name with /bin/bash, ignore SBX_DIR, SBX_NAME and COMPOSE_PROJECT_NAME from your terminal, and keep the container and the files; the test sandbox is restored on the run folder | h28-sbx-add-start-stop.sh | automatic |
-| H-29 | sbx-upgrade with a bogus build option fails and leaves the sandbox as it was; sbx-upgrade rebuilds, recreates only sbx-hosttest (new container, other sbx containers unchanged), keeps the files in the project folder, state/ and state/claude, keeps one bind mount and no volume, warns that open shells close, and starts a stopped sandbox; the login and session survive in the helper | h29-sbx-upgrade.sh, manual/h29-upgrade-resume.sh | automatic; helper for the rest |
+| H-28 | sbx-add registers a sandbox on a folder with a space in its path and refuses it twice; sbx-start and sbx-stop work by name with /bin/bash, ignore SBX_DIR, SBX_NAME and COMPOSE_PROJECT_NAME from your terminal, and keep the container and the files; sbx-stop returns in under 10 s; the test sandbox is restored on the run folder | h28-sbx-add-start-stop.sh | automatic |
+| H-29 | sbx-upgrade with a bogus build option fails and leaves the sandbox as it was; sbx-upgrade rebuilds, recreates only sbx-hosttest (new container, other sbx containers unchanged), keeps the files in the project folder, state/ and state/claude (including a fake credentials file and a fake session file), keeps one bind mount and no volume, warns that open shells close, and starts a stopped sandbox | h29-sbx-upgrade.sh | automatic |
 | H-30 | The tool versions line in sbx-claude:local matches versions.env (jdk from the TEMURIN_IMAGE tag, python from the image); an interactive shell prints it once, bash -c and bash -lc print nothing; sbx-upgrade ends with it (H-29) | h30-version-line.sh | automatic |
-| H-31 | sbx-shell on a sandbox with no container starts it and waits for its start hooks, then (with no terminal) Docker refuses the shell; through a terminal it opens bash in /home/sandbox/workspace/hosttest on a running sandbox without recreating it, and on a stopped one after starting it again; the helper logs in with sbx-claude in that shell and finds Claude still logged in after a stop and a new sbx-shell | `h31-sbx-shell.sh`, `manual/h31-jump-in.sh` | automatic; helper for the rest |
+| H-31 | sbx-shell on a sandbox with no container starts it and waits for its start hooks, then (with no terminal) Docker refuses the shell; through a terminal it opens bash in /home/sandbox/workspace/hosttest on a running sandbox without recreating it, and on a stopped one after starting it again | `h31-sbx-shell.sh` | automatic |
 | H-32 | sbx-list with an empty registry says so and lists the running sbx-hosttest as a labelled container with no entry, with no cc_ container; after sbx-add, sbx-start and sbx-stop the hosttest row reads no container, running and stopped with its folder (a space in its path), each matching docker ps -a; a sandbox on the current image is not marked | `h32-sbx-list.sh` | automatic |
 | H-33 | sbx-rm of the running test sandbox without a terminal or --yes is refused and the sandbox, its entry and its files stay; with --yes it warns, takes its container and its network, and keeps its folder (a space in its path), its registry entry, the volumes, the images and the other sbx containers; it runs again with no container, and with the folder moved away; --unregister deletes only the entry; sbx-add of the same folder and sbx-start bring back a file in state/claude and a line in the bash history | `h33-sbx-rm.sh` | automatic |
-
-## Manual helpers (when something looks wrong)
-
-Run them after a change the script cannot see (a Claude Code or GSD pin bump, a change to the managed settings or to login handling), or when a check fails and you want to look closer. Each needs a real terminal and the running test sandbox from `run-all.sh`.
-
-```bash
-bash tests/host/manual/h07-login.sh
-bash tests/host/manual/h09-rebuild-resume.sh
-bash tests/host/manual/h13-doctor.sh
-bash tests/host/manual/h16-gsd-bump.sh
-bash tests/host/manual/h19-bundle-behaviour.sh
-bash tests/host/manual/h29-upgrade-resume.sh
-bash tests/host/manual/h31-jump-in.sh
-```
-
-| Helper | You do | What it proves |
-|---|---|---|
-| `h07-login.sh` | Log in with a claude.ai account, send one message, then `/exit` | A Claude login lands in the run folder's `state/claude`, `claude auth status` shows `"loggedIn": true`, and there is no `~/.claude.json` in the container home |
-| `h09-rebuild-resume.sh` | Confirm the earlier session resumes in `claude --continue`, then `/exit` | After a rebuild and a recreate the login survives and `claude --continue` resumes the earlier session |
-| `h13-doctor.sh` | Confirm `claude doctor` shows auto-updates disabled | `claude doctor` reports auto-updates disabled; the wording is for you to judge |
-| `h16-gsd-bump.sh` | Set `GSD_CORE_VERSION` in `versions.env` to the approved bump target when asked, confirm the session resumes in `claude --continue`, then put the pin back | After a GSD pin bump and a rebuild the new GSD is synced into `state/claude`, the login survives and `claude --continue` resumes |
-| `h19-bundle-behaviour.sh` | Run `sbx-gh-login`, `sbx-bundle-clone` (the private repo) and `sbx-claude`; then ask, read and amend a rule on a branch, try an edit through `~/.claude/skills`, check `/status`, and optionally push and open a PR | The clone works with a real login, the skills are listed, a rule is followed, a language rule loads on demand, a rule is amended on a branch in the clone, an edit through `~/.claude/skills` is refused, and `/status` shows the managed settings |
-| `h29-upgrade-resume.sh` | Log in to Claude in the helper's own sandbox, send one message, /exit; after sbx-upgrade confirm the session resumes in claude --continue, then /exit | sbx-upgrade keeps the Claude login and claude --continue resumes the earlier session in a registered sandbox |
-| `h31-jump-in.sh` | In the shell sbx-shell opens, run pwd, then sbx-claude: log in, send one message, /exit, exit; after it stops and reopens the sandbox, run sbx-claude again and confirm there is no login prompt | sbx-shell starts a sandbox and opens a real shell in its project folder, and sbx-claude in that shell starts Claude already logged in after a stop and a new start |
-
-- `h09-rebuild-resume.sh`, `h16-gsd-bump.sh` and `h19-bundle-behaviour.sh` need a Claude login in the test sandbox. `h07-login.sh` makes one. `h29-upgrade-resume.sh` and `h31-jump-in.sh` make their own.
-- Add `--no-cache` to `h09-rebuild-resume.sh` for a clean rebuild: `bash tests/host/manual/h09-rebuild-resume.sh --no-cache`. It is slow. `h29-upgrade-resume.sh` takes `--no-cache` the same way.
-- Each helper prints `PASS` or `FAIL` lines and exits 0 only when every line is `PASS`.
-- A helper run without a terminal, or when the test sandbox is not running, stops before it does anything.
 
 ## Reading a failure
 
 - **FAIL line:** shows the check ID and what went wrong, with detail lines under it.
-- **NOT RUN:** an earlier step failed: the setup, or an earlier link of the chain H-08, H-16, H-23, H-11, H-09, H-28, H-29, H-31, H-32, H-33, H-20, H-10. Fix that one first.
+- **NOT RUN:** an earlier step failed: the setup, or an earlier link of the chain H-08, H-16, H-23, H-09, H-28, H-29, H-31, H-32, H-33, H-20, H-10. Fix that one first.
 - **Build failure:** the output names the log path, inside the run folder's `logs/`.
 - **H-28, H-29, H-31, H-32 or H-33 failure:** their logs are `h28-*`, `h29-*`, `h31-*`, `h32-*` and `h33-*` in the run folder's `logs/`.
   - Each runs on its own folder with a space in its path and its own registry inside the run folder.
   - Each restores the test sandbox on the run folder at the end.
-- **H-31 says `script` may not give sbx-shell a terminal:** run `tests/host/manual/h31-jump-in.sh`, which checks the same shell by hand, and paste the FAIL line.
+- **H-31 says BSD `script` on this Mac did not give sbx-shell a terminal:** paste the FAIL line and the log it names.
 - **H-27 failure:** H-27 runs offline in its own folder under the run folder, and its logs are next to its `run.log` there.
 - **"Mounts denied" during setup:** Docker Desktop does not share `$TMPDIR`. Add it in Settings, Resources, File sharing.
 - **H-10 says Docker created the missing folder:** Compose ignored `create_host_path: false`. That is a real finding, not a script bug.
@@ -115,26 +79,18 @@ bash tests/host/manual/h31-jump-in.sh
   - See the env_file follow-up in [`README.md`, Troubleshooting](../README.md#troubleshooting-and-known-limits). It needs your approval.
 - **H-20 says the sandbox started, or a folder appeared:** the start folder in `compose.yml` or the project-folder check in `base/sbx-start-lib.sh` changed. Do not create the folder by hand.
 - **H-03 says an uppercase `SBX_NAME` was not refused:** `docker compose up` got past the `name-check` service in `compose.yml`. Paste the FAIL line; the refusal before anything is created needs another design, and README.md must not promise it until then.
-- **H-21 says a name was not refused:** the image's entrypoint has no name check. Rebuild the images and run again; if it still fails, the check in `base/sbx-start-lib.sh` changed.
-- **H-15 fails after a Claude Code pin change:** the format of `/context` may have changed. Compare with what `manual/h19-bundle-behaviour.sh` shows before suspecting the bundle.
-- **H-15 and a login:** H-15 runs Claude without a login, so `state/claude/.claude.json` exists before `h07-login.sh` runs. The login proof in `h07-login.sh` is `.credentials.json` and `claude auth status`.
-- **H-18 fails after a Claude Code pin change:** H-18 follows the wire format of the pinned Claude through the fake API in `tests/host/support/fake-claude-api.js`.
-  - After a pin bump that file may need updating, not the image.
-  - `manual/h19-bundle-behaviour.sh` still covers both behaviours by hand.
-  - To drop H-18, delete its script and its entry in `tests/host/run-all.sh`. No other check depends on it.
-- **After the managed settings landed:** run `manual/h13-doctor.sh` once to see that `claude doctor` still reports updates disabled.
 - **Rebuilding retags the images:** your running sandboxes keep their old image until their next `docker compose up`. That is safe: all their data is in their folder.
 
 ## Clean up
 
 Run the cleanup command that `run-all.sh` printed. It stops `sbx-hosttest` and deletes the run folder.
 
-- Do it when you are done, including any helper runs. After `h07-login.sh`, `h29-upgrade-resume.sh` or `h31-jump-in.sh` the folder holds a real Claude login.
+- Do it when you are done.
 - The images stay.
 
 ## Record your results
 
-Paste the `run-all.sh` summary and the lines of any helper you ran.
+Paste the `run-all.sh` summary.
 
 - `docker compose version` output:
 - Docker Desktop version:

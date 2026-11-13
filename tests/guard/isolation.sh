@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Guard rules on isolation: no socket, no privileges, data kept
+# Guard rules on isolation: no socket, no privileges, data kept, deny entries
 # ------------------------------------------------------------------------------
 # Usage: bash tests/guard/isolation.sh (exit 0 = every rule holds)
 # Mounts and effective privileges are checked on the running sandbox by H-26.
@@ -24,9 +24,9 @@ no_docker_socket_or_privileges() {
 # ------------------------------------------------------------------------------
 # host_scripts_keep_sandbox_data: only sbx-rm takes a sandbox down; data stays
 # ------------------------------------------------------------------------------
-# sbx-rm runs a plain compose down and deletes only its registry entry; volumes
-# stay, because removing them is how the old layout lost data. For a broken
-# entry it removes the one container sbx-NAME by name, with no option.
+# Every bin/ script other than sbx-rm is free of rm, rmdir, prune, kill, down and
+# --volumes, so no other script deletes data or takes a sandbox down. What sbx-rm
+# itself removes is proven on real Docker by host check H-33.
 # ------------------------------------------------------------------------------
 host_scripts_keep_sandbox_data() {
   local hostFile
@@ -44,14 +44,26 @@ host_scripts_keep_sandbox_data() {
   done
 
   # No bin/ file name holds a space, so the list is split on purpose.
-  nowhere_matches '\b(rm|rmdir|prune|kill|down)\b|--volumes' $otherFileList || return 1
+  nowhere_matches '\b(rm|rmdir|prune|kill|down)\b|--volumes' $otherFileList
+}
 
-  {
-    grep -nE '\b(rmdir|prune|kill)\b|--(volumes|rmi|remove-orphans)|[[:space:]]-v([^A-Za-z0-9-]|$)|\bdown[[:space:]]+-' bin/sbx-rm
-    grep -nE '(^|[^A-Za-z-])rm([[:space:]]|$)' bin/sbx-rm \
-      | grep -vE '^[0-9]+:  if ! rm -- "\$entryFile"; then$' \
-      | grep -vE '^[0-9]+:  if ! docker rm "sbx-\$1" >/dev/null </dev/null; then$'
-  } | report_lines 'bin/sbx-rm:'
+# ------------------------------------------------------------------------------
+# managed_settings_deny_skill_edits: the managed settings deny Edit on the synced skills
+# ------------------------------------------------------------------------------
+# Host check H-14 reads the same two entries in the image.
+# ------------------------------------------------------------------------------
+managed_settings_deny_skill_edits() {
+  local ok=0
+  local denyEntry
+
+  for denyEntry in 'Edit(//home/sandbox/workspace/state/claude/.best-practices-skills)' 'Edit(//home/sandbox/workspace/state/claude/skills/**)'; do
+    if ! grep -Fq "\"$denyEntry\"" claude/managed-settings.json; then
+      echo "    claude/managed-settings.json has no deny entry $denyEntry"
+      ok=1
+    fi
+  done
+
+  return "$ok"
 }
 
 # ------------------------------------------------------------------------------
@@ -61,4 +73,5 @@ require_no_arguments "$@" || exit 2
 enter_repo_root || exit 1
 run_rules \
   no_docker_socket_or_privileges \
-  host_scripts_keep_sandbox_data || exit 1
+  host_scripts_keep_sandbox_data \
+  managed_settings_deny_skill_edits || exit 1

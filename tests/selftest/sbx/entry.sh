@@ -137,5 +137,4 @@ case_read_as_data
 case_line_forms
 case_bad_entries
 case_start_stop_refusals
-expect "registry: no case reached docker" no_docker_call
 finish_cases

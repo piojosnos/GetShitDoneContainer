@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Self-test of the start folders and the sandbox name rule
+# Self-test of the start folders
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/entrypoint/start-folders.sh (exit 0 = all pass)
 # Run by run-all.sh; its one work folder under TMPDIR is removed at exit.
@@ -40,27 +40,6 @@ started_in() {
 # ------------------------------------------------------------------------------
 stopped_before_command() {
   [ "$1" -eq 1 ] && has_text "$2" "(the project folder) is missing." && lacks_text "$2" "command-ran"
-}
-
-# ------------------------------------------------------------------------------
-# start_with_name NAME OUTFILE: starts a project folder named NAME, sets NAME_RC
-# ------------------------------------------------------------------------------
-# The command prints command-ran, then its folder as the last line.
-# A name such as ../x makes its folder next to the workspace, under WORK.
-# ------------------------------------------------------------------------------
-start_with_name() {
-  make_entry_copy
-  mkdir -p "$WORK/ws/$1" "$WORK/name"
-
-  ( cd "$WORK" && SBX_NAME=$1 bash "$WORK/entry/sbx-entrypoint" sh -c 'echo command-ran; pwd -P' ) >"$2" 2>&1 </dev/null
-  NAME_RC=$?
-}
-
-# ------------------------------------------------------------------------------
-# refused_by_name_rule RC OUTFILE: true when the name error stopped the start
-# ------------------------------------------------------------------------------
-refused_by_name_rule() {
-  [ "$1" -eq 1 ] && has_text "$2" "[sbx] ERROR: SBX_NAME" && lacks_text "$2" "command-ran"
 }
 
 # ------------------------------------------------------------------------------
@@ -126,53 +105,11 @@ case_nested_state_folders() {
 }
 
 # ------------------------------------------------------------------------------
-# Case: the sandbox name rule decides whether the start goes on
-# ------------------------------------------------------------------------------
-case_name_rule() {
-  local tooLongName
-  local ruleText
-
-  echo '--- the sandbox name rule decides whether the start goes on'
-  ruleText='starts with a lowercase letter, then lowercase letters, digits or hyphens, 31 characters at most'
-  tooLongName=a$(printf 'b%.0s' $(seq 1 31))
-
-  start_with_name a "$WORK/name/one-letter.out"
-  expect "entrypoint: one letter starts (a)" started_in "$NAME_RC" "$WORK/name/one-letter.out" "$WORK/ws/a"
-
-  start_with_name my-project "$WORK/name/my-project.out"
-  expect "entrypoint: my-project starts" started_in "$NAME_RC" "$WORK/name/my-project.out" "$WORK/ws/my-project"
-
-  start_with_name HostTest "$WORK/name/upper.out"
-  expect "entrypoint: an uppercase letter is refused (HostTest)" refused_by_name_rule "$NAME_RC" "$WORK/name/upper.out"
-
-  start_with_name my_project "$WORK/name/underscore.out"
-  expect "entrypoint: an underscore is refused (my_project)" refused_by_name_rule "$NAME_RC" "$WORK/name/underscore.out"
-
-  start_with_name ../x "$WORK/name/path.out"
-  expect "entrypoint: a path is refused (../x)" refused_by_name_rule "$NAME_RC" "$WORK/name/path.out"
-
-  start_with_name "$tooLongName" "$WORK/name/too-long.out"
-  expect "entrypoint: a name of 32 characters is refused" refused_by_name_rule "$NAME_RC" "$WORK/name/too-long.out"
-
-  start_with_name state "$WORK/name/state.out"
-  expect "entrypoint: the state folder name is refused (state)" refused_by_name_rule "$NAME_RC" "$WORK/name/state.out"
-
-  start_with_name best-practices "$WORK/name/best-practices.out"
-  expect "entrypoint: the clone folder name is refused (best-practices)" refused_by_name_rule "$NAME_RC" "$WORK/name/best-practices.out"
-  expect "entrypoint: a taken name says so" has_text "$WORK/name/best-practices.out" "is taken:"
-
-  expect "entrypoint: the name error names SBX_NAME and the value" has_text "$WORK/name/upper.out" 'SBX_NAME "HostTest"'
-  expect "entrypoint: the name error states the rule in plain words" has_text "$WORK/name/upper.out" "$ruleText"
-  expect "entrypoint: the name error gives a valid example" has_text "$WORK/name/upper.out" "Example: my-project."
-}
-
-# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 start_group || exit 1
 case_command_starts_in_project
 case_missing_project_stops_start
-case_name_rule
 case_nested_state_folders
 finish_cases

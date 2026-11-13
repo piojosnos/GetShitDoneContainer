@@ -3,11 +3,12 @@
 # H-09: files survive a rebuild, no volume appears, one bind mount remains
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; stops and restarts it
-# The login and claude --continue part is manual/h09-rebuild-resume.sh.
+# A fake credentials file and a fake session file stand in for the Claude login.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
+. "$(dirname "$0")/lib-login.sh"
 
 sentinelText="h09-$$-$(date +%s)"
 memorySentinel=$RUN/state/claude/projects/-home-sandbox-workspace-hosttest/memory/h09-memory.md
@@ -25,10 +26,11 @@ list_test_volumes() {
 }
 
 # ------------------------------------------------------------------------------
-# Writes the four sentinel files and records the volume list
+# Writes the four sentinel files and the fake login files, records the volumes
 # ------------------------------------------------------------------------------
 # The memory sentinel under state/claude/projects proves a rebuild with restart
 # leaves learned memories alone; the one in the clone proves it keeps the clone.
+# The fake credentials and session files stand in for the Claude login.
 # ------------------------------------------------------------------------------
 plant_sentinels() {
   printf '%s\n' "$sentinelText" >"$RUN/hosttest/h09-sentinel.txt"
@@ -36,6 +38,7 @@ plant_sentinels() {
   printf '%s\n' "$sentinelText" >"$cloneSentinel"
   mkdir -p "$(dirname "$memorySentinel")"
   printf '%s\n' "$sentinelText" >"$memorySentinel"
+  plant_login_files "$RUN/state" "$sentinelText" h09
   volumesBefore=$(list_test_volumes)
   volumesBeforeStatus=$?
 }
@@ -65,7 +68,7 @@ rebuild_and_restart() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks the four sentinel files still hold their text
+# Checks the four sentinel files and the fake login files still hold their text
 # ------------------------------------------------------------------------------
 check_sentinels_survived() {
   local sentinelFile
@@ -75,6 +78,8 @@ check_sentinels_survived() {
       add_problem "$sentinelFile is missing or changed after the rebuild"
     fi
   done
+
+  check_login_files "$RUN/state" "$sentinelText" h09 "after the rebuild"
 }
 
 # ------------------------------------------------------------------------------
@@ -142,4 +147,4 @@ check_sentinels_survived
 check_volumes_unchanged
 check_one_bind_mount
 report_check H-09 "the rebuild lost something or the mounts are wrong" \
-  "files and a file in the best-practices clone survived the rebuild, the volume list is unchanged, one bind mount ${cacheFlag:+(built with $cacheFlag)}"
+  "files, a file in the best-practices clone and a fake credentials file and session file survived the rebuild, the volume list is unchanged, one bind mount ${cacheFlag:+(built with $cacheFlag)}"

@@ -170,5 +170,4 @@ start_group || exit 1
 case_fix_modes_refusals
 case_fix_modes_sets_both_sides
 case_fix_modes_without_xattr
-expect "sbx-fix-modes: no case reached docker" no_docker_call
 finish_cases

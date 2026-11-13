@@ -3,7 +3,7 @@
 # Mac test run: every Docker check in one go, all output kept in host-test.log
 # ------------------------------------------------------------------------------
 # Usage: ./host-test.sh [--keep]   (exit 0 = every step passed; sh works too)
-# --keep leaves the test sandbox up for the helpers in tests/host/manual/.
+# --keep leaves the test sandbox up to look around after a failure.
 # ------------------------------------------------------------------------------
 set -u
 
@@ -49,7 +49,7 @@ show_context() {
 }
 
 # ------------------------------------------------------------------------------
-# host_checks: H-00 to H-33; builds both images first
+# host_checks: H-01 to H-33; builds both images first
 # ------------------------------------------------------------------------------
 host_checks() {
   bash tests/host/run-all.sh
@@ -104,7 +104,7 @@ pin_digests() {
 }
 
 # ------------------------------------------------------------------------------
-# sandbox_suites: the guard and both self-tests inside sbx-hosttest
+# sandbox_suites: the guard and the entrypoint self-test inside sbx-hosttest
 # ------------------------------------------------------------------------------
 # They run on a clone of the commit under test, so uncommitted edits are left
 # out. Inside the sandbox both linters exist, so every guard rule must pass.
@@ -117,7 +117,7 @@ sandbox_suites() {
   rm -rf "$repoDir"
   git clone -q "$PWD" "$repoDir" && git -C "$repoDir" checkout -q "$(git rev-parse HEAD)" || return 1
 
-  for suite in tests/guard/run-all.sh tests/selftest/guard/run-all.sh tests/selftest/entrypoint/run-all.sh; do
+  for suite in tests/guard/run-all.sh tests/selftest/entrypoint/run-all.sh; do
     printf -- '-- %s\n' "$suite"
 
     if ! docker exec -w /home/sandbox/workspace/hosttest/repo sbx-hosttest bash "$suite"; then
@@ -199,9 +199,23 @@ remove_sandbox() {
 }
 
 # ------------------------------------------------------------------------------
+# require_compose_v2: stops the run before any step when Compose v2 is missing
+# ------------------------------------------------------------------------------
+# Compose 2.x and the later 5.x pass; 1.x and a missing docker fail.
+# ------------------------------------------------------------------------------
+require_compose_v2() {
+  if ! docker compose version --short </dev/null 2>&1 | grep -Eq '^v?([2-9]|[1-9][0-9])\.'; then
+    echo "Docker Compose v2 or newer is required; install Docker Desktop"
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
 # main: every step in order, then the summary
 # ------------------------------------------------------------------------------
 main() {
+  require_compose_v2 || exit 1
+
   run_step "context" show_context
   run_step "sbx self-test in the Mac shell" mac_sbx_selftest
   run_step "host checks" host_checks
@@ -210,7 +224,7 @@ main() {
   if [ -n "$RUN" ] && [ -d "$RUN" ]; then
     run_step "linter versions" linter_versions
     run_step "pin digests" pin_digests
-    run_step "guard and self-tests in sbx-hosttest" sandbox_suites
+    run_step "guard and entrypoint self-test in sbx-hosttest" sandbox_suites
     run_step "guard in the Mac shell" mac_guard
     run_step "build warnings" build_warnings
 

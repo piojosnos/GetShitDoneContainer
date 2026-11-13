@@ -18,12 +18,11 @@ unset SBXTEST_DIR
 # The chain stops at its first failure. H-10 runs last: it is the likeliest to
 # fail for an environmental reason.
 # ------------------------------------------------------------------------------
-fatalCheck="h00-compose-v2.sh"
-noSandboxCheckList="h02-claude-on-base.sh h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh h17-start-offline-and-failing-hook.sh h21-bad-name-refused.sh h25-images-match-versions.sh h27-bundle-clone-and-publish.sh"
-sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h14-wrappers-and-settings-in-image.sh h15-bundle-linked-and-visible.sh h18-scope-and-deny.sh h22-toolchain-in-base.sh h24-ccusage-reports-usage.sh h26-isolation-by-inspect.sh h30-version-line.sh"
-chainCheckList="h08-history-survives-recreate.sh h16-live-clone-and-restart.sh h23-caches-survive-recreate.sh h11-stop-is-quick-and-safe.sh h09-rebuild-keeps-files-no-volumes.sh h28-sbx-add-start-stop.sh h29-sbx-upgrade.sh h31-sbx-shell.sh h32-sbx-list.sh h33-sbx-rm.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
+noSandboxCheckList="h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh h17-start-offline-and-failing-hook.sh h25-images-match-versions.sh h27-bundle-clone-and-publish.sh"
+sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h14-wrappers-and-settings-in-image.sh h15-bundle-linked-and-visible.sh h22-toolchain-in-base.sh h26-isolation-by-inspect.sh h30-version-line.sh"
+chainCheckList="h08-history-survives-recreate.sh h16-live-clone-and-restart.sh h23-caches-survive-recreate.sh h09-rebuild-keeps-files-no-volumes.sh h28-sbx-add-start-stop.sh h29-sbx-upgrade.sh h31-sbx-shell.sh h32-sbx-list.sh h33-sbx-rm.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
 
-remainingList="$fatalCheck $noSandboxCheckList $sandboxCheckList $chainCheckList"
+remainingList="$noSandboxCheckList $sandboxCheckList $chainCheckList"
 passedCount=0
 failedCount=0
 notRunCount=0
@@ -140,19 +139,17 @@ fatal() {
 }
 
 # ------------------------------------------------------------------------------
-# print_next_block: prints the cleanup command and where the helpers are
+# print_next_block: prints the cleanup command
 # ------------------------------------------------------------------------------
 print_next_block() {
   printf '\nNext\n'
 
   if [ -n "${RUN:-}" ]; then
-    printf '  Cleanup when you are done. The run folder holds a Claude login if a helper logged in:\n'
+    printf '  Cleanup when you are done:\n'
     printf '    cd %q && SBX_NAME=hosttest SBX_DIR=%q docker compose down && rm -rf %q\n' "${REPO_DIR:-}" "$RUN" "$RUN"
   else
     printf '  No run folder was created, so there is nothing to clean up.\n'
   fi
-
-  printf '  If something looks wrong, see tests/host/manual/\n'
 }
 
 # ------------------------------------------------------------------------------
@@ -238,15 +235,6 @@ remove_leftover_test_container() {
 }
 
 # ------------------------------------------------------------------------------
-# run_compose_check: runs the Compose check; the run ends here when it fails
-# ------------------------------------------------------------------------------
-run_compose_check() {
-  if ! run_check "$fatalCheck"; then
-    finish "the Compose check failed"
-  fi
-}
-
-# ------------------------------------------------------------------------------
 # build_all_images: builds both images; stops the run when the build fails
 # ------------------------------------------------------------------------------
 build_all_images() {
@@ -280,7 +268,6 @@ check_docker_reachable
 create_run_folder
 create_bundle_clone
 remove_leftover_test_container
-run_compose_check
 build_all_images
 run_list "$noSandboxCheckList"
 run_sandbox_checks

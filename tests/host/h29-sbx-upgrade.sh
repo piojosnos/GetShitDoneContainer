@@ -4,11 +4,13 @@
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; takes it down and restores it
 # A bogus build option proves a failed build leaves the sandbox as it was.
+# A fake credentials file and a fake session file stand in for the Claude login.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 . "$(dirname "$0")/lib-sbx.sh"
+. "$(dirname "$0")/lib-login.sh"
 
 sentinelText="h29-$$-$(date +%s)"
 sbxDir=""
@@ -94,13 +96,15 @@ check_failed_build() {
 }
 
 # ------------------------------------------------------------------------------
-# Writes a sentinel in three folders and records the volumes and other sandboxes
+# Writes sentinels in three folders and the fake login files, then records the
+# volumes and other sandboxes
 # ------------------------------------------------------------------------------
 plant_and_snapshot() {
   mkdir -p "$sbxDir/state/claude"
   printf '%s\n' "$sentinelText" >"$sbxDir/hosttest/h29-sentinel.txt"
   printf '%s\n' "$sentinelText" >"$sbxDir/state/h29-sentinel.txt"
   printf '%s\n' "$sentinelText" >"$sbxDir/state/claude/h29-sentinel.txt"
+  plant_login_files "$sbxDir/state" "$sentinelText" h29
   volumesBefore=$(list_project_volumes)
   othersBefore=$(list_other_containers)
 }
@@ -178,6 +182,8 @@ check_upgrade() {
     fi
   done
 
+  check_login_files "$sbxDir/state" "$sentinelText" h29 "after sbx-upgrade"
+
   volumesAfter=$(list_project_volumes)
 
   if [ "$volumesBefore" != "$volumesAfter" ]; then
@@ -245,4 +251,4 @@ check_upgrade
 check_upgrade_of_stopped
 restore_test_sandbox h29
 report_check H-29 "sbx-upgrade did not rebuild and recreate the sandbox safely" \
-  "a failed build left the sandbox as it was; sbx-upgrade rebuilt, recreated only sbx-hosttest, kept its files and one bind mount, ended with the versions line, and started a stopped sandbox"
+  "a failed build left the sandbox as it was; sbx-upgrade rebuilt, recreated only sbx-hosttest, kept its files and the fake credentials and session files and one bind mount, ended with the versions line, and started a stopped sandbox"
