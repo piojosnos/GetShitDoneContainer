@@ -11,9 +11,9 @@ Milestone v2.0 Simple tooling. Decisions behind them: `.planning/research/v2-sim
 
 - [x] **DIET-01**: No test needs a person at the keyboard: `tests/host/manual/` and every interactive helper are gone.
 - [x] **DIET-02**: No test drives Claude or checks Claude, GSD, Docker or Maven Central behaviour: H-18, `fake-claude-api.js`, H-21, H-24, H-02 and those parts of H-13, H-15, H-16 and H-23 are gone; H-00 becomes one preflight line in `host-test.sh`; H-11 merges into H-28.
-- [ ] **DIET-03**: Proxies replace the manual helpers: a planted fake credentials file and a fake session file survive recreate and `sbx-upgrade`; `DISABLE_UPDATES` is set; managed settings are present; bundle links resolve.
-- [ ] **DIET-04**: Guard rules assert the managed deny entries and the one-FROM rule; the guard self-test, the `sbx-rm` source-line rule and the three start rules H-20 covers are gone.
-- [ ] **DIET-05**: No stand-in `docker` is left: the scripted fake docker, the 7-line fence and the self-test cases that need Docker to answer are gone, and the refusal cases run with `DOCKER_HOST` pointing nowhere; `start-library.sh` and the name-rule cases of the entrypoint self-test are gone.
+- [x] **DIET-03**: Proxies replace the manual helpers: a planted fake credentials file and a fake session file survive recreate and `sbx-upgrade`; `DISABLE_UPDATES` is set; managed settings are present; bundle links resolve.
+- [x] **DIET-04**: Guard rules assert the managed deny entries and the one-FROM rule; the guard self-test, the `sbx-rm` source-line rule and the three start rules H-20 covers are gone.
+- [x] **DIET-05**: No stand-in `docker` is left: the scripted fake docker, the 7-line fence and the self-test cases that need Docker to answer are gone, and the refusal cases run with `DOCKER_HOST` pointing nowhere; `start-library.sh` and the name-rule cases of the entrypoint self-test are gone.
 
 ### Test images
 
@@ -75,9 +75,9 @@ Tracked, not in this roadmap.
 |-------------|-------|--------|
 | DIET-01 | Phase 6 | Complete |
 | DIET-02 | Phase 6 | Complete |
-| DIET-03 | Phase 6 | Pending |
-| DIET-04 | Phase 6 | Pending |
-| DIET-05 | Phase 6 | Pending |
+| DIET-03 | Phase 6 | Complete |
+| DIET-04 | Phase 6 | Complete |
+| DIET-05 | Phase 6 | Complete |
 | IMG-01 | Phase 7 | Pending |
 | IMG-02 | Phase 7 | Pending |
 | CHECK-01 | Phase 8 | Pending |
