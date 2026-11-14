@@ -13,7 +13,9 @@
 # ------------------------------------------------------------------------------
 # No case can reach a Docker daemon. DOCKER_CONTEXT is unset because the Docker
 # CLI lets it override DOCKER_HOST. SBX_CONFIG_DIR keeps the user's registry
-# out.
+# out. ./host-test.sh exports the test tag, and the cases expect the default
+# tag and no extra certificate, so both are unset; a case that needs a value
+# sets it itself.
 # ------------------------------------------------------------------------------
 start_group() {
   enter_repo_root || return 1
@@ -24,7 +26,7 @@ start_group() {
 
   SBX_CONFIG_DIR=$WORK/cfg
   export SBX_CONFIG_DIR
-  unset SBX_DIR SBX_NAME DOCKER_CONTEXT
+  unset SBX_DIR SBX_NAME DOCKER_CONTEXT SBX_IMAGE_TAG SBX_CA_CERT
 
   DOCKER_HOST=unix:///nonexistent
   export DOCKER_HOST
