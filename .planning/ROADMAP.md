@@ -133,10 +133,10 @@ Plans:
 **Depends on**: Phase 7
 **Requirements**: CHECK-01, CHECK-02, CHECK-03, CHECK-04
 **Success Criteria** (what must be TRUE):
-  1. `sbx-selfcheck` prints one PASS, FAIL or SKIP line per named check; in a plain container of the image with no sandbox mounts, the checks that need a live sandbox print SKIP, not FAIL.
-  2. In `./host-test.sh` on the Mac, one host check runs `sbx-selfcheck` with `docker exec` and fails on any FAIL line or on a check count other than the expected one; the probes it absorbs (H-01, H-04, H-05 owners, H-06, H-12 pin part, H-13 env, H-14, H-15 links, H-22, H-25 record, H-30) are deleted.
+  1. `sbx-selfcheck` prints one PASS or FAIL line per named check: the base image ships the runner and the shared checks, and each agent image adds its own checks file to a fixed folder the runner reads; there is no SKIP.
+  2. In `./host-test.sh` on the Mac, one host check runs `sbx-selfcheck` with `docker exec` in a Claude and in a Cursor test sandbox and fails on any FAIL line or on a check count other than that agent's expected one; H-01, H-04, H-05, H-13, H-14, H-15, H-22 and H-30 are deleted, and H-06, H-12 and H-25 keep only the parts that need the Mac.
   3. `./host-test.sh` makes a throwaway root certificate with `openssl`, builds it into the test base image, and the self-check finds it in the system bundle and in Java `cacerts`; no certificate is committed.
-  4. Each FAIL line carries a fix hint, with the Mac command when the fix is on the Mac, and a skill shipped in the image runs the self-check and explains the results in plain words.
+  4. Each FAIL line carries a fix hint, with the Mac command when the fix is on the Mac; no skill wraps the self-check.
 
 **Plans**: TBD
 

@@ -22,10 +22,10 @@ Milestone v2.0 Simple tooling. Decisions behind them: `.planning/research/v2-sim
 
 ### Self-check
 
-- [ ] **CHECK-01**: `sbx-selfcheck` (Python, in the image) prints one PASS, FAIL or SKIP line per named check; a check that needs a live sandbox prints SKIP outside one.
-- [ ] **CHECK-02**: One host check runs `sbx-selfcheck` with `docker exec` and asserts no FAIL and the expected check count; the host probes it absorbs (H-01, H-04, H-05 owners, H-06, H-12 pin part, H-13 env, H-14, H-15 links, H-22, H-25 record, H-30) are deleted.
+- [ ] **CHECK-01**: `sbx-selfcheck` (Python, in the image) prints one PASS or FAIL line per named check; the base image holds the runner and the shared checks, each agent image adds its own checks.
+- [ ] **CHECK-02**: One host check runs `sbx-selfcheck` with `docker exec` in a Claude and a Cursor test sandbox and asserts no FAIL and each agent's expected check count; the in-container parts of H-01, H-04, H-05, H-06, H-12, H-13, H-14, H-15, H-22, H-25 and H-30 are deleted.
 - [ ] **CHECK-03**: The root certificate is checked automatically: a throwaway `openssl` certificate is built into the test base image and the self-check finds it in the system bundle and Java `cacerts`.
-- [ ] **CHECK-04**: The self-check doubles as the doctor: each FAIL prints a fix hint (with the Mac command where one is needed), and a thin skill shipped in the image runs it and explains the results.
+- [ ] **CHECK-04**: The self-check doubles as the doctor: each FAIL prints a fix hint (with the Mac command where one is needed); no skill wraps it.
 
 ### sbx-init
 

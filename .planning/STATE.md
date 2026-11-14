@@ -5,17 +5,17 @@ milestone_name: Simple tooling
 current_phase: 8
 current_phase_name: In-image self-check
 status: planning
-stopped_at: Phase 07 complete, ready to plan Phase 8
-last_updated: "2026-11-14T07:03:04.521Z"
+stopped_at: Phase 8 context gathered
+last_updated: "2026-11-14T07:36:04.352Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 07 complete, transitioned to Phase 8
-state_head: c2baa5a06ca8646127fe307387940221a5cd6c46
+state_head: 6a1749ac8c6f014c8a673d5143c6070c19c2cc86
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 14
   completed_plans: 14
-  percent: 33
+  percent: 29
 ---
 
 # Project State
@@ -401,9 +401,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T05:07:31.445Z
-Stopped at: Phase 07 complete, ready to plan Phase 8
-Resume file: None
+Last session: 2026-11-14T07:36:04.291Z
+Stopped at: Phase 8 context gathered
+Resume file: .planning/phases/08-in-image-self-check/08-CONTEXT.md
 
 ## Operator Next Steps
 
