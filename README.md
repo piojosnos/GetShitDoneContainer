@@ -351,7 +351,7 @@ PASS: user-sandbox: uid 1000, gid 1000, name sandbox
 FAIL: git-identity: user.email is not set
       fix: run sbx-gh-login in this sandbox; it asks for the name and email
 ...
-sbx-selfcheck: 51 checks, 1 failed
+sbx-selfcheck: 53 checks, 1 failed
 ```
 
 - Each FAIL line has a `fix:` line under it. When the fix is on the Mac, it says so and gives the command, such as `sbx-upgrade NAME`.
