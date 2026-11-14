@@ -1,21 +1,53 @@
 ---
-phase: 08-in-image-self-check
+phase: 08
 review: 08-REVIEW.md
+titles: json
+findings:
+  - id: WR-01
+    severity: warning
+    disposition: open
+    title: "scan_owned_state still raises on a folder that lists but cannot be searched"
+  - id: WR-02
+    severity: warning
+    disposition: open
+    title: "a malformed CHECK_LIST still crashes the whole runner"
+  - id: IN-01
+    severity: info
+    disposition: open
+    title: "the owner fix hint is also printed for unreadable folders it cannot fix"
+  - id: IN-02
+    severity: info
+    disposition: open
+    title: "the hint hardcodes the image tag and the container name pattern"
+  - id: IN-03
+    severity: info
+    disposition: open
+    title: "an unreadable settings file is reported as \"not valid JSON\""
+  - id: IN-04
+    severity: info
+    disposition: open
+    title: "the H-34 \"after\" run asserts only that one check stopped failing"
+  - id: IN-05
+    severity: info
+    disposition: open
+    title: "root_run leaves an unnamed container behind when it times out"
+open: 7
+total: 7
+recorded: 2026-11-14T22:18:38.004Z
 ---
 
-# Phase 08 code review disposition
+# Phase 08: Code Review Disposition
 
-| Finding | Severity | Title | Disposition | Reason |
-|---|---|---|---|---|
-| WR-01 | warning | The `no-root-owned-state` fix line tells the sandbox user to run a `chown` that cannot succeed | fixed | 9f17723, 591dd80, 78f9fb0: the fix line gives the Mac command (a throwaway root container through `--volumes-from`), plan 08-08; H-34 runs it on real Docker, plan 08-09 |
-| WR-02 | warning | `scan_owned_state` raises on an unreadable folder, so the check reports a crash instead of the root-owned path | fixed | 124297b, 1f4c2e4: unreadable folders are named with `(unreadable)` and vanished folders are skipped, plan 08-08 |
-| WR-03 | warning | A missing or empty agent checks folder gives a green result with no agent checks | fixed | 5e304b3, feff7d5: a runner level `load-agent-checks` FAIL when the agent folder yields no check, counts unchanged, plan 08-08 |
-| WR-04 | warning | `bash` and `keytool` are executed through PATH without the "not under /home" guard | fixed | 0ca3e69, 6fe06ee: `tool-bash` and `tool-keytool` lines, counts 41, 53 and 51, plan 08-09 |
-| IN-01 | info | `owned_by_uid_paths` is dead code in the image | fixed | 124297b: the test-only wrapper is gone, plan 08-08 |
-| IN-02 | info | Blank lines missing before control flow | fixed | feff7d5, 5e304b3, 6fe06ee, 183206d: the four blank lines, plans 08-08, 08-09 and 08-10 |
-| IN-03 | info | Comprehensions and generator expressions in the tests | fixed | 183206d: loops and the `check_name_list_of` fixture, plan 08-10 |
-| IN-04 | info | Dict-typed locals without a `Map` suffix, and an inconsistent exception name | fixed | 0aee85e: shape suffixes and `e`, plan 08-10 |
-| IN-05 | info | Public functions without type hints | fixed | 0aee85e: `ModuleType` and `object` hints, plan 08-10 |
-| IN-06 | info | `managed_settings_result` reports a missing or unreadable file as "does not parse as JSON" | fixed | ca96830, dc579a7: `is missing` and `is not valid JSON`, as in the Cursor check, plan 08-10 |
-| IN-07 | info | A test name and a constant hard-code the check counts | fixed | 6fe06ee: the counts test no longer names the numbers, plan 08-09 |
-| IN-08 | info | Host scripts: leftover state and a predictable shared folder | deferred | The bash host checks are rewritten in Python in Phase 10 (HOST-01, HOST-05), where per-check clean state and the certificate folder are best handled; (b) is harmless on macOS, where `TMPDIR` is per user; tracked in the 2026-11-14 todo `h34-host-check-hygiene` |
+| Finding | Severity | Disposition | Source |
+|---------|----------|-------------|--------|
+| WR-01 | warning | open | - |
+| WR-02 | warning | open | - |
+| IN-01 | info | open | - |
+| IN-02 | info | open | - |
+| IN-03 | info | open | - |
+| IN-04 | info | open | - |
+| IN-05 | info | open | - |
+
+Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
+Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
+Re-running the gate keeps every row it can. A row the current review no longer reports is kept and its Source cell flagged, so a finding does not leave this record silently. ONE exception: when a finding id is REUSED by a different finding, the earlier decision cannot keep a row — the id is taken — and it is dropped. A RECORDED decision (anything but `open`) is named on the console when that happens; a row still at `open` is replaced silently, because `open` records no decision to lose.
