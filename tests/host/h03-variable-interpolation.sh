@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# H-03: variables reach compose.yml; a bad or missing name is refused
+# H-03: variables and the image tag reach compose.yml; bad names are refused
 # ------------------------------------------------------------------------------
 # Needs: nothing
 # The probes use folders that do not exist, so nothing can start by mistake.
@@ -44,6 +44,15 @@ check_project_name() {
 }
 
 # ------------------------------------------------------------------------------
+# Checks Compose renders the Claude test image
+# ------------------------------------------------------------------------------
+check_image_follows_the_tag() {
+  if ! printf '%s\n' "$nameOutput" | grep -Fq "image: $CLAUDE_IMAGE"; then
+    add_problem "expected the line 'image: $CLAUDE_IMAGE' in the config; got: $(first_lines "$nameOutput")"
+  fi
+}
+
+# ------------------------------------------------------------------------------
 # Checks a missing SBX_DIR is refused by name
 # ------------------------------------------------------------------------------
 check_missing_dir_refused() {
@@ -77,8 +86,9 @@ require_no_arguments "$@" || exit 2
 read_configs
 read_name_probes
 check_project_name
+check_image_follows_the_tag
 check_missing_dir_refused
 check_missing_name_refused
 check_uppercase_refused
 report_check H-03 "variable interpolation is wrong" \
-  "the project name is sbx-hosttest; a missing SBX_NAME or SBX_DIR is refused by name; up refuses an uppercase SBX_NAME before it creates anything"
+  "the project name is sbx-hosttest; Compose renders $CLAUDE_IMAGE; a missing SBX_NAME or SBX_DIR is refused by name; up refuses an uppercase SBX_NAME before it creates anything"

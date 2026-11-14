@@ -238,7 +238,7 @@ remove_leftover_test_container() {
 # build_all_images: builds every image; stops the run when the build fails
 # ------------------------------------------------------------------------------
 build_all_images() {
-  info "building the images (logs in $RUN/logs)"
+  info "building the $SBX_IMAGE_TAG images (logs in $RUN/logs)"
 
   if ! build_images build; then
     fatal "the image build failed"

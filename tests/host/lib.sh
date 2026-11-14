@@ -11,9 +11,11 @@
 . "$(dirname "${BASH_SOURCE[0]}")/lib-docker.sh"
 
 # ------------------------------------------------------------------------------
-# host_init: sets REPO_DIR, HOST_DIR, SBX_NAME, PROJECT_DIR, CONTAINER, RUN
+# host_init: sets REPO_DIR, HOST_DIR, SBX_NAME, SBX_IMAGE_TAG, image names, RUN
 # ------------------------------------------------------------------------------
 # SBX_DIR and COMPOSE_* are unset, so a caller's values never reach the test.
+# SBX_IMAGE_TAG is always test, so build.sh, Compose and the sbx-* scripts the
+# checks run use the test images, never the ones your sandboxes run.
 # ------------------------------------------------------------------------------
 host_init() {
   local libDir
@@ -25,6 +27,10 @@ host_init() {
   unset COMPOSE_PROJECT_NAME COMPOSE_FILE COMPOSE_PROFILES COMPOSE_PATH_SEPARATOR COMPOSE_ENV_FILES COMPOSE_IGNORE_ORPHANS COMPOSE_REMOVE_ORPHANS SBX_DIR
   SBX_NAME=hosttest
   export SBX_NAME
+  SBX_IMAGE_TAG="test"
+  export SBX_IMAGE_TAG
+  BASE_IMAGE=sbx-base:$SBX_IMAGE_TAG
+  CLAUDE_IMAGE=sbx-claude:$SBX_IMAGE_TAG
   PROJECT_DIR=/home/sandbox/workspace/$SBX_NAME
   CONTAINER=sbx-hosttest
 
