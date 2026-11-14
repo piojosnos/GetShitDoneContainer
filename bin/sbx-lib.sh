@@ -57,7 +57,9 @@ load_name_rule() {
 # check_image_tag: sets imageTag from SBX_IMAGE_TAG; only local and test pass
 # ------------------------------------------------------------------------------
 # Unset or empty means local, as in compose.yml and build.sh. Any other value is
-# refused, so a typo cannot make a third set of images.
+# refused, so a typo cannot make a third set of images. An accepted tag other
+# than local is named on stderr, so a value left in the shell never moves a real
+# sandbox onto other images unseen.
 # ------------------------------------------------------------------------------
 check_image_tag() {
   local knownTag
@@ -66,6 +68,10 @@ check_image_tag() {
 
   for knownTag in $knownImageTagList; do
     if [ "$imageTag" = "$knownTag" ]; then
+      if [ "$imageTag" != "local" ]; then
+        echo "$scriptName: using the $imageTag images because SBX_IMAGE_TAG=$imageTag; unset it to use the local images your sandboxes run" >&2
+      fi
+
       return 0
     fi
   done
