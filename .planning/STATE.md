@@ -3,18 +3,18 @@ gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
 current_phase: 07
-current_phase_name: separate-test-images
+current_phase_name: Separate test images
 status: executing
-stopped_at: Phase 7 context gathered
-last_updated: "2026-11-14T04:33:59.917Z"
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-11-14T04:50:09.245Z"
 last_activity: 2026-11-14
-last_activity_desc: Phase 06.1 complete, transitioned to Phase 7
-state_head: 7cf8a6d796c768e330ce9350ad4bbe74c81c783b
+last_activity_desc: Phase 07 execution started
+state_head: e15e73ad3587fe93e638b7922c7fececd0a41be6
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 14
-  completed_plans: 11
+  completed_plans: 12
   percent: 14
 ---
 
@@ -25,14 +25,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 06.1 — Cursor agent image (INSERTED)
+**Current focus:** Phase 07 — Separate test images
 
 ## Current Position
 
-Phase: 07 (separate-test-images) — READY TO EXECUTE
-Plan: Not started
+Phase: 07 (Separate test images) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-11-14 — Phase 06.1 complete, transitioned to Phase 7
+Last activity: 2026-11-14 — Phase 07 execution started
 
 ## Performance Metrics
 
@@ -167,6 +167,7 @@ Last activity: 2026-11-14 — Phase 06.1 complete, transitioned to Phase 7
 | Phase 06.1 P03 | 6 min | 3 tasks | 13 files |
 | Phase 06.1 P04 | 8 min | 3 tasks | 12 files |
 | Phase 06.1 P05 | 5 min | 2 tasks | 0 files |
+| Phase 07 P01 | 25 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -322,6 +323,9 @@ Recent decisions affecting current work:
 - [Phase 06.1]: Changing a sandbox's agent: sbx-rm NAME --unregister then sbx-add, since sbx-add refuses a registered name
 - [Phase 06.1]: ZSCALER.md documents no headless Cursor prompt flags; the form was never run
 - [Phase 06.1]: Plan 06.1-05 changed no file: the dev sandbox gate and the Mac gate (host-test and a logged Cursor sandbox) passed as written
+- [Phase 07]: The tag check lives twice (bin/sbx-lib.sh and build.sh) rather than build.sh sourcing the library; build.sh stays standalone and one self-test text covers both
+- [Phase 07]: BASE_IMAGE is passed by build.sh as a build option; versions.env and both agent Dockerfiles stay unchanged
+- [Phase 07]: start_group unsets SBX_IMAGE_TAG and SBX_CA_CERT so ./host-test.sh can export both without moving the default-case expectations
 
 ### Pending Todos
 
@@ -390,9 +394,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T03:40:57.567Z
-Stopped at: Phase 7 context gathered
-Resume file: .planning/phases/07-separate-test-images/07-CONTEXT.md
+Last session: 2026-11-14T04:50:09.195Z
+Stopped at: Completed 07-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
