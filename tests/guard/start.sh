@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Guard rules on the container start: ordered hooks, GSD first, in every agent image
+# Guard rules on the container start: ordered hooks, GSD first, the agent image
 # ------------------------------------------------------------------------------
 # Usage: bash tests/guard/start.sh (exit 0 = every rule holds)
 # ------------------------------------------------------------------------------
@@ -64,10 +64,33 @@ gsd_sync_runs_before_the_bundle() {
 }
 
 # ------------------------------------------------------------------------------
+# compose_image_follows_the_agent: the registered agent picks the image
+# ------------------------------------------------------------------------------
+# compose.yml falls back to the Claude image when SBX_AGENT is unset, so a lost
+# or renamed side would start every Cursor sandbox on the Claude image.
+# ------------------------------------------------------------------------------
+compose_image_follows_the_agent() {
+  local ok=0
+
+  if ! grep -Fq 'image: "sbx-${SBX_AGENT:-claude}:local"' $COMPOSE; then
+    echo "    $COMPOSE does not take its image from \"sbx-\${SBX_AGENT:-claude}:local\""
+    ok=1
+  fi
+
+  if ! grep -Fq 'SBX_AGENT="$entryAgent" docker compose' bin/sbx-lib.sh; then
+    echo "    bin/sbx-lib.sh does not pass SBX_AGENT=\"\$entryAgent\" to docker compose"
+    ok=1
+  fi
+
+  return "$ok"
+}
+
+# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 enter_repo_root || exit 1
 run_rules \
   start_hooks_have_two_digit_names \
-  gsd_sync_runs_before_the_bundle || exit 1
+  gsd_sync_runs_before_the_bundle \
+  compose_image_follows_the_agent || exit 1

@@ -20,9 +20,9 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 | | |
 |---|---|
-| Runs | 17 rules that read the files only: pins and supply chain, the one-FROM agent images (Claude and Cursor), the start hooks of both agents, the managed deny entries, isolation greps, host scripts other than `sbx-rm` that never delete data, shellcheck and hadolint |
+| Runs | 18 rules that read the files only: pins and supply chain, the one-FROM agent images (Claude and Cursor), the start hooks of both agents, the compose image line and `SBX_AGENT` wiring, the managed deny entries, isolation greps, host scripts other than `sbx-rm` that never delete data, shellcheck and hadolint |
 | Where | New-layout sandbox: every rule passes, because sbx-base holds both linters. Old dev sandbox or a Mac shell by hand without the linters: the two linter rules FAIL as "not installed" and every other rule must PASS. `./host-test.sh` gives the Mac shell stand-ins that run both linters from `sbx-base`, so there every rule passes |
-| Catches | An unpinned or floating version, a pipe-to-shell install, the compromised GSD package, a mounted Docker socket or privileged mode, a second FROM in an agent image, a lost skill deny entry in the managed settings, a host script other than `sbx-rm` that deletes a file or takes a sandbox down, a badly named start hook, a shell or Dockerfile lint error |
+| Catches | An unpinned or floating version, a pipe-to-shell install, the compromised GSD package, a mounted Docker socket or privileged mode, a second FROM in an agent image, a lost skill deny entry in the managed settings, a host script other than `sbx-rm` that deletes a file or takes a sandbox down, a badly named start hook, a compose image line or `SBX_AGENT` hand-off that no longer follows the agent, a shell or Dockerfile lint error |
 | Does not catch | Whether an image builds or behaves (`tests/host/` does), or what `sbx-rm` removes (H-33 covers it) |
 
 ## tests/selftest/entrypoint/
