@@ -35,17 +35,6 @@ build_images() {
 }
 
 # ------------------------------------------------------------------------------
-# expected_arch: the image architecture the daemon should build (or unknown)
-# ------------------------------------------------------------------------------
-expected_arch() {
-  case "$(docker info --format '{{.Architecture}}' </dev/null)" in
-    aarch64) printf 'arm64\n' ;;
-    x86_64) printf 'amd64\n' ;;
-    *) printf 'unknown\n' ;;
-  esac
-}
-
-# ------------------------------------------------------------------------------
 # pin_of NAME: the value of NAME in versions.env; empty when NAME is absent
 # ------------------------------------------------------------------------------
 pin_of() {
