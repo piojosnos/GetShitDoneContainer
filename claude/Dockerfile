@@ -58,6 +58,15 @@ RUN chmod 755 /etc/sbx/start.d/* \
     && node -e 'JSON.parse(require("fs").readFileSync("/etc/claude-code/managed-settings.json", "utf8"))'
 
 # ------------------------------------------------------------------------------
+# The Claude checks for sbx-selfcheck
+# ------------------------------------------------------------------------------
+# The runner in the base image runs every file in /etc/sbx/selfcheck.d.
+# ------------------------------------------------------------------------------
+COPY --chmod=644 claude/selfcheck/claude.py /etc/sbx/selfcheck.d/claude.py
+RUN PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /etc/sbx/selfcheck.d/claude.py \
+    && rm -rf /tmp/sbx-pycache
+
+# ------------------------------------------------------------------------------
 # The tool versions line: the Claude fields go in front of the base fields
 # ------------------------------------------------------------------------------
 # From the same pins the smoke test below checks, so the line cannot disagree.
@@ -81,6 +90,6 @@ RUN test "$(claude --version)" = "${CLAUDE_CODE_VERSION} (Claude Code)" \
 # ------------------------------------------------------------------------------
 # Pin record: a copy of versions.env
 # ------------------------------------------------------------------------------
-# Last, so a pin bump changes only this layer. Nothing reads it at runtime.
+# Last, so a pin bump changes only this layer. sbx-selfcheck reads the pins.
 # ------------------------------------------------------------------------------
 COPY --chmod=644 versions.env /etc/sbx/versions.env

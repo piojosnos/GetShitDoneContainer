@@ -49,6 +49,15 @@ COPY --chmod=755 cursor/bin/ /usr/local/bin/
 RUN chmod 755 /etc/sbx/start.d/*
 
 # ------------------------------------------------------------------------------
+# The Cursor checks for sbx-selfcheck
+# ------------------------------------------------------------------------------
+# The runner in the base image runs every file in /etc/sbx/selfcheck.d.
+# ------------------------------------------------------------------------------
+COPY --chmod=644 cursor/selfcheck/cursor.py /etc/sbx/selfcheck.d/cursor.py
+RUN PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /etc/sbx/selfcheck.d/cursor.py \
+    && rm -rf /tmp/sbx-pycache
+
+# ------------------------------------------------------------------------------
 # The tool versions line: the Cursor field goes in front of the base fields
 # ------------------------------------------------------------------------------
 # From the same pin the smoke test below checks, so the line cannot disagree.
@@ -87,6 +96,6 @@ RUN smokeHome="$(mktemp -d)" \
 # ------------------------------------------------------------------------------
 # Pin record: a copy of versions.env
 # ------------------------------------------------------------------------------
-# Last, so a pin bump changes only this layer. Nothing reads it at runtime.
+# Last, so a pin bump changes only this layer. sbx-selfcheck reads the pins.
 # ------------------------------------------------------------------------------
 COPY --chmod=644 versions.env /etc/sbx/versions.env
