@@ -31,6 +31,7 @@ HOME_ROOT = "/home"
 ELF_HEADER_LENGTH = 20
 ELF_MAGIC = b"\x7fELF"
 ELF_MACHINE_OFFSET = 18
+TOOL_VERSIONS_FILE = Path("/etc/sbx/tool-versions")
 
 
 @dataclass(frozen=True)
@@ -352,6 +353,64 @@ def tool_result(
         return failed(problem, rebuild_hint())
 
     return passed(f"{real_path}, {line}")
+
+
+def expected_base_versions_text(versions_file: Path = VERSIONS_FILE, python_version: str | None = None) -> str:
+    if python_version is None:
+        python_version = platform.python_version()
+
+    gsd_version = pin_value("GSD_CORE_VERSION", versions_file)
+    node_version = pin_value("NODE_VERSION", versions_file)
+    temurin_image = pin_value("TEMURIN_IMAGE", versions_file)
+    maven_version = pin_value("MAVEN_VERSION", versions_file)
+
+    for name, value in [
+        ("GSD_CORE_VERSION", gsd_version),
+        ("NODE_VERSION", node_version),
+        ("TEMURIN_IMAGE", temurin_image),
+        ("MAVEN_VERSION", maven_version),
+    ]:
+        if not value:
+            raise KeyError(name)
+
+    return (
+        f"gsd {gsd_version} | node {node_version} | jdk {jdk_version(temurin_image)}"
+        f" | mvn {maven_version} | python {python_version}"
+    )
+
+
+def versions_line_result(
+    prefix_text: str,
+    versions_line_file: Path = TOOL_VERSIONS_FILE,
+    versions_file: Path = VERSIONS_FILE,
+) -> CheckResult:
+    try:
+        expected_line = prefix_text + expected_base_versions_text(versions_file)
+    except KeyError as e:
+        return missing_pin_result(e.args[0])
+
+    if not versions_line_file.is_file():
+        return failed(f"{versions_line_file} is missing", rebuild_hint())
+
+    actual_text = versions_line_file.read_text()
+
+    if actual_text != expected_line + "\n":
+        return failed(
+            f"{versions_line_file} holds '{one_line(actual_text.rstrip())}'; expected '{expected_line}'",
+            rebuild_hint(),
+        )
+
+    return passed(f"the line is {expected_line}")
+
+
+def history_free_environment(environment: Mapping[str, str] | None = None) -> dict[str, str]:
+    if environment is None:
+        environment = os.environ
+
+    history_free = dict(environment)
+    history_free["HISTFILE"] = "/dev/null"
+
+    return history_free
 
 
 def load_check_module(module_path: Path):

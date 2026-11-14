@@ -1,9 +1,11 @@
 # The checks every sandbox image shares. The image puts this file in
 # /usr/local/lib/sbx-selfcheck/ and the launcher runs CHECK_LIST first.
 
+import hashlib
 import os
 import platform
 import pwd
+import ssl
 import tempfile
 from pathlib import Path
 from typing import Mapping
@@ -13,17 +15,22 @@ from sbx_selfcheck import (
     ELF_MACHINE_BY_UNAME_MAP,
     MOUNTINFO_FILE,
     STATE_DIR,
+    TOOL_VERSIONS_FILE,
     VERSIONS_FILE,
     WORKSPACE_DIR,
     Check,
     CheckResult,
     environment_values_result,
+    expected_base_versions_text,
     failed,
+    first_output_line,
+    history_free_environment,
     image_tag,
     jdk_version,
     mac_hint,
     missing_pin_result,
     passed,
+    parse_versions_text,
     pin_value,
     protected_paths_result,
     read_mount_point_set,
@@ -68,6 +75,25 @@ BASE_WRAPPER_MODE_LIST = [
     ("/usr/local/lib/sbx-selfcheck", 0o755),
 ]
 UTC_ZONE_FILE = Path("/usr/share/zoneinfo/UTC")
+SHARED_PIN_NAME_LIST = [
+    "GH_VERSION",
+    "NODE_VERSION",
+    "MAVEN_VERSION",
+    "GSD_CORE_VERSION",
+    "TEMURIN_IMAGE",
+    "UV_IMAGE",
+    "BUNDLE_REPO_URL",
+]
+QUIET_SHELL_FLAG_LIST = ["-c", "-lc"]
+FIRST_LINES_LIMIT = 3
+EXTRA_CA_DIR = Path("/usr/local/share/ca-certificates")
+SYSTEM_BUNDLE_FILE = Path("/etc/ssl/certs/ca-certificates.crt")
+KEYTOOL_STORE_ARGUMENT_LIST = ["-cacerts", "-storepass", "changeit"]
+NO_EXTRA_CA_TEXT = "no extra root certificate installed"
+PEM_BEGIN_MARKER = "-----BEGIN CERTIFICATE-----"
+PEM_END_MARKER = "-----END CERTIFICATE-----"
+KEYTOOL_FINGERPRINT_PREFIX = "Certificate fingerprint (SHA-256): "
+KEYTOOL_ALIAS_LINE_END = "trustedCertEntry,"
 PROTECTED_PATH_LIST = [Path("/etc/sbx"), Path("/usr/local/bin"), Path("/usr/local/lib/sbx-selfcheck")]
 
 
@@ -408,6 +434,221 @@ def tzdata_result(utc_zone_file: Path = UTC_ZONE_FILE) -> CheckResult:
     return passed(f"{utc_zone_file} exists")
 
 
+def first_lines(text: str) -> str:
+    line_list = []
+
+    for line in text.splitlines():
+        if line.strip():
+            line_list.append(line.strip())
+
+    return " / ".join(line_list[:FIRST_LINES_LIMIT])
+
+
+def versions_record_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
+    if not versions_file.is_file():
+        return failed(f"{versions_file} is missing", rebuild_hint())
+
+    value_by_name_map = parse_versions_text(versions_file.read_text())
+    missing_list = []
+
+    for name in SHARED_PIN_NAME_LIST:
+        if not value_by_name_map.get(name):
+            missing_list.append(name)
+
+    if missing_list:
+        return failed(f"{', '.join(missing_list)} missing or empty in {versions_file}", rebuild_hint())
+
+    return passed(f"{len(value_by_name_map)} pins in {versions_file}")
+
+
+def versions_line_file_result(
+    versions_line_file: Path = TOOL_VERSIONS_FILE,
+    versions_file: Path = VERSIONS_FILE,
+) -> CheckResult:
+    try:
+        base_text = expected_base_versions_text(versions_file)
+    except KeyError as e:
+        return missing_pin_result(e.args[0])
+
+    if not versions_line_file.is_file():
+        return failed(f"{versions_line_file} is missing", rebuild_hint())
+
+    actual_text = versions_line_file.read_text()
+    one_line_text = actual_text.rstrip("\n")
+
+    if actual_text.endswith("\n") and "\n" not in one_line_text and (
+        one_line_text == base_text or one_line_text.endswith(" | " + base_text)
+    ):
+        return passed(f"the line ends with {base_text}")
+
+    return failed(
+        f"{versions_line_file} holds '{first_lines(actual_text)}'; expected one line ending with '{base_text}'",
+        rebuild_hint(),
+    )
+
+
+def interactive_versions_line_result(
+    versions_line_file: Path = TOOL_VERSIONS_FILE,
+    environment: Mapping[str, str] | None = None,
+) -> CheckResult:
+    if not versions_line_file.is_file():
+        return failed(f"{versions_line_file} is missing", rebuild_hint())
+
+    expected_text = versions_line_file.read_text()
+    completed = run_command(["bash", "-i"], history_free_environment(environment))
+
+    if completed.stdout != expected_text:
+        return failed(
+            f"an interactive shell printed '{first_lines(completed.stdout)}'; expected the versions line once",
+            rebuild_hint(),
+        )
+
+    return passed(f"an interactive shell prints {versions_line_file} once")
+
+
+def quiet_shells_result(environment: Mapping[str, str] | None = None) -> CheckResult:
+    problem_list = []
+
+    for flag in QUIET_SHELL_FLAG_LIST:
+        completed = run_command(["bash", flag, "true"], environment)
+
+        if completed.stdout or completed.stderr:
+            problem_list.append(f"bash {flag} true printed '{first_output_line(completed)}'")
+
+    if problem_list:
+        return failed("; ".join(problem_list), rebuild_hint())
+
+    return passed("bash -c true and bash -lc true print nothing")
+
+
+def pem_block_list(text: str) -> list[str]:
+    block_list = []
+
+    for part in text.split(PEM_END_MARKER):
+        begin_index = part.find(PEM_BEGIN_MARKER)
+
+        if begin_index < 0:
+            continue
+
+        block_list.append(part[begin_index:] + PEM_END_MARKER)
+
+    return block_list
+
+
+def pem_fingerprint(pem_text: str) -> str:
+    return hashlib.sha256(ssl.PEM_cert_to_DER_cert(pem_text)).hexdigest().upper()
+
+
+def extra_cert_fingerprint_by_alias_map(extra_ca_dir: Path) -> dict[str, str]:
+    fingerprint_by_alias_map = {}
+
+    for certificate_file in sorted(extra_ca_dir.glob("sbx-extra-ca-*.crt")):
+        block_list = pem_block_list(certificate_file.read_text())
+
+        if not block_list:
+            raise ValueError(f"{certificate_file} holds no certificate")
+
+        fingerprint_by_alias_map[certificate_file.stem] = pem_fingerprint(block_list[0])
+
+    return fingerprint_by_alias_map
+
+
+def keytool_fingerprint_set(text: str) -> set[str]:
+    fingerprint_set = set()
+
+    for line in text.splitlines():
+        if line.startswith(KEYTOOL_FINGERPRINT_PREFIX):
+            fingerprint_set.add(line[len(KEYTOOL_FINGERPRINT_PREFIX):].strip().replace(":", "").upper())
+
+    return fingerprint_set
+
+
+def keytool_alias_set(text: str) -> set[str]:
+    alias_set = set()
+
+    for line in text.splitlines():
+        stripped_line = line.strip()
+
+        if stripped_line.endswith(KEYTOOL_ALIAS_LINE_END):
+            alias_set.add(stripped_line.partition(", ")[0])
+
+    return alias_set
+
+
+def extra_certificates_text(fingerprint_by_alias_map: Mapping[str, str]) -> str:
+    pair_list = []
+
+    for alias, fingerprint in fingerprint_by_alias_map.items():
+        pair_list.append(f"{alias} {fingerprint}")
+
+    return ", ".join(pair_list)
+
+
+def system_bundle_result(
+    extra_ca_dir: Path = EXTRA_CA_DIR,
+    bundle_file: Path = SYSTEM_BUNDLE_FILE,
+) -> CheckResult:
+    fingerprint_by_alias_map = extra_cert_fingerprint_by_alias_map(extra_ca_dir)
+
+    if not fingerprint_by_alias_map:
+        return passed(NO_EXTRA_CA_TEXT)
+
+    if not bundle_file.is_file():
+        return failed(f"{bundle_file} is missing", rebuild_hint())
+
+    bundle_fingerprint_set = set()
+
+    for block in pem_block_list(bundle_file.read_text()):
+        bundle_fingerprint_set.add(pem_fingerprint(block))
+
+    problem_list = []
+
+    for alias, fingerprint in fingerprint_by_alias_map.items():
+        if fingerprint not in bundle_fingerprint_set:
+            problem_list.append(f"{alias} ({fingerprint}) is not in {bundle_file}")
+
+    if problem_list:
+        return failed("; ".join(problem_list), rebuild_hint())
+
+    return passed(
+        f"{len(fingerprint_by_alias_map)} extra root certificates in the system bundle: "
+        + extra_certificates_text(fingerprint_by_alias_map)
+    )
+
+
+def java_cacerts_result(
+    extra_ca_dir: Path = EXTRA_CA_DIR,
+    keytool_argument_list: list[str] = KEYTOOL_STORE_ARGUMENT_LIST,
+) -> CheckResult:
+    fingerprint_by_alias_map = extra_cert_fingerprint_by_alias_map(extra_ca_dir)
+
+    if not fingerprint_by_alias_map:
+        return passed(NO_EXTRA_CA_TEXT)
+
+    completed = run_command(["keytool", "-list"] + keytool_argument_list)
+
+    if completed.returncode != 0:
+        return failed(f"keytool -list failed: {first_output_line(completed)}", rebuild_hint())
+
+    alias_set = keytool_alias_set(completed.stdout)
+    fingerprint_set = keytool_fingerprint_set(completed.stdout)
+    problem_list = []
+
+    for alias, fingerprint in fingerprint_by_alias_map.items():
+        if alias not in alias_set:
+            problem_list.append(f"{alias} is not an alias in Java cacerts")
+        elif fingerprint not in fingerprint_set:
+            problem_list.append(f"{alias} ({fingerprint}) is not in Java cacerts")
+
+    if problem_list:
+        return failed("; ".join(problem_list), rebuild_hint())
+
+    return passed(
+        f"{len(fingerprint_by_alias_map)} extra root certificates in Java cacerts: "
+        + extra_certificates_text(fingerprint_by_alias_map)
+    )
+
+
 def check_workspace_mount() -> CheckResult:
     return workspace_mount_result()
 
@@ -524,6 +765,30 @@ def check_tzdata() -> CheckResult:
     return tzdata_result()
 
 
+def check_versions_record() -> CheckResult:
+    return versions_record_result()
+
+
+def check_versions_line_file() -> CheckResult:
+    return versions_line_file_result()
+
+
+def check_versions_line_interactive() -> CheckResult:
+    return interactive_versions_line_result()
+
+
+def check_versions_line_quiet() -> CheckResult:
+    return quiet_shells_result()
+
+
+def check_extra_ca_system_bundle() -> CheckResult:
+    return system_bundle_result()
+
+
+def check_extra_ca_java_cacerts() -> CheckResult:
+    return java_cacerts_result()
+
+
 def check_wrappers_root_owned() -> CheckResult:
     return root_owned_result(BASE_WRAPPER_MODE_LIST)
 
@@ -567,7 +832,13 @@ CHECK_LIST = [
     Check("tool-make", check_tool_make),
     Check("tool-gcc", check_tool_gcc),
     Check("tzdata", check_tzdata),
+    Check("versions-record", check_versions_record),
+    Check("versions-line-file", check_versions_line_file),
+    Check("versions-line-interactive", check_versions_line_interactive),
+    Check("versions-line-quiet", check_versions_line_quiet),
     Check("wrappers-root-owned", check_wrappers_root_owned),
     Check("image-paths-protected", check_image_paths_protected),
     Check("no-bundle-copy", check_no_bundle_copy),
+    Check("extra-ca-system-bundle", check_extra_ca_system_bundle),
+    Check("extra-ca-java-cacerts", check_extra_ca_java_cacerts),
 ]

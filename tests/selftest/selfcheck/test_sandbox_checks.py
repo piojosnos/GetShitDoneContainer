@@ -607,7 +607,13 @@ def test_the_shared_list_holds_the_checks_in_the_final_order():
         "tool-make",
         "tool-gcc",
         "tzdata",
+        "versions-record",
+        "versions-line-file",
+        "versions-line-interactive",
+        "versions-line-quiet",
         "wrappers-root-owned",
         "image-paths-protected",
         "no-bundle-copy",
+        "extra-ca-system-bundle",
+        "extra-ca-java-cacerts",
     ]
