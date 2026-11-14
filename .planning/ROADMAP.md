@@ -115,14 +115,14 @@ Plans:
   2. On the Mac, the image IDs of `sbx-base:local` and `sbx-claude:local` are the same before and after a full `./host-test.sh` run.
   3. `build.sh`, `sbx-upgrade` and the user's sandboxes still build and run the `:local` tags; only a test run uses the test tags.
 
-**Plans**: 1/3 plans executed
+**Plans**: 2/3 plans executed
 
 Plans:
 **Wave 1**
 - [x] 07-01-PLAN.md: tracer; `SBX_IMAGE_TAG` (`local` or `test`, anything else refused) picks the tag in `bin/sbx-lib.sh`, `compose.yml` and `build.sh`; guard rule `compose_image_follows_agent_and_tag`; dockerless self-test group `image-tag.sh` (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 07-02-PLAN.md: tracer; `./host-test.sh` and `host_init` set `SBX_IMAGE_TAG=test`; every host check, the linter stand-ins and H-03 use the test images; guard rule `host_tests_never_name_the_local_tag` (wave 2)
+- [x] 07-02-PLAN.md: tracer; `./host-test.sh` and `host_init` set `SBX_IMAGE_TAG=test`; every host check, the linter stand-ins and H-03 use the test images; guard rule `host_tests_never_name_the_local_tag` (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 07-03-PLAN.md: docs and comments, the dev-sandbox gate, then the Mac gate with the before and after `:local` image IDs (wave 3, checkpoint)
@@ -190,7 +190,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 6. Test diet | v2.0 | 6/6 | Complete    | 2026-11-13 |
-| 7. Separate test images | v2.0 | 1/3 | In Progress|  |
+| 7. Separate test images | v2.0 | 2/3 | In Progress|  |
 | 8. In-image self-check | v2.0 | 0/TBD | Not started | - |
 | 9. sbx-init replaces the start hooks | v2.0 | 0/TBD | Not started | - |
 | 10. Host side to Python | v2.0 | 0/TBD | Not started | - |

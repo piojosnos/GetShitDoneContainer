@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 07
 current_phase_name: Separate test images
 status: executing
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-11-14T04:50:09.245Z"
+stopped_at: Completed 07-02-PLAN.md
+last_updated: "2026-11-14T04:54:56.138Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 07 execution started
-state_head: e15e73ad3587fe93e638b7922c7fececd0a41be6
+state_head: 585b27eef9706ef18c1e649223e7e702c0bd571c
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 14
-  completed_plans: 12
+  completed_plans: 13
   percent: 14
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 07 (Separate test images) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 07 execution started
 
@@ -168,6 +168,7 @@ Last activity: 2026-11-14 — Phase 07 execution started
 | Phase 06.1 P04 | 8 min | 3 tasks | 12 files |
 | Phase 06.1 P05 | 5 min | 2 tasks | 0 files |
 | Phase 07 P01 | 25 min | 2 tasks | 6 files |
+| Phase 07 P02 | 4 min | 3 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -326,6 +327,8 @@ Recent decisions affecting current work:
 - [Phase 07]: The tag check lives twice (bin/sbx-lib.sh and build.sh) rather than build.sh sourcing the library; build.sh stays standalone and one self-test text covers both
 - [Phase 07]: BASE_IMAGE is passed by build.sh as a build option; versions.env and both agent Dockerfiles stay unchanged
 - [Phase 07]: start_group unsets SBX_IMAGE_TAG and SBX_CA_CERT so ./host-test.sh can export both without moving the default-case expectations
+- [Phase 07]: Plan 07-02: tag assigned as SBX_IMAGE_TAG="test" (quoted) in host-test.sh and host_init; shellcheck SC2209 flags the bare word — Keeps the assignment plain and unconditional while the guard shellcheck rule passes
+- [Phase 07]: Plan 07-02: BASE_IMAGE and CLAUDE_IMAGE are uppercase unexported globals set by host_init — shellcheck reports a lowercase library global as unassigned; build.sh must not see them
 
 ### Pending Todos
 
@@ -394,8 +397,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T04:50:09.195Z
-Stopped at: Completed 07-01-PLAN.md
+Last session: 2026-11-14T04:54:56.079Z
+Stopped at: Completed 07-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
