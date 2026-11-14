@@ -4,17 +4,17 @@ milestone: v2.0
 milestone_name: Simple tooling
 current_phase: "06.1"
 current_phase_name: Cursor agent image (INSERTED)
-status: executing
-stopped_at: Completed 06.1-04-PLAN.md
-last_updated: "2026-11-14T00:47:27.558Z"
+status: verifying
+stopped_at: Completed 06.1-05-PLAN.md
+last_updated: "2026-11-14T01:07:57.182Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 06.1 execution started
-state_head: b7e78a9338bb75afaedf64001f04b16331c814c5
+state_head: f4985e492ebc9871d0ee3c059ffc42cd92b1c968
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
   percent: 14
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 
 Phase: 06.1 (Cursor agent image (INSERTED)) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-11-14 — Phase 06.1 execution started
 
 ## Performance Metrics
@@ -165,6 +165,7 @@ Last activity: 2026-11-14 — Phase 06.1 execution started
 | Phase 06.1 P02 | 5 min | 3 tasks | 12 files |
 | Phase 06.1 P03 | 6 min | 3 tasks | 13 files |
 | Phase 06.1 P04 | 8 min | 3 tasks | 12 files |
+| Phase 06.1 P05 | 5 min | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -319,6 +320,7 @@ Recent decisions affecting current work:
 - [Phase 06.1]: Guard hook rules loop over HOOK_DIRS; each agent folder must hold its own GSD hook sorted before 10-best-practices
 - [Phase 06.1]: Changing a sandbox's agent: sbx-rm NAME --unregister then sbx-add, since sbx-add refuses a registered name
 - [Phase 06.1]: ZSCALER.md documents no headless Cursor prompt flags; the form was never run
+- [Phase 06.1]: Plan 06.1-05 changed no file: the dev sandbox gate and the Mac gate (host-test and a logged Cursor sandbox) passed as written
 
 ### Pending Todos
 
@@ -387,8 +389,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T00:47:27.516Z
-Stopped at: Completed 06.1-04-PLAN.md
+Last session: 2026-11-14T01:07:57.141Z
+Stopped at: Completed 06.1-05-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

@@ -87,7 +87,7 @@ Plans:
   4. GSD is installed for Cursor in a Cursor sandbox, and existing Claude sandboxes work as before.
   5. On the Mac, a Cursor sandbox logs in, answers a prompt in its workspace, and `./host-test.sh` still passes.
 
-**Plans**: 4/5 plans executed
+**Plans**: 5/5 plans executed
 
 Plans:
 **Wave 1**
@@ -103,7 +103,7 @@ Plans:
 - [x] 06.1-04-PLAN.md: list of bundle items that do not work in Cursor; README and test docs (wave 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 06.1-05-PLAN.md: dev-sandbox suites, then the Mac gate with a Cursor login and one prompt (wave 5)
+- [x] 06.1-05-PLAN.md: dev-sandbox suites, then the Mac gate with a Cursor login and one prompt (wave 5)
 
 ### Phase 7: Separate test images
 
