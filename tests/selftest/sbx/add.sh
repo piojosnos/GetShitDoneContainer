@@ -9,10 +9,12 @@ set -u
 . "$(dirname "$0")/lib.sh"
 
 # ------------------------------------------------------------------------------
-# entry_equals NAME PATH: true when the entry NAME is exactly the two lines
+# entry_equals NAME PATH [AGENT]: true when the entry NAME is exactly the two lines
+# ------------------------------------------------------------------------------
+# AGENT is claude when left out.
 # ------------------------------------------------------------------------------
 entry_equals() {
-  printf 'SBX_DIR=%s\nSBX_AGENT=claude\n' "$2" | cmp -s - "$SBX_CONFIG_DIR/sandboxes/$1"
+  printf 'SBX_DIR=%s\nSBX_AGENT=%s\n' "$2" "${3:-claude}" | cmp -s - "$SBX_CONFIG_DIR/sandboxes/$1"
 }
 
 # ------------------------------------------------------------------------------
@@ -20,6 +22,13 @@ entry_equals() {
 # ------------------------------------------------------------------------------
 folders_made() {
   [ -d "$1/$2" ] && [ -d "$1/state" ]
+}
+
+# ------------------------------------------------------------------------------
+# no_entry_no_folder NAME PATH: true when NAME has no entry and PATH is absent
+# ------------------------------------------------------------------------------
+no_entry_no_folder() {
+  [ ! -e "$SBX_CONFIG_DIR/sandboxes/$1" ] && [ ! -e "$2" ]
 }
 
 # ------------------------------------------------------------------------------
@@ -57,6 +66,23 @@ case_registers() {
 }
 
 # ------------------------------------------------------------------------------
+# Case: the third argument picks the agent
+# ------------------------------------------------------------------------------
+case_agents() {
+  echo '--- sbx-add picks the agent'
+
+  run_sbx agentcursor sbx-add agentcursor "$WORK/agent cursor" cursor
+  expect "sbx-add: cursor as the third argument writes SBX_AGENT=cursor" entry_equals agentcursor "$WORK/agent cursor" cursor
+  expect "sbx-add: the success line names the agent" has_text "$WORK/agentcursor.out" "(agent cursor)"
+
+  run_sbx agentclaude sbx-add agentclaude "$WORK/agent claude" claude
+  expect "sbx-add: claude as the third argument writes SBX_AGENT=claude" entry_equals agentclaude "$WORK/agent claude" claude
+
+  run_sbx agentother sbx-add agentother "$WORK/agent other" opencode
+  expect "sbx-add: an unknown agent makes no entry and no folder" no_entry_no_folder agentother "$WORK/agent other"
+}
+
+# ------------------------------------------------------------------------------
 # Case: the registry folder default and a relative registry folder
 # ------------------------------------------------------------------------------
 case_defaults() {
@@ -77,6 +103,7 @@ case_defaults() {
 # ------------------------------------------------------------------------------
 case_usage() {
   local usageText='Usage: sbx-add NAME HOST_PATH'
+  local agentUsageText='Usage: sbx-add NAME HOST_PATH [claude|cursor]'
 
   echo '--- the wrong number of arguments'
 
@@ -87,7 +114,10 @@ case_usage() {
   expect "sbx-add: one argument prints the usage and exits 2" usage_printed u1 "$usageText"
 
   run_sbx u3 sbx-add demo "$WORK/u3" extra
-  expect "sbx-add: three arguments print the usage and exit 2" usage_printed u3 "$usageText"
+  expect "sbx-add: an unknown agent prints the usage and exits 2" usage_printed u3 "$agentUsageText"
+
+  run_sbx u4 sbx-add demo "$WORK/u4" cursor extra
+  expect "sbx-add: four arguments print the usage and exit 2" usage_printed u4 "$agentUsageText"
 }
 
 # ------------------------------------------------------------------------------
@@ -288,6 +318,7 @@ case_usage
 case_bad_names
 case_bad_paths
 case_registers
+case_agents
 case_defaults
 case_repo_overlap
 case_overlaps
