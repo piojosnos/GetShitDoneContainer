@@ -5,11 +5,18 @@
 
 import importlib.util
 import os
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Mapping, TextIO
 
+WORKSPACE_DIR = Path("/home/sandbox/workspace")
+STATE_DIR = WORKSPACE_DIR / "state"
+BUNDLE_DIR = WORKSPACE_DIR / "best-practices"
+VERSIONS_FILE = Path("/etc/sbx/versions.env")
+MOUNTINFO_FILE = Path("/proc/self/mountinfo")
+COMMAND_TIMEOUT_SECONDS = 60
 AGENT_CHECKS_DIR = Path("/etc/sbx/selfcheck.d")
 AGENT_MODULE_PREFIX = "sbx_selfcheck_agent_"
 FIX_LINE_INDENT = "      "
@@ -72,6 +79,69 @@ def start_hint() -> str:
 
 def shell_hint() -> str:
     return mac_hint("open the sandbox shell with sbx-shell", f"sbx-shell {sandbox_name()}")
+
+
+def run_command(
+    argument_list: list[str],
+    environment: Mapping[str, str] | None = None,
+) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        argument_list,
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
+        timeout=COMMAND_TIMEOUT_SECONDS,
+        check=False,
+        env=environment,
+    )
+
+
+def parse_versions_text(text: str) -> dict[str, str]:
+    value_by_name_map = {}
+
+    for line in text.splitlines():
+        stripped_line = line.strip()
+
+        if not stripped_line or stripped_line.startswith("#"):
+            continue
+
+        name, separator, value = stripped_line.partition("=")
+
+        if not separator:
+            continue
+
+        value_by_name_map[name.strip()] = value.strip()
+
+    return value_by_name_map
+
+
+def pin_value(name: str, versions_file: Path = VERSIONS_FILE) -> str:
+    if not versions_file.is_file():
+        return ""
+
+    return parse_versions_text(versions_file.read_text()).get(name, "")
+
+
+def missing_pin_result(name: str) -> CheckResult:
+    return failed(f"{name} is not in {VERSIONS_FILE}", rebuild_hint())
+
+
+def mount_point_set(mountinfo_text: str) -> set[str]:
+    mount_point_collection = set()
+
+    for line in mountinfo_text.splitlines():
+        field_list = line.split()
+
+        if len(field_list) < 5:
+            continue
+
+        mount_point_collection.add(field_list[4])
+
+    return mount_point_collection
+
+
+def read_mount_point_set(mountinfo_file: Path = MOUNTINFO_FILE) -> set[str]:
+    return mount_point_set(mountinfo_file.read_text())
 
 
 def environment_values_result(
