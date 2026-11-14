@@ -71,7 +71,12 @@ def make_bundle_tree(base_dir: Path, skill_name_list: list[str], links_rules: bo
         (clone_dir / "skills" / skill_name).mkdir()
         os.symlink(SKILL_LINK_TEXT_TEMPLATE.format(name=skill_name), config_dir / "skills" / skill_name)
 
-    (config_dir / ".best-practices-skills").write_text("".join([name + "\n" for name in skill_name_list]))
+    skill_line_list = []
+
+    for skill_name in skill_name_list:
+        skill_line_list.append(skill_name + "\n")
+
+    (config_dir / ".best-practices-skills").write_text("".join(skill_line_list))
 
     return config_dir, clone_dir
 
@@ -386,10 +391,10 @@ def test_managed_settings_result_fails_for_json_that_is_not_an_object(agent_modu
     assert not result.passed
 
 
-def test_the_claude_check_names_are_the_twelve_in_order(agent_module):
+def test_the_claude_check_names_are_the_twelve_in_order(agent_module, check_name_list_of):
     claude = agent_module("claude")
 
-    assert [check.name for check in claude.CHECK_LIST] == CLAUDE_CHECK_NAME_LIST
+    assert check_name_list_of(claude.CHECK_LIST) == CLAUDE_CHECK_NAME_LIST
 
 
 def test_claude_no_home_copy_passes_when_no_copy_exists_and_fails_naming_each_copy(agent_module, tmp_path):
@@ -421,12 +426,12 @@ def write_cursor_stand_in(folder: Path, home_record_file: Path) -> None:
 
 
 def cursor_environment(folder: Path, with_config_dir: bool) -> dict[str, str]:
-    environment = {"PATH": f"{folder}{os.pathsep}{os.environ['PATH']}", "HOME": str(folder / "home1")}
+    environment_map = {"PATH": f"{folder}{os.pathsep}{os.environ['PATH']}", "HOME": str(folder / "home1")}
 
     if with_config_dir:
-        environment["CURSOR_CONFIG_DIR"] = str(folder / "state1" / "cursor")
+        environment_map["CURSOR_CONFIG_DIR"] = str(folder / "state1" / "cursor")
 
-    return environment
+    return environment_map
 
 
 def test_cursor_version_result_runs_the_cli_with_a_throwaway_home_that_is_gone_afterwards(agent_module, tmp_path):
@@ -497,12 +502,13 @@ def test_self_update_result_fails_for_another_channel_bad_text_and_a_missing_fil
 
     assert "stable" in stable_result.detail
     assert "other1" not in stable_result.detail
+
     for result in [stable_result, text_result, list_result, missing_result]:
         assert not result.passed
         assert "on the Mac run: sbx-stop name1" in result.hint
 
 
-def test_the_cursor_check_names_are_the_ten_in_order(agent_module):
+def test_the_cursor_check_names_are_the_ten_in_order(agent_module, check_name_list_of):
     cursor = agent_module("cursor")
 
-    assert [check.name for check in cursor.CHECK_LIST] == CURSOR_CHECK_NAME_LIST
+    assert check_name_list_of(cursor.CHECK_LIST) == CURSOR_CHECK_NAME_LIST

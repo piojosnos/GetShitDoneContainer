@@ -200,7 +200,9 @@ def test_scan_owned_state_reports_a_link_without_following_it(state_tree):
     path_list = shared_checks.scan_owned_state(state_tree, os.getuid(), set(), set())[0]
 
     assert "sub1/link1" in path_list
-    assert not any(path.startswith("sub1/link1/") for path in path_list)
+
+    for path in path_list:
+        assert not path.startswith("sub1/link1/")
 
 
 def make_fourteen_path_tree(state1: Path) -> None:
@@ -666,8 +668,8 @@ def test_no_bundle_copy_fails_for_a_dangling_link(tmp_path):
     assert not shared_checks.no_bundle_copy_result(copy1).passed
 
 
-def test_the_shared_list_holds_the_checks_in_the_final_order():
-    name_list = [check.name for check in shared_checks.CHECK_LIST]
+def test_the_shared_list_holds_the_checks_in_the_final_order(check_name_list_of):
+    name_list = check_name_list_of(shared_checks.CHECK_LIST)
 
     assert name_list == [
         "workspace-mount",

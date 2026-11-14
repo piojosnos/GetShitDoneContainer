@@ -280,8 +280,8 @@ def test_tzdata_passes_when_the_utc_zone_file_exists(tmp_path):
     assert not shared_checks.tzdata_result(tmp_path / "missing1").passed
 
 
-def test_every_tool_line_has_a_check_of_its_own():
-    name_list = [check.name for check in shared_checks.CHECK_LIST]
+def test_every_tool_line_has_a_check_of_its_own(check_name_list_of):
+    name_list = check_name_list_of(shared_checks.CHECK_LIST)
 
     for tool in [
         "git", "bash", "gh", "node", "python", "uv", "java", "keytool", "maven", "gsd", "jq", "rg", "unzip", "zip", "ssh",
@@ -525,7 +525,12 @@ def test_interactive_shell_does_not_touch_the_history_file_of_a_real_bash(tmp_pa
     shared_checks.interactive_versions_line_result(line1, environment1)
 
     assert history1.read_text() == "command one\ncommand two\n"
-    assert sorted(path.name for path in home1.iterdir()) == ["history1"]
+    remaining_name_list = []
+
+    for path in home1.iterdir():
+        remaining_name_list.append(path.name)
+
+    assert sorted(remaining_name_list) == ["history1"]
 
 
 def test_quiet_shells_pass_when_both_flags_print_nothing(bin1):
