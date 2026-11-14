@@ -42,3 +42,8 @@ _old
 
 ### Mac test run ###
 host-test.log
+
+### Python (uv and pytest) ###
+.venv/
+__pycache__/
+.pytest_cache/
