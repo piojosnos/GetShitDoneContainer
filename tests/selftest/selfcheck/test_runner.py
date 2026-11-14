@@ -47,24 +47,34 @@ def write_agent_file(checks_dir: Path, name: str) -> None:
     (checks_dir / f"{name}.py").write_text(AGENT_FILE_TEMPLATE.format(name=name))
 
 
-def test_passing_checks_print_one_pass_line_each_in_list_order(tmp_path):
+@pytest.fixture
+def agents1(tmp_path) -> Path:
+    agents_dir = tmp_path / "agents1"
+    agents_dir.mkdir()
+    write_agent_file(agents_dir, "agent1")
+
+    return agents_dir
+
+
+def test_passing_checks_print_one_pass_line_each_in_list_order(agents1):
     check_list = [passing_check("check1"), passing_check("check2"), passing_check("check3")]
 
-    status, line_list = run_lines(check_list, tmp_path)
+    status, line_list = run_lines(check_list, agents1)
 
     assert status == 0
     assert line_list == [
         "PASS: check1: detail_check1",
         "PASS: check2: detail_check2",
         "PASS: check3: detail_check3",
-        "sbx-selfcheck: 3 checks, 0 failed",
+        "PASS: agent1: detail_agent1",
+        "sbx-selfcheck: 4 checks, 0 failed",
     ]
 
 
-def test_failing_check_has_exactly_one_fix_line_before_the_next_check(tmp_path):
+def test_failing_check_has_exactly_one_fix_line_before_the_next_check(agents1):
     check_list = [passing_check("check1"), failing_check("check2", "hint1"), passing_check("check3")]
 
-    status, line_list = run_lines(check_list, tmp_path)
+    status, line_list = run_lines(check_list, agents1)
 
     assert status == 1
     assert line_list == [
@@ -72,7 +82,8 @@ def test_failing_check_has_exactly_one_fix_line_before_the_next_check(tmp_path):
         "FAIL: check2: broken_check2",
         "      fix: hint1",
         "PASS: check3: detail_check3",
-        "sbx-selfcheck: 3 checks, 1 failed",
+        "PASS: agent1: detail_agent1",
+        "sbx-selfcheck: 4 checks, 1 failed",
     ]
 
 
@@ -84,19 +95,20 @@ def test_failed_refuses_an_empty_or_blank_hint():
         failed("detail1", "   ")
 
 
-def test_raising_check_becomes_a_fail_line_with_the_rebuild_hint(tmp_path, monkeypatch):
+def test_raising_check_becomes_a_fail_line_with_the_rebuild_hint(agents1, monkeypatch):
     monkeypatch.setenv("SBX_NAME", "sbx1")
 
     def run_raising() -> CheckResult:
         raise RuntimeError("line1\nline2")
 
-    status, line_list = run_lines([Check("check1", run_raising), passing_check("check2")], tmp_path)
+    status, line_list = run_lines([Check("check1", run_raising), passing_check("check2")], agents1)
 
     assert status == 1
     assert line_list[0] == "FAIL: check1: raised RuntimeError: line1 line2"
     assert line_list[1].startswith("      fix: ")
     assert "on the Mac run: sbx-upgrade sbx1" in line_list[1]
     assert line_list[2] == "PASS: check2: detail_check2"
+    assert line_list[3] == "PASS: agent1: detail_agent1"
 
 
 def test_newlines_in_detail_and_hint_print_as_spaces():
@@ -137,26 +149,65 @@ def test_the_order_is_the_same_on_every_run(tmp_path):
     assert lines1[1] == "PASS: check1: detail_check1"
 
 
-def test_empty_and_missing_agent_folders_give_the_shared_lines_only(tmp_path):
+def expected_no_agent_checks_lines(checks_dir: Path) -> list[str]:
+    return [
+        "PASS: check1: detail_check1",
+        f"FAIL: load-agent-checks: found no agent checks in {checks_dir}, so the image's own checks did not run",
+        "      fix: rebuild the image and recreate the sandbox: on the Mac run: sbx-upgrade sbx1",
+        "sbx-selfcheck: 2 checks, 1 failed",
+    ]
+
+
+def test_empty_and_missing_agent_folders_fail_naming_the_folder(tmp_path, monkeypatch):
+    monkeypatch.setenv("SBX_NAME", "sbx1")
     empty_dir = tmp_path / "empty1"
     empty_dir.mkdir()
     missing_dir = tmp_path / "missing1"
-    expected_lines = ["PASS: check1: detail_check1", "sbx-selfcheck: 1 checks, 0 failed"]
 
     empty_status, empty_lines = run_lines([passing_check("check1")], empty_dir)
     missing_status, missing_lines = run_lines([passing_check("check1")], missing_dir)
 
-    assert empty_status == 0
-    assert empty_lines == expected_lines
-    assert missing_status == 0
-    assert missing_lines == expected_lines
+    assert empty_status == 1
+    assert empty_lines == expected_no_agent_checks_lines(empty_dir)
+    assert missing_status == 1
+    assert missing_lines == expected_no_agent_checks_lines(missing_dir)
 
 
-def test_an_empty_check_list_prints_only_the_summary_and_exits_zero(tmp_path):
-    status, line_list = run_lines([], tmp_path)
+def test_an_agent_file_with_an_empty_check_list_is_no_agent_checks(tmp_path, monkeypatch):
+    monkeypatch.setenv("SBX_NAME", "sbx1")
+    (tmp_path / "agent1.py").write_text("CHECK_LIST = []\n")
+
+    status, line_list = run_lines([passing_check("check1")], tmp_path)
+
+    assert status == 1
+    assert line_list == expected_no_agent_checks_lines(tmp_path)
+
+
+def test_a_broken_agent_file_alone_is_one_load_failure(tmp_path, monkeypatch):
+    monkeypatch.setenv("SBX_NAME", "sbx1")
+    (tmp_path / "agent1.py").write_text("def broken(:\n")
+
+    status, line_list = run_lines([passing_check("check1")], tmp_path)
+
+    fail_line_list = []
+
+    for line in line_list:
+        if line.startswith("FAIL: "):
+            fail_line_list.append(line)
+
+        assert "load-agent-checks" not in line
+
+    assert status == 1
+    assert len(fail_line_list) == 1
+    assert fail_line_list[0].startswith("FAIL: load-agent1: ")
+    assert line_list[-1] == "sbx-selfcheck: 2 checks, 1 failed"
+
+
+def test_an_empty_shared_list_prints_the_agent_lines_only(agents1):
+    status, line_list = run_lines([], agents1)
 
     assert status == 0
-    assert line_list == ["sbx-selfcheck: 0 checks, 0 failed"]
+    assert line_list == ["PASS: agent1: detail_agent1", "sbx-selfcheck: 1 checks, 0 failed"]
 
 
 def test_an_agent_file_with_a_syntax_error_is_one_load_failure(tmp_path, monkeypatch):
@@ -196,12 +247,12 @@ def test_main_with_an_argument_exits_two_with_one_usage_line_on_stderr(tmp_path,
     assert captured.err == "Usage: sbx-selfcheck (no arguments)\n"
 
 
-def test_main_without_arguments_runs_the_checks_on_stdout(tmp_path, capsys):
-    status = sbx_selfcheck.main([], [passing_check("check1")], tmp_path)
+def test_main_without_arguments_runs_the_checks_on_stdout(agents1, capsys):
+    status = sbx_selfcheck.main([], [passing_check("check1")], agents1)
 
     captured = capsys.readouterr()
     assert status == 0
-    assert captured.out == "PASS: check1: detail_check1\nsbx-selfcheck: 1 checks, 0 failed\n"
+    assert captured.out == "PASS: check1: detail_check1\nPASS: agent1: detail_agent1\nsbx-selfcheck: 2 checks, 0 failed\n"
     assert captured.err == ""
 
 
@@ -274,6 +325,7 @@ def test_every_line_is_pass_fail_fix_or_the_summary(tmp_path):
     status, line_list = run_lines(check_list, tmp_path)
 
     assert status == 1
+
     for line in line_list:
         assert line.startswith(("PASS: ", "FAIL: ", "      fix: ", "sbx-selfcheck: "))
         assert not line.startswith("SKIP")
