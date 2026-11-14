@@ -33,13 +33,13 @@ image_tag_version() {
 # ------------------------------------------------------------------------------
 # run_probes: runs the probe in a throwaway base container and in the sandbox
 # ------------------------------------------------------------------------------
-# The throwaway sbx-base:local container proves the tools come from the base.
+# A throwaway container of the test base image proves the tools are in the base.
 # ------------------------------------------------------------------------------
 run_probes() {
   local probeText
 
   probeText=$(cat "$HOST_DIR/support/toolchain-probe.sh")
-  baseOutput=$(run_timeout 120 docker run --rm --entrypoint bash sbx-base:local -c "$probeText" </dev/null 2>&1)
+  baseOutput=$(run_timeout 120 docker run --rm --entrypoint bash "$BASE_IMAGE" -c "$probeText" </dev/null 2>&1)
   shellOutput=$(run_timeout 120 in_project bash -lc "$probeText")
 }
 
@@ -233,7 +233,7 @@ if [ -z "$expectedElf" ]; then
 fi
 
 run_probes
-check_probe "sbx-base:local" "$baseOutput"
+check_probe "$BASE_IMAGE" "$baseOutput"
 check_probe "login shell in the sandbox" "$shellOutput"
 javaTag=$(image_tag_version TEMURIN_IMAGE)
 report_check H-22 "the toolchain in the base image is missing, not native or not at its pin" \
