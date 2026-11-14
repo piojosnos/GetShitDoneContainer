@@ -17,8 +17,8 @@ Milestone v2.0 Simple tooling. Decisions behind them: `.planning/research/v2-sim
 
 ### Test images
 
-- [ ] **IMG-01**: `./host-test.sh` builds its own test image tags and runs every host check against them.
-- [ ] **IMG-02**: A test run never replaces `sbx-base:local` or `sbx-claude:local`.
+- [x] **IMG-01**: `./host-test.sh` builds its own test image tags and runs every host check against them.
+- [x] **IMG-02**: A test run never replaces `sbx-base:local` or `sbx-claude:local`.
 
 ### Self-check
 
@@ -78,8 +78,8 @@ Tracked, not in this roadmap.
 | DIET-03 | Phase 6 | Complete |
 | DIET-04 | Phase 6 | Complete |
 | DIET-05 | Phase 6 | Complete |
-| IMG-01 | Phase 7 | Pending |
-| IMG-02 | Phase 7 | Pending |
+| IMG-01 | Phase 7 | Complete |
+| IMG-02 | Phase 7 | Complete |
 | CHECK-01 | Phase 8 | Pending |
 | CHECK-02 | Phase 8 | Pending |
 | CHECK-03 | Phase 8 | Pending |
