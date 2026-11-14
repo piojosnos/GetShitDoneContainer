@@ -238,6 +238,33 @@ def test_an_agent_file_without_a_check_list_is_one_load_failure(tmp_path):
     assert line_list[2].startswith("      fix: ")
 
 
+@pytest.mark.parametrize(
+    "check_list_text",
+    [
+        "CHECK_LIST = None\n",
+        "CHECK_LIST = 5\n",
+        'CHECK_LIST = "check1"\n',
+        'CHECK_LIST = ["check1"]\n',
+        AGENT_FILE_TEMPLATE.format(name="agent2") + 'CHECK_LIST.append("check2")\n',
+    ],
+    ids=["none", "number", "text", "list_of_text", "list_with_a_text_item"],
+)
+def test_an_agent_file_with_a_malformed_check_list_is_one_load_failure(tmp_path, monkeypatch, check_list_text):
+    monkeypatch.setenv("SBX_NAME", "sbx1")
+    agent_file = tmp_path / "agent1.py"
+    agent_file.write_text(check_list_text)
+
+    status, line_list = run_lines([passing_check("check1")], tmp_path)
+
+    assert status == 1
+    assert line_list == [
+        "PASS: check1: detail_check1",
+        f"FAIL: load-agent1: {agent_file} defines a CHECK_LIST that is not a list of checks",
+        "      fix: rebuild the image and recreate the sandbox: on the Mac run: sbx-upgrade sbx1",
+        "sbx-selfcheck: 2 checks, 1 failed",
+    ]
+
+
 def test_main_with_an_argument_exits_two_with_one_usage_line_on_stderr(tmp_path, capsys):
     status = sbx_selfcheck.main(["extra"], [passing_check("check1")], tmp_path)
 
