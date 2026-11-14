@@ -325,6 +325,55 @@ def test_root_owned_state_names_an_unreadable_folder_with_the_mac_fix(tmp_path, 
     assert str(state1) in result.hint
 
 
+@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 444 folder")
+def test_scan_owned_state_marks_a_folder_it_can_list_but_not_search(tmp_path, restorable_mode):
+    state1 = tmp_path / "state1"
+    write_file(state1 / "sub1" / "private1" / "file1")
+    write_file(state1 / "sub1" / "private1" / "file2")
+    restorable_mode(state1 / "sub1" / "private1", 0o444)
+
+    result = shared_checks.scan_owned_state(state1, os.getuid(), set(), set())
+
+    assert result == (["sub1", "sub1/private1 (unreadable)"], 0)
+
+
+@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 444 folder")
+def test_scan_owned_state_tolerates_a_folder_it_cannot_search_in_a_sync_folder(tmp_path, restorable_mode):
+    state1 = tmp_path / "state1"
+    write_file(state1 / "sub1" / "gsd-core" / "file1")
+    restorable_mode(state1 / "sub1" / "gsd-core", 0o444)
+
+    result = shared_checks.scan_owned_state(state1, os.getuid(), set(), {"gsd-core"})
+
+    assert result == (["sub1"], 1)
+
+
+@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 444 folder")
+def test_root_owned_state_prints_the_owner_fix_for_a_folder_it_cannot_search(tmp_path, restorable_mode, monkeypatch):
+    monkeypatch.setenv("SBX_NAME", "name1")
+    state1 = tmp_path / "state1"
+    write_file(state1 / "sub1" / "private1" / "file1")
+    write_file(state1 / "sub1" / "private1" / "file2")
+    restorable_mode(state1 / "sub1" / "private1", 0o444)
+
+    def scan_state1():
+        return shared_checks.root_owned_state_result(state1, os.getuid())
+
+    check = sbx_selfcheck.Check("no-root-owned-state", scan_state1)
+    line_list = sbx_selfcheck.outcome_lines(check.name, sbx_selfcheck.run_check(check))
+
+    assert len(line_list) == 2
+    assert line_list[0] == (
+        f"FAIL: no-root-owned-state: 2 paths under state/ are owned by uid {os.getuid()} "
+        "or unreadable: sub1, sub1/private1 (unreadable)"
+    )
+    assert "raised" not in line_list[0]
+    assert line_list[1].startswith(
+        "      fix: give the paths back to the sandbox user from a throwaway root container"
+    )
+    assert line_list[1].endswith(f"--volumes-from sbx-name1 sbx-base:local -R 1000:1000 {state1}")
+
+
 def test_root_owned_state_names_the_tolerated_count_on_a_pass(tmp_path):
     state1 = tmp_path / "state1"
     state1.mkdir()
