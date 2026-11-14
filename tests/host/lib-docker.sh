@@ -9,7 +9,8 @@
 # ------------------------------------------------------------------------------
 # build_images LOG_PREFIX [--no-cache]: runs build.sh, logging to the run folder
 # ------------------------------------------------------------------------------
-# The log is RUN/logs/LOG_PREFIX-images.log.
+# The log is RUN/logs/LOG_PREFIX-images.log. build.sh reads SBX_IMAGE_TAG, which
+# host_init sets to test, so it builds the test images.
 build_images() {
   local logPrefix=$1
   local cacheFlag=${2:-}

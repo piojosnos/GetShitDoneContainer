@@ -12,7 +12,7 @@ A new check needs a real failure it would have caught, not a hypothetical one.
 | `tests/host/` | `bash tests/host/run-all.sh` | the Mac, with Docker |
 | `tests/host-checklist.md` | read it | the Mac, by hand |
 
-On the Mac, `./host-test.sh` first checks that Docker Compose v2 is there and stops when it is not. Then it runs everything that needs Docker in one go: the host checks, the pin digests against the registry, the guard and the entrypoint self-test inside `sbx-hosttest`, the guard and the sbx self-test in the Mac shell (the guard with shellcheck and hadolint run from `sbx-base`, the self-test under `/bin/bash`). It writes all output to `host-test.log` in the repo root and ends with one OK or FAIL line per step. Pass `--keep` to leave the test sandbox up to look around after a failure.
+On the Mac, `./host-test.sh` first checks that Docker Compose v2 is there and stops when it is not. It sets `SBX_IMAGE_TAG=test` for the whole run, so it builds and checks `sbx-base:test`, `sbx-claude:test` and `sbx-cursor:test` and never touches the `:local` images your sandboxes run; the log names the test images. Then it runs everything that needs Docker in one go: the host checks, the pin digests against the registry, the guard and the entrypoint self-test inside `sbx-hosttest`, the guard and the sbx self-test in the Mac shell (the guard with shellcheck and hadolint run from `sbx-base:test`, the self-test under `/bin/bash`). It writes all output to `host-test.log` in the repo root and ends with one OK or FAIL line per step. Pass `--keep` to leave the test sandbox up to look around after a failure.
 
 There is no CI yet. Docs and shell portability have no automated check; PR review covers them.
 
@@ -20,9 +20,9 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 | | |
 |---|---|
-| Runs | 18 rules that read the files only: pins and supply chain, the one-FROM agent images (Claude and Cursor), the start hooks of both agents, the compose image line and `SBX_AGENT` wiring, the managed deny entries, isolation greps, host scripts other than `sbx-rm` that never delete data, shellcheck and hadolint |
-| Where | New-layout sandbox: every rule passes, because sbx-base holds both linters. Old dev sandbox or a Mac shell by hand without the linters: the two linter rules FAIL as "not installed" and every other rule must PASS. `./host-test.sh` gives the Mac shell stand-ins that run both linters from `sbx-base`, so there every rule passes |
-| Catches | An unpinned or floating version, a pipe-to-shell install, the compromised GSD package, a mounted Docker socket or privileged mode, a second FROM in an agent image, a lost skill deny entry in the managed settings, a host script other than `sbx-rm` that deletes a file or takes a sandbox down, a badly named start hook, a compose image line or `SBX_AGENT` hand-off that no longer follows the agent, a shell or Dockerfile lint error |
+| Runs | 19 rules that read the files only: pins and supply chain, the one-FROM agent images (Claude and Cursor), the start hooks of both agents, the compose image line and the `SBX_AGENT` and `SBX_IMAGE_TAG` hand-offs, agent builds on the base of their own tag, the managed deny entries, isolation greps, host scripts other than `sbx-rm` that never delete data, host test files that never name a `:local` image, shellcheck and hadolint |
+| Where | New-layout sandbox: every rule passes, because sbx-base holds both linters. Old dev sandbox or a Mac shell by hand without the linters: the two linter rules FAIL as "not installed" and every other rule must PASS. `./host-test.sh` gives the Mac shell stand-ins that run both linters from `sbx-base:test`, so there every rule passes |
+| Catches | An unpinned or floating version, a pipe-to-shell install, the compromised GSD package, a mounted Docker socket or privileged mode, a second FROM in an agent image, a lost skill deny entry in the managed settings, a host script other than `sbx-rm` that deletes a file or takes a sandbox down, a badly named start hook, a compose image line or `SBX_AGENT` hand-off that no longer follows the agent, a lost `SBX_IMAGE_TAG` hand-off or an agent build on another tag's base, a host test file that names a `:local` image, a shell or Dockerfile lint error |
 | Does not catch | Whether an image builds or behaves (`tests/host/` does), or what `sbx-rm` removes (H-33 covers it) |
 
 ## tests/selftest/entrypoint/
@@ -38,9 +38,9 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 | | |
 |---|---|
-| Runs | The real `bin/` scripts as plain bash in a temp folder, with `DOCKER_HOST` pointing at a socket that does not exist and a registry in the work folder |
+| Runs | The real `bin/` scripts as plain bash in a temp folder, with `DOCKER_HOST` pointing at a socket that does not exist and a registry in the work folder; `build.sh` with no `docker` on the PATH |
 | Where | Linux and the Mac shell. `./host-test.sh` runs it under `/bin/bash` |
-| Catches | A name, path or registry entry the scripts should refuse, a registry value that would run, a refusal that comes too late, Docker not answering reported as such |
+| Catches | A name, path or registry entry the scripts should refuse, a registry value that would run, a refusal that comes too late, Docker not answering reported as such, an image tag other than `local` or `test`, and the image names each tag picks |
 | Does not catch | Anything that needs Docker to answer: starting, entering, listing and removing a sandbox. H-28 to H-33 cover it |
 
 ## tests/host/
