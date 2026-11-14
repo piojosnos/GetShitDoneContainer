@@ -21,8 +21,8 @@ actuals:
   tokens: 6950
   tasks: 3
   commits: 4
-plan_head_before: 7da8a021c7905711bd178e8beb66eca8173b41f9
-plan_head_after: 183206d44f834bfc32dd0e42455ab9b060de12ce
+plan_head_before: 9999a169a55a0f14a7c7d9adbb4c54d98470492a
+plan_head_after: aab375d206ab08681603de41680e081c14267917
 
 tech-stack:
   added: []
@@ -89,10 +89,10 @@ A missing managed settings file now reads "is missing" instead of a JSON parse c
 
 | Task | Commit | Type | What |
 |---|---|---|---|
-| 1 RED | ca96830 | test | exact detail text for missing and bad JSON, plus the unreadable file test |
-| 1 GREEN | dc579a7 | fix | the missing-file branch and the symmetric JSON message |
-| 2 | 0aee85e | refactor | shape suffixes, `e`, `ModuleType`, `object` |
-| 3 | 183206d | refactor | `check_name_list_of`, loops, last blank line |
+| 1 RED | 762cc3e | test | exact detail text for missing and bad JSON, plus the unreadable file test |
+| 1 GREEN | 0b1d6c2 | fix | the missing-file branch and the symmetric JSON message |
+| 2 | 8d8d56c | refactor | shape suffixes, `e`, `ModuleType`, `object` |
+| 3 | aab375d | refactor | `check_name_list_of`, loops, last blank line |
 
 ## RED Evidence (failed against the old code)
 
@@ -139,5 +139,5 @@ Ready for 08-11.
 ## Self-Check: PASSED
 
 - Files modified exist: `claude/selfcheck/claude.py`, `cursor/selfcheck/cursor.py`, `base/selfcheck/sbx_selfcheck.py`, `base/selfcheck/shared_checks.py` and the four test files.
-- Commits found in `git log`: ca96830, dc579a7, 0aee85e, 183206d (`git rev-list --count` from the plan base gives 4).
+- Commits found in `git log`: 762cc3e, 0b1d6c2, 8d8d56c, aab375d (`git rev-list --count` from the plan base gives 4).
 - Acceptance criteria re-run: all pass (see Verification).

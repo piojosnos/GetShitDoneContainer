@@ -18,8 +18,8 @@ actuals:
   tokens: 4300
   tasks: 2
   commits: 4
-plan_head_before: 1bb4994fcbe4814a9a7015bf723fb5bf45e7185a
-plan_head_after: 4b96908d141330d311545734e5f50494dd4e1f24
+plan_head_before: 79fc4ad1fe20b8b24bb89025953d250898ac3645
+plan_head_after: 0e11d29ab4d1b144832bcd32344ae20b8a7ed2b3
 
 tech-stack:
   added: []
@@ -94,10 +94,10 @@ Every tool the self-check runs by name is now guarded against a copy under /home
 
 | Task | Commit | Type | What |
 |---|---|---|---|
-| 1 RED | 6fe06ee | test | final order, tool list, two direct tool tests, counts 41 and 53 and 51, IN-07 and IN-02 |
-| 1 GREEN | 0ca3e69 | fix | `check_tool_bash`, `check_tool_keytool` and their list entries |
-| 2 | 78f9fb0 | test | H-34 owner fix round trip |
-| 2 docs | 4b96908 | docs | H-34 checklist row and failure note, README sample count |
+| 1 RED | 9bfb275 | test | final order, tool list, two direct tool tests, counts 41 and 53 and 51, IN-07 and IN-02 |
+| 1 GREEN | 44812f4 | fix | `check_tool_bash`, `check_tool_keytool` and their list entries |
+| 2 | 8fe9d9d | test | H-34 owner fix round trip |
+| 2 docs | 0e11d29 | docs | H-34 checklist row and failure note, README sample count |
 
 ## RED Evidence (failed against the old code)
 
@@ -149,5 +149,5 @@ Ready for 08-10.
 ## Self-Check: PASSED
 
 - Files modified exist: `base/selfcheck/shared_checks.py`, the three selfcheck test files, `tests/host/h34-selfcheck.sh`, `tests/host-checklist.md`, `README.md`.
-- Commits found in `git log`: 6fe06ee, 0ca3e69, 78f9fb0, 4b96908.
+- Commits found in `git log`: 9bfb275, 44812f4, 8fe9d9d, 0e11d29.
 - Acceptance criteria re-run: all pass (see Verification).

@@ -23,8 +23,8 @@ actuals:
   tokens: 4200
   tasks: 3
   commits: 2
-plan_head_before: ae96b8b84ca38ff36236df08589d03237102b53d
-plan_head_after: 02a3c32387b29f2fde2df5e069551dcade7d7695
+plan_head_before: 38127eac28a63a86e607b0277e7262a5be854c00
+plan_head_after: cf49d998c54c50bed0d5b10dd5a5dc7d6d8a47f4
 
 tech-stack:
   added: []
@@ -40,7 +40,7 @@ key-files:
 
 key-decisions:
   - "IN-08 is deferred to Phase 10, where the bash host checks are rewritten in Python (HOST-01, HOST-05); part (b) is harmless on macOS, where TMPDIR is per user"
-  - "All four CHECK requirements were marked complete together, the exact reverse of the revert in f695bea, only after the Mac run was approved"
+  - "All four CHECK requirements were marked complete together, the exact reverse of the revert in ff65692, only after the Mac run was approved"
 
 requirements-completed: [CHECK-01, CHECK-02, CHECK-03, CHECK-04]
 
@@ -80,15 +80,15 @@ Every review finding now has a recorded disposition, the dev sandbox and the Mac
 - `08-REVIEW-DISPOSITION.md` has a Reason column and twelve rows: WR-01 to WR-04 and IN-01 to IN-07 are `fixed` with their commits, IN-08 is `deferred`. No row is `open`.
 - `.planning/todos/pending/2026-11-14-h34-host-check-hygiene.md` holds the three IN-08 items with the review's fix for each, with `resolves_phase: 10`.
 - The dev-sandbox gate (Task 1) and the Mac gate (Task 2) are green; the evidence is below.
-- `REQUIREMENTS.md`: CHECK-01 to CHECK-04 are checked and their traceability rows read `Complete`, exactly the eight lines f695bea reverted.
+- `REQUIREMENTS.md`: CHECK-01 to CHECK-04 are checked and their traceability rows read `Complete`, exactly the eight lines ff65692 reverted.
 
 ## Task Commits
 
 | Task | Commit | Type | What |
 |---|---|---|---|
-| 1 | afa04c9 | docs | dispositions and the deferred host check todo |
+| 1 | 4e3fd1a | docs | dispositions and the deferred host check todo |
 | 2 | none | checkpoint | the Mac gate, approved by the user |
-| 3 | 02a3c32 | docs | CHECK-01 to CHECK-04 complete |
+| 3 | cf49d99 | docs | CHECK-01 to CHECK-04 complete |
 
 ## Dev-sandbox gate evidence (Task 1)
 
@@ -101,10 +101,10 @@ Every review finding now has a recorded disposition, the dev sandbox and the Mac
 | list sizes (shared, Claude, Cursor) | 41 12 10 |
 | H-34 constants | `expectedClaudeCount=53`, `expectedCursorCount=51` |
 | host check files | 19 |
-| code paths changed since f695bea | exactly the 14 the gap plans name |
+| code paths changed since ff65692 | exactly the 14 the gap plans name |
 | file modes | no mode change; `h34-selfcheck.sh` is 100644 and `sbx-selfcheck` is 100755 |
 | untouched files | Dockerfiles, `compose.yml`, `build.sh`, `bin/`, `clean.sh`, `host-test.sh`, `tests/host/run-all.sh`, `versions.env` |
-| commit mix | no commit since f695bea holds both `.planning/` files and code |
+| commit mix | no commit since ff65692 holds both `.planning/` files and code |
 | ASCII, planning ID and dash sweeps | empty output |
 | comprehension and blank-line sweeps, removed names | empty output |
 
@@ -133,7 +133,7 @@ None.
 
 ## Issues Encountered
 
-None. One housekeeping note: commit afa04c9 carries a `Co-Authored-By` trailer that the user's git rules do not want; the Task 3 commit has none. It is unpushed, so it can be reworded before the PR if wanted.
+None. One housekeeping note: commit 4e3fd1a carries a `Co-Authored-By` trailer that the user's git rules do not want; the Task 3 commit has none. It is unpushed, so it can be reworded before the PR if wanted.
 
 ## Next
 
@@ -142,5 +142,5 @@ Phase 8 is complete. Next: the code PR is prepared by hand as for plan 08-07 (ch
 ## Self-Check: PASSED
 
 - Files exist: `08-REVIEW-DISPOSITION.md`, `2026-11-14-h34-host-check-hygiene.md`, `REQUIREMENTS.md`.
-- Commits found in `git log`: afa04c9, 02a3c32 (`git rev-list --count` from the plan base gives 2).
-- Task 3 verify command passed: four `[x]` lines, four `Complete` rows, numstat `8 8` against f695bea.
+- Commits found in `git log`: 4e3fd1a, cf49d99 (`git rev-list --count` from the plan base gives 2).
+- Task 3 verify command passed: four `[x]` lines, four `Complete` rows, numstat `8 8` against ff65692.

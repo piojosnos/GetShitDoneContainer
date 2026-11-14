@@ -27,8 +27,8 @@ actuals:
   tokens: 300
   tasks: 2
   commits: 1
-plan_head_before: d12d34ac1fa33fbd75e8524ba46e21b9930f9524
-plan_head_after: 08311fac2e7be78ce8b1ddd33a38b961d26ff1d9
+plan_head_before: 0da90d82b485f43d9f84f392fbf752e2b8bb5e51
+plan_head_after: 54b5c6a723002ad4f6e53a74e0f8a417395f0687
 
 tech-stack:
   added: []
@@ -141,7 +141,7 @@ Flagged assumptions: A3 did not trigger (`no-root-owned-state` passed in both sa
 
 ## Task Commits
 
-1. **Task 1: Dev-sandbox phase gate**: `08311fa` (fix, reworded one comment in `tests/host/h34-selfcheck.sh`)
+1. **Task 1: Dev-sandbox phase gate**: `54b5c6a` (fix, reworded one comment in `tests/host/h34-selfcheck.sh`)
 2. **Task 2: Mac gate**: no file change, no commit
 
 ## Verification
@@ -157,7 +157,7 @@ All verify commands of Task 1 exited 0; the Mac acceptance criteria of Task 2 ar
 - **Issue:** a comment on line 22 of `tests/host/h34-selfcheck.sh` held the word `pytest`, which the plan forbids in host checks
 - **Fix:** reworded the comment to avoid the word
 - **Files modified:** `tests/host/h34-selfcheck.sh`
-- **Commit:** `08311fa`
+- **Commit:** `54b5c6a`
 
 The plan said Task 1 changes no file; this one-line comment edit was needed to make the sweep pass. The gate was re-run after it.
 
@@ -176,5 +176,5 @@ Phase 8 is ready for verification. The code PR is prepared by hand: cherry-pick 
 ## Self-Check: PASSED
 
 - `.planning/phases/08-in-image-self-check/08-07-SUMMARY.md` written
-- commit `08311fa` exists
+- commit `54b5c6a` exists
 - `host-test.log` and `selfcheck-gate.log` read and match the figures above

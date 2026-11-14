@@ -19,7 +19,7 @@ actuals:
   tasks: 3
   commits: 3
 plan_head_before: 12b154b02162299140447870cbaf1596affb0a1e
-plan_head_after: 61d10c6231e35390fa59aaad5299920e02b00bec
+plan_head_after: 39152b5f9e9b520691a21adabe9e736933879b03
 
 tech-stack:
   added: [pytest 9.2.0 (dev sandbox only, never in an image)]
@@ -109,9 +109,9 @@ status: complete
 
 ## Task Commits
 
-1. **Task 1: runner, launcher, shared and agent checks (tracer)** - `4d11e1a`
-2. **Task 2: pinned pytest harness and runner tests** - `888a592`
-3. **Task 3: Dockerfile wiring in base, Claude and Cursor** - `61d10c6`
+1. **Task 1: runner, launcher, shared and agent checks (tracer)** - `8f6bce4`
+2. **Task 2: pinned pytest harness and runner tests** - `82e6ce9`
+3. **Task 3: Dockerfile wiring in base, Claude and Cursor** - `39152b5`
 
 ## Verification
 
@@ -130,7 +130,7 @@ status: complete
 - **Issue:** the first version of the "no SKIP outcome" test searched every output line for `SKIP`, but a load-failure line holds the temp path, which contains the test function name, which contained "skip".
 - **Fix:** renamed the test `test_every_line_is_pass_fail_fix_or_the_summary` and asserted the allowed line prefixes instead of a substring search.
 - **Files modified:** tests/selftest/selfcheck/test_runner.py
-- **Commit:** 888a592
+- **Commit:** 82e6ce9
 
 ### Plan check not reproducible as written
 
@@ -157,4 +157,4 @@ Ready for 08-02 (host check that reads this output format). Docker builds of the
 ## Self-Check: PASSED
 
 - Files exist: base/selfcheck/sbx-selfcheck, base/selfcheck/sbx_selfcheck.py, base/selfcheck/shared_checks.py, claude/selfcheck/claude.py, cursor/selfcheck/cursor.py, pyproject.toml, .python-version, uv.lock, tests/selftest/selfcheck/conftest.py, tests/selftest/selfcheck/test_runner.py.
-- Commits exist: 4d11e1a, 888a592, 61d10c6.
+- Commits exist: 8f6bce4, 82e6ce9, 39152b5.

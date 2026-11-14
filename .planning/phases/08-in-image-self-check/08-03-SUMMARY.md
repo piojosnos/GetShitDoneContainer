@@ -17,8 +17,8 @@ actuals:
   tokens: 9000
   tasks: 2
   commits: 2
-plan_head_before: eb892417f42a46e6e9402cd8c0e2030acbac22ec
-plan_head_after: e313863a3bc631204d2636ebdf01cf3dbdd649d7
+plan_head_before: b09df0a5cbc9b9bb813a7f86efa3931dffd217c3
+plan_head_after: a9170695da47e83d897a9fb29bf464aa2897cf85
 
 tech-stack:
   added: []
@@ -100,8 +100,8 @@ status: complete
 
 ## Task Commits
 
-1. **Task 1: the sandbox's shape and its state folder** - `85a6fc7`
-2. **Task 2: the user's home, git, the environment and the protected image paths** - `e313863`
+1. **Task 1: the sandbox's shape and its state folder** - `2bfc4ea`
+2. **Task 2: the user's home, git, the environment and the protected image paths** - `a917069`
 
 ## Verification
 
@@ -146,4 +146,4 @@ Ready for 08-04 (delete the old probes now covered here). Hint strings of `state
 ## Self-Check: PASSED
 
 - Files exist: base/selfcheck/sbx_selfcheck.py, base/selfcheck/shared_checks.py, tests/selftest/selfcheck/test_sandbox_checks.py.
-- Commits exist: 85a6fc7, e313863.
+- Commits exist: 2bfc4ea, a917069.

@@ -20,8 +20,8 @@ actuals:
   tokens: 21000
   tasks: 3
   commits: 3
-plan_head_before: 485d22ebfe33f04cf068ca676ace92419dac02bd
-plan_head_after: 6207caa1f90ca4e7945a7fc0f77bbdb33b2f3283
+plan_head_before: 6327c4ea4cc1617afe22736126055a05ae9d69e1
+plan_head_after: 32d9894be9c06ad2bed583f4cf4cc0571a189dba
 
 tech-stack:
   added: []
@@ -115,9 +115,9 @@ status: complete
 
 ## Task Commits
 
-1. **Task 1: delete the eight probes and the toolchain probe, guard scans the self-check sources** - `f0547e5`
-2. **Task 2: slim H-06, H-12 and H-25, comments follow** - `2ae1eaf`
-3. **Task 3: docs** - `6207caa`
+1. **Task 1: delete the eight probes and the toolchain probe, guard scans the self-check sources** - `efe18ea`
+2. **Task 2: slim H-06, H-12 and H-25, comments follow** - `07981ef`
+3. **Task 3: docs** - `32d9894`
 
 ## Where each dropped assertion went
 
@@ -146,7 +146,7 @@ status: complete
 - **Issue:** appending "and `sbx-hosttest-root-ca`, the test root certificate, which the next run makes again" in the middle of a comma list read badly.
 - **Fix:** reworded to "the test root certificate `sbx-hosttest-root-ca` (the next run makes it again)" as one list item. `clean.sh` already removes it: its `sbx-hosttest-*` glob matches the folder, so no script change was needed.
 - **Files modified:** README.md
-- **Commit:** 6207caa
+- **Commit:** 32d9894
 
 ### Folded review nits
 
@@ -183,4 +183,4 @@ Ready for 08-05 and 08-06 (the Claude and Cursor checks that bring H-34's counts
 ## Self-Check: PASSED
 
 - Files exist: tests/host/h06-git-on-mac-repo.sh, tests/host/h12-plain-run-refused.sh, tests/host/h25-images-match-versions.sh, tests/host/run-all.sh, tests/guard/supply-chain.sh, README.md, tests/README.md, tests/host-checklist.md, MIGRATION.md; the nine deleted files are gone.
-- Commits exist: f0547e5, 2ae1eaf, 6207caa.
+- Commits exist: efe18ea, 07981ef, 32d9894.

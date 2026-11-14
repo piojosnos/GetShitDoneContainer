@@ -17,8 +17,8 @@ actuals:
   tokens: 4200
   tasks: 2
   commits: 2
-plan_head_before: 7ddd85b02ce8563d6f8d3b92c6f87de58d03ac91
-plan_head_after: b0b0bfe4cf64f71be8030ea868453d71024e4487
+plan_head_before: c57e3ab11b8f8dcaea353ab54c488a6c08bde6b1
+plan_head_after: b48cba5f5b99d4a7c9922ea329850c8a7082a945
 
 tech-stack:
   added: []
@@ -93,8 +93,8 @@ status: complete
 
 ## Task Commits
 
-1. **Task 1: the test root reaches the build, H-34 reads the Claude sandbox (tracer)** - `6f5b173`
-2. **Task 2: H-34 starts, checks and removes a Cursor test sandbox** - `b0b0bfe`
+1. **Task 1: the test root reaches the build, H-34 reads the Claude sandbox (tracer)** - `f15b77f`
+2. **Task 2: H-34 starts, checks and removes a Cursor test sandbox** - `b48cba5`
 
 ## Verification
 
@@ -113,7 +113,7 @@ status: complete
 - **Issue:** `sbxDir` and `sbxStatus` are set by `lib-sbx.sh`, so shellcheck reported SC2154 in the new Cursor functions and the guard failed.
 - **Fix:** declared `sbxDir=""` and `sbxStatus=0` in the globals block, as H-28 does.
 - **Files modified:** tests/host/h34-selfcheck.sh
-- **Commit:** b0b0bfe
+- **Commit:** b48cba5
 
 ### Plan check not reproducible as written
 
@@ -142,4 +142,4 @@ Ready for 08-03. The real two-sandbox run and the certificate build into the tes
 ## Self-Check: PASSED
 
 - Files exist: tests/host/h34-selfcheck.sh, tests/host/lib-docker.sh, tests/host/run-all.sh.
-- Commits exist: 6f5b173, b0b0bfe.
+- Commits exist: f15b77f, b48cba5.

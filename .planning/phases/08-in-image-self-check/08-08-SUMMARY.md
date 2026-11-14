@@ -18,8 +18,8 @@ actuals:
   tokens: 5200
   tasks: 3
   commits: 7
-plan_head_before: 1df43c5a9ff4e624237510a9e8ef004d3a9317a0
-plan_head_after: 7aaa7ed7e46b42f7b7013623623d4f2c31a4a655
+plan_head_before: 49abb773de1eadd8d61a9b3a755b841f6e63b0c4
+plan_head_after: e0e6d6125682efdc5ead9e19c06ebe7786891542
 
 tech-stack:
   added: []
@@ -94,13 +94,13 @@ The no-root-owned-state FAIL now gives a Mac command that works on any engine, n
 
 | Task | Commit | Type | What |
 |---|---|---|---|
-| 1 RED | 591dd80 | test | exact owner fix hint, unset `SBX_NAME`, and the end to end FAIL plus fix lines |
-| 1 GREEN | 9f17723 | fix | `owner_fix_hint`, `OWNER_FIX_IMAGE` |
-| 2 RED | 1f4c2e4 | test | five unreadable folder cases, wrapper call sites and names moved to `scan_owned_state` |
-| 2 GREEN | 124297b | fix | OSError tolerant walk, `UNREADABLE_SUFFIX`, wrapper deleted |
-| 3 RED | feff7d5 | test | agent folder cases, `agents1` fixture, IN-02 blank line |
-| 3 GREEN | 5e304b3 | fix | `AGENT_CHECKS_CHECK_NAME`, runner level failure, IN-02 blank line |
-| 3 docs | 7aaa7ed | docs | README troubleshooting row, tests/README Catches row |
+| 1 RED | f08abb6 | test | exact owner fix hint, unset `SBX_NAME`, and the end to end FAIL plus fix lines |
+| 1 GREEN | 5af642d | fix | `owner_fix_hint`, `OWNER_FIX_IMAGE` |
+| 2 RED | d4611e3 | test | five unreadable folder cases, wrapper call sites and names moved to `scan_owned_state` |
+| 2 GREEN | a61259d | fix | OSError tolerant walk, `UNREADABLE_SUFFIX`, wrapper deleted |
+| 3 RED | 888e12e | test | agent folder cases, `agents1` fixture, IN-02 blank line |
+| 3 GREEN | a543cb7 | fix | `AGENT_CHECKS_CHECK_NAME`, runner level failure, IN-02 blank line |
+| 3 docs | e0e6d61 | docs | README troubleshooting row, tests/README Catches row |
 
 Tracer gate: after Task 1 the verify commands were re-run (4 passed, hint one-liner exact, old text gone); logged "Tracer verified end-to-end, expanding".
 
@@ -174,5 +174,5 @@ Ready for 08-09 (WR-04 `tool-bash` and `tool-keytool`, H-34 owner fix round trip
 ## Self-Check: PASSED
 
 - Files modified exist: `base/selfcheck/shared_checks.py`, `base/selfcheck/sbx_selfcheck.py`, `tests/selftest/selfcheck/test_sandbox_checks.py`, `tests/selftest/selfcheck/test_runner.py`, `README.md`, `tests/README.md`.
-- Commits found in `git log`: 591dd80, 9f17723, 1f4c2e4, 124297b, feff7d5, 5e304b3, 7aaa7ed.
+- Commits found in `git log`: f08abb6, 5af642d, d4611e3, a61259d, 888e12e, a543cb7, e0e6d61.
 - Acceptance criteria re-run: all pass (see Verification).

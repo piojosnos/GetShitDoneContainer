@@ -19,8 +19,8 @@ actuals:
   tokens: 10100
   tasks: 2
   commits: 2
-plan_head_before: 91781826ece5aef63555dd7bc99dd7138b3ff12c
-plan_head_after: 55c09c4668b51eaf081119ac6e72606c79344622
+plan_head_before: 7502908b129ab98a63c4fe091151e5161379a089
+plan_head_after: b3528217d54cf3968f5e0bb4d13c991290bbfb48
 
 tech-stack:
   added: []
@@ -107,8 +107,8 @@ status: complete
 
 ## Task Commits
 
-1. **Task 1: the agent helpers and the complete Claude checks file** - `9043e3d`
-2. **Task 2: the complete Cursor checks file and the inventory test** - `55c09c4`
+1. **Task 1: the agent helpers and the complete Claude checks file** - `6d5593d`
+2. **Task 2: the complete Cursor checks file and the inventory test** - `b352821`
 
 ## Verification
 
@@ -147,4 +147,4 @@ Plan 07's Mac gate runs H-34 against rebuilt images: 51 lines in a Claude sandbo
 ## Self-Check: PASSED
 
 - Files exist: `base/selfcheck/sbx_selfcheck.py`, `claude/selfcheck/claude.py`, `cursor/selfcheck/cursor.py`, `tests/selftest/selfcheck/conftest.py`, `tests/selftest/selfcheck/test_agent_checks.py`, `tests/selftest/selfcheck/test_inventory.py`.
-- Commits `9043e3d` and `55c09c4` exist on `feat/phase-08-in-image-self-check`; `git rev-list --count` from the recorded base is 2.
+- Commits `6d5593d` and `b352821` exist on `feat/phase-08-in-image-self-check`; `git rev-list --count` from the recorded base is 2.

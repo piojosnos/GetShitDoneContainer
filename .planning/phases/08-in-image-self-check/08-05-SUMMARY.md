@@ -19,8 +19,8 @@ actuals:
   tokens: 12300
   tasks: 2
   commits: 2
-plan_head_before: 2c6582649450a6a2ff313192e677540c063408cf
-plan_head_after: 0da18a4f5e68ca2357315675aad7fa60616129eb
+plan_head_before: 5588fddfd152b8a40b2db26082b75652c25b7e75
+plan_head_after: 80b2a29498474091712a9ed57a7acbb312593806
 
 tech-stack:
   added: []
@@ -108,8 +108,8 @@ status: complete
 
 ## Task Commits
 
-1. **Task 1: the architecture and one line per tool** - `d3af014`
-2. **Task 2: the versions record, the versions line and the extra root certificates** - `0da18a4`
+1. **Task 1: the architecture and one line per tool** - `f3cdb61`
+2. **Task 2: the versions record, the versions line and the extra root certificates** - `80b2a29`
 
 ## Verification
 
@@ -147,4 +147,4 @@ Plan 06 adds the agent checks on `tool_result`, `versions_line_result`, `first_o
 ## Self-Check: PASSED
 
 - Files created and modified exist: `base/selfcheck/sbx_selfcheck.py`, `base/selfcheck/shared_checks.py`, `tests/selftest/selfcheck/conftest.py`, `tests/selftest/selfcheck/test_tool_checks.py`, `tests/selftest/selfcheck/test_certs.py`.
-- Commits `d3af014` and `0da18a4` exist on `feat/phase-08-in-image-self-check`; `git rev-list --count` from the recorded base is 2.
+- Commits `f3cdb61` and `80b2a29` exist on `feat/phase-08-in-image-self-check`; `git rev-list --count` from the recorded base is 2.
