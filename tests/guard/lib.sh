@@ -23,7 +23,7 @@ ENTRY="base/sbx-entrypoint base/sbx-start-lib.sh"
 HOOK_DIRS="claude/start.d cursor/start.d"
 DOCKERFILES="$BASE $CLAUDE $CURSOR"
 SANDBOX_FILES="$BASE $CLAUDE $CURSOR $COMPOSE $ENTRY versions.env build.sh clean.sh bin/*"
-SHELL_FILES="build.sh clean.sh host-test.sh bin/* base/sbx-entrypoint base/sbx-start-lib.sh base/bin/* claude/start.d/* cursor/start.d/* claude/bin/* tests/*/*.sh tests/*/*/*.sh tests/selftest/*/support/fake-gsd"
+SHELL_FILES="build.sh clean.sh host-test.sh bin/* base/sbx-entrypoint base/sbx-start-lib.sh base/bin/* claude/start.d/* cursor/start.d/* claude/bin/* cursor/bin/* tests/*/*.sh tests/*/*/*.sh tests/selftest/*/support/fake-gsd"
 
 # ------------------------------------------------------------------------------
 # nowhere_matches REGEX FILE...: true if no line matches; prints the hits

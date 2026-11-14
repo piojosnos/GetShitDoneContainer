@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# The Cursor image: the Cursor CLI (cursor-agent) on sbx-base
+# The Cursor image: the Cursor CLI (cursor-agent) and sbx-cursor on sbx-base
 # ------------------------------------------------------------------------------
 # BASE_IMAGE keeps a default because it names the local base tag, not a version.
 # Pins come from versions.env through build.sh; no other ARG has a default.
@@ -40,12 +40,12 @@ ENV CURSOR_CONFIG_DIR=/home/sandbox/workspace/state/cursor \
     SBX_STATE_DIRS="${SBX_STATE_DIRS} cursor"
 
 # ------------------------------------------------------------------------------
-# Start hooks: self-update off, the GSD sync and the bundle skills
+# Start hooks (self-update off, the GSD sync, the bundle skills) and sbx-cursor
 # ------------------------------------------------------------------------------
-# Root-owned, so the sandbox user cannot change them. There is no launcher: the
-# user starts cursor-agent in sbx-shell.
+# Root-owned, so the sandbox user cannot change them.
 # ------------------------------------------------------------------------------
 COPY cursor/start.d/ /etc/sbx/start.d/
+COPY --chmod=755 cursor/bin/ /usr/local/bin/
 RUN chmod 755 /etc/sbx/start.d/*
 
 # ------------------------------------------------------------------------------

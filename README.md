@@ -34,7 +34,7 @@ Each step is explained below in "Scripts", "Register a sandbox" and "Best-practi
 |---|---|
 | `sbx-base:local` | Ubuntu 24.04, git, gh, Node.js 24, Python 3 (pip, venv) and uv, the Temurin JDK 21, Maven, jq, ripgrep, zip and unzip, the ssh client, make and a C compiler, shellcheck and hadolint, GSD, and the `sbx-gh-login`, `sbx-bundle-clone` and `sbx-link-bundle` helpers |
 | `sbx-claude:local` | `sbx-base` plus Claude Code, ccusage, the `sbx-claude` wrapper and the managed settings (no bundle) |
-| `sbx-cursor:local` | `sbx-base` plus the Cursor CLI (`cursor-agent`) |
+| `sbx-cursor:local` | `sbx-base` plus the Cursor CLI (`cursor-agent`) and the `sbx-cursor` wrapper |
 
 - Python projects use uv or a venv, because Ubuntu blocks plain pip installs into the system Python. Every version is in `versions.env` (see "Build the images").
 
@@ -120,7 +120,7 @@ export PATH="$HOME/sbx-tools/GetShitDoneContainer/bin:$PATH"
 | `sbx-upgrade NAME [BUILD_OPTION...]` | Builds every image with `./build.sh`, which reads `SBX_CA_CERT` from your shell, then recreates this sandbox and waits for it. Prints the tool versions last. |
 | `sbx-fix-modes NAME` | Sets every file git tracks in the project folder to 644 or 755, as git committed, on the Mac and in the sandbox. Prints how many it changed. |
 
-In the sandbox: `sbx-gh-login` and `sbx-bundle-clone` (both agents) and `sbx-claude` (Claude); see "Best-practices bundle".
+In the sandbox: `sbx-gh-login` and `sbx-bundle-clone` (both agents), `sbx-claude` (Claude) and `sbx-cursor` (Cursor); see "Best-practices bundle".
 
 ## Register a sandbox
 
@@ -196,7 +196,7 @@ The files stay either way. The login of the other agent starts empty, in its own
 
 A Cursor sandbox:
 
-- `sbx-shell` opens bash as for Claude; start `cursor-agent` from it. There is no `sbx-cursor` launcher and no warning when the bundle is missing.
+- `sbx-shell` opens bash as for Claude; start `sbx-cursor` from it. It runs `cursor-agent` with its arguments, after a warning when no best-practices clone is linked. Plain `cursor-agent` works too.
 - Log in once with `cursor-agent login` and open the printed link in the Mac browser.
 - The login (`auth.json`) and the settings live in `$SBX_DIR/state/cursor`, so they survive a recreate and `sbx-upgrade`.
 - Self-update is off: every start sets the static channel in `cli-config.json`, so the CLI stays at the version of the image.
@@ -267,7 +267,7 @@ First run, once per sandbox:
 |---|---|---|
 | 1 | `sbx-gh-login` | Logs gh in and lets git use that login over HTTPS. It also asks for the git name and email if none is set. |
 | 2 | `sbx-bundle-clone` | Clones the repo into `SBX_BUNDLE_DIR` and links it. It refuses an existing folder and prints how to update or relink it. |
-| 3 | `sbx-claude` | Starts Claude. It warns and waits 5 seconds when no clone is linked. |
+| 3 | `sbx-claude` or `sbx-cursor` | Starts the agent. It warns and waits 5 seconds when no clone is linked. |
 
 What a start does in `state/claude`:
 
@@ -476,7 +476,7 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 | A skill of yours named `gsd-...` is gone after a start | GSD owns that prefix. Rename the skill. |
 | Claude refuses to edit a bundle skill under `~/.claude/skills` | Intended. Edit it in the clone by its real path (see "Best-practices bundle"). |
 | The start prints `no best-practices clone` | Run `sbx-gh-login`, then `sbx-bundle-clone`. |
-| `sbx-claude` prints the WARNING | Same. If the clone folder exists, relink it with `/etc/sbx/start.d/10-best-practices`. |
+| `sbx-claude` or `sbx-cursor` prints the WARNING | Same. If the clone folder exists, relink it with `/etc/sbx/start.d/10-best-practices`. |
 | `sbx-bundle-clone` says the folder already exists | Pull it (`git -C /home/sandbox/workspace/best-practices pull`), or relink it with `/etc/sbx/start.d/10-best-practices`. Move the folder away to clone fresh. |
 | `sbx-bundle-clone` says it cannot clone | Run `sbx-gh-login` first; the repo is private. |
 | A skill you pulled is missing in Claude | Restart, or run `/etc/sbx/start.d/10-best-practices`. |

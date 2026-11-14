@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Self-test of base/bin/sbx-link-bundle and the bundle hooks, in a temp sandbox folder
+# Self-test of base/bin/sbx-link-bundle, the bundle hooks and sbx-cursor, in a temp sandbox folder
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/entrypoint/bundle-hook.sh (exit 0 = all pass)
 # ------------------------------------------------------------------------------
@@ -196,6 +196,28 @@ case_cursor_hook() {
 }
 
 # ------------------------------------------------------------------------------
+# Case: sbx-cursor warns with no skill linked, stays quiet once linked, runs Cursor
+# ------------------------------------------------------------------------------
+case_cursor_launcher() {
+  local fakeBin
+
+  echo '--- sbx-cursor'
+  new_sandbox launcher
+  CONFIG=$WS/state/cursor
+  fakeBin=$WORK/launcher-bin
+  mkdir -p "$CONFIG" "$fakeBin"
+  printf '#!/usr/bin/env bash\necho "cursor-agent $*"\n' >"$fakeBin/cursor-agent"
+  printf '#!/usr/bin/env bash\n' >"$fakeBin/sleep"
+  chmod 755 "$fakeBin/cursor-agent" "$fakeBin/sleep"
+  env PATH="$fakeBin:$PATH" CURSOR_CONFIG_DIR="$CONFIG" SBX_BUNDLE_DIR="$WS/best-practices" bash "$REPO/cursor/bin/sbx-cursor" --version >"$WORK/launcher-before.out" 2>"$WORK/launcher-before.err" </dev/null
+  expect "sbx-cursor: warns when no bundle skill is linked" has_text "$WORK/launcher-before.err" "WARNING: no best-practices clone is linked into Cursor."
+  expect "sbx-cursor: runs cursor-agent with its arguments" equals "$(cat "$WORK/launcher-before.out")" "cursor-agent --version"
+  env PATH="$REPO/base/bin:$PATH" CURSOR_CONFIG_DIR="$CONFIG" SBX_BUNDLE_DIR="$WS/best-practices" bash "$REPO/cursor/start.d/10-best-practices" >/dev/null 2>&1 </dev/null
+  env PATH="$fakeBin:$PATH" CURSOR_CONFIG_DIR="$CONFIG" SBX_BUNDLE_DIR="$WS/best-practices" bash "$REPO/cursor/bin/sbx-cursor" --version >"$WORK/launcher-after.out" 2>"$WORK/launcher-after.err" </dev/null
+  expect "sbx-cursor: no warning once the clone is linked" equals "$(cat "$WORK/launcher-after.err")" ""
+}
+
+# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -209,5 +231,6 @@ case_bad_inputs
 case_skills_only
 case_skills_only_clone
 case_cursor_hook
+case_cursor_launcher
 case_bad_mode
 finish_cases
