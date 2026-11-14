@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 08
 current_phase_name: In-image self-check
 status: executing
-stopped_at: Completed 08-05-PLAN.md
-last_updated: "2026-11-14T18:46:34.865Z"
+stopped_at: Completed 08-06-PLAN.md
+last_updated: "2026-11-14T18:50:40.512Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 08 execution started
-state_head: 0da18a4f5e68ca2357315675aad7fa60616129eb
+state_head: 55c09c4668b51eaf081119ac6e72606c79344622
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 21
-  completed_plans: 19
+  completed_plans: 20
   percent: 29
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 08 (In-image self-check) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 08 execution started
 
@@ -176,6 +176,7 @@ Last activity: 2026-11-14 — Phase 08 execution started
 | Phase 08 P03 | 12 min | 2 tasks | 3 files |
 | Phase 08 P04 | 20 min | 3 tasks | 23 files |
 | Phase 08 P05 | 20 min | 2 tasks | 6 files |
+| Phase 08 P06 | 15 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -343,6 +344,7 @@ Recent decisions affecting current work:
 - [Phase 08]: 08-04: H-06 and H-12 renamed to h06-git-on-mac-repo.sh and h12-plain-run-refused.sh; probe deletion and guard scan-list change land in one commit
 - [Phase 08]: 08-05: pinned tool lines are named functions taking the pins file; tool_result takes an optional home_root, so wrong-pin and under-/home paths are tested with real stand-ins
 - [Phase 08]: 08-05: versions-line-file accepts the base text alone or any ' | ' prefix plus the base text; agent images check their prefix with versions_line_result
+- [Phase 08]: 08-06: link texts and the bundle, login, GSD sync and home link helpers are generic in the base library; managed settings and no-home-copy stay in the Claude file
 
 ### Pending Todos
 
@@ -412,8 +414,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T18:46:34.804Z
-Stopped at: Completed 08-05-PLAN.md
+Last session: 2026-11-14T18:50:40.448Z
+Stopped at: Completed 08-06-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
