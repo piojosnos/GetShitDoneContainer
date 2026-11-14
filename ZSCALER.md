@@ -47,7 +47,7 @@ Expect: the path, then a number of 1 or more.
 
 ## 4. Build and upgrade the sandbox
 
-`NAME` is your sandbox name. A new one: `sbx-add NAME HOST_PATH` first.
+`NAME` is your sandbox name. A new one: `sbx-add NAME HOST_PATH` first, or `sbx-add NAME HOST_PATH cursor` for a Cursor sandbox.
 
 ```bash
 sbx-upgrade NAME
@@ -56,7 +56,7 @@ sbx-upgrade NAME
 Expect:
 
 - a banner of `*` lines with the Zscaler subject and fingerprint, before the build and after it;
-- no `curl: (60)` at the `gh` download;
+- no `curl: (60)` at the `gh` download or at the Cursor CLI download from `downloads.cursor.com`;
 - the tool versions line last.
 
 ## 5. Check the tools
@@ -105,6 +105,16 @@ sbx-claude
 
 Log in, send one message, then `/exit`.
 
+In a Cursor sandbox, run this instead of `sbx-claude`:
+
+```bash
+cursor-agent login
+```
+
+Open the printed link in the Mac browser, then start `cursor-agent`, send one prompt and exit.
+
+- The proxy must pass three Cursor hosts: `downloads.cursor.com` (the build), `cursor.com` (the login page) and `api2.cursor.sh` (the prompts).
+
 | Check | Expect |
 |---|---|
 | curl | `200` or a similar code |
@@ -115,6 +125,7 @@ Log in, send one message, then `/exit`.
 | pip | `Successfully installed ...` |
 | uv | `Installed ...` |
 | Claude Code | an answer |
+| Cursor CLI | an answer |
 
 None may print `curl: (60)`, `UNABLE_TO_VERIFY_LEAF_SIGNATURE`, `CERTIFICATE_VERIFY_FAILED` or `PKIX path building failed`.
 
