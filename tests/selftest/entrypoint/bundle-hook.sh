@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Self-test of claude/start.d/10-best-practices in a temp sandbox folder
+# Self-test of base/bin/sbx-link-bundle and the bundle hooks, in a temp sandbox folder
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/entrypoint/bundle-hook.sh (exit 0 = all pass)
 # ------------------------------------------------------------------------------
@@ -30,7 +30,7 @@ new_sandbox() {
 # ------------------------------------------------------------------------------
 run_bundle_hook() {
   mkdir -p "$1/state/claude"
-  env CLAUDE_CONFIG_DIR="$1/state/claude" SBX_BUNDLE_DIR="${3:-$1/best-practices}" bash "$REPO/claude/start.d/10-best-practices" >"$WORK/$2.out" 2>"$WORK/$2.err" </dev/null
+  env PATH="$REPO/base/bin:$PATH" CLAUDE_CONFIG_DIR="$1/state/claude" SBX_BUNDLE_DIR="${3:-$1/best-practices}" bash "$REPO/claude/start.d/10-best-practices" >"$WORK/$2.out" 2>"$WORK/$2.err" </dev/null
   HOOK_RC=$?
 }
 
@@ -125,13 +125,41 @@ case_clone_without_skills() {
 case_bad_inputs() {
   echo '--- bad inputs'
   new_sandbox badinputs
-  env CLAUDE_CONFIG_DIR= SBX_BUNDLE_DIR="$WS/best-practices" bash "$REPO/claude/start.d/10-best-practices" >/dev/null 2>"$WORK/noconfig.err" </dev/null; HOOK_RC=$?
+  env PATH="$REPO/base/bin:$PATH" CLAUDE_CONFIG_DIR= SBX_BUNDLE_DIR="$WS/best-practices" bash "$REPO/claude/start.d/10-best-practices" >/dev/null 2>"$WORK/noconfig.err" </dev/null; HOOK_RC=$?
   expect "bundle hook: an empty CLAUDE_CONFIG_DIR stops the start" equals "$HOOK_RC:$(grep -Fc '[sbx] ERROR:' "$WORK/noconfig.err")" "1:1"
-  env CLAUDE_CONFIG_DIR="$CONFIG" SBX_BUNDLE_DIR= bash "$REPO/claude/start.d/10-best-practices" >/dev/null 2>"$WORK/nobundle.err" </dev/null; HOOK_RC=$?
+  env PATH="$REPO/base/bin:$PATH" CLAUDE_CONFIG_DIR="$CONFIG" SBX_BUNDLE_DIR= bash "$REPO/claude/start.d/10-best-practices" >/dev/null 2>"$WORK/nobundle.err" </dev/null; HOOK_RC=$?
   expect "bundle hook: an empty SBX_BUNDLE_DIR stops the start" equals "$HOOK_RC:$(grep -Fc '[sbx] ERROR:' "$WORK/nobundle.err")" "1:1"
   make_clone "$WORK/elsewhere"
   run_bundle_hook "$WS" unreachable "$WORK/elsewhere"
   expect "bundle hook: a clone the links cannot reach stops the start" equals "$HOOK_RC:$(grep -Fc 'does not resolve to' "$WORK/unreachable.err")" "1:1"
+}
+
+# ------------------------------------------------------------------------------
+# Case: no-rules mode links skills and keeps a rules folder of your own
+# ------------------------------------------------------------------------------
+case_skills_only() {
+  local linkerOut
+
+  echo '--- no-rules mode'
+  new_sandbox skillsonly
+  CONFIG=$WS/state/cursor
+  mkdir -p "$CONFIG/rules"
+  echo mine >"$CONFIG/rules/mine.mdc"
+  env SBX_BUNDLE_DIR="$WS/best-practices" bash "$REPO/base/bin/sbx-link-bundle" "$CONFIG" no-rules >"$WORK/skillsonly.out" 2>"$WORK/skillsonly.err" </dev/null
+  HOOK_RC=$?
+  linkerOut="$HOOK_RC:$(readlink "$CONFIG/skills/sbx-one") $(readlink "$CONFIG/skills/sbx-two"):$(tr '\n' ' ' <"$CONFIG/.best-practices-skills"):$(if [ -d "$CONFIG/rules" ] && [ ! -L "$CONFIG/rules" ]; then echo folder; fi):$(cat "$CONFIG/rules/mine.mdc"):$(cat "$WORK/skillsonly.out")"
+  expect "bundle linker: no-rules links each skill and keeps a rules folder of your own" equals "$linkerOut" "0:../../../best-practices/skills/sbx-one ../../../best-practices/skills/sbx-two:sbx-one sbx-two :folder:mine:[sbx] best-practices linked from $WS/best-practices"
+}
+
+# ------------------------------------------------------------------------------
+# Case: an unknown mode is a usage error
+# ------------------------------------------------------------------------------
+case_bad_mode() {
+  echo '--- an unknown mode'
+  new_sandbox badmode
+  env SBX_BUNDLE_DIR="$WS/best-practices" bash "$REPO/base/bin/sbx-link-bundle" "$WS/state/nothing" all >"$WORK/badmode.out" 2>"$WORK/badmode.err" </dev/null
+  HOOK_RC=$?
+  expect "bundle linker: an unknown mode prints the usage, exits 2 and changes nothing" equals "$HOOK_RC:$(cat "$WORK/badmode.err"):$(test -e "$WS/state/nothing" && echo created)" "2:Usage: sbx-link-bundle CONFIG_DIR rules|no-rules:"
 }
 
 # ------------------------------------------------------------------------------
@@ -145,4 +173,6 @@ case_dropped_skill
 case_no_clone
 case_clone_without_skills
 case_bad_inputs
+case_skills_only
+case_bad_mode
 finish_cases
