@@ -73,9 +73,17 @@ v2.0 Simple tooling (requirements come from `/gsd-new-milestone`; decisions in `
 
 v1.0 shipped 2026-11-12 (tag `v1.0`): two-mount Claude sandboxes with a pinned toolchain, GSD and ccusage baked in, the best-practices bundle from its own repo, the `sbx-*` host scripts, and an optional company root certificate. About 2.1k lines of product shell and about 10.9k lines of test shell. The user runs v1.0 on the Mac while v2.0 is built.
 
-## Next Milestone Goals
+## Current Milestone: v2.0 Simple tooling
 
-v2.0 Simple tooling: make the tests and the tooling they test simple. Delete tests of other people's software and all interactive helpers, separate test images from prod, move image checks into one in-image self-check, replace start hooks with a user-run `sbx-init`, move host logic to Python, and widen CI.
+**Goal:** Make the tests, and the tooling they test, simple: tests check our setup with real Docker and simple proxies, not other people's software.
+
+**Target features:**
+- Test diet: delete the manual helpers, the tests of Claude, GSD and Maven Central behaviour, the guard self-test and most of the fake docker
+- Test runs build and use their own image tags
+- `sbx-selfcheck` in the image (Python), also the sandbox doctor
+- `sbx-init`, run by the user, replaces the start hooks and the readiness poll
+- Host side in Python through `uv`, with a JSON registry per sandbox
+- CI on GitHub builds the test images and runs the Linux-runnable checks
 
 ## Constraints
 
@@ -133,4 +141,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-12 after v1.0 milestone*
+*Last updated: 2026-11-12 after starting milestone v2.0*

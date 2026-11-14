@@ -6,6 +6,9 @@ source: .planning/phases/02.2-best-practices-from-git-editable-from-any-sandbox/
 audit_acknowledged:
   milestone: v1.0
   at: 2026-11-12
+completed: 2026-11-12
+status: completed
+resolution: obsolete; the bash skill list check goes with the start hooks in v2.0 Phase 9
 ---
 
 File: `tests/host/lib-bundle.sh:83-87`.

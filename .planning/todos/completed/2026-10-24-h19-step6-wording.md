@@ -6,6 +6,9 @@ source: .planning/phases/02.2-best-practices-from-git-editable-from-any-sandbox/
 audit_acknowledged:
   milestone: v1.0
   at: 2026-11-12
+completed: 2026-11-12
+status: completed
+resolution: obsolete; the manual helpers are deleted in v2.0 Phase 6
 ---
 
 Files: `tests/host/manual/h19-bundle-behaviour.sh:87` and `:207-209`.

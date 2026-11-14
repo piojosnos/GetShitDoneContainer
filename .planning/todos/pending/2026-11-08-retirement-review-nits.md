@@ -2,11 +2,11 @@
 created: 2026-11-08
 title: Fix the two wording nits from the phase 5 code review
 area: docs
-resolves_phase: 5.1
 source: .planning/phases/05-migration-docs-and-old-layout-retirement/05-REVIEW.md (IN-01, IN-02)
 audit_acknowledged:
   milestone: v1.0
   at: 2026-11-12
+resolves_phase: 6
 ---
 
 Two info findings left out of the retirement PR on purpose; fold them into phase 5.1.

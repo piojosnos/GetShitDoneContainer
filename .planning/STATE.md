@@ -1,17 +1,21 @@
 ---
 gsd_state_version: "1.0"
-status: Awaiting next milestone
-stopped_at: Milestone v1.0 archived, ready for /gsd-new-milestone v2.0
-last_updated: "2026-11-12T06:32:18.959Z"
-last_activity: 2026-11-12
-last_activity_desc: Milestone v1.0 completed and archived
-state_head: 4641de8064137cae696ca7f36896810ac8b06500
+milestone: v2.0
+milestone_name: Simple tooling
+current_phase: 7
+current_phase_name: Separate test images
+status: planning
+stopped_at: Phase 06.1 complete, ready to plan Phase 7
+last_updated: "2026-11-14T01:13:56.021Z"
+last_activity: 2026-11-14
+last_activity_desc: Phase 06.1 complete, transitioned to Phase 7
+state_head: a7eee6c4e9a2e121483fee3d8496f36ecb089cbe
 progress:
-  total_phases: 13
-  completed_phases: 13
-  total_plans: 89
-  completed_plans: 89
-  percent: 100
+  total_phases: 7
+  completed_phases: 1
+  total_plans: 11
+  completed_plans: 11
+  percent: 17
 ---
 
 # Project State
@@ -21,19 +25,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Planning milestone v2.0 Simple tooling
+**Current focus:** Phase 06.1 — Cursor agent image (INSERTED)
 
 ## Current Position
 
-Phase: Milestone v1.0 complete
-Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-11-12 — Milestone v1.0 completed and archived
+Phase: 7 — Separate test images
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-14 — Phase 06.1 complete, transitioned to Phase 7
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 89
+- Total plans completed: 100
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -54,6 +58,8 @@ Last activity: 2026-11-12 — Milestone v1.0 completed and archived
 | 04 | 5 | - | - |
 | 5 | 5 | - | - |
 | 05.2 | 3 | - | - |
+| 06 | 6 | - | - |
+| 06.1 | 5 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -150,6 +156,17 @@ Last activity: 2026-11-12 — Milestone v1.0 completed and archived
 | Phase 05.2 P01 | 12 min | 3 tasks | 3 files |
 | Phase 05.2 P02 | 8 min | 2 tasks | 1 files |
 | Phase 05.2 P03 | 2 days (Mac waits included) | 3 tasks | 2 files |
+| Phase 06 P01 | 2 min | 3 tasks | 10 files |
+| Phase 06 P03 | 3 min | 2 tasks | 5 files |
+| Phase 06 P02 | 15 min | 3 tasks | 12 files |
+| Phase 06 P04 | 15min | 3 tasks | 18 files |
+| Phase 06 P05 | 8min | 2 tasks | 16 files |
+| Phase 06 P06 | 10min | 2 tasks | 0 files |
+| Phase 06.1 P01 | 4 min | 2 tasks | 12 files |
+| Phase 06.1 P02 | 5 min | 3 tasks | 12 files |
+| Phase 06.1 P03 | 6 min | 3 tasks | 13 files |
+| Phase 06.1 P04 | 8 min | 3 tasks | 12 files |
+| Phase 06.1 P05 | 5 min | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -289,6 +306,22 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-03: Mac host checklist deferred by the user to plan 05; sbx-fix-modes added to the docs PR after the real migration
 - [Phase 05.2]: SBX_CA_CERT root certificate is delivered as a BuildKit named context (cacert) with no ENV; build.sh splits it on the Mac so a private key never reaches the build
 - [Phase 05.2]: README proxy example file is $HOME/zscaler-root-ca.pem; the manual checklist lives in the proxy section and Verify a new build points at it
+- [Roadmap v2.0]: Six phases in the agreed order, each on the one before: 6 Test diet, 7 Separate test images, 8 In-image self-check, 9 sbx-init replaces the start hooks, 10 Host side to Python, 11 CI widened; criteria that need Docker are proven by `./host-test.sh` on the Mac
+- [Phase 06]: sbx self-test points DOCKER_HOST at a missing socket and unsets DOCKER_CONTEXT; no stand-in docker remains
+- [Phase 06]: Bad_Name rm case asserts the name-rule text to prove the check order without a call log
+- [Phase 06]: H-09 and H-29 share tests/host/lib-login.sh to plant and check a fake credentials file and a fake session file; presence only, never a real credential
+- [Phase 06]: 06-02: guard deny rule in isolation.sh and one-FROM rule in supply-chain.sh are plain greps; name rule stays covered by the sbx-add self-test
+- [Phase 06]: H-11 folds into H-28 as a sbx-stop timing (10 s threshold); the Compose v2 preflight lives only in host-test.sh; H-17 stays as is
+- [Phase 06]: Manual helpers deleted in one commit with their guard glob; no_compromised_gsd_package keeps every other glob
+- [Phase 06]: Plan 06 changed no file; it records the dev-sandbox gate and the passing Mac run
+- [Phase 06.1]: Compose keeps a claude default for SBX_AGENT so direct compose callers still start the Claude image
+- [Phase 06.1]: pins_are_exact accepts the dated YYYY.MM.DD-hash form; the guard keeps 17 rules
+- [Phase 06.1]: Plan 02: GSD, the helpers, the clone settings and sbx-link-bundle live in sbx-base; the linker's reach check runs before any link in both modes
+- [Phase 06.1]: 02-no-self-update writes a new cli-config.json through jq, so a rerun leaves it byte for byte
+- [Phase 06.1]: Guard hook rules loop over HOOK_DIRS; each agent folder must hold its own GSD hook sorted before 10-best-practices
+- [Phase 06.1]: Changing a sandbox's agent: sbx-rm NAME --unregister then sbx-add, since sbx-add refuses a registered name
+- [Phase 06.1]: ZSCALER.md documents no headless Cursor prompt flags; the form was never run
+- [Phase 06.1]: Plan 06.1-05 changed no file: the dev sandbox gate and the Mac gate (host-test and a logged Cursor sandbox) passed as written
 
 ### Pending Todos
 
@@ -330,6 +363,8 @@ None yet.
 - Phase 05.2 inserted after Phase 5: Trust a company root certificate (Zscaler blocks the build on the work Mac); runs before 5.1 (URGENT)
 - Phase 05.3 inserted after Phase 5.2: Tests for the extra root certificate (automated tests for the Phase 5.2 feature; runs before 5.1) (URGENT)
 - Phase 05.3 repurposed to Separate test images from prod images (host-test replaces the :local images the sandboxes run, found while discussing the cert tests); the cert tests move to the new Phase 05.4, one automatic host check that runs after 5.3
+- Phase 999.2 removed from the backlog: Retire the fake docker; fully covered by DIET-05 (Phase 6) and HOST-05 (Phase 10)
+- Phase 06.1 inserted after Phase 6: Cursor agent image: separate image, the sandbox picks claude or cursor
 
 ## Deferred Items
 
@@ -355,10 +390,10 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-11T05:18:25.281Z
-Stopped at: Phase 05.2 complete, ready to plan Phase 5.1
+Last session: 2026-11-14T01:07:57.141Z
+Stopped at: Phase 06.1 complete, ready to plan Phase 7
 Resume file: None
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Discuss Phase 6 (Test diet) with /gsd-discuss-phase 6

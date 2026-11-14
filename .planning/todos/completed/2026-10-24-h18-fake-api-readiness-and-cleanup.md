@@ -6,6 +6,9 @@ source: .planning/phases/02.2-best-practices-from-git-editable-from-any-sandbox/
 audit_acknowledged:
   milestone: v1.0
   at: 2026-11-12
+completed: 2026-11-12
+status: completed
+resolution: obsolete; H-18 and fake-claude-api.js are deleted in v2.0 Phase 6
 ---
 
 File: `tests/host/h18-scope-and-deny.sh:36-40`.
