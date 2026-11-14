@@ -600,6 +600,17 @@ def load_failure_check(name: str, detail: str) -> Check:
     return Check(name, report_load_failure)
 
 
+def is_check_list(value: object) -> bool:
+    if not isinstance(value, list):
+        return False
+
+    for item in value:
+        if not isinstance(item, Check):
+            return False
+
+    return True
+
+
 def module_check_list(module_path: Path) -> list[Check]:
     name = "load-" + module_path.stem
 
@@ -611,7 +622,12 @@ def module_check_list(module_path: Path) -> list[Check]:
     if not hasattr(module, "CHECK_LIST"):
         return [load_failure_check(name, f"{module_path} defines no CHECK_LIST")]
 
-    return list(module.CHECK_LIST)
+    check_list = module.CHECK_LIST
+
+    if not is_check_list(check_list):
+        return [load_failure_check(name, f"{module_path} defines a CHECK_LIST that is not a list of checks")]
+
+    return list(check_list)
 
 
 def collect_checks(shared_check_list: list[Check], checks_dir: Path) -> list[Check]:
