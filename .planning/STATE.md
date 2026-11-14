@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 08
 current_phase_name: In-image self-check
 status: executing
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-11-14T18:32:52.894Z"
+stopped_at: Completed 08-03-PLAN.md
+last_updated: "2026-11-14T18:37:30.018Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 08 execution started
-state_head: 8e3552ed98225fdfe90e7ba6ca52f8927b609f23
+state_head: e313863a3bc631204d2636ebdf01cf3dbdd649d7
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 21
-  completed_plans: 16
+  completed_plans: 17
   percent: 29
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 08 (In-image self-check) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 08 execution started
 
@@ -173,6 +173,7 @@ Last activity: 2026-11-14 — Phase 08 execution started
 | Phase 07 P03 | 25 min | 3 tasks | 5 files |
 | Phase 08 P01 | 3 min | 3 tasks | 14 files |
 | Phase 08 P02 | 4 min | 2 tasks | 3 files |
+| Phase 08 P03 | 12 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -336,6 +337,7 @@ Recent decisions affecting current work:
 - [Phase 07]: 07-03: clean.sh keeps its code; docker image prune -a -f already removes unused :test and :local images, so only its comment and the docs changed
 - [Phase 08]: Launcher runs /usr/bin/python3 -I and imports only its own resolved folder; Python sources live in */selfcheck/, never */bin/ (shellcheck would reject them)
 - [Phase 08]: H-34 pins the expected check counts (51 Claude, 49 Cursor) as constants and matches the test root by SHA-256 fingerprint, never by a certificate count
+- [Phase 08]: 08-03: one shared state walk returns reported paths and the tolerated count; GSD sync folders matched by second path part in any state subfolder
 
 ### Pending Todos
 
@@ -405,8 +407,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T18:32:52.833Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-11-14T18:37:29.956Z
+Stopped at: Completed 08-03-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
