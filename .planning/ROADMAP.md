@@ -87,7 +87,7 @@ Plans:
   4. GSD is installed for Cursor in a Cursor sandbox, and existing Claude sandboxes work as before.
   5. On the Mac, a Cursor sandbox logs in, answers a prompt in its workspace, and `./host-test.sh` still passes.
 
-**Plans**: 2/5 plans executed
+**Plans**: 3/5 plans executed
 
 Plans:
 **Wave 1**
@@ -97,7 +97,7 @@ Plans:
 - [x] 06.1-02-PLAN.md: GSD, `sbx-gh-login`, `sbx-bundle-clone` and the shared bundle linker move to `sbx-base`; Claude works as before (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 06.1-03-PLAN.md: Cursor start hooks (self-update off, GSD sync, bundle skills); guard and self-tests cover them (wave 3)
+- [x] 06.1-03-PLAN.md: Cursor start hooks (self-update off, GSD sync, bundle skills); guard and self-tests cover them (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 06.1-04-PLAN.md: list of bundle items that do not work in Cursor; README and test docs (wave 4)
