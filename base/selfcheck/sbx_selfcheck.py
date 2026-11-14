@@ -22,6 +22,7 @@ MOUNTINFO_FILE = Path("/proc/self/mountinfo")
 COMMAND_TIMEOUT_SECONDS = 60
 REPORTED_PROBLEM_LIMIT = 10
 AGENT_CHECKS_DIR = Path("/etc/sbx/selfcheck.d")
+AGENT_CHECKS_CHECK_NAME = "load-agent-checks"
 AGENT_MODULE_PREFIX = "sbx_selfcheck_agent_"
 FIX_LINE_INDENT = "      "
 UNSET_SANDBOX_NAME = "NAME"
@@ -618,6 +619,14 @@ def collect_checks(shared_check_list: list[Check], checks_dir: Path) -> list[Che
     for module_path in sorted(checks_dir.glob("*.py")):
         check_list.extend(module_check_list(module_path))
 
+    if len(check_list) == len(shared_check_list):
+        check_list.append(
+            load_failure_check(
+                AGENT_CHECKS_CHECK_NAME,
+                f"found no agent checks in {checks_dir}, so the image's own checks did not run",
+            )
+        )
+
     return check_list
 
 
@@ -650,6 +659,7 @@ def run_selfcheck(shared_check_list: list[Check], checks_dir: Path, output: Text
 
     for check in check_list:
         result = run_check(check)
+
         if not result.passed:
             failed_count += 1
 
