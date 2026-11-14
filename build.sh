@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Builds sbx-base:local, then sbx-claude:local and sbx-cursor:local, with the pins in versions.env
+# Builds sbx-base, then one image per agent, with the pins in versions.env
 # ------------------------------------------------------------------------------
 # Usage: ./build.sh [DOCKER_BUILD_OPTION...]
 # Extra options go to every build, for example --no-cache.
 # With SBX_CA_CERT set to a PEM file, every image also trusts its root
 # certificates.
+# SBX_IMAGE_TAG picks the tag of all three: local when unset or empty, or test
+# for the test run. Any other value stops the build.
 # ------------------------------------------------------------------------------
 set -eu
 
@@ -54,18 +56,18 @@ collect_build_args() {
 }
 
 # ------------------------------------------------------------------------------
-# build_image DOCKERFILE TAG [OPTION...]: builds TAG with every pin
+# build_image DOCKERFILE IMAGE [OPTION...]: builds IMAGE with every pin
 # ------------------------------------------------------------------------------
 # The options come right after docker build.
 # ------------------------------------------------------------------------------
 build_image() {
   local dockerfile=$1
-  local imageTag=$2
+  local imageName=$2
 
   shift 2
 
-  echo "build.sh: building $imageTag"
-  docker build "$@" -f "$dockerfile" "${buildArgList[@]}" -t "$imageTag" .
+  echo "build.sh: building $imageName"
+  docker build "$@" -f "$dockerfile" "${buildArgList[@]}" -t "$imageName" .
 }
 
 # ------------------------------------------------------------------------------
@@ -149,6 +151,12 @@ print_cert_banner() {
 # ------------------------------------------------------------------------------
 cd "$(dirname "$0")"
 
+# The agent list and the tag check live once, in the library the sbx-* scripts
+# use; its errors start with scriptName.
+scriptName=build.sh
+. bin/sbx-lib.sh
+
+check_image_tag || exit 1
 check_versions_file
 load_versions
 collect_build_args
@@ -156,11 +164,13 @@ prepare_extra_cert || exit 1
 print_cert_banner
 
 if [ -n "$extraCertDir" ]; then
-  build_image base/Dockerfile sbx-base:local --build-context "cacert=$extraCertDir" "$@"
+  build_image base/Dockerfile "sbx-base:$imageTag" --build-context "cacert=$extraCertDir" "$@"
 else
-  build_image base/Dockerfile sbx-base:local "$@"
+  build_image base/Dockerfile "sbx-base:$imageTag" "$@"
 fi
 
-build_image claude/Dockerfile sbx-claude:local "$@"
-build_image cursor/Dockerfile sbx-cursor:local "$@"
+for agent in $knownAgentList; do
+  build_image "$agent/Dockerfile" "sbx-$agent:$imageTag" --build-arg "BASE_IMAGE=sbx-base:$imageTag" "$@"
+done
+
 print_cert_banner

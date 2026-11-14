@@ -200,7 +200,7 @@ check_upgrade() {
 
   check_one_bind_mount
 
-  versionsLine=$(run_timeout 60 docker run --rm --entrypoint cat sbx-claude:local /etc/sbx/tool-versions </dev/null 2>&1)
+  versionsLine=$(run_timeout 60 docker run --rm --entrypoint cat "$CLAUDE_IMAGE" /etc/sbx/tool-versions </dev/null 2>&1)
   lastLine=$(tail -n 1 "$RUN/logs/h29-upgrade.out")
   previousLine=$(tail -n 2 "$RUN/logs/h29-upgrade.out" | head -n 1)
 

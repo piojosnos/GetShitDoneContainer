@@ -10,8 +10,9 @@ services:
   sandbox:
     # Built on the Mac with ./build.sh, from the repo root. SBX_AGENT picks the
     # agent image (claude or cursor); the sbx-* scripts always set it, and a plain
-    # docker compose call gets claude.
-    image: "sbx-${SBX_AGENT:-claude}:local"
+    # docker compose call gets claude. SBX_IMAGE_TAG picks the tag, local unless
+    # it is test.
+    image: "sbx-${SBX_AGENT:-claude}:${SBX_IMAGE_TAG:-local}"
     pull_policy: never             # a missing image is an error, never a pull from Docker Hub
     container_name: "sbx-${SBX_NAME}"
     init: true                     # tini as PID 1: reaps zombies, stops promptly

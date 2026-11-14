@@ -88,7 +88,7 @@ SCRIPT
   run_timeout 180 docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true \
     -e SBX_NAME=hosttest -e BUNDLE_REPO_URL=/home/sandbox/workspace/bundle-origin.git \
     --mount "type=bind,source=$h27Dir,target=/home/sandbox/workspace" \
-    sbx-claude:local bash -c "$scriptText" </dev/null >"$h27Dir/run.log" 2>&1
+    "$CLAUDE_IMAGE" bash -c "$scriptText" </dev/null >"$h27Dir/run.log" 2>&1
   runStatus=$?
 }
 

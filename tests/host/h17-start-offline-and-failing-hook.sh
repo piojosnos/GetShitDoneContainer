@@ -57,7 +57,7 @@ run_restricted_container() {
   shift
   run_timeout 60 docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true \
     -e SBX_NAME=hosttest --mount "type=bind,source=$folder,target=/home/sandbox/workspace" \
-    "$@" sbx-claude:local sh -c 'echo h17-command-ran' </dev/null 2>&1
+    "$@" "$CLAUDE_IMAGE" sh -c 'echo h17-command-ran' </dev/null 2>&1
 }
 
 # ------------------------------------------------------------------------------

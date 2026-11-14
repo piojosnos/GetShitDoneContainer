@@ -47,6 +47,7 @@ Each step is explained below in "Scripts", "Register a sandbox" and "Best-practi
 ## Build the images
 
 - `./build.sh` builds `sbx-base:local`, then `sbx-claude:local` and `sbx-cursor:local`. It runs from any folder; the repo root is the build context. Extra options pass through, for example `./build.sh --no-cache`.
+- `SBX_IMAGE_TAG` picks the tag of all three images. Unset or empty means `local`, the images your sandboxes run; `test` gives `sbx-base:test`, `sbx-claude:test` and `sbx-cursor:test` for `./host-test.sh`, which sets it itself. Any other value is refused. The `sbx-*` scripts read it too, so leave it unset in your shell.
 - Every version (base OS image, toolchains, GSD, Claude Code, the Cursor CLI) lives in `versions.env`. The Dockerfiles have no default versions, so a plain `docker build` stops and names the missing pin.
 - Plain apt packages are not pinned. They follow the pinned Ubuntu release and pick up its security fixes at each rebuild.
 - In a sandbox shell, `cat /etc/sbx/versions.env` shows the pins the image was built with.
@@ -364,7 +365,7 @@ Rules. They hold whatever the timing: an agent working while Mac-side git or an 
 
 ## Verify a new build
 
-Run `./host-test.sh` on the Mac after building, or after a change under `base/`, `claude/`, `cursor/` or `compose.yml`. It keeps its output in `host-test.log` and uses its own test sandbox, `sbx-hosttest`.
+Run `./host-test.sh` on the Mac after building, or after a change under `base/`, `claude/`, `cursor/` or `compose.yml`. It keeps its output in `host-test.log` and uses its own test sandbox, `sbx-hosttest`. It also builds and checks its own images, `sbx-base:test`, `sbx-claude:test` and `sbx-cursor:test`, so it never replaces the `:local` images your sandboxes run. They stay after the run, so the next run reuses their build cache.
 
 | Question | Proven by | Run |
 |---|---|---|
@@ -388,7 +389,7 @@ Rebuilds and host-test runs pile up images, build cache and run folders. From th
 
 - Removed: the test sandbox `sbx-hosttest` and its network, every host-test run folder (`sbx-hosttest-*` in the macOS temp folder), the Docker build cache, and every image no container uses.
 - Kept: every other container, running or stopped, the images those containers use, all volumes, and every sandbox folder and its `state/`.
-- `sbx-base:local`, `sbx-claude:local` and `sbx-cursor:local` go too when no container uses them. `./build.sh` rebuilds them; the first build after a clean takes a few minutes.
+- `sbx-base`, `sbx-claude` and `sbx-cursor` go too when no container uses them, under both tags, `:local` and `:test`. `./build.sh` rebuilds the `:local` ones and `./host-test.sh` the `:test` ones; the first build after a clean takes a few minutes.
 - A build that fails with `No space left on device` usually means the Docker Desktop disk is full: run `./clean.sh --yes`, or raise the disk limit in Docker Desktop, Settings, Resources.
 
 ## Safety checks
@@ -429,7 +430,7 @@ docker rm sbx-demo
 
 - `down` is what `sbx-rm` runs, never with an option that removes volumes or images. `docker stop` and `docker rm` are what `sbx-rm --unregister` runs for a broken entry, by the exact container name and never with `-v` or `-f`.
 - `docker exec` is what `sbx-shell` runs. `-w` starts the shell in your project folder; without it a shell starts in `/home/sandbox/workspace`. `docker ps` is what `sbx-list` reads.
-- A raw `docker compose` starts the Claude image unless `SBX_AGENT=cursor` is set next to `SBX_NAME` and `SBX_DIR`.
+- A raw `docker compose` starts the Claude image unless `SBX_AGENT=cursor` is set next to `SBX_NAME` and `SBX_DIR`. It uses the `:local` tag unless `SBX_IMAGE_TAG=test` is set too.
 - `up` returns before the start hooks finish, so a failing hook shows only as the container exiting afterwards. `sbx-start` waits for them.
 - The hooks are done when `docker exec sbx-demo pgrep -x sleep` succeeds. It fails when the container has exited (`docker logs sbx-demo` shows why).
 

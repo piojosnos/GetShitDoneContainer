@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Guard rules on the container start: ordered hooks, GSD first, the agent image
+# Guard rules on the container start: ordered hooks, GSD first, agent image, tag
 # ------------------------------------------------------------------------------
 # Usage: bash tests/guard/start.sh (exit 0 = every rule holds)
 # ------------------------------------------------------------------------------
@@ -64,21 +64,47 @@ gsd_sync_runs_before_the_bundle() {
 }
 
 # ------------------------------------------------------------------------------
-# compose_image_follows_the_agent: the registered agent picks the image
+# compose_image_follows_agent_and_tag: the agent and the tag pick the image
 # ------------------------------------------------------------------------------
-# compose.yml falls back to the Claude image when SBX_AGENT is unset, so a lost
-# or renamed side would start every Cursor sandbox on the Claude image.
+# compose.yml falls back to claude and local when a variable is unset, so a lost
+# hand-off would start a Cursor sandbox on the Claude image, or a test sandbox
+# on the images the user's sandboxes run. An agent build without the base of its
+# own tag would sit on the local base. build.sh reads the agent list and the tag
+# check from bin/sbx-lib.sh, so a new agent or tag is one edit there.
 # ------------------------------------------------------------------------------
-compose_image_follows_the_agent() {
+compose_image_follows_agent_and_tag() {
   local ok=0
+  local baseArgCount
 
-  if ! grep -Fq 'image: "sbx-${SBX_AGENT:-claude}:local"' $COMPOSE; then
-    echo "    $COMPOSE does not take its image from \"sbx-\${SBX_AGENT:-claude}:local\""
+  if ! grep -Fq 'image: "sbx-${SBX_AGENT:-claude}:${SBX_IMAGE_TAG:-local}"' $COMPOSE; then
+    echo "    $COMPOSE does not take its image from \"sbx-\${SBX_AGENT:-claude}:\${SBX_IMAGE_TAG:-local}\""
     ok=1
   fi
 
   if ! grep -Fq 'SBX_AGENT="$entryAgent" docker compose' bin/sbx-lib.sh; then
     echo "    bin/sbx-lib.sh does not pass SBX_AGENT=\"\$entryAgent\" to docker compose"
+    ok=1
+  fi
+
+  if ! grep -Fq 'SBX_IMAGE_TAG="$imageTag"' bin/sbx-lib.sh; then
+    echo "    bin/sbx-lib.sh does not pass SBX_IMAGE_TAG=\"\$imageTag\" to docker compose"
+    ok=1
+  fi
+
+  if ! grep -Fq 'for agent in $knownAgentList; do' build.sh; then
+    echo "    build.sh does not build one image per agent in knownAgentList"
+    ok=1
+  fi
+
+  baseArgCount=$(grep -Ev '^[[:space:]]*#' build.sh | grep -cF -- '--build-arg "BASE_IMAGE=sbx-base:$imageTag"')
+
+  if [ "$baseArgCount" -ne 1 ]; then
+    echo "    build.sh does not pass the base of its own tag to the agent builds"
+    ok=1
+  fi
+
+  if grep -Eq '^(knownImageTagList|knownAgentList)=|^check_image_tag\(\)' build.sh; then
+    echo "    build.sh defines its own agent list or tag check instead of reading bin/sbx-lib.sh"
     ok=1
   fi
 
@@ -93,4 +119,4 @@ enter_repo_root || exit 1
 run_rules \
   start_hooks_have_two_digit_names \
   gsd_sync_runs_before_the_bundle \
-  compose_image_follows_the_agent || exit 1
+  compose_image_follows_agent_and_tag || exit 1

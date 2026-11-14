@@ -7,6 +7,7 @@
 # ------------------------------------------------------------------------------
 
 knownAgentList="claude cursor"
+knownImageTagList="local test"
 startLimitSeconds=120
 
 # ------------------------------------------------------------------------------
@@ -53,10 +54,32 @@ load_name_rule() {
 }
 
 # ------------------------------------------------------------------------------
+# check_image_tag: sets imageTag from SBX_IMAGE_TAG; only local and test pass
+# ------------------------------------------------------------------------------
+# Unset or empty means local, as in compose.yml and build.sh. Any other value is
+# refused, so a typo cannot make a third set of images.
+# ------------------------------------------------------------------------------
+check_image_tag() {
+  local knownTag
+
+  imageTag=${SBX_IMAGE_TAG:-local}
+
+  for knownTag in $knownImageTagList; do
+    if [ "$imageTag" = "$knownTag" ]; then
+      return 0
+    fi
+  done
+
+  sbx_error "SBX_IMAGE_TAG must be ${knownImageTagList// / or }, not '$imageTag'"
+  return 1
+}
+
+# ------------------------------------------------------------------------------
 # sbx_init: sets scriptName, repoDir, the registry folder and the name rule
 # ------------------------------------------------------------------------------
 # repoDir comes from the place of this library, not from $0, so a test that
-# sources the library finds the repo too. COMPOSE_* variables are unset.
+# sources the library finds the repo too. COMPOSE_* variables are unset, and the
+# image tag is checked here, before any script registers or builds anything.
 # ------------------------------------------------------------------------------
 sbx_init() {
   local libDir
@@ -85,6 +108,7 @@ sbx_init() {
 
   unset COMPOSE_PROJECT_NAME COMPOSE_FILE COMPOSE_PROFILES COMPOSE_PATH_SEPARATOR COMPOSE_ENV_FILES COMPOSE_IGNORE_ORPHANS COMPOSE_REMOVE_ORPHANS
 
+  check_image_tag || return 1
   load_name_rule
 }
 
@@ -173,7 +197,7 @@ read_registry_entry() {
     return 1
   fi
 
-  agentImage=sbx-$entryAgent:local
+  agentImage=sbx-$entryAgent:$imageTag
 }
 
 # ------------------------------------------------------------------------------
@@ -198,13 +222,14 @@ check_sandbox_folders() {
 # ------------------------------------------------------------------------------
 # -p wins over COMPOSE_PROJECT_NAME; --env-file /dev/null keeps a .env file out.
 # SBX_NAME, SBX_DIR and SBX_AGENT are set on this one command, never taken from
-# the caller.
+# the caller. SBX_IMAGE_TAG comes from the caller, but only as the value
+# check_image_tag accepted.
 # ------------------------------------------------------------------------------
 run_compose() {
   local sandboxName=$1
 
   shift
-  SBX_NAME="$sandboxName" SBX_DIR="$entryDir" SBX_AGENT="$entryAgent" docker compose --env-file /dev/null -p "sbx-$sandboxName" -f "$repoDir/compose.yml" "$@" </dev/null
+  SBX_NAME="$sandboxName" SBX_DIR="$entryDir" SBX_IMAGE_TAG="$imageTag" SBX_AGENT="$entryAgent" docker compose --env-file /dev/null -p "sbx-$sandboxName" -f "$repoDir/compose.yml" "$@" </dev/null
 }
 
 # ------------------------------------------------------------------------------

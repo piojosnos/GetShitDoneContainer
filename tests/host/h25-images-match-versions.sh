@@ -28,11 +28,11 @@ check_record() {
   local recordFile="$RUN/logs/h25-image-versions.env"
   local diffText
 
-  run_timeout 60 docker run --rm --entrypoint cat sbx-claude:local /etc/sbx/versions.env </dev/null >"$recordFile" 2>&1
+  run_timeout 60 docker run --rm --entrypoint cat "$CLAUDE_IMAGE" /etc/sbx/versions.env </dev/null >"$recordFile" 2>&1
 
   diffText=$(diff "$recordFile" "$REPO_DIR/versions.env" 2>&1)
   if [ -n "$diffText" ]; then
-    add_problem "/etc/sbx/versions.env in sbx-claude:local differs from versions.env; rebuild with ./build.sh: $(first_lines "$diffText")"
+    add_problem "/etc/sbx/versions.env in $CLAUDE_IMAGE differs from versions.env; rebuild with ./build.sh: $(first_lines "$diffText")"
   fi
 }
 
@@ -48,12 +48,12 @@ check_tool_versions() {
   gsdPin=$(pin_of GSD_CORE_VERSION)
   ccusagePin=$(pin_of CCUSAGE_VERSION)
 
-  gsdIdentity=$(run_timeout 60 docker run --rm --entrypoint gsd-tools sbx-claude:local runtime-identity --raw </dev/null 2>&1)
+  gsdIdentity=$(run_timeout 60 docker run --rm --entrypoint gsd-tools "$CLAUDE_IMAGE" runtime-identity --raw </dev/null 2>&1)
   if [ "$gsdIdentity" != "{\"packageName\":\"@opengsd/gsd-core\",\"version\":\"$gsdPin\"}" ]; then
     add_problem "the image's GSD is $(first_lines "$gsdIdentity"); versions.env pins $gsdPin"
   fi
 
-  ccusageVersion=$(run_timeout 60 docker run --rm --entrypoint ccusage sbx-claude:local --version </dev/null 2>&1)
+  ccusageVersion=$(run_timeout 60 docker run --rm --entrypoint ccusage "$CLAUDE_IMAGE" --version </dev/null 2>&1)
   if [ "$ccusageVersion" != "ccusage $ccusagePin" ]; then
     add_problem "the image's ccusage is $(first_lines "$ccusageVersion"); versions.env pins $ccusagePin"
   fi
@@ -67,7 +67,7 @@ check_tool_versions() {
 check_workspace_empty() {
   local listing listingStatus
 
-  listing=$(run_timeout 60 docker run --rm --entrypoint ls sbx-claude:local -A /home/sandbox/workspace </dev/null 2>&1)
+  listing=$(run_timeout 60 docker run --rm --entrypoint ls "$CLAUDE_IMAGE" -A /home/sandbox/workspace </dev/null 2>&1)
   listingStatus=$?
 
   if [ "$listingStatus" -ne 0 ]; then
@@ -82,6 +82,8 @@ check_workspace_empty() {
 # ------------------------------------------------------------------------------
 # BuildKit names whichever blank FROM pin it reads first, so any is accepted.
 # Only the guard's own messages count, never the echoed Dockerfile text.
+# The Claude build gets the test base image: BASE_IMAGE is not a pin, and its
+# Dockerfile default names an image a test run must not use (or may lack).
 # ------------------------------------------------------------------------------
 check_bare_builds() {
   local baseLog="$RUN/logs/h25-bare-base.log"
@@ -95,7 +97,7 @@ check_bare_builds() {
     add_problem "a build of base/Dockerfile without build.sh did not stop naming a missing pin; log: $baseLog"
   fi
 
-  run_timeout 300 docker build --progress=plain -f "$REPO_DIR/claude/Dockerfile" "$REPO_DIR" </dev/null >"$claudeLog" 2>&1
+  run_timeout 300 docker build --progress=plain --build-arg "BASE_IMAGE=$BASE_IMAGE" -f "$REPO_DIR/claude/Dockerfile" "$REPO_DIR" </dev/null >"$claudeLog" 2>&1
   claudeStatus=$?
 
   if [ "$claudeStatus" -eq 0 ] || ! grep -Fq 'CLAUDE_CODE_VERSION: CLAUDE_CODE_VERSION is not set; build with ./build.sh' "$claudeLog"; then

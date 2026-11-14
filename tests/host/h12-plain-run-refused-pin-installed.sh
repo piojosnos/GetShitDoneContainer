@@ -13,9 +13,9 @@ host_init
 # ------------------------------------------------------------------------------
 run_containers() {
   pin=$(claude_pin)
-  plainOutput=$(docker run --rm sbx-claude:local claude --version </dev/null 2>&1)
+  plainOutput=$(docker run --rm "$CLAUDE_IMAGE" claude --version </dev/null 2>&1)
   plainStatus=$?
-  pinOutput=$(docker run --rm --entrypoint claude sbx-claude:local --version </dev/null 2>&1)
+  pinOutput=$(docker run --rm --entrypoint claude "$CLAUDE_IMAGE" --version </dev/null 2>&1)
 }
 
 # ------------------------------------------------------------------------------

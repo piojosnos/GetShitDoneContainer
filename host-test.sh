@@ -4,6 +4,8 @@
 # ------------------------------------------------------------------------------
 # Usage: ./host-test.sh [--keep]   (exit 0 = every step passed; sh works too)
 # --keep leaves the test sandbox up to look around after a failure.
+# The run builds and checks the test images (tag test); it never builds, runs or
+# removes the local images your sandboxes run.
 # ------------------------------------------------------------------------------
 set -u
 
@@ -39,11 +41,21 @@ run_step() {
 }
 
 # ------------------------------------------------------------------------------
-# show_context: the commit under test and the Docker versions
+# show_context: the commit under test, the test images and the Docker versions
 # ------------------------------------------------------------------------------
 show_context() {
+  local agent
+  local imageList
+
   date
   printf 'branch %s, commit %s\n' "$(git rev-parse --abbrev-ref HEAD)" "$(git rev-parse --short HEAD)"
+  imageList="sbx-base:$SBX_IMAGE_TAG"
+
+  for agent in $(bash -c '. bin/sbx-lib.sh && printf "%s" "$knownAgentList"'); do
+    imageList="$imageList, sbx-$agent:$SBX_IMAGE_TAG"
+  done
+
+  echo "images: $imageList"
   git status --short
   docker --version && docker compose version
 }
@@ -65,11 +77,11 @@ find_run_dir() {
 }
 
 # ------------------------------------------------------------------------------
-# linter_versions: the linters sbx-base ships
+# linter_versions: the linters the test base image ships
 # ------------------------------------------------------------------------------
 linter_versions() {
-  docker run --rm --entrypoint shellcheck sbx-base:local --version \
-    && docker run --rm --entrypoint hadolint sbx-base:local --version
+  docker run --rm --entrypoint shellcheck "sbx-base:$SBX_IMAGE_TAG" --version \
+    && docker run --rm --entrypoint hadolint "sbx-base:$SBX_IMAGE_TAG" --version
 }
 
 # ------------------------------------------------------------------------------
@@ -129,12 +141,12 @@ sandbox_suites() {
 }
 
 # ------------------------------------------------------------------------------
-# make_linter_standin DIR TOOL: writes DIR/TOOL, which runs TOOL from sbx-base
+# make_linter_standin DIR TOOL: writes DIR/TOOL that runs TOOL in the test base
 # ------------------------------------------------------------------------------
 # The stand-in mounts the current folder read-only at the same path.
 # ------------------------------------------------------------------------------
 make_linter_standin() {
-  printf '#!/bin/sh\nexec docker run --rm -v "$PWD:$PWD:ro" -w "$PWD" --entrypoint %s sbx-base:local "$@"\n' "$2" > "$1/$2"
+  printf '#!/bin/sh\nexec docker run --rm -v "$PWD:$PWD:ro" -w "$PWD" --entrypoint %s sbx-base:%s "$@"\n' "$2" "$SBX_IMAGE_TAG" > "$1/$2"
   chmod +x "$1/$2"
 }
 
@@ -142,7 +154,7 @@ make_linter_standin() {
 # mac_guard: the guard in the Mac shell (stock bash 3.2 and BSD tools)
 # ------------------------------------------------------------------------------
 # The Mac has no shellcheck or hadolint. Two stand-ins on PATH run them from
-# sbx-base:local, so every rule must pass here and any FAIL fails the step.
+# the test base image, so every rule must pass here and any FAIL fails the step.
 # ------------------------------------------------------------------------------
 mac_guard() {
   local output standinDir status
@@ -246,6 +258,10 @@ main() {
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 cd "$(dirname "$0")" || exit 1
+
+# The run always uses the test images, whatever the caller's shell holds.
+SBX_IMAGE_TAG="test"
+export SBX_IMAGE_TAG
 
 if [ "${1:-}" = --keep ]; then
   keepSandbox=true

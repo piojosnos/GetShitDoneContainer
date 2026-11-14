@@ -28,7 +28,7 @@ check_image_architectures() {
   local imageName
   local imageArch
 
-  for imageName in sbx-base:local sbx-claude:local; do
+  for imageName in "$BASE_IMAGE" "$CLAUDE_IMAGE"; do
     imageArch=$(docker image inspect --format '{{.Architecture}}' "$imageName" </dev/null 2>&1)
     if [ "$imageArch" != "$expected" ]; then
       add_problem "$imageName is $imageArch; expected $expected"
