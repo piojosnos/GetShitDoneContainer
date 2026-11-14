@@ -717,6 +717,14 @@ def check_tool_git() -> CheckResult:
     return tool_result("git")
 
 
+def check_tool_bash() -> CheckResult:
+    return tool_result("bash")
+
+
+def check_tool_keytool() -> CheckResult:
+    return tool_result("keytool")
+
+
 def check_tool_jq() -> CheckResult:
     return tool_result("jq")
 
@@ -833,11 +841,13 @@ CHECK_LIST = [
     Check("env-bundle", check_env_bundle),
     Check("java-home", check_java_home),
     Check("tool-git", check_tool_git),
+    Check("tool-bash", check_tool_bash),
     Check("tool-gh", check_tool_gh),
     Check("tool-node", check_tool_node),
     Check("tool-python", check_tool_python),
     Check("tool-uv", check_tool_uv),
     Check("tool-java", check_tool_java),
+    Check("tool-keytool", check_tool_keytool),
     Check("tool-maven", check_tool_maven),
     Check("tool-gsd", check_tool_gsd),
     Check("tool-jq", check_tool_jq),
