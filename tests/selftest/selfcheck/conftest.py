@@ -14,6 +14,8 @@ REPO_DIR = Path(__file__).resolve().parents[3]
 
 sys.path.insert(0, str(REPO_DIR / "base" / "selfcheck"))
 
+import sbx_selfcheck  # noqa: E402
+
 
 @pytest.fixture
 def repo_dir() -> Path:
@@ -39,3 +41,11 @@ def make_certificate(tmp_path):
         return certificate_file
 
     return new_certificate
+
+
+@pytest.fixture
+def agent_module():
+    def load_agent_module(agent_name: str):
+        return sbx_selfcheck.load_check_module(REPO_DIR / agent_name / "selfcheck" / f"{agent_name}.py")
+
+    return load_agent_module
