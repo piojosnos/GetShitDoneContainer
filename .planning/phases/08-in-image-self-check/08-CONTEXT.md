@@ -49,6 +49,13 @@ The self-check always runs inside a sandbox started by `sbx-start`: the user's o
 - **D-13:** `./host-test.sh` makes a throwaway root certificate with `openssl`, builds it into the test base image through `SBX_CA_CERT`, and deletes the private key at once. Nothing is committed. No HTTPS server, no per-tool checks.
 - **D-14:** The self-check confirms every extra certificate the build installed is in the system bundle and in Java `cacerts`. With no extra certificate there is nothing to confirm and the check passes.
 
+### Decided after research
+- **D-15:** `./host-test.sh` reuses one throwaway root certificate across runs (kept under `${TMPDIR:-/tmp}/sbx-hosttest-root-ca/`, made when missing, private key deleted at once, never committed), so the test base image keeps its layer cache.
+- **D-16:** The runner's Python is unit tested with pytest pinned to exactly 9.2.0, through a minimal root `pyproject.toml`, `.python-version` (3.12) and `uv.lock`. Phase 10 extends the same file.
+- **D-17:** H-01 is deleted whole, with nothing kept on the Mac (no architecture comparison with `docker info`, no platform-warning grep). Builds run natively on the Mac; the small emulation risk is accepted.
+- **D-18:** pytest runs in the dev sandbox only. `./host-test.sh` does not run it.
+- **D-19:** One self-check line per tool; tool checks are not merged into groups.
+
 ### Claude's Discretion
 - The exact name of the agent checks folder and how a checks file declares its checks.
 - How each check is expressed in Python (small functions returning a result with a name and a hint).
@@ -118,6 +125,7 @@ The self-check always runs inside a sandbox started by `sbx-start`: the user's o
 ## Deferred Ideas
 
 - If the Cursor test sandbox makes the run noticeably longer, revisit how the host run covers Cursor.
+- Phase 10 (when `uv` reaches the Mac): consider running the self-check pytest suite as part of `./host-test.sh`.
 
 ### Reviewed Todos (not folded)
 - `2026-11-08-gsd-sync-leaves-root-owned-files.md`: belongs to Phase 9 (INIT-06).
