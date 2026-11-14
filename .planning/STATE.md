@@ -3,18 +3,18 @@ gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
 current_phase: "06.1"
-current_phase_name: cursor-agent-image
+current_phase_name: Cursor agent image (INSERTED)
 status: executing
-stopped_at: Phase 06.1 context gathered
-last_updated: "2026-11-13T23:29:32.577Z"
-last_activity: 2026-11-13
-last_activity_desc: Phase 06 complete, transitioned to Phase 06.1
-state_head: 6e2ff5ce5b865b8e465cbf79d6831990d830f4e6
+stopped_at: Completed 06.1-01-PLAN.md
+last_updated: "2026-11-14T00:35:30.575Z"
+last_activity: 2026-11-14
+last_activity_desc: Phase 06.1 execution started
+state_head: 36106e754235fbe8b3c0d0504bf5602a1ed74131
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 11
-  completed_plans: 6
+  completed_plans: 7
   percent: 14
 ---
 
@@ -25,14 +25,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 06 — Test diet
+**Current focus:** Phase 06.1 — Cursor agent image (INSERTED)
 
 ## Current Position
 
-Phase: 06.1 (cursor-agent-image) — READY TO EXECUTE
-Plan: Not started
+Phase: 06.1 (Cursor agent image (INSERTED)) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-11-13 — Phase 06 complete, transitioned to Phase 06.1
+Last activity: 2026-11-14 — Phase 06.1 execution started
 
 ## Performance Metrics
 
@@ -161,6 +161,7 @@ Last activity: 2026-11-13 — Phase 06 complete, transitioned to Phase 06.1
 | Phase 06 P04 | 15min | 3 tasks | 18 files |
 | Phase 06 P05 | 8min | 2 tasks | 16 files |
 | Phase 06 P06 | 10min | 2 tasks | 0 files |
+| Phase 06.1 P01 | 4 min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -308,6 +309,8 @@ Recent decisions affecting current work:
 - [Phase 06]: H-11 folds into H-28 as a sbx-stop timing (10 s threshold); the Compose v2 preflight lives only in host-test.sh; H-17 stays as is
 - [Phase 06]: Manual helpers deleted in one commit with their guard glob; no_compromised_gsd_package keeps every other glob
 - [Phase 06]: Plan 06 changed no file; it records the dev-sandbox gate and the passing Mac run
+- [Phase 06.1]: Compose keeps a claude default for SBX_AGENT so direct compose callers still start the Claude image
+- [Phase 06.1]: pins_are_exact accepts the dated YYYY.MM.DD-hash form; the guard keeps 17 rules
 
 ### Pending Todos
 
@@ -376,9 +379,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-13T19:42:08.713Z
-Stopped at: Phase 06.1 context gathered
-Resume file: .planning/phases/06.1-cursor-agent-image/06.1-CONTEXT.md
+Last session: 2026-11-14T00:35:30.533Z
+Stopped at: Completed 06.1-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 

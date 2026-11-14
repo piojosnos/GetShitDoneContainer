@@ -87,11 +87,11 @@ Plans:
   4. GSD is installed for Cursor in a Cursor sandbox, and existing Claude sandboxes work as before.
   5. On the Mac, a Cursor sandbox logs in, answers a prompt in its workspace, and `./host-test.sh` still passes.
 
-**Plans**: 5 plans
+**Plans**: 1/5 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 06.1-01-PLAN.md: tracer; `SBX_AGENT=cursor` starts `sbx-cursor:local` built from the pinned, checksummed Cursor package; `sbx-add` takes `[claude|cursor]`; login under `state/cursor` (wave 1)
+- [x] 06.1-01-PLAN.md: tracer; `SBX_AGENT=cursor` starts `sbx-cursor:local` built from the pinned, checksummed Cursor package; `sbx-add` takes `[claude|cursor]`; login under `state/cursor` (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 06.1-02-PLAN.md: GSD, `sbx-gh-login`, `sbx-bundle-clone` and the shared bundle linker move to `sbx-base`; Claude works as before (wave 2)
