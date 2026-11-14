@@ -2,165 +2,105 @@
 phase: 08-in-image-self-check
 reviewed: 2026-11-14T00:00:00Z
 depth: standard
-files_reviewed: 34
+files_reviewed: 14
 files_reviewed_list:
-  - .gitignore
-  - .hadolint.yaml
-  - .python-version
-  - MIGRATION.md
   - README.md
-  - base/Dockerfile
-  - base/selfcheck/sbx-selfcheck
   - base/selfcheck/sbx_selfcheck.py
   - base/selfcheck/shared_checks.py
-  - claude/Dockerfile
   - claude/selfcheck/claude.py
-  - cursor/Dockerfile
   - cursor/selfcheck/cursor.py
-  - host-test.sh
-  - pyproject.toml
   - tests/README.md
-  - tests/guard/isolation.sh
-  - tests/guard/supply-chain.sh
   - tests/host-checklist.md
-  - tests/host/h06-git-on-mac-repo.sh
-  - tests/host/h12-plain-run-refused.sh
-  - tests/host/h25-images-match-versions.sh
-  - tests/host/h26-isolation-by-inspect.sh
   - tests/host/h34-selfcheck.sh
-  - tests/host/lib-docker.sh
-  - tests/host/run-all.sh
   - tests/selftest/selfcheck/conftest.py
   - tests/selftest/selfcheck/test_agent_checks.py
-  - tests/selftest/selfcheck/test_certs.py
   - tests/selftest/selfcheck/test_inventory.py
   - tests/selftest/selfcheck/test_runner.py
   - tests/selftest/selfcheck/test_sandbox_checks.py
   - tests/selftest/selfcheck/test_tool_checks.py
 findings:
   critical: 0
-  warning: 4
-  info: 8
-  total: 12
+  warning: 2
+  info: 5
+  total: 7
 status: issues_found
 ---
 
 # Phase 8: Code Review Report
 
 **Reviewed:** 2026-11-14
-**Depth:** standard
-**Files Reviewed:** 34
+**Depth:** standard (incremental, diff base b286958)
+**Files Reviewed:** 14
 **Status:** issues_found
 
 ## Summary
 
-The self-check runner, the shared checks and the two agent files are in good shape. No secret or login file is ever opened or printed: `login_file_result` only calls `stat`, `cursor_version_result` runs the CLI with a throwaway `HOME` and without `CURSOR_CONFIG_DIR`, the cursor `cli-config.json` read prints only the `channel` value, and every subprocess call takes an argument list (no shell). The launcher runs under `python3 -I`, resolves its own path and imports only from the root-owned library folder. The host scripts use bash 3.2 and BSD safe constructs (`sed 's/..//'`, `tr 'a-f' 'A-F'`, no `mapfile`, no `grep -P`). No ASCII, dash or planning-ID violations were found in the listed source files.
+The gap closure holds up. All 190 selfcheck tests pass (`uv run pytest`). The renames to `_map`/`_set`, the removed comprehensions, the new `tool-bash` and `tool-keytool` checks, the `load-agent-checks` failure, the Mac owner fix hint and the H-34 round trip match the stated intent. The counts agree everywhere (41 shared + 12 Claude = 53, + 10 Cursor = 51 in `README.md`, `h34-selfcheck.sh` and `test_inventory.py`). No non-ASCII characters, planning IDs, dash punctuation or comprehensions were introduced, and `h34-selfcheck.sh` uses only bash 3.2 and BSD-safe constructs (`grep -A 1`, `grep -Ec`, `sed -n 2p`, `[[ ]]`). IN-08 was not re-raised.
 
-There is no blocker. The four warnings are a hint that cannot work in the sandbox, a check that crashes instead of reporting the thing it exists to find, a path where the self-check goes green with zero agent checks, and two checks that execute a PATH lookup that is not guarded against `/home`.
+Two of the fixes are only partly closed: the unreadable-folder handling still crashes for one shape of unreadable folder, and the "broken or missing checks file" handling still crashes for one shape of broken file. Details below.
 
 ## Warnings
 
-### WR-01: The `no-root-owned-state` fix line tells the sandbox user to run a `chown` that cannot succeed
+### WR-01: scan_owned_state still raises on a folder that lists but cannot be searched
 
-**File:** `base/selfcheck/shared_checks.py:258`
-**Issue:** The fix is `in this sandbox run: chown -R sandbox:sandbox /home/sandbox/workspace/state`. The sandbox user is uid 1000, has no sudo, drops every capability and runs with `no-new-privileges` (compose.yml, and MIGRATION.md line 137 says outright "the sandbox drops every capability, so even its root cannot change owners"). A non-root user cannot chown a file that root owns, so the command prints `Operation not permitted` for exactly the paths the check reports. The unit test `test_root_owned_state_fails_with_the_total_and_at_most_ten_paths` (`tests/selftest/selfcheck/test_sandbox_checks.py`, the `"chown -R sandbox:sandbox" in result.hint` assertion) locks the wrong hint in.
-**Fix:** Point the fix at the Mac, using the throwaway-container pattern MIGRATION.md already documents, for example:
+**File:** `base/selfcheck/shared_checks.py:239-242`
+**Issue:** The new `except OSError` around `os.scandir` handles a folder that cannot be listed. A folder that can be listed but not searched (mode `r--`, such as a root-owned `0444` folder) passes `scandir`, then `entry.stat(follow_symlinks=False)` raises `PermissionError` for each entry, and only `FileNotFoundError` is caught there. Reproduced: `scan_owned_state` on `st/sub/d/f` with `d` at mode 444 raises `PermissionError: [Errno 13]`. The runner turns it into `FAIL: no-root-owned-state: raised PermissionError ...` with the generic "bug in the self-check or a broken image; sbx-upgrade" hint, which is the same misleading outcome the fix was meant to remove (the right hint is the owner fix). Root-owned state is exactly the case this check exists for.
+**Fix:** Treat a failed `stat` like a failed `scandir`: report the folder as unreadable.
 ```python
-return failed(
-    ...,
-    mac_hint(
-        "give the files back to the sandbox user with a throwaway root container",
-        f"docker run --rm --network none -u root --entrypoint chown -v <state folder of {sandbox_name()}>:/state sbx-base:local -R 1000:1000 /state",
-    ),
-)
+            try:
+                entry_stat = entry.stat(follow_symlinks=False)
+            except FileNotFoundError:
+                continue
+            except OSError:
+                reported_list.append(relative_path.as_posix() + UNREADABLE_SUFFIX)
+                continue
 ```
-or, when the root-owned entries sit in a sandbox-owned folder, tell the user to `rm` them (a user may delete a root-owned file in a folder it owns). Update the test assertion to match.
+(Skip the append when `is_tolerated_path(relative_path, tolerated_folder_set)`.) Add a test with a `0o444` folder next to the `0o000` ones. Moving the "unreadable" branch into a small helper also shortens `scan_owned_state`, which is now about 50 lines at four levels of nesting.
 
-### WR-02: `scan_owned_state` raises on an unreadable folder, so the check reports a crash instead of the root-owned path
+### WR-02: a malformed CHECK_LIST still crashes the whole runner
 
-**File:** `base/selfcheck/shared_checks.py:211-237`
-**Issue:** The walk appends a root-owned directory to `reported_list` and then pushes it onto `pending_dir_list`. When that directory is mode 700 and owned by root (the very condition the check exists to find), the next `os.scandir(current_dir)` raises `PermissionError`. `run_check` turns that into `FAIL: no-root-owned-state: raised PermissionError: ...`, and the reported list is lost, so the user never learns which path is wrong. Reproduced: a `0o000` folder under a state tree makes `scan_owned_state` raise `PermissionError`. A folder deleted between listing and descending raises `FileNotFoundError` the same way, although `entry.stat` already guards that case.
-**Fix:** Catch `OSError` around the `scandir`, record the folder as unreadable in `reported_list` (it is a finding either way) and continue:
+**File:** `base/selfcheck/sbx_selfcheck.py:603-614`
+**Issue:** The gap fix makes a missing or empty checks folder a FAIL, but `module_check_list` still does `list(module.CHECK_LIST)` outside the `try`. A file with `CHECK_LIST = None` (or any non-iterable) raises `TypeError` out of `collect_checks`, so `sbx-selfcheck` dies with a traceback and prints no PASS or FAIL line at all. Reproduced with `run_selfcheck([], dir_with_CHECK_LIST_None, sys.stdout)`: `TypeError: 'NoneType' object is not iterable`. A list holding something that is not a `Check` fails later in `outcome_lines(check.name, ...)`, which also runs outside `run_check`'s `try`. The README now promises "a `load-...` line means a checks file in the image is broken or missing", and this shape of broken file breaks that promise.
+**Fix:** Validate in `module_check_list` and turn a bad list into a load failure.
 ```python
-try:
-    with os.scandir(current_dir) as entry_iterator:
-        entry_list = list(entry_iterator)
-except FileNotFoundError:
-    continue
-except PermissionError:
-    reported_list.append(current_dir.relative_to(state_dir).as_posix() + " (unreadable)")
-    continue
+    check_list = getattr(module, "CHECK_LIST", None)
+
+    if not isinstance(check_list, list) or not all(isinstance(check, Check) for check in check_list):
+        return [load_failure_check(name, f"{module_path} defines no CHECK_LIST of checks")]
 ```
-Add a test that plants an unreadable folder (the `restorable_mode` fixture already exists).
-
-### WR-03: A missing or empty agent checks folder gives a green result with no agent checks
-
-**File:** `base/selfcheck/sbx_selfcheck.py:615-621` (and `tests/selftest/selfcheck/test_runner.py:140-152`, which asserts this behaviour)
-**Issue:** `collect_checks` globs `*.py` in `/etc/sbx/selfcheck.d`. If the folder is missing, empty, or the agent file was not copied, only the 39 shared checks run and the result is `39 checks, 0 failed`, exit 0. The shared `wrappers-root-owned` check requires the folder to exist, but nothing requires a file in it, and the file that would check `/etc/sbx/selfcheck.d/claude.py` is the one that is absent. A user running `sbx-selfcheck` in such a sandbox is told everything is fine while the login, GSD sync, managed settings and agent CLI version were never checked. Only the Mac-side count in H-34 would notice, and it runs on test images only.
-**Fix:** Make the absence a failing check, so it also fails the exit status:
-```python
-module_path_list = sorted(checks_dir.glob("*.py"))
-
-if not module_path_list:
-    check_list.append(load_failure_check("load-agent-checks", f"no checks file in {checks_dir}"))
-```
-and change the runner test to expect the FAIL line and exit 1.
-
-### WR-04: `bash` and `keytool` are executed through PATH without the "not under /home" guard
-
-**File:** `base/selfcheck/shared_checks.py:498` (`bash -i`), `:513` (`bash -c`, `bash -lc`), `:628` (`keytool -list`)
-**Issue:** The project rule is that nothing in the sandbox may run from `/home`, and `tool_result` enforces it for every tool it checks. `run_command` hands a bare name to `subprocess.run`, which resolves it through the `PATH` of the environment passed in (`os.get_exec_path(env)`). There is no `tool-bash` or `tool-keytool` check, so a `~/.local/bin/bash` or `~/.local/bin/keytool` placed ahead of the image's on PATH is what the versions-line and certificate checks run, and they can pass or fail on behalf of a binary that is not the image's. `git` is covered by the `tool-git` check, so only these two escape.
-**Fix:** Run them through `tool_result`-style resolution, or pin the absolute paths (`/usr/bin/bash`, `$JAVA_HOME/bin/keytool`). The smaller change is two extra checks (`tool-bash`, `tool-keytool`) built on `tool_result("bash")` and `tool_result("keytool")`, plus bumping the three count constants (inventory test and `h34-selfcheck.sh`).
+(Write the `all(...)` as a `for` loop to follow the no-chain rule.) Keep the separate "defines no CHECK_LIST" message for the missing attribute, and add a test per shape.
 
 ## Info
 
-### IN-01: `owned_by_uid_paths` is dead code in the image
+### IN-01: the owner fix hint is also printed for unreadable folders it cannot fix
 
-**File:** `base/selfcheck/shared_checks.py:240-246`
-**Issue:** The function is a one-line wrapper around `scan_owned_state(...)[0]`. Nothing in `base/`, `claude/` or `cursor/` calls it; only `test_sandbox_checks.py` does. It widens the public surface for the benefit of tests alone.
-**Fix:** Delete it and have the tests call `scan_owned_state(...)[0]`.
+**File:** `base/selfcheck/shared_checks.py:271-275`, `tests/selftest/selfcheck/test_sandbox_checks.py` (`test_scan_owned_state_reports_an_unreadable_folder_of_another_owner`)
+**Issue:** `scan_owned_state` reports any folder it cannot open, whoever owns it. For a folder owned by the sandbox user with mode 000, `chown -R 1000:1000` changes nothing, so the Mac command in the hint does not fix the FAIL, and the detail ("owned by uid 0 or unreadable") does not tell the two cases apart. The test above makes this behaviour deliberate.
+**Fix:** Either keep unreadable-but-owned-by-sandbox folders out of the report (the sandbox can `chmod` them itself) or give that case its own hint ("make it readable: chmod u+rwx ..."). If the single hint stays, say "or make readable" in it.
 
-### IN-02: Blank lines missing before control flow
+### IN-02: the hint hardcodes the image tag and the container name pattern
 
-**File:** `base/selfcheck/sbx_selfcheck.py:653`, `tests/selftest/selfcheck/test_inventory.py:75`, `tests/selftest/selfcheck/test_runner.py:277`, `tests/selftest/selfcheck/test_agent_checks.py:478`
-**Issue:** In each place an `if` or `for` follows a statement with no blank line (`result = run_check(check)` then `if not result.passed:` in the runner; an `assert` then `for` in the three tests). This breaks the blank-lines-around-control-flow rule.
-**Fix:** Add a blank line before each of those four lines.
+**File:** `base/selfcheck/shared_checks.py:49,261`
+**Issue:** The hint names `sbx-base:local`. A sandbox started with `SBX_IMAGE_TAG=test` (the H-34 sandbox itself) runs `sbx-base:test`, so the hint the user copies there names an image that may not exist on the Mac, and `sbx-{name}` duplicates the `container_name` in `compose.yml` and `CONTAINER` in `tests/host/lib.sh`. H-34 sidesteps this by not asserting the tag, so a drift in either place is not caught.
+**Fix:** Pass the tag into the container (a `SBX_IMAGE_TAG` environment variable set by Compose) and build the image name from it, or add a one-line comment at the constant saying the hint assumes the default tag.
 
-### IN-03: Comprehensions and generator expressions in the tests
+### IN-03: an unreadable settings file is reported as "not valid JSON"
 
-**File:** `tests/selftest/selfcheck/test_agent_checks.py:72,370,486`, `tests/selftest/selfcheck/test_sandbox_checks.py:577`, `tests/selftest/selfcheck/test_tool_checks.py:284,508`, `tests/selftest/selfcheck/test_sandbox_checks.py` (the `any(...)` generator in the link-not-followed test)
-**Issue:** The source files use plain loops throughout, but the tests use list comprehensions and generator expressions (`[check.name for check in ...]`, `[name + "\n" for name in ...]`, `sorted(path.name for path in ...)`). The coding rule asks for imperative loops.
-**Fix:** Add one `check_name_list(check_list)` helper in `conftest.py` that loops, and use it in all the name comparisons; replace the other few with small loops.
+**File:** `claude/selfcheck/claude.py:84-87`, `tests/selftest/selfcheck/test_agent_checks.py` (`test_managed_settings_result_reports_an_unreadable_file_as_not_valid_json`)
+**Issue:** `except (OSError, ValueError)` folds a `PermissionError` into "is not valid JSON". The file may be fine and merely unreadable. The same pattern is in `cursor.py:66-69` (unchanged). The new test enshrines the wrong wording.
+**Fix:** Catch `ValueError` for "is not valid JSON" and `OSError` for `f"{settings_file} cannot be read: {e}"`, and update the test.
 
-### IN-04: Dict-typed locals without a `Map` suffix, and an inconsistent exception name
+### IN-04: the H-34 "after" run asserts only that one check stopped failing
 
-**File:** `base/selfcheck/shared_checks.py:343,575`, `base/selfcheck/sbx_selfcheck.py:571-578,606,627`, `claude/selfcheck/claude.py:84-90`, `cursor/selfcheck/cursor.py:66`
-**Issue:** `mount_point_collection` (a set, but named "collection"), `history_free` (a dict), `settings`, `permissions`, `config` (dicts) and the `environment` parameters carry no shape suffix. The runner catches exceptions as `error` in two places while the rest of the code uses the sanctioned `e`.
-**Fix:** Rename to `mount_point_set`-style names (`mount_point_found_set`), `history_free_environment_map`, `settings_map`, `permissions_map`, `config_map`, and use `e` for caught exceptions.
+**File:** `tests/host/h34-selfcheck.sh:267-274`
+**Issue:** After the owner fix the script runs `check_selfcheck_status` and greps for a `no-root-owned-state` FAIL. A different FAIL caused by the recursive chown (or a changed line count) passes silently, because `check_selfcheck_output` is not used. The doc and report text say the check "passes after running" the fix, which is true, but the sandbox as a whole is not shown healthy.
+**Fix:** Call `check_selfcheck_output "owner fix, after" "$afterFile" "$expectedClaudeCount"` instead of the grep, so the count and every FAIL line with its `fix:` are reported as in the first run.
 
-### IN-05: Public functions without type hints
+### IN-05: root_run leaves an unnamed container behind when it times out
 
-**File:** `base/selfcheck/sbx_selfcheck.py:581` (`load_check_module` has no return type), `claude/selfcheck/claude.py:63` (`sorted_text_list(value)` has an untyped parameter)
-**Issue:** The Python rule asks for hints on public signatures.
-**Fix:** `-> ModuleType` with `from types import ModuleType`, and `value: object`.
-
-### IN-06: `managed_settings_result` reports a missing or unreadable file as "does not parse as JSON"
-
-**File:** `claude/selfcheck/claude.py:83-86`
-**Issue:** `except (OSError, ValueError)` collapses a missing file, a permission error and bad JSON into one message. `cursor.py` already separates `FileNotFoundError` from the other two cases.
-**Fix:** Handle `FileNotFoundError` first with `f"{settings_file} is missing"`, symmetric with `self_update_result`.
-
-### IN-07: A test name and a constant hard-code the check counts
-
-**File:** `tests/selftest/selfcheck/test_inventory.py:30`
-**Issue:** `test_the_lists_hold_39_shared_12_claude_and_10_cursor_checks` repeats the numbers in `SHARED_CHECK_COUNT`, `CLAUDE_CHECK_COUNT` and `CURSOR_CHECK_COUNT`; the name goes stale the first time a check is added.
-**Fix:** Rename to `test_the_lists_hold_the_declared_check_counts`.
-
-### IN-08: Host scripts: leftover state and a predictable shared folder
-
-**File:** `tests/host/h34-selfcheck.sh:175-184`, `tests/host/run-all.sh:213-239`, `clean.sh:138`
-**Issue:** (a) `check_claude_sandbox` plants a git identity and a fake `.credentials.json` in the shared Claude test sandbox and leaves them there for the chain checks that run after H-34, so later checks start from non-clean state. (b) `make_test_root_cert` reuses an existing `root-ca.pem` in `$TMPDIR/sbx-hosttest-root-ca` without checking who owns the folder. On macOS `TMPDIR` is per-user, so this is harmless there, but with `TMPDIR` unset on a shared Linux `/tmp` another user could pre-create the folder with their own certificate and have the test images trust it. (c) `clean.sh` removes the certificate folder only because its `sbx-hosttest-*` glob happens to match it, and its output then lists it under "Host-test run folders".
-**Fix:** (a) Remove the planted files at the end of `check_claude_sandbox`, or note in the header that later checks tolerate them. (b) Test `[ -O "$certDir" ]` before reuse and regenerate when it fails. (c) Name the folder outside the `sbx-hosttest-*` pattern and add an explicit line for it in `clean.sh`, so the README's claim does not depend on a glob.
+**File:** `tests/host/h34-selfcheck.sh:203-204`
+**Issue:** `run_timeout 120 docker run --rm ...` kills the docker CLI on timeout, but the container has no name and keeps running with the test sandbox's volumes. The next run's `sbx-rm` or `docker ps` checks can see it, and a stuck root container holds the planted folder.
+**Fix:** Give it a name (`--name sbx-hosttest-h34-$logName`) and `docker rm -f` that name in `remove_planted_folder`, or mention the leftover in the H-34 failure notes in `tests/host-checklist.md`.
 
 ---
 
