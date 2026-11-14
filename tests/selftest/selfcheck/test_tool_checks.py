@@ -284,11 +284,31 @@ def test_every_tool_line_has_a_check_of_its_own():
     name_list = [check.name for check in shared_checks.CHECK_LIST]
 
     for tool in [
-        "git", "gh", "node", "python", "uv", "java", "maven", "gsd", "jq", "rg", "unzip", "zip", "ssh", "make", "gcc",
+        "git", "bash", "gh", "node", "python", "uv", "java", "keytool", "maven", "gsd", "jq", "rg", "unzip", "zip", "ssh",
+        "make", "gcc",
     ]:
         assert f"tool-{tool}" in name_list
 
     assert "tool-versions" not in name_list
+
+
+def test_tool_bash_resolves_to_the_image_outside_the_home():
+    result = shared_checks.check_tool_bash()
+    expected_path = os.path.realpath(shutil.which("bash"))
+
+    assert result.passed
+    assert result.detail == expected_path
+    assert not result.detail.startswith("/home/")
+
+
+@pytest.mark.skipif(shutil.which("keytool") is None, reason="keytool is not installed here")
+def test_tool_keytool_resolves_to_the_jdk_outside_the_home():
+    result = shared_checks.check_tool_keytool()
+    expected_path = os.path.realpath(shutil.which("keytool"))
+
+    assert result.passed
+    assert result.detail == expected_path
+    assert not result.detail.startswith("/home/")
 
 
 BASE_VERSIONS_TEXT1 = "gsd 1.15.0 | node 24.21.0 | jdk 21.0.12 | mvn 3.9.11 | python 3.12.3"

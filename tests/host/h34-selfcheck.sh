@@ -22,8 +22,8 @@ host_init
 # claude/selfcheck/claude.py or cursor/selfcheck/cursor.py; an inventory test in
 # tests/selftest/selfcheck keeps them equal.
 # ------------------------------------------------------------------------------
-expectedClaudeCount=51
-expectedCursorCount=49
+expectedClaudeCount=53
+expectedCursorCount=51
 
 cursorName=hosttest-cursor
 cursorContainer=sbx-hosttest-cursor

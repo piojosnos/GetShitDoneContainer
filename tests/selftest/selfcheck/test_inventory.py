@@ -10,7 +10,7 @@ import sbx_selfcheck
 import shared_checks
 
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
-SHARED_CHECK_COUNT = 39
+SHARED_CHECK_COUNT = 41
 CLAUDE_CHECK_COUNT = 12
 CURSOR_CHECK_COUNT = 10
 
@@ -25,7 +25,7 @@ def expected_count(repo_dir: Path, constant_name: str) -> int:
     raise AssertionError(f"{constant_name} is not set in {host_test_file}")
 
 
-def test_the_lists_hold_39_shared_12_claude_and_10_cursor_checks(agent_module):
+def test_the_lists_hold_the_declared_check_counts(agent_module):
     assert len(shared_checks.CHECK_LIST) == SHARED_CHECK_COUNT
     assert len(agent_module("claude").CHECK_LIST) == CLAUDE_CHECK_COUNT
     assert len(agent_module("cursor").CHECK_LIST) == CURSOR_CHECK_COUNT
@@ -72,5 +72,6 @@ def test_collect_checks_loads_both_agent_files_without_a_load_failure(repo_dir, 
     check_list = sbx_selfcheck.collect_checks(shared_checks.CHECK_LIST, folder1)
 
     assert len(check_list) == SHARED_CHECK_COUNT + CLAUDE_CHECK_COUNT + CURSOR_CHECK_COUNT
+
     for check in check_list:
         assert not check.name.startswith("load-"), check.name
