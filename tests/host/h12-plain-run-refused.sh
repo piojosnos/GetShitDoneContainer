@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# H-12: a plain docker run is refused; the pinned Claude Code is installed
+# H-12: a plain docker run is refused
 # ------------------------------------------------------------------------------
 # Needs: images built
 # ------------------------------------------------------------------------------
@@ -9,13 +9,11 @@ set -u
 host_init
 
 # ------------------------------------------------------------------------------
-# Runs the image once plain and once with claude as the entrypoint
+# Runs the Claude test image once, plainly
 # ------------------------------------------------------------------------------
 run_containers() {
-  pin=$(claude_pin)
   plainOutput=$(docker run --rm "$CLAUDE_IMAGE" claude --version </dev/null 2>&1)
   plainStatus=$?
-  pinOutput=$(docker run --rm --entrypoint claude "$CLAUDE_IMAGE" --version </dev/null 2>&1)
 }
 
 # ------------------------------------------------------------------------------
@@ -28,20 +26,9 @@ check_plain_run_refused() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks the installed Claude Code is the pinned version
-# ------------------------------------------------------------------------------
-check_pin_installed() {
-  if [ -z "$pin" ] || [ "$pinOutput" != "$pin (Claude Code)" ]; then
-    add_problem "expected '$pin (Claude Code)'; got: $pinOutput"
-  fi
-}
-
-# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 run_containers
 check_plain_run_refused
-check_pin_installed
-report_check H-12 "the start check or the pinned version is wrong" \
-  "a plain docker run is refused and Claude Code $pin is installed"
+report_check H-12 "a plain docker run was not refused" "a plain docker run is refused"

@@ -50,7 +50,7 @@ host_scripts_keep_sandbox_data() {
 # ------------------------------------------------------------------------------
 # managed_settings_deny_skill_edits: the managed settings deny Edit on the synced skills
 # ------------------------------------------------------------------------------
-# Host check H-14 reads the same two entries in the image.
+# sbx-selfcheck reads the same two entries in the image (host check H-34).
 # ------------------------------------------------------------------------------
 managed_settings_deny_skill_edits() {
   local ok=0

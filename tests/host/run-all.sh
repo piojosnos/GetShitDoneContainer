@@ -18,8 +18,8 @@ unset SBXTEST_DIR
 # The chain stops at its first failure. H-10 runs last: it is the likeliest to
 # fail for an environmental reason.
 # ------------------------------------------------------------------------------
-noSandboxCheckList="h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh h17-start-offline-and-failing-hook.sh h25-images-match-versions.sh h27-bundle-clone-and-publish.sh"
-sandboxCheckList="h06-git-and-identity.sh h26-isolation-by-inspect.sh h34-selfcheck.sh"
+noSandboxCheckList="h03-variable-interpolation.sh h12-plain-run-refused.sh h17-start-offline-and-failing-hook.sh h25-images-match-versions.sh h27-bundle-clone-and-publish.sh"
+sandboxCheckList="h06-git-on-mac-repo.sh h26-isolation-by-inspect.sh h34-selfcheck.sh"
 chainCheckList="h08-history-survives-recreate.sh h16-live-clone-and-restart.sh h23-caches-survive-recreate.sh h09-rebuild-keeps-files-no-volumes.sh h28-sbx-add-start-stop.sh h29-sbx-upgrade.sh h31-sbx-shell.sh h32-sbx-list.sh h33-sbx-rm.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
 
 remainingList="$noSandboxCheckList $sandboxCheckList $chainCheckList"
