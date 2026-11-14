@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# Turns the Cursor CLI's self-update off at every start
+# ------------------------------------------------------------------------------
+# The image is the version. The static channel makes the CLI skip its update
+# check and refuse an update. The setting lives in cli-config.json under
+# state/cursor, which the image cannot ship, so it is set here. Runs first,
+# before any shell can start the CLI.
+# ------------------------------------------------------------------------------
+set -eu
+
+configDir=${CURSOR_CONFIG_DIR:-}
+configFile=$configDir/cli-config.json
+
+# ------------------------------------------------------------------------------
+# check_inputs: stops the start when the config folder variable is empty
+# ------------------------------------------------------------------------------
+check_inputs() {
+  if [ -z "$configDir" ]; then
+    echo "[sbx] ERROR: CURSOR_CONFIG_DIR is not set." >&2
+    exit 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# make_config_folder: makes the config folder, or stops the start
+# ------------------------------------------------------------------------------
+make_config_folder() {
+  if ! mkdir -p "$configDir" 2>/dev/null; then
+    echo "[sbx] ERROR: cannot create the Cursor config folder $configDir." >&2
+    exit 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# set_static_channel: sets channel to static and keeps the file's other keys
+# ------------------------------------------------------------------------------
+# A file that is not valid JSON stops the start and is left as it was.
+# ------------------------------------------------------------------------------
+set_static_channel() {
+  if [ -s "$configFile" ]; then
+    if ! jq '.channel = "static"' "$configFile" >"$configFile.tmp"; then
+      rm -f "$configFile.tmp"
+      echo "[sbx] ERROR: $configFile is not valid JSON; fix or delete it, then start the sandbox again." >&2
+      exit 1
+    fi
+
+    mv "$configFile.tmp" "$configFile"
+  else
+    printf '{"channel":"static"}\n' >"$configFile"
+  fi
+
+  echo "[sbx] Cursor self-update off (static channel)"
+}
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+check_inputs
+make_config_folder
+set_static_channel

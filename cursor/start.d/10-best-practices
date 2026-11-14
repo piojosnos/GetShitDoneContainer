@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# Links the sandbox's best-practices skills into the Cursor config at each start
+# ------------------------------------------------------------------------------
+# Skills only. Cursor reads global rules only from .mdc files and the bundle's
+# rules are .md, so no rules link is made and a rules folder of your own is
+# never touched. sbx-link-bundle in the base image does the work.
+# ------------------------------------------------------------------------------
+set -eu
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+exec sbx-link-bundle "${CURSOR_CONFIG_DIR:-}" no-rules

@@ -40,6 +40,15 @@ ENV CURSOR_CONFIG_DIR=/home/sandbox/workspace/state/cursor \
     SBX_STATE_DIRS="${SBX_STATE_DIRS} cursor"
 
 # ------------------------------------------------------------------------------
+# Start hooks: self-update off, the GSD sync and the bundle skills
+# ------------------------------------------------------------------------------
+# Root-owned, so the sandbox user cannot change them. There is no launcher: the
+# user starts cursor-agent in sbx-shell.
+# ------------------------------------------------------------------------------
+COPY cursor/start.d/ /etc/sbx/start.d/
+RUN chmod 755 /etc/sbx/start.d/*
+
+# ------------------------------------------------------------------------------
 # The tool versions line: the Cursor field goes in front of the base fields
 # ------------------------------------------------------------------------------
 # From the same pin the smoke test below checks, so the line cannot disagree.
