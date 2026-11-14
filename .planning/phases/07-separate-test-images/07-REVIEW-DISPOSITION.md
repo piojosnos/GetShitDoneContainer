@@ -5,11 +5,11 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "H-25 failure message tells the user to rebuild the wrong images"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "A leaked `SBX_IMAGE_TAG=test` silently moves a real sandbox onto the test images"
   - id: IN-01
     severity: info
@@ -21,13 +21,13 @@ findings:
     title: "H-03 image check is a substring match"
   - id: IN-03
     severity: info
-    disposition: open
+    disposition: fixed
     title: "The tag allow-list is written in two places with no drift check"
   - id: IN-04
     severity: info
     disposition: open
     title: "`run_build_without_docker` depends on build.sh's exact first output and tool set"
-open: 6
+open: 3
 total: 6
 recorded: 2026-11-14T05:11:13.497Z
 ---
@@ -36,11 +36,11 @@ recorded: 2026-11-14T05:11:13.497Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
+| WR-01 | warning | fixed | quick 261114-9ma (aa45f08) |
+| WR-02 | warning | fixed | quick 261114-9ma (5d1eccb) |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
-| IN-03 | info | open | - |
+| IN-03 | info | fixed | PR #41 review (8b11423) |
 | IN-04 | info | open | - |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
