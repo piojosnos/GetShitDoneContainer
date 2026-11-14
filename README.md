@@ -47,7 +47,7 @@ Each step is explained below in "Scripts", "Register a sandbox" and "Best-practi
 ## Build the images
 
 - `./build.sh` builds `sbx-base:local`, then `sbx-claude:local` and `sbx-cursor:local`. It runs from any folder; the repo root is the build context. Extra options pass through, for example `./build.sh --no-cache`.
-- `SBX_IMAGE_TAG` picks the tag of all three images. Unset or empty means `local`, the images your sandboxes run; `test` gives `sbx-base:test`, `sbx-claude:test` and `sbx-cursor:test` for `./host-test.sh`, which sets it itself. Any other value is refused. The `sbx-*` scripts read it too, so leave it unset in your shell.
+- `SBX_IMAGE_TAG` picks the tag of all three images. Unset or empty means `local`, the images your sandboxes run; `test` gives `sbx-base:test`, `sbx-claude:test` and `sbx-cursor:test` for `./host-test.sh`, which sets it itself. Any other value is refused. The `sbx-*` scripts read it too, so leave it unset in your shell. When it is `test`, `build.sh` and the `sbx-*` scripts name it in a line on stderr.
 - Every version (base OS image, toolchains, GSD, Claude Code, the Cursor CLI) lives in `versions.env`. The Dockerfiles have no default versions, so a plain `docker build` stops and names the missing pin.
 - Plain apt packages are not pinned. They follow the pinned Ubuntu release and pick up its security fixes at each rebuild.
 - In a sandbox shell, `cat /etc/sbx/versions.env` shows the pins the image was built with.

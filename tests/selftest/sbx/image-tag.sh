@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
 # Self-test of SBX_IMAGE_TAG: it picks the image names; only local, test pass
+# A tag other than local is named on stderr; local, unset and empty are quiet.
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/sbx/image-tag.sh (exit 0 = all pass)
 # Run by run-all.sh; its one work folder under TMPDIR is removed at exit.
@@ -9,13 +10,33 @@
 set -u
 . "$(dirname "$0")/lib.sh"
 
+noticeCore='images because SBX_IMAGE_TAG='
+
+# ------------------------------------------------------------------------------
+# tag_noticed LABEL TEXT: exit 0, TEXT on stderr, the notice not on stdout
+# ------------------------------------------------------------------------------
+tag_noticed() {
+  [ "$SBX_RC" -eq 0 ] || return 1
+  has_text "$WORK/$1.err" "$2" || return 1
+  lacks_text "$WORK/$1.out" "$noticeCore"
+}
+
+# ------------------------------------------------------------------------------
+# tag_quiet LABEL: exit 0 and no notice on stderr
+# ------------------------------------------------------------------------------
+tag_quiet() {
+  [ "$SBX_RC" -eq 0 ] || return 1
+  lacks_text "$WORK/$1.err" "$noticeCore"
+}
+
 # ------------------------------------------------------------------------------
 # tag_refused LABEL NAME PATH: the tag text, nothing made, no build started
 # ------------------------------------------------------------------------------
 tag_refused() {
   refused_cleanly "$1" "SBX_IMAGE_TAG must be local or test, not 'latest'" "$2" "$3" || return 1
   lacks_text "$WORK/$1.out" "build.sh: building" || return 1
-  lacks_text "$WORK/$1.err" "build.sh: building"
+  lacks_text "$WORK/$1.err" "build.sh: building" || return 1
+  lacks_text "$WORK/$1.err" "$noticeCore"
 }
 
 # ------------------------------------------------------------------------------
@@ -47,7 +68,8 @@ run_build_without_docker() {
 build_refused() {
   [ "$BUILD_RC" -eq 1 ] || return 1
   has_text "$WORK/$1.err" "build.sh: SBX_IMAGE_TAG must be local or test, not 'latest'" || return 1
-  lacks_text "$WORK/$1.out" "build.sh: building"
+  lacks_text "$WORK/$1.out" "build.sh: building" || return 1
+  lacks_text "$WORK/$1.err" "$noticeCore"
 }
 
 # ------------------------------------------------------------------------------
@@ -65,13 +87,13 @@ case_tag_picks_the_image() {
   plant_entry entry1 "SBX_DIR=/x/one" "SBX_AGENT=cursor"
   plant_entry entry2 "SBX_DIR=/x/two" "SBX_AGENT=claude"
 
-  readOut=$(export SBX_IMAGE_TAG=test; lib_eval "${readText/NAME/entry1}" 2>&1)
+  readOut=$(export SBX_IMAGE_TAG=test; lib_eval "${readText/NAME/entry1}" 2>"$WORK/tagimage1.err")
   expect "image tag: test maps a cursor entry to sbx-cursor:test" equals "$readOut" "sbx-cursor:test"
 
-  readOut=$(export SBX_IMAGE_TAG=test; lib_eval "${readText/NAME/entry2}" 2>&1)
+  readOut=$(export SBX_IMAGE_TAG=test; lib_eval "${readText/NAME/entry2}" 2>"$WORK/tagimage2.err")
   expect "image tag: test maps a claude entry to sbx-claude:test" equals "$readOut" "sbx-claude:test"
 
-  readOut=$(export SBX_IMAGE_TAG=; lib_eval "${readText/NAME/entry1}" 2>&1)
+  readOut=$(export SBX_IMAGE_TAG=; lib_eval "${readText/NAME/entry1}" 2>"$WORK/tagimage3.err")
   expect "image tag: an empty value means local" equals "$readOut" "sbx-cursor:local"
 }
 
@@ -103,6 +125,34 @@ case_tag_refusals() {
 }
 
 # ------------------------------------------------------------------------------
+# Case: a tag other than local is named on stderr; local and unset are quiet
+# ------------------------------------------------------------------------------
+case_tag_notice() {
+  SBX_CONFIG_DIR=$WORK/cfg-tag-notice
+  export SBX_CONFIG_DIR
+
+  echo '--- a tag other than local is named'
+
+  export SBX_IMAGE_TAG=test
+  run_sbx noticetest sbx-add name1 "$WORK/notice dir/one"
+  expect "image tag: test is named on stderr by sbx-add" tag_noticed noticetest "sbx-add: using the test images because SBX_IMAGE_TAG=test; unset it to use the local images your sandboxes run"
+
+  unset SBX_IMAGE_TAG
+  run_sbx noticeunset sbx-add name2 "$WORK/notice dir/two"
+  expect "image tag: an unset tag prints no notice" tag_quiet noticeunset
+
+  export SBX_IMAGE_TAG=
+  run_sbx noticeempty sbx-add name3 "$WORK/notice dir/three"
+  expect "image tag: an empty tag prints no notice" tag_quiet noticeempty
+
+  export SBX_IMAGE_TAG=local
+  run_sbx noticelocal sbx-add name4 "$WORK/notice dir/four"
+  expect "image tag: local prints no notice" tag_quiet noticelocal
+
+  unset SBX_IMAGE_TAG
+}
+
+# ------------------------------------------------------------------------------
 # Case: build.sh names its first image by the tag and refuses another tag
 # ------------------------------------------------------------------------------
 case_build_tag() {
@@ -111,14 +161,17 @@ case_build_tag() {
   unset SBX_IMAGE_TAG
   run_build_without_docker buildunset
   expect "image tag: build.sh builds sbx-base:local when the tag is unset" equals "$(cat "$WORK/buildunset.out")" "build.sh: building sbx-base:local"
+  expect "image tag: build.sh prints no notice when the tag is unset" lacks_text "$WORK/buildunset.err" "$noticeCore"
 
   export SBX_IMAGE_TAG=
   run_build_without_docker buildempty
   expect "image tag: build.sh builds sbx-base:local when the tag is empty" equals "$(cat "$WORK/buildempty.out")" "build.sh: building sbx-base:local"
+  expect "image tag: build.sh prints no notice when the tag is empty" lacks_text "$WORK/buildempty.err" "$noticeCore"
 
   export SBX_IMAGE_TAG=test
   run_build_without_docker buildtest
   expect "image tag: build.sh builds sbx-base:test for test" equals "$(cat "$WORK/buildtest.out")" "build.sh: building sbx-base:test"
+  expect "image tag: build.sh names the test tag on stderr" has_text "$WORK/buildtest.err" "build.sh: using the test images because SBX_IMAGE_TAG=test"
 
   export SBX_IMAGE_TAG=latest
   run_build_without_docker buildbad
@@ -134,5 +187,6 @@ require_no_arguments "$@" || exit 2
 start_group || exit 1
 case_tag_picks_the_image
 case_tag_refusals
+case_tag_notice
 case_build_tag
 finish_cases
