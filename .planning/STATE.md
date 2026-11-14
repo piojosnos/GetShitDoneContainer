@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
-current_phase: "06.1"
-current_phase_name: Cursor agent image (INSERTED)
-status: verifying
-stopped_at: Completed 06.1-05-PLAN.md
-last_updated: "2026-11-14T01:07:57.182Z"
+current_phase: 7
+current_phase_name: Separate test images
+status: planning
+stopped_at: Phase 06.1 complete, ready to plan Phase 7
+last_updated: "2026-11-14T01:13:56.021Z"
 last_activity: 2026-11-14
-last_activity_desc: Phase 06.1 execution started
-state_head: f4985e492ebc9871d0ee3c059ffc42cd92b1c968
+last_activity_desc: Phase 06.1 complete, transitioned to Phase 7
+state_head: a7eee6c4e9a2e121483fee3d8496f36ecb089cbe
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 11
   completed_plans: 11
-  percent: 14
+  percent: 17
 ---
 
 # Project State
@@ -29,15 +29,15 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 
 ## Current Position
 
-Phase: 06.1 (Cursor agent image (INSERTED)) — EXECUTING
-Plan: 5 of 5
-Status: Phase complete — ready for verification
-Last activity: 2026-11-14 — Phase 06.1 execution started
+Phase: 7 — Separate test images
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-14 — Phase 06.1 complete, transitioned to Phase 7
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 95
+- Total plans completed: 100
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -59,6 +59,7 @@ Last activity: 2026-11-14 — Phase 06.1 execution started
 | 5 | 5 | - | - |
 | 05.2 | 3 | - | - |
 | 06 | 6 | - | - |
+| 06.1 | 5 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -390,7 +391,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-11-14T01:07:57.141Z
-Stopped at: Completed 06.1-05-PLAN.md
+Stopped at: Phase 06.1 complete, ready to plan Phase 7
 Resume file: None
 
 ## Operator Next Steps
