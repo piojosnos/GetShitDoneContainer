@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: "06.1"
 current_phase_name: Cursor agent image (INSERTED)
 status: executing
-stopped_at: Completed 06.1-03-PLAN.md
-last_updated: "2026-11-14T00:44:08.752Z"
+stopped_at: Completed 06.1-04-PLAN.md
+last_updated: "2026-11-14T00:47:27.558Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 06.1 execution started
-state_head: f317f2e0167a4b7c3b4b2d2996ea49f9a2f47af9
+state_head: b7e78a9338bb75afaedf64001f04b16331c814c5
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 10
   percent: 14
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 06.1 (Cursor agent image (INSERTED)) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 06.1 execution started
 
@@ -164,6 +164,7 @@ Last activity: 2026-11-14 — Phase 06.1 execution started
 | Phase 06.1 P01 | 4 min | 2 tasks | 12 files |
 | Phase 06.1 P02 | 5 min | 3 tasks | 12 files |
 | Phase 06.1 P03 | 6 min | 3 tasks | 13 files |
+| Phase 06.1 P04 | 8 min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -316,6 +317,8 @@ Recent decisions affecting current work:
 - [Phase 06.1]: Plan 02: GSD, the helpers, the clone settings and sbx-link-bundle live in sbx-base; the linker's reach check runs before any link in both modes
 - [Phase 06.1]: 02-no-self-update writes a new cli-config.json through jq, so a rerun leaves it byte for byte
 - [Phase 06.1]: Guard hook rules loop over HOOK_DIRS; each agent folder must hold its own GSD hook sorted before 10-best-practices
+- [Phase 06.1]: Changing a sandbox's agent: sbx-rm NAME --unregister then sbx-add, since sbx-add refuses a registered name
+- [Phase 06.1]: ZSCALER.md documents no headless Cursor prompt flags; the form was never run
 
 ### Pending Todos
 
@@ -384,8 +387,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T00:44:08.711Z
-Stopped at: Completed 06.1-03-PLAN.md
+Last session: 2026-11-14T00:47:27.516Z
+Stopped at: Completed 06.1-04-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
