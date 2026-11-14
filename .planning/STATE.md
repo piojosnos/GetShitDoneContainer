@@ -6,10 +6,10 @@ current_phase: 8
 current_phase_name: In-image self-check
 status: planning
 stopped_at: Phase 07 complete, ready to plan Phase 8
-last_updated: "2026-11-14T05:13:28.045Z"
+last_updated: "2026-11-14T07:03:04.521Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 07 complete, transitioned to Phase 8
-state_head: 6f2375a37467ef398b8a545565775ed126060038
+state_head: c2baa5a06ca8646127fe307387940221a5cd6c46
 progress:
   total_phases: 7
   completed_phases: 2
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 Phase: 8 — In-image self-check
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-11-14 — Phase 07 complete, transitioned to Phase 8
+Last activity: 2026-11-14 - Completed quick task 261114-9ma: fix the two test-tag review warnings
 
 ## Performance Metrics
 
@@ -359,6 +359,7 @@ None yet.
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 261114-9ma | Fix the two test-tag review warnings: H-25 rebuild hint and a notice for a non-local SBX_IMAGE_TAG | 2026-11-14 | aa45f08 | [261114-9ma-fix-the-two-test-tag-review-warnings-h-2](./quick/261114-9ma-fix-the-two-test-tag-review-warnings-h-2/) |
 
 ### Roadmap Evolution
 
