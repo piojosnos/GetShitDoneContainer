@@ -8,6 +8,8 @@ import json
 import os
 from pathlib import Path
 
+import pytest
+
 import sbx_selfcheck
 
 GSD_PIN1 = "1.15.0"
@@ -345,13 +347,33 @@ def test_managed_settings_result_fails_for_text_that_is_not_json_and_for_a_missi
     claude = agent_module("claude")
     text1 = tmp_path / "text1.json"
     text1.write_text("not json {")
+    missing1 = tmp_path / "missing1.json"
 
     text_result = claude.managed_settings_result(text1, tmp_path / "clone1", tmp_path / "config1")
-    missing_result = claude.managed_settings_result(tmp_path / "missing1.json", tmp_path / "clone1", tmp_path / "config1")
+    missing_result = claude.managed_settings_result(missing1, tmp_path / "clone1", tmp_path / "config1")
 
     assert not text_result.passed
-    assert "does not parse as JSON" in text_result.detail
+    assert text_result.detail == f"{text1} is not valid JSON"
+    assert "sbx-upgrade" in text_result.hint
     assert not missing_result.passed
+    assert missing_result.detail == f"{missing1} is missing"
+    assert "sbx-upgrade" in missing_result.hint
+
+
+@pytest.mark.skipif(os.getuid() == 0, reason="root can read a mode 000 file")
+def test_managed_settings_result_reports_an_unreadable_file_as_not_valid_json(agent_module, tmp_path):
+    claude = agent_module("claude")
+    locked1 = tmp_path / "locked1.json"
+    locked1.write_text("{}")
+    locked1.chmod(0o000)
+
+    try:
+        result = claude.managed_settings_result(locked1, tmp_path / "clone1", tmp_path / "config1")
+    finally:
+        locked1.chmod(0o644)
+
+    assert not result.passed
+    assert result.detail == f"{locked1} is not valid JSON"
 
 
 def test_managed_settings_result_fails_for_json_that_is_not_an_object(agent_module, tmp_path):
