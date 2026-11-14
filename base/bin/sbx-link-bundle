@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# Links the sandbox's best-practices clone into an agent's config folder
+# ------------------------------------------------------------------------------
+# Usage: sbx-link-bundle CONFIG_DIR rules|no-rules
+# Each agent image's 10-best-practices start hook runs it. Rules mode also
+# links rules/, for an agent that reads them; no-rules mode never touches
+# CONFIG_DIR/rules. Other skills (GSD, your own) are never touched.
+# A start with no clone goes on, so a first start works before the clone exists.
+# ------------------------------------------------------------------------------
+set -eu
+
+configDir=${1:-}
+linkMode=${2:-}
+bundleDir=${SBX_BUNDLE_DIR:-}
+skillList=$configDir/.best-practices-skills
+
+# ------------------------------------------------------------------------------
+# check_arguments: refuses anything but CONFIG_DIR and a known mode
+# ------------------------------------------------------------------------------
+check_arguments() {
+  if [ "$#" -ne 2 ]; then
+    echo "Usage: sbx-link-bundle CONFIG_DIR rules|no-rules" >&2
+    return 1
+  fi
+
+  case "$2" in
+    rules|no-rules) ;;
+    *)
+      echo "Usage: sbx-link-bundle CONFIG_DIR rules|no-rules" >&2
+      return 1
+      ;;
+  esac
+}
+
+# ------------------------------------------------------------------------------
+# check_inputs: stops the start when the config or clone folder is not named
+# ------------------------------------------------------------------------------
+check_inputs() {
+  if [ -z "$configDir" ] || [ -z "$bundleDir" ]; then
+    echo "[sbx] ERROR: no config folder was given, or SBX_BUNDLE_DIR is not set." >&2
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# remove_old_links: removes the rules link (rules mode) and the listed skills
+# ------------------------------------------------------------------------------
+# rm on a link removes the link, never the clone; it also clears the copies an
+# older start left. A skill dropped from the clone goes away with its entry.
+# ------------------------------------------------------------------------------
+remove_old_links() {
+  local oldName
+
+  if [ "$linkMode" = rules ]; then
+    rm -rf "$configDir/rules"
+  fi
+
+  if [ ! -f "$skillList" ]; then
+    return
+  fi
+
+  while IFS= read -r oldName; do
+    case "$oldName" in
+      ""|*/*|.*) continue ;;
+    esac
+
+    rm -rf "$configDir/skills/$oldName"
+  done <"$skillList"
+
+  rm -f "$skillList"
+}
+
+# ------------------------------------------------------------------------------
+# check_links_reach_clone: stops the start when the links would miss the clone
+# ------------------------------------------------------------------------------
+# The links are relative, two folders above the config folder, so they resolve
+# in the container and on the Mac alike. Runs before any link is made.
+# ------------------------------------------------------------------------------
+check_links_reach_clone() {
+  if [ ! "$configDir/../../best-practices" -ef "$bundleDir" ]; then
+    echo "[sbx] ERROR: $configDir/../../best-practices does not resolve to $bundleDir" >&2
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# link_bundle: links rules (rules mode) and each skill folder, lists the skills
+# ------------------------------------------------------------------------------
+link_bundle() {
+  local skillDir skillName
+
+  if [ "$linkMode" = rules ]; then
+    ln -s ../../best-practices/rules "$configDir/rules"
+  fi
+
+  : >"$skillList"
+
+  for skillDir in "$bundleDir"/skills/*/; do
+    if [ ! -d "$skillDir" ]; then
+      continue
+    fi
+
+    skillDir=${skillDir%/}
+    skillName=$(basename "$skillDir")
+    echo "$skillName" >>"$skillList"
+    rm -rf "$configDir/skills/$skillName"
+    ln -s "../../../best-practices/skills/$skillName" "$configDir/skills/$skillName"
+  done
+}
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+check_arguments "$@" || exit 2
+check_inputs || exit 1
+mkdir -p "$configDir/skills"
+remove_old_links
+
+if [ -d "$bundleDir/rules" ]; then
+  check_links_reach_clone || exit 1
+  link_bundle
+  echo "[sbx] best-practices linked from $bundleDir"
+else
+  echo "[sbx] no best-practices clone at $bundleDir; run sbx-bundle-clone"
+fi

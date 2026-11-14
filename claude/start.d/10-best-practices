@@ -2,91 +2,11 @@
 # ------------------------------------------------------------------------------
 # Links the sandbox's best-practices clone into the Claude config at each start
 # ------------------------------------------------------------------------------
-# Other skills (GSD, your own) are never touched.
-# A start with no clone goes on, so a first start works before the clone exists.
+# Rules and skills; sbx-link-bundle in the base image does the work.
 # ------------------------------------------------------------------------------
 set -eu
-
-configDir=${CLAUDE_CONFIG_DIR:-}
-bundleDir=${SBX_BUNDLE_DIR:-}
-skillList=$configDir/.best-practices-skills
-
-# ------------------------------------------------------------------------------
-# check_inputs: stops the start when the config or clone folder is not named
-# ------------------------------------------------------------------------------
-check_inputs() {
-  if [ -z "$configDir" ] || [ -z "$bundleDir" ]; then
-    echo "[sbx] ERROR: CLAUDE_CONFIG_DIR or SBX_BUNDLE_DIR is not set." >&2
-    exit 1
-  fi
-}
-
-# ------------------------------------------------------------------------------
-# remove_old_links: removes the rules link and the skills the last start listed
-# ------------------------------------------------------------------------------
-# rm on a link removes the link, never the clone; it also clears the copies an
-# older start left. A skill dropped from the clone goes away with its entry.
-# ------------------------------------------------------------------------------
-remove_old_links() {
-  local oldName
-
-  rm -rf "$configDir/rules"
-
-  if [ ! -f "$skillList" ]; then
-    return
-  fi
-
-  while IFS= read -r oldName; do
-    case "$oldName" in
-      ""|*/*|.*) continue ;;
-    esac
-
-    rm -rf "$configDir/skills/$oldName"
-  done <"$skillList"
-
-  rm -f "$skillList"
-}
-
-# ------------------------------------------------------------------------------
-# link_bundle: links rules and each skill folder of the clone, lists the skills
-# ------------------------------------------------------------------------------
-# Relative links resolve in the container and on the Mac alike. The last test
-# stops the start when they miss the clone.
-# ------------------------------------------------------------------------------
-link_bundle() {
-  local skillDir skillName
-
-  ln -s ../../best-practices/rules "$configDir/rules"
-  : >"$skillList"
-
-  for skillDir in "$bundleDir"/skills/*/; do
-    if [ ! -d "$skillDir" ]; then
-      continue
-    fi
-
-    skillDir=${skillDir%/}
-    skillName=$(basename "$skillDir")
-    echo "$skillName" >>"$skillList"
-    rm -rf "$configDir/skills/$skillName"
-    ln -s "../../../best-practices/skills/$skillName" "$configDir/skills/$skillName"
-  done
-
-  if [ ! "$configDir/rules" -ef "$bundleDir/rules" ]; then
-    echo "[sbx] ERROR: $configDir/rules does not resolve to $bundleDir/rules" >&2
-    exit 1
-  fi
-}
 
 # ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
-check_inputs
-mkdir -p "$configDir/skills"
-remove_old_links
-
-if [ -d "$bundleDir/rules" ]; then
-  link_bundle
-  echo "[sbx] best-practices linked from $bundleDir"
-else
-  echo "[sbx] no best-practices clone at $bundleDir; run sbx-bundle-clone"
-fi
+exec sbx-link-bundle "${CLAUDE_CONFIG_DIR:-}" rules
