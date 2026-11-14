@@ -138,7 +138,7 @@ Plans:
   3. `./host-test.sh` makes a throwaway root certificate with `openssl`, builds it into the test base image, and the self-check finds it in the system bundle and in Java `cacerts`; no certificate is committed.
   4. Each FAIL line carries a fix hint, with the Mac command when the fix is on the Mac; no skill wraps the self-check.
 
-**Plans**: 7/7 plans executed
+**Plans**: 7/11 plans executed
 
 Plans:
 **Wave 1**
@@ -157,6 +157,20 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [x] 08-07-PLAN.md: dev-sandbox phase gate, then the Mac run of `./host-test.sh` (wave 5, checkpoint)
+
+Gap closure, from the phase verification (the `no-root-owned-state` fix line cannot work in the sandbox) and the code review:
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 08-08-PLAN.md: the owner fix hint becomes a Mac command (tracer), unreadable folders are named instead of crashing, and the runner fails when no agent check ran
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 08-09-PLAN.md: `tool-bash` and `tool-keytool` (counts 41, 53, 51), and H-34 runs the owner fix round trip on real Docker
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 08-10-PLAN.md: the review's info findings: settings message, shape suffixes, type hints, loops instead of comprehensions
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 08-11-PLAN.md: dispositions recorded, the dev-sandbox gate, the Mac run (checkpoint), then CHECK-01 to CHECK-04 marked complete
 
 ### Phase 9: sbx-init replaces the start hooks
 

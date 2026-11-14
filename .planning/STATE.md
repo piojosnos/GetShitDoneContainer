@@ -3,17 +3,17 @@ gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
 current_phase: 08
-current_phase_name: In-image self-check
-status: verifying
+current_phase_name: in-image-self-check
+status: executing
 stopped_at: Completed 08-07-PLAN.md
-last_updated: "2026-11-14T20:32:24.751Z"
+last_updated: "2026-11-14T21:23:23.891Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 08 execution started
-state_head: 6907f62ed89872c64402fb0d67ad4ac94077b410
+state_head: f695bea44e09a4a0ff59d8668924c3855b0fe9d8
 progress:
   total_phases: 7
   completed_phases: 2
-  total_plans: 21
+  total_plans: 25
   completed_plans: 21
   percent: 29
 ---
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 
 ## Current Position
 
-Phase: 08 (In-image self-check) — EXECUTING
+Phase: 08 (in-image-self-check) — READY TO EXECUTE
 Plan: 7 of 7
-Status: Phase complete — ready for verification
+Status: Ready to execute
 Last activity: 2026-11-14 — Phase 08 execution started
 
 ## Performance Metrics
