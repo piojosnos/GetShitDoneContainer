@@ -82,8 +82,10 @@ def managed_settings_result(
 ) -> CheckResult:
     try:
         settings = json.loads(settings_file.read_text())
+    except FileNotFoundError:
+        return failed(f"{settings_file} is missing", rebuild_hint())
     except (OSError, ValueError):
-        return failed(f"{settings_file} does not parse as JSON", rebuild_hint())
+        return failed(f"{settings_file} is not valid JSON", rebuild_hint())
 
     permissions = {}
 
