@@ -11,7 +11,7 @@ set -u
 # no_compromised_gsd_package: GSD comes only from @opengsd/gsd-core
 # ------------------------------------------------------------------------------
 no_compromised_gsd_package() {
-  nowhere_matches 'get-shit-done-cc|gsd-build' $SANDBOX_FILES base/bin/* claude/start.d/* claude/bin/* claude/managed-settings.json README.md MIGRATION.md tests/host-checklist.md tests/host/*.sh tests/host/support/*.* tests/host/support/bundle/rules/* tests/host/support/bundle/skills/*/* tests/selftest/*.sh tests/selftest/*/*.sh tests/selftest/*/support/*
+  nowhere_matches 'get-shit-done-cc|gsd-build' $SANDBOX_FILES base/bin/* claude/start.d/* cursor/start.d/* claude/bin/* claude/managed-settings.json README.md MIGRATION.md tests/host-checklist.md tests/host/*.sh tests/host/support/*.* tests/host/support/bundle/rules/* tests/host/support/bundle/skills/*/* tests/selftest/*.sh tests/selftest/*/*.sh tests/selftest/*/support/*
 }
 
 # ------------------------------------------------------------------------------
@@ -41,7 +41,7 @@ no_pipe_to_shell_installers() {
     return 1
   fi
 
-  nowhere_matches "$pipeRegex|$substitutionRegex" $ENTRY base/bin/* claude/start.d/* claude/bin/* bin/* build.sh clean.sh
+  nowhere_matches "$pipeRegex|$substitutionRegex" $ENTRY base/bin/* claude/start.d/* cursor/start.d/* claude/bin/* bin/* build.sh clean.sh
 }
 
 # ------------------------------------------------------------------------------

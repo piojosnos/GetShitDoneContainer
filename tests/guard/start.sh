@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Guard rules on the container start: ordered hooks, GSD first
+# Guard rules on the container start: ordered hooks, GSD first, in every agent image
 # ------------------------------------------------------------------------------
 # Usage: bash tests/guard/start.sh (exit 0 = every rule holds)
 # ------------------------------------------------------------------------------
@@ -11,38 +11,53 @@ set -u
 # start_hooks_have_two_digit_names: NN-name, so 100- cannot sort before 20-
 # ------------------------------------------------------------------------------
 start_hooks_have_two_digit_names() {
+  local hookDir
   local hookNames
+  local ok=0
 
-  hookNames=$(find claude/start.d -type f 2>/dev/null | sed 's#.*/##')
+  for hookDir in $HOOK_DIRS; do
+    hookNames=$(find "$hookDir" -type f 2>/dev/null | sed 's#.*/##')
 
-  if [ -z "$hookNames" ]; then
-    echo "    claude/start.d holds no start hook"
-    return 1
-  fi
+    if [ -z "$hookNames" ]; then
+      echo "    $hookDir holds no start hook"
+      ok=1
+      continue
+    fi
 
-  printf '%s\n' "$hookNames" | grep -Ev '^[0-9]{2}-[a-z0-9-]+$' | report_lines "start hook name is not NN-name (lowercase, digits, hyphens): "
+    if ! printf '%s\n' "$hookNames" | grep -Ev '^[0-9]{2}-[a-z0-9-]+$' | report_lines "start hook name is not NN-name (lowercase, digits, hyphens): "; then
+      ok=1
+    fi
+  done
+
+  return "$ok"
 }
 
 # ------------------------------------------------------------------------------
 # gsd_sync_runs_before_the_bundle: GSD syncs first, so a bundle skill wins
 # ------------------------------------------------------------------------------
+# Each agent folder must hold its own GSD hook.
+# ------------------------------------------------------------------------------
 gsd_sync_runs_before_the_bundle() {
   local ok=0
   local hook
+  local hookDir
   local hookList
 
-  hookList=$(grep -lF 'gsd-core --claude' claude/start.d/* 2>/dev/null)
+  for hookDir in $HOOK_DIRS; do
+    hookList=$(grep -lE 'gsd-core --(claude|cursor) ' "$hookDir"/* 2>/dev/null)
 
-  if [ -z "$hookList" ]; then
-    echo "    no start hook runs the GSD installer"
-    return 1
-  fi
-
-  for hook in $hookList; do
-    if ! [[ "$(basename "$hook")" < "10-best-practices" ]]; then
-      echo "    $hook sorts after 10-best-practices"
+    if [ -z "$hookList" ]; then
+      echo "    $hookDir has no start hook that runs the GSD installer"
       ok=1
+      continue
     fi
+
+    for hook in $hookList; do
+      if ! [[ "$(basename "$hook")" < "10-best-practices" ]]; then
+        echo "    $hook sorts after 10-best-practices"
+        ok=1
+      fi
+    done
   done
 
   return "$ok"
