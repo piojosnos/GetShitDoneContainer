@@ -47,7 +47,7 @@ ENV CURSOR_CONFIG_DIR=/home/sandbox/workspace/state/cursor \
 RUN { printf 'cursor-agent %s | ' "${CURSOR_AGENT_VERSION}"; cat /etc/sbx/tool-versions; } > /tmp/tool-versions \
     && mv /tmp/tool-versions /etc/sbx/tool-versions \
     && chmod 644 /etc/sbx/tool-versions \
-    && grep -Eq '^cursor-agent [0-9]{4}\.[0-9]{2}\.[0-9]{2}-[0-9a-f]+ \| node [0-9.]+ \| jdk [0-9.]+ \| mvn [0-9.]+ \| python [0-9.]+$' /etc/sbx/tool-versions
+    && grep -Eq '^cursor-agent [0-9]{4}\.[0-9]{2}\.[0-9]{2}-[0-9a-f]+ \| gsd [0-9.]+ \| node [0-9.]+ \| jdk [0-9.]+ \| mvn [0-9.]+ \| python [0-9.]+$' /etc/sbx/tool-versions
 
 USER sandbox
 

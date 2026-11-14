@@ -15,11 +15,11 @@ no_compromised_gsd_package() {
 }
 
 # ------------------------------------------------------------------------------
-# gsd_installs_only_the_official_package: the Claude image installs pinned GSD
+# gsd_installs_only_the_official_package: the base image installs pinned GSD
 # ------------------------------------------------------------------------------
 gsd_installs_only_the_official_package() {
-  if ! grep -Fq 'npm install -g "@opengsd/gsd-core@${GSD_CORE_VERSION}"' $CLAUDE; then
-    echo "    $CLAUDE does not install \"@opengsd/gsd-core@\${GSD_CORE_VERSION}\""
+  if ! grep -Fq 'npm install -g "@opengsd/gsd-core@${GSD_CORE_VERSION}"' $BASE; then
+    echo "    $BASE does not install \"@opengsd/gsd-core@\${GSD_CORE_VERSION}\""
     return 1
   fi
 

@@ -23,7 +23,7 @@ expected_line() {
   jdkVersion=${temurinTag%%_*}
   pythonVersion=$(in_container python3 --version | sed 's/^Python //')
 
-  expectedLine="claude $(pin_of CLAUDE_CODE_VERSION) | gsd $(pin_of GSD_CORE_VERSION) | ccusage $(pin_of CCUSAGE_VERSION) | node $(pin_of NODE_VERSION) | jdk $jdkVersion | mvn $(pin_of MAVEN_VERSION) | python $pythonVersion"
+  expectedLine="claude $(pin_of CLAUDE_CODE_VERSION) | ccusage $(pin_of CCUSAGE_VERSION) | gsd $(pin_of GSD_CORE_VERSION) | node $(pin_of NODE_VERSION) | jdk $jdkVersion | mvn $(pin_of MAVEN_VERSION) | python $pythonVersion"
 }
 
 # ------------------------------------------------------------------------------
