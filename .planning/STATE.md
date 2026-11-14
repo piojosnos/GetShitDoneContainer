@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: "06.1"
 current_phase_name: Cursor agent image (INSERTED)
 status: executing
-stopped_at: Completed 06.1-01-PLAN.md
-last_updated: "2026-11-14T00:35:30.575Z"
+stopped_at: Completed 06.1-02-PLAN.md
+last_updated: "2026-11-14T00:39:56.827Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 06.1 execution started
-state_head: 36106e754235fbe8b3c0d0504bf5602a1ed74131
+state_head: 1639cf6de208df8f2f9d4fd01649455452d0b384
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 11
-  completed_plans: 7
+  completed_plans: 8
   percent: 14
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 06.1 (Cursor agent image (INSERTED)) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 06.1 execution started
 
@@ -162,6 +162,7 @@ Last activity: 2026-11-14 — Phase 06.1 execution started
 | Phase 06 P05 | 8min | 2 tasks | 16 files |
 | Phase 06 P06 | 10min | 2 tasks | 0 files |
 | Phase 06.1 P01 | 4 min | 2 tasks | 12 files |
+| Phase 06.1 P02 | 5 min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -311,6 +312,7 @@ Recent decisions affecting current work:
 - [Phase 06]: Plan 06 changed no file; it records the dev-sandbox gate and the passing Mac run
 - [Phase 06.1]: Compose keeps a claude default for SBX_AGENT so direct compose callers still start the Claude image
 - [Phase 06.1]: pins_are_exact accepts the dated YYYY.MM.DD-hash form; the guard keeps 17 rules
+- [Phase 06.1]: Plan 02: GSD, the helpers, the clone settings and sbx-link-bundle live in sbx-base; the linker's reach check runs before any link in both modes
 
 ### Pending Todos
 
@@ -379,8 +381,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T00:35:30.533Z
-Stopped at: Completed 06.1-01-PLAN.md
+Last session: 2026-11-14T00:39:56.784Z
+Stopped at: Completed 06.1-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
