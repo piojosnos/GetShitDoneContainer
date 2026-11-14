@@ -152,6 +152,22 @@ case_skills_only() {
 }
 
 # ------------------------------------------------------------------------------
+# Case: no-rules mode needs skills/ only, so a clone without rules/ still links
+# ------------------------------------------------------------------------------
+case_skills_only_clone() {
+  local linkerOut
+
+  echo '--- no-rules mode, clone without rules'
+  new_sandbox skillsclone
+  CONFIG=$WS/state/cursor
+  rm -rf "$WS/best-practices/rules"
+  env SBX_BUNDLE_DIR="$WS/best-practices" bash "$REPO/base/bin/sbx-link-bundle" "$CONFIG" no-rules >"$WORK/skillsclone.out" 2>"$WORK/skillsclone.err" </dev/null
+  HOOK_RC=$?
+  linkerOut="$HOOK_RC:$(readlink "$CONFIG/skills/sbx-one") $(readlink "$CONFIG/skills/sbx-two"):$(tr '\n' ' ' <"$CONFIG/.best-practices-skills"):$(cat "$WORK/skillsclone.out")"
+  expect "bundle linker: no-rules links the skills of a clone that has no rules folder" equals "$linkerOut" "0:../../../best-practices/skills/sbx-one ../../../best-practices/skills/sbx-two:sbx-one sbx-two :[sbx] best-practices linked from $WS/best-practices"
+}
+
+# ------------------------------------------------------------------------------
 # Case: an unknown mode is a usage error
 # ------------------------------------------------------------------------------
 case_bad_mode() {
@@ -191,6 +207,7 @@ case_no_clone
 case_clone_without_skills
 case_bad_inputs
 case_skills_only
+case_skills_only_clone
 case_cursor_hook
 case_bad_mode
 finish_cases

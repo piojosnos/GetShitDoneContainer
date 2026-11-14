@@ -7,6 +7,8 @@
 # links rules/, for an agent that reads them; no-rules mode never touches
 # CONFIG_DIR/rules. Other skills (GSD, your own) are never touched.
 # A start with no clone goes on, so a first start works before the clone exists.
+# The clone counts as missing when the folder the mode links is absent: rules/
+# in rules mode, skills/ in no-rules mode.
 # ------------------------------------------------------------------------------
 set -eu
 
@@ -117,7 +119,13 @@ check_inputs || exit 1
 mkdir -p "$configDir/skills"
 remove_old_links
 
-if [ -d "$bundleDir/rules" ]; then
+if [ "$linkMode" = rules ]; then
+  neededDir=$bundleDir/rules
+else
+  neededDir=$bundleDir/skills
+fi
+
+if [ -d "$neededDir" ]; then
   check_links_reach_clone || exit 1
   link_bundle
   echo "[sbx] best-practices linked from $bundleDir"
