@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
-current_phase: 7
-current_phase_name: Separate test images
+current_phase: 8
+current_phase_name: In-image self-check
 status: planning
-stopped_at: Phase 06.1 complete, ready to plan Phase 7
-last_updated: "2026-11-14T01:13:56.021Z"
+stopped_at: Phase 07 complete, ready to plan Phase 8
+last_updated: "2026-11-14T05:13:28.045Z"
 last_activity: 2026-11-14
-last_activity_desc: Phase 06.1 complete, transitioned to Phase 7
-state_head: a7eee6c4e9a2e121483fee3d8496f36ecb089cbe
+last_activity_desc: Phase 07 complete, transitioned to Phase 8
+state_head: 6f2375a37467ef398b8a545565775ed126060038
 progress:
   total_phases: 7
-  completed_phases: 1
-  total_plans: 11
-  completed_plans: 11
-  percent: 17
+  completed_phases: 2
+  total_plans: 14
+  completed_plans: 14
+  percent: 33
 ---
 
 # Project State
@@ -25,19 +25,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 06.1 — Cursor agent image (INSERTED)
+**Current focus:** Phase 07 — Separate test images
 
 ## Current Position
 
-Phase: 7 — Separate test images
+Phase: 8 — In-image self-check
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-11-14 — Phase 06.1 complete, transitioned to Phase 7
+Last activity: 2026-11-14 — Phase 07 complete, transitioned to Phase 8
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 100
+- Total plans completed: 103
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -60,6 +60,7 @@ Last activity: 2026-11-14 — Phase 06.1 complete, transitioned to Phase 7
 | 05.2 | 3 | - | - |
 | 06 | 6 | - | - |
 | 06.1 | 5 | - | - |
+| 07 | 3 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -167,6 +168,9 @@ Last activity: 2026-11-14 — Phase 06.1 complete, transitioned to Phase 7
 | Phase 06.1 P03 | 6 min | 3 tasks | 13 files |
 | Phase 06.1 P04 | 8 min | 3 tasks | 12 files |
 | Phase 06.1 P05 | 5 min | 2 tasks | 0 files |
+| Phase 07 P01 | 25 min | 2 tasks | 6 files |
+| Phase 07 P02 | 4 min | 3 tasks | 14 files |
+| Phase 07 P03 | 25 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -322,6 +326,12 @@ Recent decisions affecting current work:
 - [Phase 06.1]: Changing a sandbox's agent: sbx-rm NAME --unregister then sbx-add, since sbx-add refuses a registered name
 - [Phase 06.1]: ZSCALER.md documents no headless Cursor prompt flags; the form was never run
 - [Phase 06.1]: Plan 06.1-05 changed no file: the dev sandbox gate and the Mac gate (host-test and a logged Cursor sandbox) passed as written
+- [Phase 07]: The tag check lives twice (bin/sbx-lib.sh and build.sh) rather than build.sh sourcing the library; build.sh stays standalone and one self-test text covers both
+- [Phase 07]: BASE_IMAGE is passed by build.sh as a build option; versions.env and both agent Dockerfiles stay unchanged
+- [Phase 07]: start_group unsets SBX_IMAGE_TAG and SBX_CA_CERT so ./host-test.sh can export both without moving the default-case expectations
+- [Phase 07]: Plan 07-02: tag assigned as SBX_IMAGE_TAG="test" (quoted) in host-test.sh and host_init; shellcheck SC2209 flags the bare word — Keeps the assignment plain and unconditional while the guard shellcheck rule passes
+- [Phase 07]: Plan 07-02: BASE_IMAGE and CLAUDE_IMAGE are uppercase unexported globals set by host_init — shellcheck reports a lowercase library global as unassigned; build.sh must not see them
+- [Phase 07]: 07-03: clean.sh keeps its code; docker image prune -a -f already removes unused :test and :local images, so only its comment and the docs changed
 
 ### Pending Todos
 
@@ -390,8 +400,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T01:07:57.141Z
-Stopped at: Phase 06.1 complete, ready to plan Phase 7
+Last session: 2026-11-14T05:07:31.445Z
+Stopped at: Phase 07 complete, ready to plan Phase 8
 Resume file: None
 
 ## Operator Next Steps
