@@ -3,18 +3,18 @@ gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
 current_phase: 08
-current_phase_name: in-image-self-check
+current_phase_name: In-image self-check
 status: executing
-stopped_at: Phase 8 context gathered
-last_updated: "2026-11-14T09:05:52.750Z"
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-11-14T18:27:32.078Z"
 last_activity: 2026-11-14
-last_activity_desc: Phase 07 complete, transitioned to Phase 8
-state_head: f34712be85d10f0dbfcc30eec28cf4bcca7ee4b8
+last_activity_desc: Phase 08 execution started
+state_head: 61d10c6231e35390fa59aaad5299920e02b00bec
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 21
-  completed_plans: 14
+  completed_plans: 15
   percent: 29
 ---
 
@@ -25,14 +25,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 07 — Separate test images
+**Current focus:** Phase 08 — In-image self-check
 
 ## Current Position
 
-Phase: 08 (in-image-self-check) — READY TO EXECUTE
-Plan: Not started
+Phase: 08 (In-image self-check) — EXECUTING
+Plan: 2 of 7
 Status: Ready to execute
-Last activity: 2026-11-14 - Completed quick task 261114-9ma: fix the two test-tag review warnings
+Last activity: 2026-11-14 — Phase 08 execution started
 
 ## Performance Metrics
 
@@ -171,6 +171,7 @@ Last activity: 2026-11-14 - Completed quick task 261114-9ma: fix the two test-ta
 | Phase 07 P01 | 25 min | 2 tasks | 6 files |
 | Phase 07 P02 | 4 min | 3 tasks | 14 files |
 | Phase 07 P03 | 25 min | 3 tasks | 5 files |
+| Phase 08 P01 | 3 min | 3 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -332,6 +333,7 @@ Recent decisions affecting current work:
 - [Phase 07]: Plan 07-02: tag assigned as SBX_IMAGE_TAG="test" (quoted) in host-test.sh and host_init; shellcheck SC2209 flags the bare word — Keeps the assignment plain and unconditional while the guard shellcheck rule passes
 - [Phase 07]: Plan 07-02: BASE_IMAGE and CLAUDE_IMAGE are uppercase unexported globals set by host_init — shellcheck reports a lowercase library global as unassigned; build.sh must not see them
 - [Phase 07]: 07-03: clean.sh keeps its code; docker image prune -a -f already removes unused :test and :local images, so only its comment and the docs changed
+- [Phase 08]: Launcher runs /usr/bin/python3 -I and imports only its own resolved folder; Python sources live in */selfcheck/, never */bin/ (shellcheck would reject them)
 
 ### Pending Todos
 
@@ -401,9 +403,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T07:36:04.291Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-in-image-self-check/08-CONTEXT.md
+Last session: 2026-11-14T18:27:32.016Z
+Stopped at: Completed 08-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 

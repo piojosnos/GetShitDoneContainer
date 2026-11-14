@@ -138,11 +138,11 @@ Plans:
   3. `./host-test.sh` makes a throwaway root certificate with `openssl`, builds it into the test base image, and the self-check finds it in the system bundle and in Java `cacerts`; no certificate is committed.
   4. Each FAIL line carries a fix hint, with the Mac command when the fix is on the Mac; no skill wraps the self-check.
 
-**Plans**: 7 plans
+**Plans**: 1/7 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 08-01-PLAN.md: the runner (tracer): `sbx-selfcheck`, its pytest harness pinned to 9.2.0, and the image wiring (wave 1)
+- [x] 08-01-PLAN.md: the runner (tracer): `sbx-selfcheck`, its pytest harness pinned to 9.2.0, and the image wiring (wave 1)
 - [ ] 08-02-PLAN.md: host check H-34 in a Claude and a Cursor test sandbox, with the reused throwaway root certificate (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
@@ -209,7 +209,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 |-------|-----------|----------------|--------|-----------|
 | 6. Test diet | v2.0 | 6/6 | Complete    | 2026-11-13 |
 | 7. Separate test images | v2.0 | 3/3 | Complete    | 2026-11-14 |
-| 8. In-image self-check | v2.0 | 0/TBD | Not started | - |
+| 8. In-image self-check | v2.0 | 1/7 | In Progress|  |
 | 9. sbx-init replaces the start hooks | v2.0 | 0/TBD | Not started | - |
 | 10. Host side to Python | v2.0 | 0/TBD | Not started | - |
 | 11. CI widened | v2.0 | 0/TBD | Not started | - |
