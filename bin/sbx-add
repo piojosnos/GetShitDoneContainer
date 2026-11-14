@@ -2,7 +2,8 @@
 # ------------------------------------------------------------------------------
 # Registers a sandbox once: its name, its folder on the Mac and its agent
 # ------------------------------------------------------------------------------
-# Usage: sbx-add NAME HOST_PATH
+# Usage: sbx-add NAME HOST_PATH [claude|cursor]
+# The agent is claude unless the third argument names another.
 # The entry is two lines in ~/.config/sbx/sandboxes/NAME, outside every mount.
 # ------------------------------------------------------------------------------
 
@@ -260,7 +261,7 @@ create_folders() {
 write_entry() {
   local newEntry=$registryDir/$1
 
-  if ! mkdir -p "$registryDir" || ! ( set -C; printf 'SBX_DIR=%s\nSBX_AGENT=%s\n' "$hostPath" claude >"$newEntry" ) 2>/dev/null; then
+  if ! mkdir -p "$registryDir" || ! ( set -C; printf 'SBX_DIR=%s\nSBX_AGENT=%s\n' "$hostPath" "$agentName" >"$newEntry" ) 2>/dev/null; then
     sbx_error "could not write $newEntry; nothing was registered"
     return 1
   fi
@@ -269,7 +270,18 @@ write_entry() {
 # ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
-[ "$#" -eq 2 ] || sbx_usage 'NAME HOST_PATH'
+addUsage="NAME HOST_PATH [${knownAgentList// /|}]"
+
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+  sbx_usage "$addUsage"
+fi
+
+agentName=${3:-claude}
+
+if ! is_known_agent "$agentName"; then
+  sbx_usage "$addUsage"
+fi
+
 sbx_init
 check_name "$1"
 refuse_registered "$1"
@@ -279,5 +291,5 @@ refuse_repo_overlap "$hostPath"
 refuse_sandbox_overlap "$hostPath"
 create_folders "$1"
 write_entry "$1"
-echo "sbx-add: registered $1 at $hostPath (agent claude)"
+echo "sbx-add: registered $1 at $hostPath (agent $agentName)"
 echo "sbx-add: next, sbx-upgrade $1 builds the images and starts it; sbx-start $1 starts it on the images you have"
