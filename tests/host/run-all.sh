@@ -19,7 +19,7 @@ unset SBXTEST_DIR
 # fail for an environmental reason.
 # ------------------------------------------------------------------------------
 noSandboxCheckList="h03-variable-interpolation.sh h12-plain-run-refused-pin-installed.sh h17-start-offline-and-failing-hook.sh h25-images-match-versions.sh h27-bundle-clone-and-publish.sh"
-sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h14-wrappers-and-settings-in-image.sh h15-bundle-linked-and-visible.sh h22-toolchain-in-base.sh h26-isolation-by-inspect.sh h30-version-line.sh"
+sandboxCheckList="h01-native-arch.sh h04-nonroot-user.sh h05-workspace-and-home.sh h06-git-and-identity.sh h13-env-and-no-self-update.sh h14-wrappers-and-settings-in-image.sh h15-bundle-linked-and-visible.sh h22-toolchain-in-base.sh h26-isolation-by-inspect.sh h30-version-line.sh h34-selfcheck.sh"
 chainCheckList="h08-history-survives-recreate.sh h16-live-clone-and-restart.sh h23-caches-survive-recreate.sh h09-rebuild-keeps-files-no-volumes.sh h28-sbx-add-start-stop.sh h29-sbx-upgrade.sh h31-sbx-shell.sh h32-sbx-list.sh h33-sbx-rm.sh h20-mistyped-name-refused.sh h10-missing-folder-refused.sh"
 
 remainingList="$noSandboxCheckList $sandboxCheckList $chainCheckList"
@@ -210,6 +210,80 @@ create_bundle_clone() {
 }
 
 # ------------------------------------------------------------------------------
+# make_test_root_cert CERT_FILE: makes or reuses the throwaway root certificate
+# ------------------------------------------------------------------------------
+# The private key is deleted at once; the certificate alone signs nothing. A
+# file valid for another day is reused, so the test images keep their cache.
+# ------------------------------------------------------------------------------
+make_test_root_cert() {
+  local certFile=$1
+  local certDir keyFile makeStatus
+
+  certDir=$(dirname "$certFile")
+  keyFile=$certDir/root-ca.key
+  rm -f "$keyFile"
+
+  if openssl x509 -noout -checkend 86400 -in "$certFile" >/dev/null 2>&1 </dev/null; then
+    printf 'reusing %s\n' "$certFile"
+
+    return 0
+  fi
+
+  mkdir -p "$certDir" || return 1
+  chmod 700 "$certDir" || return 1
+
+  (
+    umask 077
+    openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -subj "/CN=sbx-hosttest-root-ca" -keyout "$keyFile" -out "$certFile" </dev/null
+  )
+  makeStatus=$?
+  rm -f "$keyFile"
+
+  return "$makeStatus"
+}
+
+# ------------------------------------------------------------------------------
+# prepare_root_certificates: the build trusts your own root and the test root
+# ------------------------------------------------------------------------------
+# Your own root comes first when SBX_CA_CERT is set. The build file sits outside
+# the run folder, which the sandbox mounts.
+# ------------------------------------------------------------------------------
+prepare_root_certificates() {
+  local certFile buildFile rootLog
+
+  certFile=$(test_root_ca_file)
+  buildFile=$(dirname "$certFile")/build-ca.pem
+  rootLog=$RUN/logs/root-ca.log
+
+  if ! make_test_root_cert "$certFile" >"$rootLog" 2>&1; then
+    fatal "could not make the test root certificate (log: $rootLog)"
+  fi
+
+  if [ -n "${SBX_CA_CERT:-}" ]; then
+    if [ ! -f "$SBX_CA_CERT" ] || [ ! -r "$SBX_CA_CERT" ]; then
+      fatal "SBX_CA_CERT is not a readable file: $SBX_CA_CERT"
+    fi
+  fi
+
+  rm -f "$buildFile.tmp"
+
+  if [ -n "${SBX_CA_CERT:-}" ]; then
+    if ! cat "$SBX_CA_CERT" >"$buildFile.tmp" || ! printf '\n' >>"$buildFile.tmp"; then
+      fatal "could not write the build certificate file $buildFile"
+    fi
+  fi
+
+  if ! cat "$certFile" >>"$buildFile.tmp" || ! mv "$buildFile.tmp" "$buildFile"; then
+    fatal "could not write the build certificate file $buildFile"
+  fi
+
+  SBX_CA_CERT=$buildFile
+  export SBX_CA_CERT
+
+  info "test root certificate: $certFile, SHA-256 $(cert_fingerprint "$certFile"); the build trusts $buildFile"
+}
+
+# ------------------------------------------------------------------------------
 # remove_leftover_test_container: takes down an earlier test container
 # ------------------------------------------------------------------------------
 # Stops the run if the name belongs to something else or the take down fails.
@@ -267,6 +341,7 @@ print_docker_target
 check_docker_reachable
 create_run_folder
 create_bundle_clone
+prepare_root_certificates
 remove_leftover_test_container
 build_all_images
 run_list "$noSandboxCheckList"
