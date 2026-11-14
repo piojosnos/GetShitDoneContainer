@@ -36,7 +36,7 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
 
 - [x] **Phase 6: Test diet**: the tests check only our setup, nothing waits for a person, and the guard self-test and every stand-in docker are gone (completed 2026-11-13)
 - [x] **Phase 06.1: Cursor agent image** (INSERTED): a separate Cursor image; a sandbox picks Claude or Cursor when it is added (completed 2026-11-14)
-- [ ] **Phase 7: Separate test images**: a test run builds and checks its own image tags and never replaces the images the sandboxes run
+- [x] **Phase 7: Separate test images**: a test run builds and checks its own image tags and never replaces the images the sandboxes run (completed 2026-11-14)
 - [ ] **Phase 8: In-image self-check**: `sbx-selfcheck` in the image checks the sandbox, replaces most host probes and doubles as the doctor
 - [ ] **Phase 9: sbx-init replaces the start hooks**: the user runs `sbx-init` to sync GSD and link the bundle; a container start runs no hooks
 - [ ] **Phase 10: Host side to Python**: the Mac commands and host tests are Python run through `uv`, with one JSON registry file per sandbox
@@ -115,7 +115,7 @@ Plans:
   2. On the Mac, the image IDs of `sbx-base:local` and `sbx-claude:local` are the same before and after a full `./host-test.sh` run.
   3. `build.sh`, `sbx-upgrade` and the user's sandboxes still build and run the `:local` tags; only a test run uses the test tags.
 
-**Plans**: 3/3 plans executed
+**Plans**: 3/3 plans complete
 
 Plans:
 **Wave 1**
@@ -190,7 +190,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 6. Test diet | v2.0 | 6/6 | Complete    | 2026-11-13 |
-| 7. Separate test images | v2.0 | 3/3 | In Progress|  |
+| 7. Separate test images | v2.0 | 3/3 | Complete    | 2026-11-14 |
 | 8. In-image self-check | v2.0 | 0/TBD | Not started | - |
 | 9. sbx-init replaces the start hooks | v2.0 | 0/TBD | Not started | - |
 | 10. Host side to Python | v2.0 | 0/TBD | Not started | - |
