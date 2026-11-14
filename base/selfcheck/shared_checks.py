@@ -2,6 +2,7 @@
 # /usr/local/lib/sbx-selfcheck/ and the launcher runs CHECK_LIST first.
 
 import os
+import platform
 import pwd
 import tempfile
 from pathlib import Path
@@ -9,6 +10,7 @@ from typing import Mapping
 
 from sbx_selfcheck import (
     BUNDLE_DIR,
+    ELF_MACHINE_BY_UNAME_MAP,
     MOUNTINFO_FILE,
     STATE_DIR,
     VERSIONS_FILE,
@@ -17,6 +19,8 @@ from sbx_selfcheck import (
     CheckResult,
     environment_values_result,
     failed,
+    image_tag,
+    jdk_version,
     mac_hint,
     missing_pin_result,
     passed,
@@ -30,6 +34,7 @@ from sbx_selfcheck import (
     sandbox_name,
     shell_hint,
     start_hint,
+    tool_result,
 )
 
 SANDBOX_UID = 1000
@@ -62,6 +67,7 @@ BASE_WRAPPER_MODE_LIST = [
     ("/etc/sbx/selfcheck.d", 0o755),
     ("/usr/local/lib/sbx-selfcheck", 0o755),
 ]
+UTC_ZONE_FILE = Path("/usr/share/zoneinfo/UTC")
 PROTECTED_PATH_LIST = [Path("/etc/sbx"), Path("/usr/local/bin"), Path("/usr/local/lib/sbx-selfcheck")]
 
 
@@ -313,6 +319,95 @@ def no_bundle_copy_result(bundle_copy_path: Path = BUNDLE_COPY_PATH) -> CheckRes
     return passed(f"no bundle copy at {bundle_copy_path}")
 
 
+def architecture_result() -> CheckResult:
+    machine = platform.machine()
+
+    if machine not in ELF_MACHINE_BY_UNAME_MAP:
+        return failed(f"the machine is {machine}; the images are built for aarch64 or x86_64", rebuild_hint())
+
+    return passed(f"{machine}, ELF machine 0x{ELF_MACHINE_BY_UNAME_MAP[machine]:02X}")
+
+
+def tool_gh_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
+    gh_version = pin_value("GH_VERSION", versions_file)
+
+    if not gh_version:
+        return missing_pin_result("GH_VERSION")
+
+    return tool_result("gh", ["--version"], f"gh version {gh_version}")
+
+
+def tool_node_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
+    node_version = pin_value("NODE_VERSION", versions_file)
+
+    if not node_version:
+        return missing_pin_result("NODE_VERSION")
+
+    return tool_result("node", ["-v"], f"v{node_version}")
+
+
+def tool_uv_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
+    uv_image = pin_value("UV_IMAGE", versions_file)
+
+    if not uv_image:
+        return missing_pin_result("UV_IMAGE")
+
+    return tool_result("uv", ["--version"], f"uv {image_tag(uv_image)}")
+
+
+def tool_java_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
+    temurin_image = pin_value("TEMURIN_IMAGE", versions_file)
+
+    if not temurin_image:
+        return missing_pin_result("TEMURIN_IMAGE")
+
+    return tool_result(
+        "java", ["-version"], f'openjdk version "{jdk_version(temurin_image)}"', required_text="Temurin"
+    )
+
+
+def tool_maven_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
+    maven_version = pin_value("MAVEN_VERSION", versions_file)
+    temurin_image = pin_value("TEMURIN_IMAGE", versions_file)
+
+    if not maven_version:
+        return missing_pin_result("MAVEN_VERSION")
+
+    if not temurin_image:
+        return missing_pin_result("TEMURIN_IMAGE")
+
+    return tool_result(
+        "mvn",
+        ["-v"],
+        f"Apache Maven {maven_version}",
+        required_text=f"Java version: {jdk_version(temurin_image)},",
+    )
+
+
+def tool_gsd_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
+    gsd_version = pin_value("GSD_CORE_VERSION", versions_file)
+
+    if not gsd_version:
+        return missing_pin_result("GSD_CORE_VERSION")
+
+    return tool_result(
+        "gsd-tools",
+        ["runtime-identity", "--raw"],
+        '{"packageName":"@opengsd/gsd-core","version":"' + gsd_version + '"}',
+    )
+
+
+def tool_python_result() -> CheckResult:
+    return tool_result("python3", ["--version"], f"Python {platform.python_version()}")
+
+
+def tzdata_result(utc_zone_file: Path = UTC_ZONE_FILE) -> CheckResult:
+    if not utc_zone_file.exists():
+        return failed(f"{utc_zone_file} is missing; tzdata is not installed", rebuild_hint())
+
+    return passed(f"{utc_zone_file} exists")
+
+
 def check_workspace_mount() -> CheckResult:
     return workspace_mount_result()
 
@@ -361,6 +456,74 @@ def check_java_home() -> CheckResult:
     return environment_values_result({"JAVA_HOME": "/opt/java/openjdk"})
 
 
+def check_tool_git() -> CheckResult:
+    return tool_result("git")
+
+
+def check_tool_jq() -> CheckResult:
+    return tool_result("jq")
+
+
+def check_tool_rg() -> CheckResult:
+    return tool_result("rg")
+
+
+def check_tool_unzip() -> CheckResult:
+    return tool_result("unzip")
+
+
+def check_tool_zip() -> CheckResult:
+    return tool_result("zip")
+
+
+def check_tool_ssh() -> CheckResult:
+    return tool_result("ssh")
+
+
+def check_tool_make() -> CheckResult:
+    return tool_result("make")
+
+
+def check_tool_gcc() -> CheckResult:
+    return tool_result("gcc")
+
+
+def check_tool_gh() -> CheckResult:
+    return tool_gh_result()
+
+
+def check_tool_node() -> CheckResult:
+    return tool_node_result()
+
+
+def check_tool_python() -> CheckResult:
+    return tool_python_result()
+
+
+def check_tool_uv() -> CheckResult:
+    return tool_uv_result()
+
+
+def check_tool_java() -> CheckResult:
+    return tool_java_result()
+
+
+def check_tool_maven() -> CheckResult:
+    return tool_maven_result()
+
+
+def check_tool_gsd() -> CheckResult:
+    return tool_gsd_result()
+
+
+def check_architecture() -> CheckResult:
+    return architecture_result()
+
+
+def check_tzdata() -> CheckResult:
+    return tzdata_result()
+
+
 def check_wrappers_root_owned() -> CheckResult:
     return root_owned_result(BASE_WRAPPER_MODE_LIST)
 
@@ -382,11 +545,28 @@ CHECK_LIST = [
     Check("user-sandbox", check_user_sandbox),
     Check("home-layout", check_home_layout),
     Check("home-owners", check_home_owners),
+    Check("architecture", check_architecture),
     Check("git-safe-directory", check_git_safe_directory),
     Check("git-identity", check_git_identity),
     Check("env-state-paths", check_env_state_paths),
     Check("env-bundle", check_env_bundle),
     Check("java-home", check_java_home),
+    Check("tool-git", check_tool_git),
+    Check("tool-gh", check_tool_gh),
+    Check("tool-node", check_tool_node),
+    Check("tool-python", check_tool_python),
+    Check("tool-uv", check_tool_uv),
+    Check("tool-java", check_tool_java),
+    Check("tool-maven", check_tool_maven),
+    Check("tool-gsd", check_tool_gsd),
+    Check("tool-jq", check_tool_jq),
+    Check("tool-rg", check_tool_rg),
+    Check("tool-unzip", check_tool_unzip),
+    Check("tool-zip", check_tool_zip),
+    Check("tool-ssh", check_tool_ssh),
+    Check("tool-make", check_tool_make),
+    Check("tool-gcc", check_tool_gcc),
+    Check("tzdata", check_tzdata),
     Check("wrappers-root-owned", check_wrappers_root_owned),
     Check("image-paths-protected", check_image_paths_protected),
     Check("no-bundle-copy", check_no_bundle_copy),

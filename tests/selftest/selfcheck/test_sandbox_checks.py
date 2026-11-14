@@ -573,7 +573,7 @@ def test_no_bundle_copy_fails_for_a_dangling_link(tmp_path):
     assert not shared_checks.no_bundle_copy_result(copy1).passed
 
 
-def test_the_shared_list_holds_the_sixteen_checks_in_the_final_order():
+def test_the_shared_list_holds_the_checks_in_the_final_order():
     name_list = [check.name for check in shared_checks.CHECK_LIST]
 
     assert name_list == [
@@ -585,11 +585,28 @@ def test_the_shared_list_holds_the_sixteen_checks_in_the_final_order():
         "user-sandbox",
         "home-layout",
         "home-owners",
+        "architecture",
         "git-safe-directory",
         "git-identity",
         "env-state-paths",
         "env-bundle",
         "java-home",
+        "tool-git",
+        "tool-gh",
+        "tool-node",
+        "tool-python",
+        "tool-uv",
+        "tool-java",
+        "tool-maven",
+        "tool-gsd",
+        "tool-jq",
+        "tool-rg",
+        "tool-unzip",
+        "tool-zip",
+        "tool-ssh",
+        "tool-make",
+        "tool-gcc",
+        "tzdata",
         "wrappers-root-owned",
         "image-paths-protected",
         "no-bundle-copy",

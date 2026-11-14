@@ -5,6 +5,8 @@
 
 import importlib.util
 import os
+import platform
+import shutil
 import stat
 import subprocess
 import sys
@@ -24,6 +26,11 @@ AGENT_MODULE_PREFIX = "sbx_selfcheck_agent_"
 FIX_LINE_INDENT = "      "
 UNSET_SANDBOX_NAME = "NAME"
 USAGE_TEXT = "Usage: sbx-selfcheck (no arguments)"
+ELF_MACHINE_BY_UNAME_MAP = {"aarch64": 0xB7, "x86_64": 0x3E}
+HOME_ROOT = "/home"
+ELF_HEADER_LENGTH = 20
+ELF_MAGIC = b"\x7fELF"
+ELF_MACHINE_OFFSET = 18
 
 
 @dataclass(frozen=True)
@@ -238,6 +245,113 @@ def environment_values_result(
         return failed("; ".join(problem_list), "open a fresh shell with sbx-shell; if it stays, " + rebuild_hint())
 
     return passed(", ".join(pair_list))
+
+
+def is_under(path_text: str, root_text: str) -> bool:
+    return path_text == root_text or path_text.startswith(root_text + "/")
+
+
+def elf_machine(path: Path) -> int | None:
+    with path.open("rb") as binary_file:
+        header = binary_file.read(ELF_HEADER_LENGTH)
+
+    if len(header) < ELF_HEADER_LENGTH or not header.startswith(ELF_MAGIC):
+        return None
+
+    return int.from_bytes(header[ELF_MACHINE_OFFSET:ELF_MACHINE_OFFSET + 2], "little")
+
+
+def version_matches(line: str, expected_text: str) -> bool:
+    return line == expected_text or line.startswith(expected_text + " ")
+
+
+def image_tag(image_pin: str) -> str:
+    return image_pin.partition("@")[0].rpartition(":")[2]
+
+
+def jdk_version(temurin_pin: str) -> str:
+    return image_tag(temurin_pin).partition("_")[0]
+
+
+def first_output_line(completed: subprocess.CompletedProcess) -> str:
+    for output_text in [completed.stdout, completed.stderr]:
+        for line in output_text.splitlines():
+            if line.strip():
+                return line.strip()
+
+    return ""
+
+
+def native_machine_problem(real_path: str, command_name: str) -> str:
+    expected_machine = ELF_MACHINE_BY_UNAME_MAP.get(platform.machine())
+    actual_machine = elf_machine(Path(real_path))
+
+    if expected_machine is None or actual_machine is None or actual_machine == expected_machine:
+        return ""
+
+    return f"{command_name} is built for ELF machine 0x{actual_machine:02X}, not {platform.machine()}"
+
+
+def version_problem(
+    command_name: str,
+    found_path: str,
+    version_argument_list: list[str],
+    expected_text: str,
+    required_text: str,
+    environment: Mapping[str, str] | None,
+) -> tuple[str, str]:
+    completed = run_command([found_path] + version_argument_list, environment)
+    line = first_output_line(completed)
+
+    if completed.returncode != 0 or not version_matches(line, expected_text):
+        return f"{command_name} reports '{line}'; the pin is '{expected_text}'", ""
+
+    if required_text and required_text not in completed.stdout + completed.stderr:
+        return f"{command_name} output lacks '{required_text}'", ""
+
+    return "", line
+
+
+def tool_result(
+    command_name: str,
+    version_argument_list: list[str] | None = None,
+    expected_text: str = "",
+    required_text: str = "",
+    environment: Mapping[str, str] | None = None,
+    home_root: str = HOME_ROOT,
+) -> CheckResult:
+    if environment is None:
+        environment = os.environ
+
+    found_path = shutil.which(command_name, path=environment.get("PATH", ""))
+
+    if found_path is None:
+        return failed(f"{command_name} is not on PATH", rebuild_hint())
+
+    real_path = os.path.realpath(found_path)
+
+    if is_under(real_path, home_root):
+        return failed(
+            f"{command_name} resolves to {real_path}, under {home_root}, not the image",
+            f"a copy under {home_root} hides the image's {command_name}: remove it, or take its folder off PATH in this sandbox",
+        )
+
+    machine_problem = native_machine_problem(real_path, command_name)
+
+    if machine_problem:
+        return failed(machine_problem, rebuild_hint())
+
+    if version_argument_list is None:
+        return passed(real_path)
+
+    problem, line = version_problem(
+        command_name, found_path, version_argument_list, expected_text, required_text, environment
+    )
+
+    if problem:
+        return failed(problem, rebuild_hint())
+
+    return passed(f"{real_path}, {line}")
 
 
 def load_check_module(module_path: Path):
