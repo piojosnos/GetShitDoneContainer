@@ -32,10 +32,10 @@ expected_line() {
 check_image_line() {
   local imageLine
 
-  imageLine=$(run_timeout 60 docker run --rm --entrypoint cat sbx-claude:local /etc/sbx/tool-versions </dev/null 2>&1)
+  imageLine=$(run_timeout 60 docker run --rm --entrypoint cat "$CLAUDE_IMAGE" /etc/sbx/tool-versions </dev/null 2>&1)
 
   if [ "$imageLine" != "$expectedLine" ]; then
-    add_problem "/etc/sbx/tool-versions in sbx-claude:local is '$(first_lines "$imageLine")'; expected '$expectedLine'"
+    add_problem "/etc/sbx/tool-versions in $CLAUDE_IMAGE is '$(first_lines "$imageLine")'; expected '$expectedLine'"
   fi
 }
 

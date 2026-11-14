@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Guard rules on isolation: no socket, no privileges, data kept, deny entries
+# Guard rules on isolation: no socket or privilege, data kept, test images
 # ------------------------------------------------------------------------------
 # Usage: bash tests/guard/isolation.sh (exit 0 = every rule holds)
 # Mounts and effective privileges are checked on the running sandbox by H-26.
@@ -67,6 +67,17 @@ managed_settings_deny_skill_edits() {
 }
 
 # ------------------------------------------------------------------------------
+# host_tests_never_name_the_local_tag: a test run never builds, runs or removes the images your sandboxes use
+# ------------------------------------------------------------------------------
+# host-test.sh and the host checks take their images from SBX_IMAGE_TAG, which
+# they always set to test. A local tag named in one of them, even in a comment,
+# is the first step to a run that replaces the images your sandboxes use.
+# ------------------------------------------------------------------------------
+host_tests_never_name_the_local_tag() {
+  nowhere_matches ':local\b' host-test.sh tests/host/*.sh
+}
+
+# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -74,4 +85,5 @@ enter_repo_root || exit 1
 run_rules \
   no_docker_socket_or_privileges \
   host_scripts_keep_sandbox_data \
-  managed_settings_deny_skill_edits || exit 1
+  managed_settings_deny_skill_edits \
+  host_tests_never_name_the_local_tag || exit 1

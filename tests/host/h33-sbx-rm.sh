@@ -277,12 +277,12 @@ check_remove_running() {
 
   sentinels_intact "after sbx-rm"
 
-  if ! docker image inspect sbx-claude:local >/dev/null 2>&1 </dev/null; then
-    add_problem "the image sbx-claude:local is gone after sbx-rm"
+  if ! docker image inspect "$CLAUDE_IMAGE" >/dev/null 2>&1 </dev/null; then
+    add_problem "the image $CLAUDE_IMAGE is gone after sbx-rm"
   fi
 
-  if ! docker image inspect sbx-base:local >/dev/null 2>&1 </dev/null; then
-    add_problem "the image sbx-base:local is gone after sbx-rm"
+  if ! docker image inspect "$BASE_IMAGE" >/dev/null 2>&1 </dev/null; then
+    add_problem "the image $BASE_IMAGE is gone after sbx-rm"
   fi
 
   compare_volumes_after
