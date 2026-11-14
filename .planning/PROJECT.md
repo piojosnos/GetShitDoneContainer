@@ -39,12 +39,12 @@ A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode
 - ✓ `MIGRATION.md` moves an old-layout sandbox to the new layout with its code, Claude login and sessions, ccusage history, gh login, git identity and bash history; all four old sandboxes moved with it (Phase 5)
 - ✓ The repo holds only the new layout: `ClaudeCode/`, `OpenCode/` and the `cc-*` scripts are gone, and `README.md` is the one main doc and matches what exists, including its security limits; proven by 32 of 32 host checks (Phase 5)
 - ✓ A sandbox builds and runs behind a company HTTPS proxy (Zscaler): `SBX_CA_CERT` names one root certificate file that the system store, Java, npm, pip, uv and Node trust; unset, the image content is unchanged; `ZSCALER.md` is the setup guide (Phase 5.2)
+- ✓ Test runs use their own image tags: `SBX_IMAGE_TAG` (unset or `local`, or `test`, anything else refused) picks the tag in the `sbx-*` scripts, Compose and `build.sh`; `./host-test.sh` builds and checks `sbx-base:test`, `sbx-claude:test` and `sbx-cursor:test` and leaves the `:local` images alone; 26 of 26 host checks pass on the Mac (Phase 7)
 
 ### Active
 
 v2.0 Simple tooling (requirements come from `/gsd-new-milestone`; decisions in `.planning/research/v2-simple-tooling-decisions.md`):
 - [ ] Tests check our setup, not Claude, GSD or Docker behaviour; nothing interactive; no fake docker.
-- [ ] Test runs use their own image tags and never replace the images the sandboxes run.
 - [ ] One self-check inside the image (also the sandbox doctor) replaces most host probes.
 - [ ] `sbx-init`, run by the user, replaces the start hooks and the readiness poll.
 - [ ] The host side (`bin/sbx-*`, `build.sh`, `host-test.sh`, host tests) is Python run through `uv`, with a JSON registry.
@@ -122,6 +122,7 @@ v1.0 shipped 2026-11-12 (tag `v1.0`): two-mount Claude sandboxes with a pinned t
 | Close v1.0 at tag `v1.0` and rebuild the tooling as v2.0 on `main` | The user keeps running v1.0 on the Mac while v2 is built; configs can be recreated, so there is little migration | — Pending (v1.0 close) |
 | Docker Desktop must use Docker VMM, not the Apple Virtualization Framework | Under Apple Virtualization the GSD start hook stops with EACCES in its file copy into `state/claude` | Revisit: documented in `ZSCALER.md`; making the hook work under both is a follow-up (Phase 5.2) |
 | Write automated tests for new behavior | Reverses the earlier preference for manual README checks; the root certificate feature shipped without tests and that was a gap | ⚠️ Revisit: v1 tests grew larger than the code; v2.0 keeps the rule but tests only our setup, with proxies and real Docker (v1.0 close) |
+| One variable, `SBX_IMAGE_TAG`, allow-listed to `local` and `test`, picks the image tag; `./host-test.sh` pins it to `test` | Same image names with another tag keep the test run on the real `build.sh`, Compose and `sbx-*` scripts, with no copy of the repo and no tag rewriting | Good: the `:local` images were untouched by a full Mac run (Phase 7); a leaked `SBX_IMAGE_TAG=test` in the user's shell is accepted silently, open in the code review |
 
 ## Evolution
 
@@ -141,4 +142,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-12 after starting milestone v2.0*
+*Last updated: 2026-11-14 after Phase 7*
