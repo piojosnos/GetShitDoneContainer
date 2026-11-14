@@ -5,6 +5,7 @@
 
 import importlib.util
 import os
+import stat
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -17,6 +18,7 @@ BUNDLE_DIR = WORKSPACE_DIR / "best-practices"
 VERSIONS_FILE = Path("/etc/sbx/versions.env")
 MOUNTINFO_FILE = Path("/proc/self/mountinfo")
 COMMAND_TIMEOUT_SECONDS = 60
+REPORTED_PROBLEM_LIMIT = 10
 AGENT_CHECKS_DIR = Path("/etc/sbx/selfcheck.d")
 AGENT_MODULE_PREFIX = "sbx_selfcheck_agent_"
 FIX_LINE_INDENT = "      "
@@ -142,6 +144,71 @@ def mount_point_set(mountinfo_text: str) -> set[str]:
 
 def read_mount_point_set(mountinfo_file: Path = MOUNTINFO_FILE) -> set[str]:
     return mount_point_set(mountinfo_file.read_text())
+
+
+def root_owned_result(path_mode_list: list[tuple[str, int]]) -> CheckResult:
+    problem_list = []
+
+    for path, expected_mode in path_mode_list:
+        try:
+            path_stat = os.stat(path)
+        except FileNotFoundError:
+            problem_list.append(f"{path} is missing")
+            continue
+
+        actual_mode = stat.S_IMODE(path_stat.st_mode)
+
+        if path_stat.st_uid != 0 or path_stat.st_gid != 0 or actual_mode != expected_mode:
+            problem_list.append(
+                f"{path} is {path_stat.st_uid}:{path_stat.st_gid} {actual_mode:o}, expected root:root {expected_mode:o}"
+            )
+
+    if problem_list:
+        return failed("; ".join(problem_list), rebuild_hint())
+
+    return passed(f"{len(path_mode_list)} paths are root-owned with their modes")
+
+
+def protected_paths_problem_list(path_list: list[Path], mount_point_collection: set[str]) -> list[str]:
+    problem_list = []
+
+    for path in path_list:
+        if not os.path.lexists(path):
+            problem_list.append(f"{path} is missing")
+            continue
+
+        entry_list = [str(path)]
+
+        for current_dir, dir_name_list, file_name_list in os.walk(path, followlinks=False):
+            for name in dir_name_list + file_name_list:
+                entry_list.append(os.path.join(current_dir, name))
+
+        for entry in entry_list:
+            if os.access(entry, os.W_OK):
+                problem_list.append(f"{entry} is writable")
+
+        for mount_point in sorted(mount_point_collection):
+            if mount_point == str(path) or mount_point.startswith(str(path) + "/"):
+                problem_list.append(f"{mount_point} is a mount point")
+
+    return problem_list
+
+
+def protected_paths_result(path_list: list[Path], mountinfo_file: Path = MOUNTINFO_FILE) -> CheckResult:
+    problem_list = protected_paths_problem_list(path_list, read_mount_point_set(mountinfo_file))
+
+    if problem_list:
+        return failed(
+            f"{len(problem_list)} problems: " + "; ".join(problem_list[:REPORTED_PROBLEM_LIMIT]),
+            rebuild_hint(),
+        )
+
+    path_text_list = []
+
+    for path in path_list:
+        path_text_list.append(str(path))
+
+    return passed(f"nothing under {', '.join(path_text_list)} is writable or mounted")
 
 
 def environment_values_result(

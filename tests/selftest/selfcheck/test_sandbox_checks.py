@@ -2,6 +2,7 @@
 # on real files, real permissions and the real git, inside tmp_path.
 
 import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,7 @@ import pytest
 import sbx_selfcheck
 import shared_checks
 
+CURRENT_USER = shared_checks.user_name_of(os.getuid())
 ROOT_MOUNT_LINE = "1 0 8:1 / / rw - ext4 /dev/sda1 rw"
 MOUNT_LINE_TEMPLATE = "{number} 1 8:2 / {mount_point} rw,noatime - ext4 /dev/sda2 rw"
 
@@ -291,7 +293,287 @@ def test_run_command_passes_the_given_environment():
     assert completed.stdout.strip() == "NAME1=value1"
 
 
-def test_the_shared_list_holds_the_sandbox_shape_checks_first():
+def git_environment(system_file: Path, global_file: Path) -> dict[str, str]:
+    return {
+        "PATH": os.environ["PATH"],
+        "HOME": str(global_file.parent),
+        "GIT_CONFIG_SYSTEM": str(system_file),
+        "GIT_CONFIG_GLOBAL": str(global_file),
+        "GIT_CONFIG_NOSYSTEM": "1",
+    }
+
+
+def test_home_layout_passes_when_bashrc_and_local_exist(tmp_path):
+    home1 = tmp_path / "home1"
+    write_file(home1 / ".bashrc")
+    (home1 / ".local").mkdir()
+
+    assert shared_checks.home_layout_result(home1).passed
+
+
+def test_home_layout_fails_naming_the_missing_one(tmp_path):
+    home1 = tmp_path / "home1"
+    write_file(home1 / ".bashrc")
+
+    result = shared_checks.home_layout_result(home1)
+
+    assert not result.passed
+    assert ".local" in result.detail
+    assert ".bashrc" not in result.detail
+    assert "on the Mac run: sbx-upgrade" in result.hint
+
+
+def test_owned_by_passes_for_the_owner(tmp_path):
+    write_file(tmp_path / "path1")
+    write_file(tmp_path / "path2")
+
+    result = shared_checks.owned_by_result([tmp_path / "path1", tmp_path / "path2"], CURRENT_USER)
+
+    assert result.passed
+
+
+def test_owned_by_fails_naming_each_path_and_its_real_owner(tmp_path):
+    write_file(tmp_path / "path1")
+    write_file(tmp_path / "path2")
+
+    result = shared_checks.owned_by_result([tmp_path / "path1", tmp_path / "path2"], "root")
+
+    assert not result.passed
+    assert f"{tmp_path / 'path1'} is owned by {CURRENT_USER}" in result.detail
+    assert f"{tmp_path / 'path2'} is owned by {CURRENT_USER}" in result.detail
+
+
+def test_owned_by_fails_for_a_missing_path(tmp_path):
+    result = shared_checks.owned_by_result([tmp_path / "path1"], CURRENT_USER)
+
+    assert not result.passed
+    assert "path1 is missing" in result.detail
+
+
+def test_safe_directory_passes_when_the_system_file_trusts_every_folder(tmp_path):
+    system1 = tmp_path / "system1"
+    system1.write_text("[safe]\n\tdirectory = *\n")
+
+    result = shared_checks.safe_directory_result(git_environment(system1, tmp_path / "global1"))
+
+    assert result.passed
+
+
+def test_safe_directory_fails_when_the_system_file_trusts_one_folder(tmp_path):
+    system1 = tmp_path / "system1"
+    system1.write_text("[safe]\n\tdirectory = /folder1\n")
+
+    result = shared_checks.safe_directory_result(git_environment(system1, tmp_path / "global1"))
+
+    assert not result.passed
+    assert "on the Mac run: sbx-upgrade" in result.hint
+
+
+def test_safe_directory_fails_when_the_system_file_is_empty(tmp_path):
+    system1 = tmp_path / "system1"
+    system1.write_text("")
+
+    assert not shared_checks.safe_directory_result(git_environment(system1, tmp_path / "global1")).passed
+
+
+def test_git_identity_fails_for_an_empty_config_and_then_passes_without_printing_values(tmp_path):
+    global1 = tmp_path / "global1"
+    global1.write_text("")
+    environment1 = git_environment(tmp_path / "system1", global1)
+
+    empty_result = shared_checks.git_identity_result(environment1)
+
+    assert not empty_result.passed
+    assert "user.name" in empty_result.detail
+    assert "user.email" in empty_result.detail
+    assert "sbx-gh-login" in empty_result.hint
+
+    subprocess.run(["git", "config", "--file", str(global1), "user.name", "name1"], check=True, env=environment1)
+    subprocess.run(["git", "config", "--file", str(global1), "user.email", "name1@example.invalid"], check=True, env=environment1)
+
+    set_result = shared_checks.git_identity_result(environment1)
+
+    assert set_result.passed
+    assert "name1@example.invalid" not in set_result.detail + set_result.hint
+    assert "name1" not in set_result.detail.replace("user.name", "")
+
+
+def test_git_identity_names_only_the_empty_one(tmp_path):
+    global1 = tmp_path / "global1"
+    environment1 = git_environment(tmp_path / "system1", global1)
+    subprocess.run(["git", "config", "--file", str(global1), "user.name", "name1"], check=True, env=environment1)
+
+    result = shared_checks.git_identity_result(environment1)
+
+    assert not result.passed
+    assert "user.email" in result.detail
+    assert "user.name" not in result.detail
+
+
+def test_bundle_env_passes_when_the_url_matches_the_pin_and_the_dir_is_the_clone(tmp_path):
+    versions1 = tmp_path / "versions1"
+    versions1.write_text("BUNDLE_REPO_URL=https://example.invalid/repo1.git\n")
+    environment1 = {"BUNDLE_REPO_URL": "https://example.invalid/repo1.git", "SBX_BUNDLE_DIR": str(sbx_selfcheck.BUNDLE_DIR)}
+
+    assert shared_checks.bundle_env_result(versions1, environment1).passed
+
+
+def test_bundle_env_fails_naming_the_wrong_one(tmp_path):
+    versions1 = tmp_path / "versions1"
+    versions1.write_text("BUNDLE_REPO_URL=https://example.invalid/repo1.git\n")
+    environment1 = {"BUNDLE_REPO_URL": "https://example.invalid/repo2.git", "SBX_BUNDLE_DIR": str(sbx_selfcheck.BUNDLE_DIR)}
+
+    result = shared_checks.bundle_env_result(versions1, environment1)
+
+    assert not result.passed
+    assert "BUNDLE_REPO_URL" in result.detail
+    assert "SBX_BUNDLE_DIR" not in result.detail
+
+
+def test_bundle_env_fails_through_the_missing_pin_when_the_pin_is_absent(tmp_path):
+    versions1 = tmp_path / "versions1"
+    versions1.write_text("OTHER1=value1\n")
+
+    result = shared_checks.bundle_env_result(versions1, {})
+
+    assert not result.passed
+    assert "BUNDLE_REPO_URL is not in" in result.detail
+
+
+def test_root_owned_passes_on_the_real_root_files():
+    result = sbx_selfcheck.root_owned_result([("/etc/passwd", 0o644), ("/etc", 0o755)])
+
+    assert result.passed
+    assert "2 paths" in result.detail
+
+
+def test_root_owned_fails_naming_uid_gid_and_mode_of_a_file_made_by_the_test_user(tmp_path):
+    write_file(tmp_path / "path1")
+    (tmp_path / "path1").chmod(0o644)
+
+    result = sbx_selfcheck.root_owned_result([(str(tmp_path / "path1"), 0o644)])
+
+    assert not result.passed
+    assert f"{tmp_path / 'path1'} is {os.getuid()}:{os.getgid()} 644, expected root:root 644" in result.detail
+    assert "on the Mac run: sbx-upgrade" in result.hint
+
+
+def test_root_owned_fails_for_a_missing_path(tmp_path):
+    result = sbx_selfcheck.root_owned_result([(str(tmp_path / "path1"), 0o644)])
+
+    assert not result.passed
+    assert "path1 is missing" in result.detail
+
+
+@pytest.mark.skipif(os.getuid() == 0, reason="root can write everywhere")
+def test_protected_paths_fail_for_a_writable_file_and_pass_after_chmod(tmp_path, restorable_mode):
+    folder1 = tmp_path / "folder1"
+    write_file(folder1 / "sub1" / "file1")
+    mountinfo1 = tmp_path / "mountinfo1"
+    write_mountinfo(mountinfo1, [])
+
+    writable_result = sbx_selfcheck.protected_paths_result([folder1], mountinfo1)
+
+    assert not writable_result.passed
+    assert str(folder1 / "sub1" / "file1") in writable_result.detail
+
+    restorable_mode(folder1 / "sub1" / "file1", 0o444)
+    restorable_mode(folder1 / "sub1", 0o555)
+    restorable_mode(folder1, 0o555)
+
+    assert sbx_selfcheck.protected_paths_result([folder1], mountinfo1).passed
+
+
+@pytest.mark.skipif(os.getuid() == 0, reason="root can write everywhere")
+def test_protected_paths_fail_for_a_mount_below_the_folder(tmp_path, restorable_mode):
+    folder1 = tmp_path / "folder1"
+    write_file(folder1 / "sub1" / "file1")
+    restorable_mode(folder1 / "sub1" / "file1", 0o444)
+    restorable_mode(folder1 / "sub1", 0o555)
+    restorable_mode(folder1, 0o555)
+    mountinfo1 = tmp_path / "mountinfo1"
+    write_mountinfo(mountinfo1, [str(folder1 / "sub1")])
+
+    result = sbx_selfcheck.protected_paths_result([folder1], mountinfo1)
+
+    assert not result.passed
+    assert f"{folder1 / 'sub1'} is a mount point" in result.detail
+
+
+@pytest.mark.skipif(os.getuid() == 0, reason="root can write everywhere")
+def test_protected_paths_ignore_a_mount_beside_the_folder(tmp_path, restorable_mode):
+    folder1 = tmp_path / "folder1"
+    write_file(folder1 / "file1")
+    restorable_mode(folder1 / "file1", 0o444)
+    restorable_mode(folder1, 0o555)
+    mountinfo1 = tmp_path / "mountinfo1"
+    write_mountinfo(mountinfo1, [str(tmp_path / "folder10")])
+
+    assert sbx_selfcheck.protected_paths_result([folder1], mountinfo1).passed
+
+
+def test_protected_paths_fail_for_a_missing_path(tmp_path):
+    mountinfo1 = tmp_path / "mountinfo1"
+    write_mountinfo(mountinfo1, [])
+
+    result = sbx_selfcheck.protected_paths_result([tmp_path / "folder1"], mountinfo1)
+
+    assert not result.passed
+    assert "folder1 is missing" in result.detail
+
+
+@pytest.mark.skipif(os.getuid() == 0, reason="root can write everywhere")
+def test_protected_paths_name_at_most_ten_entries_and_the_total(tmp_path):
+    folder1 = tmp_path / "folder1"
+
+    for number in range(13):
+        write_file(folder1 / f"file{number:02d}")
+
+    mountinfo1 = tmp_path / "mountinfo1"
+    write_mountinfo(mountinfo1, [])
+
+    result = sbx_selfcheck.protected_paths_result([folder1], mountinfo1)
+
+    assert not result.passed
+    assert "14 problems" in result.detail
+    assert result.detail.count(" is writable") == 10
+
+
+def test_protected_paths_do_not_follow_a_link_while_walking(tmp_path):
+    folder1 = tmp_path / "folder1"
+    outside1 = tmp_path / "outside1"
+    folder1.mkdir()
+    write_file(outside1 / "file1")
+    (folder1 / "link1").symlink_to(outside1)
+    mountinfo1 = tmp_path / "mountinfo1"
+    write_mountinfo(mountinfo1, [])
+
+    result = sbx_selfcheck.protected_paths_result([folder1], mountinfo1)
+
+    assert "link1/file1" not in result.detail
+
+
+def test_no_bundle_copy_passes_when_the_path_is_absent_and_fails_when_present(tmp_path):
+    copy1 = tmp_path / "copy1"
+
+    assert shared_checks.no_bundle_copy_result(copy1).passed
+
+    copy1.mkdir()
+    result = shared_checks.no_bundle_copy_result(copy1)
+
+    assert not result.passed
+    assert str(copy1) in result.detail
+    assert "on the Mac run: sbx-upgrade" in result.hint
+
+
+def test_no_bundle_copy_fails_for_a_dangling_link(tmp_path):
+    copy1 = tmp_path / "copy1"
+    copy1.symlink_to(tmp_path / "missing1")
+
+    assert not shared_checks.no_bundle_copy_result(copy1).passed
+
+
+def test_the_shared_list_holds_the_sixteen_checks_in_the_final_order():
     name_list = [check.name for check in shared_checks.CHECK_LIST]
 
     assert name_list == [
@@ -301,4 +583,14 @@ def test_the_shared_list_holds_the_sandbox_shape_checks_first():
         "state-writable",
         "no-root-owned-state",
         "user-sandbox",
+        "home-layout",
+        "home-owners",
+        "git-safe-directory",
+        "git-identity",
+        "env-state-paths",
+        "env-bundle",
+        "java-home",
+        "wrappers-root-owned",
+        "image-paths-protected",
+        "no-bundle-copy",
     ]
