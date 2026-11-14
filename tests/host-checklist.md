@@ -20,7 +20,7 @@ bash tests/host/run-all.sh
 
 What it does:
 
-- Builds `sbx-base:local` and `sbx-claude:local`, the real image tags.
+- Builds `sbx-base:local`, `sbx-claude:local` and `sbx-cursor:local`, the real image tags.
 - Makes a fresh folder under `$TMPDIR` named `sbx-hosttest-...` and starts a test sandbox named `sbx-hosttest` on it.
 - Prints `PASS`, `FAIL` or `NOT RUN` per check, then a summary. Exit status 0 means every check passed.
 - Never waits for input and never deletes files.
@@ -58,7 +58,7 @@ What each check proves:
 | H-27 | In a fresh sandbox folder, offline: `sbx-claude` warns when nothing is linked and runs `claude`; `sbx-bundle-clone` links the clone at once and refuses a second run; a branch is pushed to the origin; a failed clone leaves no folder | `h27-bundle-clone-and-publish.sh` | automatic |
 | H-28 | sbx-add registers a sandbox on a folder with a space in its path and refuses it twice; sbx-start and sbx-stop work by name with /bin/bash, ignore SBX_DIR, SBX_NAME and COMPOSE_PROJECT_NAME from your terminal, and keep the container and the files; sbx-stop returns in under 10 s; the test sandbox is restored on the run folder | h28-sbx-add-start-stop.sh | automatic |
 | H-29 | sbx-upgrade with a bogus build option fails and leaves the sandbox as it was; sbx-upgrade rebuilds, recreates only sbx-hosttest (new container, other sbx containers unchanged), keeps the files in the project folder, state/ and state/claude (including a fake credentials file and a fake session file), keeps one bind mount and no volume, warns that open shells close, and starts a stopped sandbox | h29-sbx-upgrade.sh | automatic |
-| H-30 | The tool versions line in sbx-claude:local matches versions.env (jdk from the TEMURIN_IMAGE tag, python from the image); an interactive shell prints it once, bash -c and bash -lc print nothing; sbx-upgrade ends with it (H-29) | h30-version-line.sh | automatic |
+| H-30 | The tool versions line in sbx-claude:local matches versions.env, in the order claude, ccusage, then the base fields from gsd on (jdk from the TEMURIN_IMAGE tag, python from the image); an interactive shell prints it once, bash -c and bash -lc print nothing; sbx-upgrade ends with it (H-29) | h30-version-line.sh | automatic |
 | H-31 | sbx-shell on a sandbox with no container starts it and waits for its start hooks, then (with no terminal) Docker refuses the shell; through a terminal it opens bash in /home/sandbox/workspace/hosttest on a running sandbox without recreating it, and on a stopped one after starting it again | `h31-sbx-shell.sh` | automatic |
 | H-32 | sbx-list with an empty registry says so and lists the running sbx-hosttest as a labelled container with no entry, with no cc_ container; after sbx-add, sbx-start and sbx-stop the hosttest row reads no container, running and stopped with its folder (a space in its path), each matching docker ps -a; a sandbox on the current image is not marked | `h32-sbx-list.sh` | automatic |
 | H-33 | sbx-rm of the running test sandbox without a terminal or --yes is refused and the sandbox, its entry and its files stay; with --yes it warns, takes its container and its network, and keeps its folder (a space in its path), its registry entry, the volumes, the images and the other sbx containers; it runs again with no container, and with the folder moved away; --unregister deletes only the entry; sbx-add of the same folder and sbx-start bring back a file in state/claude and a line in the bash history | `h33-sbx-rm.sh` | automatic |

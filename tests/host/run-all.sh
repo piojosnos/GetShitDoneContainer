@@ -235,7 +235,7 @@ remove_leftover_test_container() {
 }
 
 # ------------------------------------------------------------------------------
-# build_all_images: builds both images; stops the run when the build fails
+# build_all_images: builds every image; stops the run when the build fails
 # ------------------------------------------------------------------------------
 build_all_images() {
   info "building the images (logs in $RUN/logs)"

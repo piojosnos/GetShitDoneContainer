@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Guard rules: shellcheck passes on every script, hadolint on both Dockerfiles
+# Guard rules: shellcheck passes on every script, hadolint on every Dockerfile
 # ------------------------------------------------------------------------------
 # Usage, from anywhere: bash tests/guard/linters.sh (exit 0 = every rule holds)
 # A missing linter is a failure, never a skip.
@@ -30,7 +30,7 @@ shellcheck_passes() {
 }
 
 # ------------------------------------------------------------------------------
-# Rule hadolint_passes: both Dockerfiles are clean at warning level
+# Rule hadolint_passes: every Dockerfile is clean at warning level
 # ------------------------------------------------------------------------------
 # --config is explicit, so a stray file in HOME cannot change the result.
 # ------------------------------------------------------------------------------

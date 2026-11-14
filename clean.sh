@@ -113,8 +113,8 @@ EOF
 # ------------------------------------------------------------------------------
 # remove_unused_images: removes the build cache and unused images
 # ------------------------------------------------------------------------------
-# Other containers, their images and all volumes are kept. sbx-base:local and
-# sbx-claude:local go too when unused; ./build.sh rebuilds them.
+# Other containers, their images and all volumes are kept. sbx-base:local,
+# sbx-claude:local and sbx-cursor:local go too when unused; ./build.sh rebuilds them.
 # ------------------------------------------------------------------------------
 remove_unused_images() {
   echo "=== Removing the build cache"

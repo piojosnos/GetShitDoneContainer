@@ -20,16 +20,16 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 | | |
 |---|---|
-| Runs | 17 rules that read the files only: pins and supply chain, the one-FROM Claude image, start hooks, the managed deny entries, isolation greps, host scripts other than `sbx-rm` that never delete data, shellcheck and hadolint |
+| Runs | 17 rules that read the files only: pins and supply chain, the one-FROM agent images (Claude and Cursor), the start hooks of both agents, the managed deny entries, isolation greps, host scripts other than `sbx-rm` that never delete data, shellcheck and hadolint |
 | Where | New-layout sandbox: every rule passes, because sbx-base holds both linters. Old dev sandbox or a Mac shell by hand without the linters: the two linter rules FAIL as "not installed" and every other rule must PASS. `./host-test.sh` gives the Mac shell stand-ins that run both linters from `sbx-base`, so there every rule passes |
-| Catches | An unpinned or floating version, a pipe-to-shell install, the compromised GSD package, a mounted Docker socket or privileged mode, a second FROM in the Claude image, a lost skill deny entry in the managed settings, a host script other than `sbx-rm` that deletes a file or takes a sandbox down, a badly named start hook, a shell or Dockerfile lint error |
+| Catches | An unpinned or floating version, a pipe-to-shell install, the compromised GSD package, a mounted Docker socket or privileged mode, a second FROM in an agent image, a lost skill deny entry in the managed settings, a host script other than `sbx-rm` that deletes a file or takes a sandbox down, a badly named start hook, a shell or Dockerfile lint error |
 | Does not catch | Whether an image builds or behaves (`tests/host/` does), or what `sbx-rm` removes (H-33 covers it) |
 
 ## tests/selftest/entrypoint/
 
 | | |
 |---|---|
-| Runs | The real `base/sbx-start-lib.sh`, `base/sbx-entrypoint`, `base/bin/sbx-link-bundle` and the start hooks of both agents (`claude/start.d/*`, `cursor/start.d/*`) as plain bash in a temp folder, with a fake GSD |
+| Runs | The real `base/sbx-start-lib.sh`, `base/sbx-entrypoint`, `base/bin/sbx-link-bundle` and the `05-gsd`, `10-best-practices` and `02-no-self-update` start hooks of `claude/start.d` and `cursor/start.d` as plain bash in a temp folder, with a fake GSD |
 | Where | Linux only (needs `/proc`) |
 | Catches | A broken start hook step, the project and state folders, the first GSD sync and its fail-closed stops, the bundle links (no clone, rerun, upgrade from copies, skills only for Cursor), the Cursor self-update setting |
 | Does not catch | Anything about the real image: mounts, users, file modes, links and special files in the hook folder. Host checks H-12, H-16, H-17 and H-20 cover those |
@@ -50,7 +50,7 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 | Runs | H-01 to H-33 against real Docker: builds, mounts, isolation (H-26), persistence, the bundle clone and its links (H-27 covers the wrappers and a push), the GSD sync, the `sbx-*` scripts (H-28, H-29 and H-31 to H-33) and the tool versions line (H-30) |
 | Where | The Mac. `run-all.sh` and `./host-test.sh` are unattended |
 | Catches | Anything that only shows on the real images and mounts |
-| Does not catch | Claude's own behaviour and a real login: no check runs Claude, and H-09 and H-29 prove that planted login files survive |
+| Does not catch | Claude's or Cursor's own behaviour and a real login: no check runs an agent, and H-09 and H-29 prove that planted login files survive. The checks run a Claude sandbox; the Cursor image is checked at build time and by hand |
 
 ## tests/host-checklist.md
 
