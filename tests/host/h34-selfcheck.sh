@@ -8,6 +8,9 @@
 # runs on its own folder with a space in its path and its own registry inside
 # the run folder. It is removed before H-34 ends, because H-32 and H-33 compare
 # every sbx- container.
+# H-34 also plants a root-owned folder in the Claude test sandbox through a
+# throwaway root container of the test base image, expects the Mac owner fix in
+# the FAIL line, runs that fix and expects the check to pass.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -25,6 +28,8 @@ host_init
 expectedClaudeCount=53
 expectedCursorCount=51
 
+plantedDirName=h34-root-owned
+containerStateDir=/home/sandbox/workspace/state
 cursorName=hosttest-cursor
 cursorContainer=sbx-hosttest-cursor
 plantText="h34-$$-$(date +%s)"
@@ -184,6 +189,108 @@ check_claude_sandbox() {
 }
 
 # ------------------------------------------------------------------------------
+# root_run LOG_NAME ENTRYPOINT ARG...: runs one throwaway root container
+# ------------------------------------------------------------------------------
+# The container is the test base image with the test sandbox's mount, so it
+# reaches only the run folder. Output goes to $RUN/logs/h34-LOG_NAME.log. Returns
+# the docker exit status.
+# ------------------------------------------------------------------------------
+root_run() {
+  local logName=$1
+  local entrypoint=$2
+
+  shift 2
+  run_timeout 120 docker run --rm --network none -u root --entrypoint "$entrypoint" \
+    --volumes-from "$CONTAINER" "$BASE_IMAGE" "$@" >"$RUN/logs/h34-$logName.log" 2>&1 </dev/null
+}
+
+# ------------------------------------------------------------------------------
+# check_owner_fix_line OUTPUT_FILE: the FAIL names the folder and gives the fix
+# ------------------------------------------------------------------------------
+# Only greps fixed fragments out of the output. The tag in the image name is not
+# asserted, because host checks never spell out the tag your sandboxes run.
+# ------------------------------------------------------------------------------
+check_owner_fix_line() {
+  local outputFile=$1
+  local failLine fixLine shownFixLine
+  local fixStart="on the Mac run: docker run --rm --network none -u root --entrypoint chown --volumes-from $CONTAINER sbx-base:"
+  local fixEnd=" -R 1000:1000 $containerStateDir"
+
+  failLine=$(grep '^FAIL: no-root-owned-state: ' "$outputFile" 2>/dev/null | head -n 1)
+  fixLine=$(grep -A 1 '^FAIL: no-root-owned-state: ' "$outputFile" 2>/dev/null | sed -n 2p)
+  shownFixLine=$(printf '%s\n' "$fixLine" | sed 's/^ *//')
+
+  if [ -z "$failLine" ]; then
+    add_problem "owner fix, before: no FAIL line of no-root-owned-state for the planted folder $plantedDirName; output: $outputFile"
+  elif [[ "$failLine" != *"$plantedDirName"* ]]; then
+    add_problem "owner fix, before: the FAIL line does not name $plantedDirName: $failLine; output: $outputFile"
+  fi
+
+  if [[ "$fixLine" != *"$fixStart"* || "$fixLine" != *"$fixEnd"* ]]; then
+    add_problem "owner fix, before: the line under the no-root-owned-state FAIL does not hold the Mac owner fix for $containerStateDir: $fixLine; output: $outputFile"
+  fi
+
+  info "H-34 owner fix line: $shownFixLine"
+}
+
+# ------------------------------------------------------------------------------
+# check_owner_fix: the doctor round trip in the Claude test sandbox
+# ------------------------------------------------------------------------------
+# Plants a root-owned mode 700 folder in state/, expects the FAIL with the Mac
+# fix, runs H-34's own copy of that fix with the test base image and expects the
+# check to pass. Never runs text taken from the output. A failed plant has
+# recorded its problem, so nothing more runs.
+# ------------------------------------------------------------------------------
+check_owner_fix() {
+  local beforeFile=$RUN/logs/h34-owner-fix-before.out
+  local afterFile=$RUN/logs/h34-owner-fix-after.out
+
+  if ! root_run plant mkdir -m 700 "$containerStateDir/$plantedDirName"; then
+    add_problem "could not plant the root-owned folder $plantedDirName in the Claude test sandbox; log: $RUN/logs/h34-plant.log"
+
+    return 0
+  fi
+
+  run_selfcheck "$CONTAINER" "$beforeFile"
+
+  if [ "$selfcheckStatus" -ne 1 ]; then
+    add_problem "owner fix, before: sbx-selfcheck exited $selfcheckStatus, expected 1 for the planted root-owned folder; output: $beforeFile"
+  fi
+
+  check_owner_fix_line "$beforeFile"
+  report_selfcheck_summary "owner fix, before" "$beforeFile"
+
+  if ! root_run chown chown -R 1000:1000 "$containerStateDir"; then
+    add_problem "owner fix: the chown of $containerStateDir as root failed; log: $RUN/logs/h34-chown.log"
+  fi
+
+  run_selfcheck "$CONTAINER" "$afterFile"
+  check_selfcheck_status "owner fix, after" "$afterFile"
+
+  if grep -q '^FAIL: no-root-owned-state: ' "$afterFile" 2>/dev/null; then
+    add_problem "owner fix, after: no-root-owned-state still fails after the owner fix; output: $afterFile"
+  fi
+
+  report_selfcheck_summary "owner fix, after" "$afterFile"
+}
+
+# ------------------------------------------------------------------------------
+# remove_planted_folder: removes the planted folder and confirms it is gone
+# ------------------------------------------------------------------------------
+# Runs whatever happened before, so the later checks never find a root-owned
+# folder in the run folder's state.
+# ------------------------------------------------------------------------------
+remove_planted_folder() {
+  root_run cleanup rm -rf "$containerStateDir/$plantedDirName"
+
+  if [ -e "$RUN/state/$plantedDirName" ]; then
+    add_problem "the planted folder $RUN/state/$plantedDirName is still there; remove it by hand with: rm -rf \"$RUN/state/$plantedDirName\"; log: $RUN/logs/h34-cleanup.log"
+  fi
+
+  return 0
+}
+
+# ------------------------------------------------------------------------------
 # start_cursor_sandbox: registers, clones the bundle for and starts the sandbox
 # ------------------------------------------------------------------------------
 # The clone must exist before the start, so the start links its skills.
@@ -268,7 +375,9 @@ require_test_sandbox H-34 || exit 1
 sbx_test_setup H-34 h34 || exit 1
 read_root_ca_fingerprint
 check_claude_sandbox
+check_owner_fix
+remove_planted_folder
 check_cursor_sandbox
 remove_cursor_sandbox
-report_check H-34 "sbx-selfcheck failed, printed the wrong number of checks, or the Cursor test sandbox did not start or go away" \
-  "sbx-selfcheck printed $expectedClaudeCount PASS lines in the Claude test sandbox and $expectedCursorCount in a Cursor test sandbox, found the test root certificate in the system bundle and Java cacerts in both, and the Cursor test sandbox is gone"
+report_check H-34 "sbx-selfcheck failed, printed the wrong number of checks, the Cursor test sandbox did not start or go away, or the owner fix round trip failed" \
+  "sbx-selfcheck printed $expectedClaudeCount PASS lines in the Claude test sandbox and $expectedCursorCount in a Cursor test sandbox, found the test root certificate in the system bundle and Java cacerts in both, failed no-root-owned-state on a planted root-owned folder with the Mac owner fix and passed after running it, and the Cursor test sandbox is gone"
