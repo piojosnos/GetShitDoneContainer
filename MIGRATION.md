@@ -159,6 +159,12 @@ sbx-claude
 ccusage daily
 ```
 
+4. `sbx-selfcheck` prints PASS for every check. A FAIL line has a `fix:` line under it that says what to run.
+
+```bash
+sbx-selfcheck
+```
+
 ## After the checks
 
 - For the best-practices bundle, run `sbx-bundle-clone` in the sandbox (the gh login came along).
