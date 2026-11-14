@@ -16,10 +16,11 @@
 # ------------------------------------------------------------------------------
 BASE=base/Dockerfile
 CLAUDE=claude/Dockerfile
+CURSOR=cursor/Dockerfile
 COMPOSE=compose.yml
 ENTRY="base/sbx-entrypoint base/sbx-start-lib.sh"
-DOCKERFILES="$BASE $CLAUDE"
-SANDBOX_FILES="$BASE $CLAUDE $COMPOSE $ENTRY versions.env build.sh clean.sh bin/*"
+DOCKERFILES="$BASE $CLAUDE $CURSOR"
+SANDBOX_FILES="$BASE $CLAUDE $CURSOR $COMPOSE $ENTRY versions.env build.sh clean.sh bin/*"
 SHELL_FILES="build.sh clean.sh host-test.sh bin/* base/sbx-entrypoint base/sbx-start-lib.sh claude/start.d/* claude/bin/* tests/*/*.sh tests/*/*/*.sh tests/selftest/*/support/fake-gsd"
 
 # ------------------------------------------------------------------------------

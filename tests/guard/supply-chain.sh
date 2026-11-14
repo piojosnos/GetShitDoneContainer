@@ -98,12 +98,12 @@ versions_file_has_one_pin_per_line() {
 }
 
 # ------------------------------------------------------------------------------
-# pins_are_exact: _VERSION x.y.z, _IMAGE tag@sha256, _URL https, no other kind
+# pins_are_exact: _VERSION x.y.z or a dated build, _IMAGE tag@sha256, _URL https
 # ------------------------------------------------------------------------------
 pins_are_exact() {
   local ok=0
 
-  pin_lines | grep -E '^[A-Z_]+_VERSION=' | grep -Ev '^[A-Z_]+_VERSION=[0-9]+\.[0-9]+\.[0-9]+$' | report_lines "versions.env: not an exact x.y.z version: " || ok=1
+  pin_lines | grep -E '^[A-Z_]+_VERSION=' | grep -Ev '^[A-Z_]+_VERSION=([0-9]+\.[0-9]+\.[0-9]+|[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[0-9a-f]{7,40})$' | report_lines "versions.env: not an exact x.y.z or YYYY.MM.DD-hash version: " || ok=1
   pin_lines | grep -E '^[A-Z_]+_IMAGE=' | grep -Ev '^[A-Z_]+_IMAGE=[a-z0-9][a-z0-9./-]*:[A-Za-z0-9._-]+@sha256:[0-9a-f]{64}$' | report_lines "versions.env: not an image tag with its @sha256 digest: " || ok=1
   pin_lines | grep -E '^[A-Z_]+_URL=' | grep -Ev '^[A-Z_]+_URL=https://[^@[:space:]]+$' | report_lines "versions.env: not an https:// URL without credentials: " || ok=1
   pin_lines | grep -Ev '^[A-Z_]+_(VERSION|IMAGE|URL)=' | sed 's/=.*//' | report_lines "versions.env: the name must end in _VERSION, _IMAGE or _URL: " || ok=1
@@ -119,30 +119,39 @@ pins_are_exact() {
 # ------------------------------------------------------------------------------
 dockerfile_args_have_no_defaults() {
   local ok=0
+  local agentDockerfile
 
   grep -E '^ARG .*=' $BASE | report_lines "$BASE: an ARG with a default value: " || ok=1
-  grep -E '^ARG .*=' $CLAUDE | grep -Fvx 'ARG BASE_IMAGE=sbx-base:local' | report_lines "$CLAUDE: an ARG with a default value: " || ok=1
+
+  for agentDockerfile in $CLAUDE $CURSOR; do
+    grep -E '^ARG .*=' "$agentDockerfile" | grep -Fvx 'ARG BASE_IMAGE=sbx-base:local' | report_lines "$agentDockerfile: an ARG with a default value: " || ok=1
+  done
+
   grep -E '^FROM ' $BASE | grep -Ev '^FROM \$\{[A-Z_]+\}( AS [a-z]+)?$' | grep -Fvx 'FROM scratch AS cacert' | report_lines "$BASE: FROM must take its image from a pin: " || ok=1
 
   return "$ok"
 }
 
 # ------------------------------------------------------------------------------
-# claude_image_has_one_from_line: the Claude image is one stage on the base image
+# agent_images_have_one_from_line: each agent image is one stage on the base image
 # ------------------------------------------------------------------------------
 # A second stage could pull an image that no pin in versions.env controls.
 # ------------------------------------------------------------------------------
-claude_image_has_one_from_line() {
+agent_images_have_one_from_line() {
+  local ok=0
+  local agentDockerfile
   local fromCount
 
-  fromCount=$(grep -c '^FROM' $CLAUDE)
+  for agentDockerfile in $CLAUDE $CURSOR; do
+    fromCount=$(grep -c '^FROM' "$agentDockerfile")
 
-  if [ "$fromCount" -ne 1 ] || ! grep -Fxq 'FROM ${BASE_IMAGE}' $CLAUDE; then
-    echo "    $CLAUDE must have exactly one FROM line, FROM \${BASE_IMAGE} (found $fromCount FROM lines)"
-    return 1
-  fi
+    if [ "$fromCount" -ne 1 ] || ! grep -Fxq 'FROM ${BASE_IMAGE}' "$agentDockerfile"; then
+      echo "    $agentDockerfile must have exactly one FROM line, FROM \${BASE_IMAGE} (found $fromCount FROM lines)"
+      ok=1
+    fi
+  done
 
-  return 0
+  return "$ok"
 }
 
 # ------------------------------------------------------------------------------
@@ -184,5 +193,5 @@ run_rules \
   versions_file_has_one_pin_per_line \
   pins_are_exact \
   dockerfile_args_have_no_defaults \
-  claude_image_has_one_from_line \
+  agent_images_have_one_from_line \
   every_dockerfile_arg_is_pinned || exit 1
