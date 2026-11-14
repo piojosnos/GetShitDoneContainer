@@ -3,8 +3,10 @@
 # Opens a bash shell in a registered sandbox, starting it when needed
 # ------------------------------------------------------------------------------
 # Usage: sbx-shell NAME
-# A running sandbox is entered as it is, never recreated, so its other shells
-# and Claude sessions stay open. Claude starts in the shell with sbx-claude.
+# The shell is bash in the project folder for every agent; start sbx-claude
+# (or claude) or sbx-cursor (or cursor-agent) there. A running sandbox is
+# entered as it is, never recreated, so its other shells and agent sessions
+# stay open.
 # ------------------------------------------------------------------------------
 
 set -eu

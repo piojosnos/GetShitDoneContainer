@@ -17,7 +17,7 @@ pinned_version() {
 }
 
 # ------------------------------------------------------------------------------
-# run_installer DIR: models gsd-core --claude --global --config-dir DIR
+# run_installer DIR: models gsd-core --claude|--cursor --global --config-dir DIR
 # ------------------------------------------------------------------------------
 run_installer() {
   local configDir=$1
@@ -46,7 +46,7 @@ if [ -n "${FAKE_GSD_LOG:-}" ]; then
   echo "$toolName $*" >>"$FAKE_GSD_LOG"
 fi
 
-if [ "$toolName" = gsd-core ] && [ "$#" -eq 4 ] && [ "$1" = --claude ] && [ "$2" = --global ] && [ "$3" = --config-dir ]; then
+if [ "$toolName" = gsd-core ] && [ "$#" -eq 4 ] && { [ "$1" = --claude ] || [ "$1" = --cursor ]; } && [ "$2" = --global ] && [ "$3" = --config-dir ]; then
   run_installer "$4"
   exit 0
 fi

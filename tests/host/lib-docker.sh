@@ -25,7 +25,7 @@ build_images() {
   fi
 
   if [ "$buildStatus" -ne 0 ]; then
-    printf 'Build of sbx-base:local and sbx-claude:local failed. Log: %s\n' "$logFile"
+    printf 'Build of the sbx images failed. Log: %s\n' "$logFile"
     print_log_tail "$logFile"
     return 1
   fi

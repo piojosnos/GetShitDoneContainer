@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Rebuilds both images, then recreates one sandbox on them
+# Rebuilds every image, then recreates one sandbox on them
 # ------------------------------------------------------------------------------
 # Usage: sbx-upgrade NAME [BUILD_OPTION...]
 # Options go to build.sh, for example --no-cache. A failed build leaves the
@@ -23,7 +23,7 @@ warn_if_running() {
 }
 
 # ------------------------------------------------------------------------------
-# run_build NAME [BUILD_OPTION...]: builds both images with build.sh
+# run_build NAME [BUILD_OPTION...]: builds every image with build.sh
 # ------------------------------------------------------------------------------
 # build.sh is its own process with its own set -e, so nothing here runs until
 # it has finished.

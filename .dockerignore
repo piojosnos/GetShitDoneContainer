@@ -1,6 +1,7 @@
-# Both images build from the repo root; only base, claude and versions.env enter the build.
+# Every image builds from the repo root; only base, claude, cursor and versions.env enter the build.
 *
 !base
 !claude
+!cursor
 !versions.env
 **/.DS_Store

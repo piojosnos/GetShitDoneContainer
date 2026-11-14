@@ -59,6 +59,27 @@ case_line_forms() {
 }
 
 # ------------------------------------------------------------------------------
+# Case: the agent picks the image
+# ------------------------------------------------------------------------------
+case_agents() {
+  local readText='read_registry_entry NAME; printf "%s|%s\n" "$entryAgent" "$agentImage"'
+  local readOut
+
+  SBX_CONFIG_DIR=$WORK/cfg-agents
+  export SBX_CONFIG_DIR
+
+  echo '--- the agent picks the image'
+
+  plant_entry cursorentry "SBX_DIR=/x/cursor" "SBX_AGENT=cursor"
+  readOut=$(lib_eval "${readText/NAME/cursorentry}" 2>&1)
+  expect "registry: a cursor entry maps to sbx-cursor:local" equals "$readOut" "cursor|sbx-cursor:local"
+
+  plant_entry claudeentry "SBX_DIR=/x/claude" "SBX_AGENT=claude"
+  readOut=$(lib_eval "${readText/NAME/claudeentry}" 2>&1)
+  expect "registry: a claude entry maps to sbx-claude:local" equals "$readOut" "claude|sbx-claude:local"
+}
+
+# ------------------------------------------------------------------------------
 # Case: an entry that is empty, relative or for another agent is refused
 # ------------------------------------------------------------------------------
 case_bad_entries() {
@@ -135,6 +156,7 @@ require_no_arguments "$@" || exit 2
 start_group || exit 1
 case_read_as_data
 case_line_forms
+case_agents
 case_bad_entries
 case_start_stop_refusals
 finish_cases

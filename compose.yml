@@ -8,8 +8,10 @@ name: "sbx-${SBX_NAME:?SBX_NAME is required (starts with a lowercase letter, the
 
 services:
   sandbox:
-    # Built on the Mac with ./build.sh, from the repo root.
-    image: sbx-claude:local
+    # Built on the Mac with ./build.sh, from the repo root. SBX_AGENT picks the
+    # agent image (claude or cursor); the sbx-* scripts always set it, and a plain
+    # docker compose call gets claude.
+    image: "sbx-${SBX_AGENT:-claude}:local"
     pull_policy: never             # a missing image is an error, never a pull from Docker Hub
     container_name: "sbx-${SBX_NAME}"
     init: true                     # tini as PID 1: reaps zombies, stops promptly
@@ -27,7 +29,8 @@ services:
       - ALL
     labels:
       sbx.name: "${SBX_NAME}"
-    # The one mount: $SBX_DIR holds <name>/ (code) and state/ (Claude, gh, git).
+    # The one mount: $SBX_DIR holds <name>/ (code) and state/ (the agent's login
+    # and settings, gh, git).
     # create_host_path: false refuses a missing folder instead of creating one.
     volumes:
       - type: bind

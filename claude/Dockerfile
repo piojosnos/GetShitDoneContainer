@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# The Claude image: Claude Code, GSD, ccusage and the sbx-* wrappers on sbx-base
+# The Claude image: Claude Code, ccusage, sbx-claude and the managed settings on sbx-base
 # ------------------------------------------------------------------------------
 # BASE_IMAGE keeps a default because it names the local base tag, not a version.
 # Pins come from versions.env through build.sh; no other ARG has a default.
@@ -23,18 +23,6 @@ RUN : "${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION is not set; build with ./build
     && chown -h sandbox:sandbox /home/sandbox/.claude
 
 # ------------------------------------------------------------------------------
-# GSD from @opengsd/gsd-core at the exact pin
-# ------------------------------------------------------------------------------
-# The start hook 05-gsd reruns its installer at every start, so the image's
-# GSD wins over what state/claude holds.
-# ------------------------------------------------------------------------------
-ARG GSD_CORE_VERSION
-RUN : "${GSD_CORE_VERSION:?GSD_CORE_VERSION is not set; build with ./build.sh}" \
-    && export NPM_CONFIG_CACHE=/tmp/npm-cache \
-    && npm install -g "@opengsd/gsd-core@${GSD_CORE_VERSION}" \
-    && rm -rf /tmp/npm-cache
-
-# ------------------------------------------------------------------------------
 # ccusage for usage reports (daily, monthly, session)
 # ------------------------------------------------------------------------------
 # The package ships its native binary without the execute bit, so root adds it;
@@ -50,19 +38,14 @@ RUN : "${CCUSAGE_VERSION:?CCUSAGE_VERSION is not set; build with ./build.sh}" \
 # ------------------------------------------------------------------------------
 # Claude settings as image ENV
 # ------------------------------------------------------------------------------
-# So every docker exec shell gets them. SBX_BUNDLE_DIR is where this sandbox
-# keeps its clone of BUNDLE_REPO_URL; SBX_STATE_DIRS appends claude.
+# So every docker exec shell gets them; SBX_STATE_DIRS appends claude.
 # ------------------------------------------------------------------------------
-ARG BUNDLE_REPO_URL
-RUN : "${BUNDLE_REPO_URL:?BUNDLE_REPO_URL is not set; build with ./build.sh}"
 ENV CLAUDE_CONFIG_DIR=/home/sandbox/workspace/state/claude \
     SBX_STATE_DIRS="${SBX_STATE_DIRS} claude" \
-    SBX_BUNDLE_DIR=/home/sandbox/workspace/best-practices \
-    BUNDLE_REPO_URL=${BUNDLE_REPO_URL} \
     DISABLE_UPDATES=1
 
 # ------------------------------------------------------------------------------
-# Start hooks, the sbx-* wrappers and managed settings
+# Start hooks, sbx-claude and managed settings
 # ------------------------------------------------------------------------------
 # Managed settings let Claude edit the clone and deny its Edit tool on the skill
 # list and on every path under state/claude/skills. Not a security boundary.
@@ -79,10 +62,10 @@ RUN chmod 755 /etc/sbx/start.d/* \
 # ------------------------------------------------------------------------------
 # From the same pins the smoke test below checks, so the line cannot disagree.
 # ------------------------------------------------------------------------------
-RUN { printf 'claude %s | gsd %s | ccusage %s | ' "${CLAUDE_CODE_VERSION}" "${GSD_CORE_VERSION}" "${CCUSAGE_VERSION}"; cat /etc/sbx/tool-versions; } > /tmp/tool-versions \
+RUN { printf 'claude %s | ccusage %s | ' "${CLAUDE_CODE_VERSION}" "${CCUSAGE_VERSION}"; cat /etc/sbx/tool-versions; } > /tmp/tool-versions \
     && mv /tmp/tool-versions /etc/sbx/tool-versions \
     && chmod 644 /etc/sbx/tool-versions \
-    && grep -Eq '^claude [0-9.]+ \| gsd [0-9.]+ \| ccusage [0-9.]+ \| node [0-9.]+ \| jdk [0-9.]+ \| mvn [0-9.]+ \| python [0-9.]+$' /etc/sbx/tool-versions
+    && grep -Eq '^claude [0-9.]+ \| ccusage [0-9.]+ \| gsd [0-9.]+ \| node [0-9.]+ \| jdk [0-9.]+ \| mvn [0-9.]+ \| python [0-9.]+$' /etc/sbx/tool-versions
 
 USER sandbox
 
@@ -92,7 +75,6 @@ USER sandbox
 # Last RUN: the mount point must stay empty; a mount hides what the image holds.
 # ------------------------------------------------------------------------------
 RUN test "$(claude --version)" = "${CLAUDE_CODE_VERSION} (Claude Code)" \
-    && test "$(gsd-tools runtime-identity --raw)" = "{\"packageName\":\"@opengsd/gsd-core\",\"version\":\"${GSD_CORE_VERSION}\"}" \
     && test "$(ccusage --version)" = "ccusage ${CCUSAGE_VERSION}" \
     && { test -z "$(ls -A /home/sandbox/workspace)" || { echo "Files under the mount point:"; find /home/sandbox/workspace; exit 1; }; }
 

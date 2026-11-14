@@ -6,7 +6,7 @@
 # Stock bash 3.2 with BSD tools, because it runs in the Mac shell.
 # ------------------------------------------------------------------------------
 
-claudeImage=sbx-claude:local
+knownAgentList="claude cursor"
 startLimitSeconds=120
 
 # ------------------------------------------------------------------------------
@@ -113,7 +113,22 @@ check_name() {
 }
 
 # ------------------------------------------------------------------------------
-# read_registry_entry NAME: sets entryFile, entryDir and entryAgent from NAME
+# is_known_agent AGENT: true when AGENT is in knownAgentList
+# ------------------------------------------------------------------------------
+is_known_agent() {
+  local knownAgent
+
+  for knownAgent in $knownAgentList; do
+    if [ "$1" = "$knownAgent" ]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+# ------------------------------------------------------------------------------
+# read_registry_entry NAME: sets entryFile, entryDir, entryAgent and agentImage
 # ------------------------------------------------------------------------------
 # The caller checked the name. The file is read line by line as text and never
 # sourced, so a value such as $(command) is only a path that does not exist.
@@ -125,6 +140,7 @@ read_registry_entry() {
   entryFile=$registryDir/$sandboxName
   entryDir=""
   entryAgent=""
+  agentImage=""
 
   if [ ! -f "$entryFile" ]; then
     sbx_error "$sandboxName is not registered; run: sbx-add $sandboxName HOST_PATH"
@@ -152,10 +168,12 @@ read_registry_entry() {
     return 1
   fi
 
-  if [ "$entryAgent" != "claude" ]; then
-    sbx_error "the entry $entryFile names agent '$entryAgent'; only claude exists"
+  if ! is_known_agent "$entryAgent"; then
+    sbx_error "the entry $entryFile names agent '$entryAgent'; the known agents are: $knownAgentList"
     return 1
   fi
+
+  agentImage=sbx-$entryAgent:local
 }
 
 # ------------------------------------------------------------------------------
@@ -179,13 +197,14 @@ check_sandbox_folders() {
 # run_compose NAME ARG...: runs docker compose for the sandbox NAME only
 # ------------------------------------------------------------------------------
 # -p wins over COMPOSE_PROJECT_NAME; --env-file /dev/null keeps a .env file out.
-# SBX_NAME and SBX_DIR are set on this one command, never taken from the caller.
+# SBX_NAME, SBX_DIR and SBX_AGENT are set on this one command, never taken from
+# the caller.
 # ------------------------------------------------------------------------------
 run_compose() {
   local sandboxName=$1
 
   shift
-  SBX_NAME="$sandboxName" SBX_DIR="$entryDir" docker compose --env-file /dev/null -p "sbx-$sandboxName" -f "$repoDir/compose.yml" "$@" </dev/null
+  SBX_NAME="$sandboxName" SBX_DIR="$entryDir" SBX_AGENT="$entryAgent" docker compose --env-file /dev/null -p "sbx-$sandboxName" -f "$repoDir/compose.yml" "$@" </dev/null
 }
 
 # ------------------------------------------------------------------------------
@@ -201,7 +220,7 @@ require_docker() {
 }
 
 # ------------------------------------------------------------------------------
-# require_images NAME: the Claude image must exist before the sandbox starts
+# require_images NAME: the sandbox's agent image must exist before it starts
 # ------------------------------------------------------------------------------
 # Docker must answer first, or sbx-upgrade would be the wrong advice.
 # ------------------------------------------------------------------------------
@@ -210,8 +229,8 @@ require_images() {
 
   require_docker || return 1
 
-  if ! docker image inspect "$claudeImage" >/dev/null 2>&1 </dev/null; then
-    sbx_error "$claudeImage is not built; run: sbx-upgrade $sandboxName (it builds the images and starts the sandbox)"
+  if ! docker image inspect "$agentImage" >/dev/null 2>&1 </dev/null; then
+    sbx_error "$agentImage is not built; run: sbx-upgrade $sandboxName (it builds the images and starts the sandbox)"
     return 1
   fi
 }
@@ -244,7 +263,7 @@ runs_older_image() {
   fi
 
   runningImage=$(docker container inspect --format '{{.Image}}' "sbx-$1" 2>/dev/null </dev/null) || return 1
-  currentImage=$(docker image inspect --format '{{.Id}}' "$claudeImage" 2>/dev/null </dev/null) || return 1
+  currentImage=$(docker image inspect --format '{{.Id}}' "$agentImage" 2>/dev/null </dev/null) || return 1
 
   [ -n "$runningImage" ] && [ -n "$currentImage" ] && [ "$runningImage" != "$currentImage" ]
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Clones the best-practices repo into the sandbox and links it into Claude
+# Clones the best-practices repo into the sandbox and links it for the agent
 # ------------------------------------------------------------------------------
 # Usage: sbx-bundle-clone (run sbx-gh-login first for a private repo)
 # It never overwrites: an existing folder is refused and left as it is.

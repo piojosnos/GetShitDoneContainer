@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Builds sbx-base:local, then sbx-claude:local, with the pins in versions.env
+# Builds sbx-base:local, then sbx-claude:local and sbx-cursor:local, with the pins in versions.env
 # ------------------------------------------------------------------------------
 # Usage: ./build.sh [DOCKER_BUILD_OPTION...]
-# Extra options go to both builds, for example --no-cache.
-# With SBX_CA_CERT set to a PEM file, both images also trust its root
+# Extra options go to every build, for example --no-cache.
+# With SBX_CA_CERT set to a PEM file, every image also trusts its root
 # certificates.
 # ------------------------------------------------------------------------------
 set -eu
@@ -133,7 +133,7 @@ print_cert_banner() {
   fi
 
   echo "$starLine"
-  echo "* build.sh: sbx-base and sbx-claude trust an EXTRA ROOT CERTIFICATE"
+  echo "* build.sh: the sbx images trust an EXTRA ROOT CERTIFICATE"
   echo "* file: $SBX_CA_CERT"
 
   for certPath in "$extraCertDir"/*.crt; do
@@ -162,4 +162,5 @@ else
 fi
 
 build_image claude/Dockerfile sbx-claude:local "$@"
+build_image cursor/Dockerfile sbx-cursor:local "$@"
 print_cert_banner

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Self-test of claude/start.d/05-gsd against a fake GSD
+# Self-test of the 05-gsd hooks of both agents against a fake GSD
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/entrypoint/gsd-hook.sh (exit 0 = all pass)
 # Run by run-all.sh; its one work folder under TMPDIR is removed at exit.
@@ -95,6 +95,30 @@ case_version_mismatch_stops() {
 }
 
 # ------------------------------------------------------------------------------
+# Case: the Cursor hook syncs into its own folder with --cursor
+# ------------------------------------------------------------------------------
+case_cursor_sync() {
+  local cursorDir=$WORK/cursorsync/cfg
+  local pin
+
+  pin=$(pin_of GSD_CORE_VERSION)
+
+  echo '--- the Cursor hook'
+  env CURSOR_CONFIG_DIR="$cursorDir" FAKE_GSD_LOG="$WORK/cursorsync.gsdlog" \
+    bash "$REPO/cursor/start.d/05-gsd" >"$WORK/cursorsync.out" 2>"$WORK/cursorsync.err" </dev/null
+  HOOK_RC=$?
+
+  expect "gsd hook: the Cursor hook syncs and prints the pinned version" equals "$HOOK_RC:$(cat "$WORK/cursorsync.out")" "0:[sbx] GSD $pin synced"
+  expect "gsd hook: the Cursor hook runs the installer with --cursor" has_text "$WORK/cursorsync.gsdlog" "--cursor --global --config-dir $cursorDir"
+
+  env CURSOR_CONFIG_DIR= FAKE_GSD_LOG="$WORK/cursorempty.gsdlog" \
+    bash "$REPO/cursor/start.d/05-gsd" >"$WORK/cursorempty.out" 2>"$WORK/cursorempty.err" </dev/null
+  HOOK_RC=$?
+
+  expect "gsd hook: an empty CURSOR_CONFIG_DIR stops the Cursor start" equals "$HOOK_RC:$(cat "$WORK/cursorempty.err")" "1:[sbx] ERROR: CURSOR_CONFIG_DIR is not set."
+}
+
+# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -104,4 +128,5 @@ case_first_sync
 case_failing_installer_stops
 case_unmakeable_folder_stops
 case_version_mismatch_stops
+case_cursor_sync
 finish_cases

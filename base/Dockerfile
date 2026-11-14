@@ -1,6 +1,6 @@
 # check=skip=InvalidDefaultArgInFrom
 # ------------------------------------------------------------------------------
-# Shared base for every sbx agent image: Linux tools and toolchains
+# Shared base for every sbx agent image: Linux tools, toolchains and GSD
 # ------------------------------------------------------------------------------
 # Build with ./build.sh. No ARG has a default, so a bare build names the pin.
 # The stages copy only files from official images pinned in versions.env.
@@ -184,19 +184,52 @@ RUN chmod 755 /usr/local/bin/sbx-entrypoint \
 RUN mkdir -p /etc/sbx/start.d
 
 # ------------------------------------------------------------------------------
+# GSD from @opengsd/gsd-core at the exact pin
+# ------------------------------------------------------------------------------
+# Every agent image syncs it into its config folder at each start (its 05-gsd
+# hook), so the image's GSD wins. Late in this file, so a GSD bump rebuilds
+# only the layers below it.
+# ------------------------------------------------------------------------------
+ARG GSD_CORE_VERSION
+RUN : "${GSD_CORE_VERSION:?GSD_CORE_VERSION is not set; build with ./build.sh}" \
+    && export NPM_CONFIG_CACHE=/tmp/npm-cache \
+    && npm install -g "@opengsd/gsd-core@${GSD_CORE_VERSION}" \
+    && rm -rf /tmp/npm-cache
+
+# ------------------------------------------------------------------------------
+# Best-practices clone settings
+# ------------------------------------------------------------------------------
+# SBX_BUNDLE_DIR is where a sandbox keeps its clone of BUNDLE_REPO_URL; every
+# agent links it at start.
+# ------------------------------------------------------------------------------
+ARG BUNDLE_REPO_URL
+RUN : "${BUNDLE_REPO_URL:?BUNDLE_REPO_URL is not set; build with ./build.sh}"
+ENV SBX_BUNDLE_DIR=/home/sandbox/workspace/best-practices \
+    BUNDLE_REPO_URL=${BUNDLE_REPO_URL}
+
+# ------------------------------------------------------------------------------
+# Shared helpers: sbx-gh-login, sbx-bundle-clone and the bundle linker
+# ------------------------------------------------------------------------------
+# Copied as root into /usr/local/bin, mode 755, so the sandbox user cannot
+# change them. Same paths for every agent.
+# ------------------------------------------------------------------------------
+COPY --chmod=755 base/bin/ /usr/local/bin/
+
+# ------------------------------------------------------------------------------
 # The tool versions line, printed by every interactive shell
 # ------------------------------------------------------------------------------
-# Written once here, so a shell never waits for java or mvn. The Claude image
-# adds its own fields in front.
+# Written once here, so a shell never waits for java or mvn. The agent images
+# add their own fields in front.
 # ------------------------------------------------------------------------------
-RUN printf 'node %s | jdk %s | mvn %s | python %s\n' \
+RUN printf 'gsd %s | node %s | jdk %s | mvn %s | python %s\n' \
+       "${GSD_CORE_VERSION}" \
        "${NODE_VERSION}" \
        "$(java -version 2>&1 | sed -n '1s/.*"\(.*\)".*/\1/p')" \
        "${MAVEN_VERSION}" \
        "$(python3 --version | sed 's/^Python //')" \
        > /etc/sbx/tool-versions \
     && chmod 644 /etc/sbx/tool-versions \
-    && grep -Eq '^node [0-9.]+ \| jdk [0-9.]+ \| mvn [0-9.]+ \| python [0-9.]+$' /etc/sbx/tool-versions \
+    && grep -Eq '^gsd [0-9.]+ \| node [0-9.]+ \| jdk [0-9.]+ \| mvn [0-9.]+ \| python [0-9.]+$' /etc/sbx/tool-versions \
     && printf '%s\n' 'cat /etc/sbx/tool-versions' >> /etc/bash.bashrc
 
 # ------------------------------------------------------------------------------
@@ -215,6 +248,7 @@ RUN mkdir -p /home/sandbox/workspace /home/sandbox/.local/state \
 # Last RUN: the mount point must stay empty; a mount hides what the image holds.
 # ------------------------------------------------------------------------------
 RUN test "$(node -v)" = "v${NODE_VERSION}" \
+    && test "$(gsd-tools runtime-identity --raw)" = "{\"packageName\":\"@opengsd/gsd-core\",\"version\":\"${GSD_CORE_VERSION}\"}" \
     && gh --version | grep -F "gh version ${GH_VERSION} " >/dev/null \
     && mvn -v | grep -F "Apache Maven ${MAVEN_VERSION} " >/dev/null \
     && java -version 2>&1 | grep -F "Temurin" >/dev/null \

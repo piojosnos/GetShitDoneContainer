@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------------
+# Runs Cursor, after a loud warning when no best-practices clone is linked
+# ------------------------------------------------------------------------------
+# Usage: sbx-cursor [cursor-agent arguments]
+# Cursor gets the bundle's skills and no rules link, so a linked clone shows as
+# a non-empty skill list written by the start hook.
+# ------------------------------------------------------------------------------
+set -eu
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+if [ ! -s "${CURSOR_CONFIG_DIR:?CURSOR_CONFIG_DIR is not set}/.best-practices-skills" ]; then
+  {
+    echo ""
+    echo "[sbx] ================================================================"
+    echo "[sbx] WARNING: no best-practices clone is linked into Cursor."
+    echo "[sbx] Cursor starts WITHOUT your skills."
+    echo "[sbx] Press Ctrl-C now and run sbx-gh-login, then sbx-bundle-clone."
+    echo "[sbx] If ${SBX_BUNDLE_DIR:?SBX_BUNDLE_DIR is not set} already exists,"
+    echo "[sbx] /etc/sbx/start.d/10-best-practices relinks it."
+    echo "[sbx] ================================================================"
+  } >&2
+  sleep 5
+fi
+
+exec cursor-agent "$@"

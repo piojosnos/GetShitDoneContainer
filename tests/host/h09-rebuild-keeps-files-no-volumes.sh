@@ -44,7 +44,7 @@ plant_sentinels() {
 }
 
 # ------------------------------------------------------------------------------
-# Takes the sandbox down, rebuilds both images and starts it again
+# Takes the sandbox down, rebuilds the images and starts it again
 # ------------------------------------------------------------------------------
 # The rebuild uses the cache; SBXTEST_NO_CACHE=1 (optional) adds --no-cache,
 # which is slow.
