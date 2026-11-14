@@ -44,9 +44,18 @@ run_step() {
 # show_context: the commit under test, the test images and the Docker versions
 # ------------------------------------------------------------------------------
 show_context() {
+  local agent
+  local imageList
+
   date
   printf 'branch %s, commit %s\n' "$(git rev-parse --abbrev-ref HEAD)" "$(git rev-parse --short HEAD)"
-  echo "images: sbx-base:$SBX_IMAGE_TAG, sbx-claude:$SBX_IMAGE_TAG and sbx-cursor:$SBX_IMAGE_TAG"
+  imageList="sbx-base:$SBX_IMAGE_TAG"
+
+  for agent in $(bash -c '. bin/sbx-lib.sh && printf "%s" "$knownAgentList"'); do
+    imageList="$imageList, sbx-$agent:$SBX_IMAGE_TAG"
+  done
+
+  echo "images: $imageList"
   git status --short
   docker --version && docker compose version
 }

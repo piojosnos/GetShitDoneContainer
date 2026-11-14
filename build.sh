@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Builds sbx-base, then sbx-claude and sbx-cursor, with the pins in versions.env
+# Builds sbx-base, then one image per agent, with the pins in versions.env
 # ------------------------------------------------------------------------------
 # Usage: ./build.sh [DOCKER_BUILD_OPTION...]
 # Extra options go to every build, for example --no-cache.
@@ -10,29 +10,6 @@
 # for the test run. Any other value stops the build.
 # ------------------------------------------------------------------------------
 set -eu
-
-knownImageTagList="local test"
-
-# ------------------------------------------------------------------------------
-# check_image_tag: sets imageTag from SBX_IMAGE_TAG; only local and test pass
-# ------------------------------------------------------------------------------
-# A twin of the check in bin/sbx-lib.sh with the same wording; build.sh does not
-# source that library. Unset or empty means local.
-# ------------------------------------------------------------------------------
-check_image_tag() {
-  local knownTag
-
-  imageTag=${SBX_IMAGE_TAG:-local}
-
-  for knownTag in $knownImageTagList; do
-    if [ "$imageTag" = "$knownTag" ]; then
-      return 0
-    fi
-  done
-
-  echo "build.sh: SBX_IMAGE_TAG must be ${knownImageTagList// / or }, not '$imageTag'" >&2
-  return 1
-}
 
 # ------------------------------------------------------------------------------
 # check_versions_file: stops when versions.env is not next to this script
@@ -174,6 +151,11 @@ print_cert_banner() {
 # ------------------------------------------------------------------------------
 cd "$(dirname "$0")"
 
+# The agent list and the tag check live once, in the library the sbx-* scripts
+# use; its errors start with scriptName.
+scriptName=build.sh
+. bin/sbx-lib.sh
+
 check_image_tag || exit 1
 check_versions_file
 load_versions
@@ -187,6 +169,8 @@ else
   build_image base/Dockerfile "sbx-base:$imageTag" "$@"
 fi
 
-build_image claude/Dockerfile "sbx-claude:$imageTag" --build-arg "BASE_IMAGE=sbx-base:$imageTag" "$@"
-build_image cursor/Dockerfile "sbx-cursor:$imageTag" --build-arg "BASE_IMAGE=sbx-base:$imageTag" "$@"
+for agent in $knownAgentList; do
+  build_image "$agent/Dockerfile" "sbx-$agent:$imageTag" --build-arg "BASE_IMAGE=sbx-base:$imageTag" "$@"
+done
+
 print_cert_banner

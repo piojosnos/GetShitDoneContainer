@@ -69,7 +69,8 @@ gsd_sync_runs_before_the_bundle() {
 # compose.yml falls back to claude and local when a variable is unset, so a lost
 # hand-off would start a Cursor sandbox on the Claude image, or a test sandbox
 # on the images the user's sandboxes run. An agent build without the base of its
-# own tag would sit on the local base.
+# own tag would sit on the local base. build.sh reads the agent list and the tag
+# check from bin/sbx-lib.sh, so a new agent or tag is one edit there.
 # ------------------------------------------------------------------------------
 compose_image_follows_agent_and_tag() {
   local ok=0
@@ -90,10 +91,20 @@ compose_image_follows_agent_and_tag() {
     ok=1
   fi
 
+  if ! grep -Fq 'for agent in $knownAgentList; do' build.sh; then
+    echo "    build.sh does not build one image per agent in knownAgentList"
+    ok=1
+  fi
+
   baseArgCount=$(grep -Ev '^[[:space:]]*#' build.sh | grep -cF -- '--build-arg "BASE_IMAGE=sbx-base:$imageTag"')
 
-  if [ "$baseArgCount" -ne 2 ]; then
-    echo "    build.sh does not pass the base of its own tag to both agent builds"
+  if [ "$baseArgCount" -ne 1 ]; then
+    echo "    build.sh does not pass the base of its own tag to the agent builds"
+    ok=1
+  fi
+
+  if grep -Eq '^(knownImageTagList|knownAgentList)=|^check_image_tag\(\)' build.sh; then
+    echo "    build.sh defines its own agent list or tag check instead of reading bin/sbx-lib.sh"
     ok=1
   fi
 
