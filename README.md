@@ -469,7 +469,7 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 
 | Symptom | Fix |
 |---|---|
-| `sbx-selfcheck` prints a FAIL line | Do what its `fix:` line says. A `load-...` line means a checks file in the image is broken; rebuild with `sbx-upgrade NAME`. |
+| `sbx-selfcheck` prints a FAIL line | Do what its `fix:` line says. A `load-...` line means a checks file in the image is broken or missing; rebuild with `sbx-upgrade NAME`. |
 | Claude hangs at start after an unclean stop | Check no claude is running (`docker exec sbx-demo pgrep -a claude` prints nothing), then delete `$SBX_DIR/state/claude/.claude.json.lock`. Everything else in `state/claude` is safe on the Mac. |
 | Console keyless sign-in is lost on recreate | It is stored outside `CLAUDE_CONFIG_DIR`. Log in with a claude.ai account instead. |
 | A check fails only because of the capability drop | Remove the `cap_drop` block from `compose.yml`, keep `no-new-privileges`, and report it. |
