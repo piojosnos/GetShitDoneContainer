@@ -40,7 +40,7 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 |---|---|
 | Runs | The real `bin/` scripts as plain bash in a temp folder, with `DOCKER_HOST` pointing at a socket that does not exist and a registry in the work folder; `build.sh` with no `docker` on the PATH |
 | Where | Linux and the Mac shell. `./host-test.sh` runs it under `/bin/bash` |
-| Catches | A name, path or registry entry the scripts should refuse, a registry value that would run, a refusal that comes too late, Docker not answering reported as such, an image tag other than `local` or `test`, and the image names each tag picks |
+| Catches | A name, path or registry entry the scripts should refuse, a registry value that would run, a refusal that comes too late, Docker not answering reported as such, an image tag other than `local` or `test`, the image names each tag picks, and a `test` tag used without a line on stderr naming it |
 | Does not catch | Anything that needs Docker to answer: starting, entering, listing and removing a sandbox. H-28 to H-33 cover it |
 
 ## tests/host/

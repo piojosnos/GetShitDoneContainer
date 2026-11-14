@@ -32,7 +32,7 @@ check_record() {
 
   diffText=$(diff "$recordFile" "$REPO_DIR/versions.env" 2>&1)
   if [ -n "$diffText" ]; then
-    add_problem "/etc/sbx/versions.env in $CLAUDE_IMAGE differs from versions.env; rebuild with ./build.sh: $(first_lines "$diffText")"
+    add_problem "/etc/sbx/versions.env in $CLAUDE_IMAGE differs from versions.env; rerun ./host-test.sh (it rebuilds the test images): $(first_lines "$diffText")"
   fi
 }
 

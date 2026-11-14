@@ -8,6 +8,7 @@
 # certificates.
 # SBX_IMAGE_TAG picks the tag of all three: local when unset or empty, or test
 # for the test run. Any other value stops the build.
+# With test, a line on stderr names it before the first build.
 # ------------------------------------------------------------------------------
 set -eu
 
