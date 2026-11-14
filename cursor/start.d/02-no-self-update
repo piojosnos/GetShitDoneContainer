@@ -35,7 +35,8 @@ make_config_folder() {
 # ------------------------------------------------------------------------------
 # set_static_channel: sets channel to static and keeps the file's other keys
 # ------------------------------------------------------------------------------
-# A file that is not valid JSON stops the start and is left as it was.
+# A file that is not valid JSON stops the start and is left as it was. A new
+# file is written by jq too, so the next start finds it already in jq's layout.
 # ------------------------------------------------------------------------------
 set_static_channel() {
   if [ -s "$configFile" ]; then
@@ -47,7 +48,7 @@ set_static_channel() {
 
     mv "$configFile.tmp" "$configFile"
   else
-    printf '{"channel":"static"}\n' >"$configFile"
+    jq -n '{channel: "static"}' >"$configFile"
   fi
 
   echo "[sbx] Cursor self-update off (static channel)"

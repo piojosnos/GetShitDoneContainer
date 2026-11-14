@@ -39,7 +39,7 @@ case_keeps_other_keys() {
   printf '{"version":1,"permissions":{"allow":["Shell(ls)"]}}\n' >"$WORK/keys/cfg/cli-config.json"
   run_update_hook "$WORK/keys/cfg" keys
 
-  expect "update hook: a file the CLI wrote keeps its other keys" jq -e '.version == 1 and .permissions.allow[0] == "Shell(ls)" and .channel == "static"' "$WORK/keys/cfg/cli-config.json" >/dev/null
+  expect "update hook: a file the CLI wrote keeps its other keys" equals "$HOOK_RC:$(jq -r '[.version, .permissions.allow[0], .channel] | join(" ")' "$WORK/keys/cfg/cli-config.json")" "0:1 Shell(ls) static"
 }
 
 # ------------------------------------------------------------------------------
