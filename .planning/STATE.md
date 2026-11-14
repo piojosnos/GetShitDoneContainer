@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 08
 current_phase_name: In-image self-check
 status: executing
-stopped_at: Completed 08-09-PLAN.md
-last_updated: "2026-11-14T21:31:38.110Z"
+stopped_at: Completed 08-10-PLAN.md
+last_updated: "2026-11-14T21:33:55.999Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 08 execution started
-state_head: 9519f36bc6d786421f3eab3abb2b6c8c3f7a817a
+state_head: d9f88086d5f95b5b8ddb92349771bda5a27a9185
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 25
-  completed_plans: 23
+  completed_plans: 24
   percent: 29
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 08 (In-image self-check) — EXECUTING
-Plan: 9 of 11 complete (next 08-09)
+Plan: 10 of 11 complete (next 08-11)
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 08 execution started
 
@@ -180,6 +180,7 @@ Last activity: 2026-11-14 — Phase 08 execution started
 | Phase 08 P07 | 40min | 2 tasks | 1 files |
 | Phase 08 P08 | 12 min | 3 tasks | 6 files |
 | Phase 08 P09 | 20 min | 2 tasks | 7 files |
+| Phase 08 P10 | 15 min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -352,6 +353,8 @@ Recent decisions affecting current work:
 - [Phase 08]: 08-08: the owner fix is a throwaway root container on the Mac (docker run --rm --network none -u root --entrypoint chown --volumes-from sbx-NAME sbx-base:local -R 1000:1000 STATE); load-agent-checks is a runner level FAIL, not a CHECK_LIST entry, so the 51 and 49 counts hold
 - [Phase 08]: tool-bash and tool-keytool use tool_result with no version argument; counts are now 41 shared, 53 Claude, 51 Cursor
 - [Phase 08]: H-34 runs the owner fix round trip with its own copy of the chown command on the test base image and never asserts the image tag in the fix line
+- [Phase 08]: 08-10: environment mappings are environment_map in the self-check sources; tool_result keyword is environment_map=
+- [Phase 08]: 08-10: managed_settings_result reports a missing file as 'is missing' and unreadable or bad JSON as 'is not valid JSON', same as the Cursor config check
 
 ### Pending Todos
 
@@ -421,8 +424,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T21:31:38.045Z
-Stopped at: Completed 08-09-PLAN.md
+Last session: 2026-11-14T21:33:55.933Z
+Stopped at: Completed 08-10-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
