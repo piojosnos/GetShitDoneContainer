@@ -203,18 +203,58 @@ def test_owned_by_uid_paths_reports_a_link_without_following_it(state_tree):
     assert not any(path.startswith("sub1/link1/") for path in path_list)
 
 
-def test_root_owned_state_fails_with_the_total_and_at_most_ten_paths(tmp_path):
-    state1 = tmp_path / "state1"
-
+def make_fourteen_path_tree(state1: Path) -> None:
     for number in range(13):
         write_file(state1 / "sub1" / f"file{number:02d}")
+
+
+def test_root_owned_state_fails_with_the_total_and_at_most_ten_paths(tmp_path, monkeypatch):
+    monkeypatch.setenv("SBX_NAME", "name1")
+    state1 = tmp_path / "state1"
+    make_fourteen_path_tree(state1)
 
     result = shared_checks.root_owned_state_result(state1, os.getuid())
 
     assert not result.passed
     assert "14 paths" in result.detail
     assert result.detail.count("sub1") == 10
-    assert "chown -R sandbox:sandbox" in result.hint
+    assert result.hint == (
+        "give the paths back to the sandbox user from a throwaway root container, "
+        "since the sandbox cannot change owners: on the Mac run: "
+        "docker run --rm --network none -u root --entrypoint chown "
+        f"--volumes-from sbx-name1 sbx-base:local -R 1000:1000 {state1}"
+    )
+
+
+def test_root_owned_state_hint_says_name_when_sbx_name_is_unset(tmp_path, monkeypatch):
+    monkeypatch.delenv("SBX_NAME", raising=False)
+    state1 = tmp_path / "state1"
+    make_fourteen_path_tree(state1)
+
+    result = shared_checks.root_owned_state_result(state1, os.getuid())
+
+    assert not result.passed
+    assert "--volumes-from sbx-NAME sbx-base:local -R 1000:1000" in result.hint
+
+
+def test_root_owned_state_prints_the_mac_owner_fix_under_its_fail_line(tmp_path, monkeypatch):
+    monkeypatch.setenv("SBX_NAME", "name1")
+    state1 = tmp_path / "state1"
+    make_fourteen_path_tree(state1)
+
+    def scan_state1():
+        return shared_checks.root_owned_state_result(state1, os.getuid())
+
+    check = sbx_selfcheck.Check("no-root-owned-state", scan_state1)
+    line_list = sbx_selfcheck.outcome_lines(check.name, sbx_selfcheck.run_check(check))
+
+    assert line_list[0].startswith("FAIL: no-root-owned-state: 14 paths under state/")
+    assert line_list[1] == (
+        "      fix: give the paths back to the sandbox user from a throwaway root container, "
+        "since the sandbox cannot change owners: on the Mac run: "
+        "docker run --rm --network none -u root --entrypoint chown "
+        f"--volumes-from sbx-name1 sbx-base:local -R 1000:1000 {state1}"
+    )
 
 
 def test_scan_owned_state_counts_tolerated_paths_and_skips_cache_folders(tmp_path):
