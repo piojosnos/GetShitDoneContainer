@@ -19,8 +19,8 @@ host_init
 # Expected check counts: the shared checks plus the agent's own
 # ------------------------------------------------------------------------------
 # Count the CHECK_LIST entries in base/selfcheck/shared_checks.py and in
-# claude/selfcheck/claude.py or cursor/selfcheck/cursor.py; a pytest test keeps
-# them equal.
+# claude/selfcheck/claude.py or cursor/selfcheck/cursor.py; an inventory test in
+# tests/selftest/selfcheck keeps them equal.
 # ------------------------------------------------------------------------------
 expectedClaudeCount=51
 expectedCursorCount=49
