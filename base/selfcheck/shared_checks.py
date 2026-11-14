@@ -46,6 +46,7 @@ from sbx_selfcheck import (
 
 SANDBOX_UID = 1000
 SANDBOX_GID = 1000
+OWNER_FIX_IMAGE = "sbx-base:local"
 SANDBOX_USER = "sandbox"
 BASE_STATE_DIR_LIST = ["shell", "gh", "git"]
 SKIPPED_STATE_DIR_SET = {"cache/npm", "cache/uv", "m2"}
@@ -246,6 +247,15 @@ def owned_by_uid_paths(
     return scan_owned_state(state_dir, owner_uid, skipped_relative_set, tolerated_folder_set)[0]
 
 
+def owner_fix_hint(state_dir: Path) -> str:
+    return mac_hint(
+        "give the paths back to the sandbox user from a throwaway root container, "
+        "since the sandbox cannot change owners",
+        "docker run --rm --network none -u root --entrypoint chown "
+        f"--volumes-from sbx-{sandbox_name()} {OWNER_FIX_IMAGE} -R {SANDBOX_UID}:{SANDBOX_GID} {state_dir}",
+    )
+
+
 def root_owned_state_result(state_dir: Path, owner_uid: int) -> CheckResult:
     reported_list, tolerated_count = scan_owned_state(state_dir, owner_uid, SKIPPED_STATE_DIR_SET, GSD_SYNC_FOLDER_SET)
 
@@ -255,7 +265,7 @@ def root_owned_state_result(state_dir: Path, owner_uid: int) -> CheckResult:
     return failed(
         f"{len(reported_list)} paths under state/ are owned by uid {owner_uid}: "
         + ", ".join(reported_list[:REPORTED_PATH_LIMIT]),
-        "give them back to the sandbox user: in this sandbox run: chown -R sandbox:sandbox /home/sandbox/workspace/state",
+        owner_fix_hint(state_dir),
     )
 
 
