@@ -200,6 +200,16 @@ def is_tolerated_path(relative_path: Path, tolerated_folder_set: set[str]) -> bo
     return len(relative_path.parts) >= 2 and relative_path.parts[1] in tolerated_folder_set
 
 
+def mark_unreadable_folder(reported_list: list[str], relative_dir: Path, tolerated_folder_set: set[str]) -> None:
+    if is_tolerated_path(relative_dir, tolerated_folder_set):
+        return
+
+    if relative_dir.as_posix() in reported_list:
+        reported_list.remove(relative_dir.as_posix())
+
+    reported_list.append(relative_dir.as_posix() + UNREADABLE_SUFFIX)
+
+
 def scan_owned_state(
     state_dir: Path,
     owner_uid: int,
@@ -219,15 +229,7 @@ def scan_owned_state(
         except FileNotFoundError:
             continue
         except OSError:
-            relative_dir = current_dir.relative_to(state_dir)
-
-            if is_tolerated_path(relative_dir, tolerated_folder_set):
-                continue
-
-            if relative_dir.as_posix() in reported_list:
-                reported_list.remove(relative_dir.as_posix())
-
-            reported_list.append(relative_dir.as_posix() + UNREADABLE_SUFFIX)
+            mark_unreadable_folder(reported_list, current_dir.relative_to(state_dir), tolerated_folder_set)
             continue
 
         for entry in entry_list:
@@ -240,6 +242,9 @@ def scan_owned_state(
                 entry_stat = entry.stat(follow_symlinks=False)
             except FileNotFoundError:
                 continue
+            except OSError:
+                mark_unreadable_folder(reported_list, current_dir.relative_to(state_dir), tolerated_folder_set)
+                break
 
             if entry_stat.st_uid == owner_uid:
                 if is_tolerated_path(relative_path, tolerated_folder_set):
