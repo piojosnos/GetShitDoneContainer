@@ -38,19 +38,14 @@ RUN : "${CCUSAGE_VERSION:?CCUSAGE_VERSION is not set; build with ./build.sh}" \
 # ------------------------------------------------------------------------------
 # Claude settings as image ENV
 # ------------------------------------------------------------------------------
-# So every docker exec shell gets them. SBX_BUNDLE_DIR is where this sandbox
-# keeps its clone of BUNDLE_REPO_URL; SBX_STATE_DIRS appends claude.
+# So every docker exec shell gets them; SBX_STATE_DIRS appends claude.
 # ------------------------------------------------------------------------------
-ARG BUNDLE_REPO_URL
-RUN : "${BUNDLE_REPO_URL:?BUNDLE_REPO_URL is not set; build with ./build.sh}"
 ENV CLAUDE_CONFIG_DIR=/home/sandbox/workspace/state/claude \
     SBX_STATE_DIRS="${SBX_STATE_DIRS} claude" \
-    SBX_BUNDLE_DIR=/home/sandbox/workspace/best-practices \
-    BUNDLE_REPO_URL=${BUNDLE_REPO_URL} \
     DISABLE_UPDATES=1
 
 # ------------------------------------------------------------------------------
-# Start hooks, the sbx-* wrappers and managed settings
+# Start hooks, sbx-claude and managed settings
 # ------------------------------------------------------------------------------
 # Managed settings let Claude edit the clone and deny its Edit tool on the skill
 # list and on every path under state/claude/skills. Not a security boundary.

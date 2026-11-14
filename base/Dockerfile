@@ -197,6 +197,25 @@ RUN : "${GSD_CORE_VERSION:?GSD_CORE_VERSION is not set; build with ./build.sh}" 
     && rm -rf /tmp/npm-cache
 
 # ------------------------------------------------------------------------------
+# Best-practices clone settings
+# ------------------------------------------------------------------------------
+# SBX_BUNDLE_DIR is where a sandbox keeps its clone of BUNDLE_REPO_URL; every
+# agent links it at start.
+# ------------------------------------------------------------------------------
+ARG BUNDLE_REPO_URL
+RUN : "${BUNDLE_REPO_URL:?BUNDLE_REPO_URL is not set; build with ./build.sh}"
+ENV SBX_BUNDLE_DIR=/home/sandbox/workspace/best-practices \
+    BUNDLE_REPO_URL=${BUNDLE_REPO_URL}
+
+# ------------------------------------------------------------------------------
+# Shared helpers: sbx-gh-login, sbx-bundle-clone and the bundle linker
+# ------------------------------------------------------------------------------
+# Copied as root into /usr/local/bin, mode 755, so the sandbox user cannot
+# change them. Same paths for every agent.
+# ------------------------------------------------------------------------------
+COPY --chmod=755 base/bin/ /usr/local/bin/
+
+# ------------------------------------------------------------------------------
 # The tool versions line, printed by every interactive shell
 # ------------------------------------------------------------------------------
 # Written once here, so a shell never waits for java or mvn. The agent images
