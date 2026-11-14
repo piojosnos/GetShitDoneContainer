@@ -4,7 +4,10 @@
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; starts and removes a Cursor test sandbox
 # A fresh sandbox correctly fails the git identity and login checks, so this
-# plants a git identity and a fake login before each run.
+# plants a git identity and a fake login before each run. The Cursor sandbox
+# runs on its own folder with a space in its path and its own registry inside
+# the run folder. It is removed before H-34 ends, because H-32 and H-33 compare
+# every sbx- container.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -28,6 +31,8 @@ plantText="h34-$$-$(date +%s)"
 rootCaFingerprint=""
 cursorAdded=0
 selfcheckStatus=0
+sbxDir=""
+sbxStatus=0
 
 # ------------------------------------------------------------------------------
 # read_root_ca_fingerprint: sets rootCaFingerprint from the test root
@@ -179,11 +184,91 @@ check_claude_sandbox() {
 }
 
 # ------------------------------------------------------------------------------
+# start_cursor_sandbox: registers, clones the bundle for and starts the sandbox
+# ------------------------------------------------------------------------------
+# The clone must exist before the start, so the start links its skills.
+# ------------------------------------------------------------------------------
+start_cursor_sandbox() {
+  run_sbx h34-add sbx-add "$cursorName" "$sbxDir" cursor
+
+  if [ "$sbxStatus" -ne 0 ]; then
+    add_problem "sbx-add of the Cursor test sandbox exited $sbxStatus; log: $RUN/logs/h34-add.err"
+
+    return 1
+  fi
+
+  cursorAdded=1
+
+  if ! make_bundle_clone "$RUN/bundle-origin.git" "$sbxDir/best-practices" >"$RUN/logs/h34-clone.log" 2>&1; then
+    add_problem "could not clone the fixture bundle for the Cursor test sandbox; log: $RUN/logs/h34-clone.log"
+
+    return 1
+  fi
+
+  run_sbx h34-start sbx-start "$cursorName"
+
+  if [ "$sbxStatus" -ne 0 ]; then
+    add_problem "sbx-start of the Cursor test sandbox exited $sbxStatus; log: $RUN/logs/h34-start.err"
+
+    return 1
+  fi
+
+  return 0
+}
+
+# ------------------------------------------------------------------------------
+# check_cursor_sandbox: runs sbx-selfcheck in the Cursor test sandbox
+# ------------------------------------------------------------------------------
+# A failed start has already recorded its problem, so nothing more runs.
+# ------------------------------------------------------------------------------
+check_cursor_sandbox() {
+  local outputFile=$RUN/logs/h34-cursor.out
+
+  if ! start_cursor_sandbox; then
+    return 0
+  fi
+
+  plant_identity "$cursorContainer"
+  plant_fake_login "$sbxDir/state/cursor/auth.json"
+  run_selfcheck "$cursorContainer" "$outputFile"
+  check_selfcheck_status "Cursor test sandbox" "$outputFile"
+  check_selfcheck_output "Cursor test sandbox" "$outputFile" "$expectedCursorCount"
+  report_selfcheck_summary "Cursor test sandbox" "$outputFile"
+}
+
+# ------------------------------------------------------------------------------
+# remove_cursor_sandbox: removes the Cursor test sandbox and confirms it is gone
+# ------------------------------------------------------------------------------
+# Runs whatever happened before, so the chain checks and the next run never see
+# a second sandbox.
+# ------------------------------------------------------------------------------
+remove_cursor_sandbox() {
+  if [ "$cursorAdded" -ne 1 ]; then
+    return 0
+  fi
+
+  run_sbx h34-rm sbx-rm "$cursorName" --yes
+
+  if [ "$sbxStatus" -ne 0 ]; then
+    add_problem "sbx-rm of the Cursor test sandbox exited $sbxStatus; log: $RUN/logs/h34-rm.err"
+  fi
+
+  if docker container inspect "$cursorContainer" >/dev/null 2>&1 </dev/null; then
+    add_problem "the container $cursorContainer is still there; remove it by hand with: docker rm -f $cursorContainer"
+  fi
+
+  return 0
+}
+
+# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-34 || exit 1
+sbx_test_setup H-34 h34 || exit 1
 read_root_ca_fingerprint
 check_claude_sandbox
-report_check H-34 "sbx-selfcheck failed, or printed the wrong number of checks" \
-  "sbx-selfcheck printed $expectedClaudeCount PASS lines in the Claude test sandbox and found the test root certificate in the system bundle and Java cacerts"
+check_cursor_sandbox
+remove_cursor_sandbox
+report_check H-34 "sbx-selfcheck failed, printed the wrong number of checks, or the Cursor test sandbox did not start or go away" \
+  "sbx-selfcheck printed $expectedClaudeCount PASS lines in the Claude test sandbox and $expectedCursorCount in a Cursor test sandbox, found the test root certificate in the system bundle and Java cacerts in both, and the Cursor test sandbox is gone"
