@@ -52,6 +52,7 @@ BASE_STATE_DIR_LIST = ["shell", "gh", "git"]
 SKIPPED_STATE_DIR_SET = {"cache/npm", "cache/uv", "m2"}
 GSD_SYNC_FOLDER_SET = {"gsd-core", "hooks", "scripts"}
 REPORTED_PATH_LIMIT = 10
+UNREADABLE_SUFFIX = " (unreadable)"
 STATE_WRITE_PROBE_PREFIX = ".sbx-selfcheck-"
 HOME_DIR = Path("/home/sandbox")
 BUNDLE_COPY_PATH = Path("/opt/sbx/best-practices")
@@ -212,8 +213,22 @@ def scan_owned_state(
     while pending_dir_list:
         current_dir = pending_dir_list.pop()
 
-        with os.scandir(current_dir) as entry_iterator:
-            entry_list = list(entry_iterator)
+        try:
+            with os.scandir(current_dir) as entry_iterator:
+                entry_list = list(entry_iterator)
+        except FileNotFoundError:
+            continue
+        except OSError:
+            relative_dir = current_dir.relative_to(state_dir)
+
+            if is_tolerated_path(relative_dir, tolerated_folder_set):
+                continue
+
+            if relative_dir.as_posix() in reported_list:
+                reported_list.remove(relative_dir.as_posix())
+
+            reported_list.append(relative_dir.as_posix() + UNREADABLE_SUFFIX)
+            continue
 
         for entry in entry_list:
             relative_path = Path(entry.path).relative_to(state_dir)
@@ -238,15 +253,6 @@ def scan_owned_state(
     return sorted(reported_list), tolerated_count
 
 
-def owned_by_uid_paths(
-    state_dir: Path,
-    owner_uid: int,
-    skipped_relative_set: set[str],
-    tolerated_folder_set: set[str],
-) -> list[str]:
-    return scan_owned_state(state_dir, owner_uid, skipped_relative_set, tolerated_folder_set)[0]
-
-
 def owner_fix_hint(state_dir: Path) -> str:
     return mac_hint(
         "give the paths back to the sandbox user from a throwaway root container, "
@@ -263,7 +269,7 @@ def root_owned_state_result(state_dir: Path, owner_uid: int) -> CheckResult:
         return passed(f"no root-owned path under state/ outside the GSD sync folders ({tolerated_count} tolerated)")
 
     return failed(
-        f"{len(reported_list)} paths under state/ are owned by uid {owner_uid}: "
+        f"{len(reported_list)} paths under state/ are owned by uid {owner_uid} or unreadable: "
         + ", ".join(reported_list[:REPORTED_PATH_LIMIT]),
         owner_fix_hint(state_dir),
     )
