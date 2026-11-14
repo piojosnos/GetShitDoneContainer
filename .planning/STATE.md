@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 08
 current_phase_name: In-image self-check
 status: executing
-stopped_at: Completed 08-10-PLAN.md
-last_updated: "2026-11-14T21:33:55.999Z"
+stopped_at: Completed 08-11-PLAN.md
+last_updated: "2026-11-14T22:15:01.459Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 08 execution started
-state_head: d9f88086d5f95b5b8ddb92349771bda5a27a9185
+state_head: 02a3c32387b29f2fde2df5e069551dcade7d7695
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 25
-  completed_plans: 24
+  completed_plans: 25
   percent: 29
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 08 (In-image self-check) — EXECUTING
-Plan: 10 of 11 complete (next 08-11)
+Plan: 11 of 11 complete (next 08-11)
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 08 execution started
 
@@ -181,6 +181,7 @@ Last activity: 2026-11-14 — Phase 08 execution started
 | Phase 08 P08 | 12 min | 3 tasks | 6 files |
 | Phase 08 P09 | 20 min | 2 tasks | 7 files |
 | Phase 08 P10 | 15 min | 3 tasks | 8 files |
+| Phase 08 P11 | 1h | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -355,6 +356,7 @@ Recent decisions affecting current work:
 - [Phase 08]: H-34 runs the owner fix round trip with its own copy of the chown command on the test base image and never asserts the image tag in the fix line
 - [Phase 08]: 08-10: environment mappings are environment_map in the self-check sources; tool_result keyword is environment_map=
 - [Phase 08]: 08-10: managed_settings_result reports a missing file as 'is missing' and unreadable or bad JSON as 'is not valid JSON', same as the Cursor config check
+- [Phase 08]: IN-08 deferred to Phase 10 where the bash host checks are rewritten in Python; CHECK-01 to CHECK-04 marked complete after the approved Mac run
 
 ### Pending Todos
 
@@ -424,8 +426,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T21:33:55.933Z
-Stopped at: Completed 08-10-PLAN.md
+Last session: 2026-11-14T22:15:01.379Z
+Stopped at: Completed 08-11-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
