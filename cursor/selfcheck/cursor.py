@@ -43,18 +43,18 @@ CURSOR_LOGIN_HINT = "log in once: run cursor-agent login in this sandbox and ope
 THROWAWAY_HOME_PREFIX = "sbx-selfcheck-cursor-"
 
 
-def cursor_version_result(expected_version: str, environment: Mapping[str, str] | None = None) -> CheckResult:
-    if environment is None:
-        environment = os.environ
+def cursor_version_result(expected_version: str, environment_map: Mapping[str, str] | None = None) -> CheckResult:
+    if environment_map is None:
+        environment_map = os.environ
 
     throwaway_home = tempfile.mkdtemp(prefix=THROWAWAY_HOME_PREFIX)
 
     try:
-        cursor_environment = dict(environment)
-        cursor_environment.pop("CURSOR_CONFIG_DIR", None)
-        cursor_environment["HOME"] = throwaway_home
+        cursor_environment_map = dict(environment_map)
+        cursor_environment_map.pop("CURSOR_CONFIG_DIR", None)
+        cursor_environment_map["HOME"] = throwaway_home
 
-        return tool_result("cursor-agent", ["--version"], expected_version, environment=cursor_environment)
+        return tool_result("cursor-agent", ["--version"], expected_version, environment_map=cursor_environment_map)
     finally:
         shutil.rmtree(throwaway_home, ignore_errors=True)
 
@@ -63,17 +63,17 @@ def self_update_result(config_file: Path = CLI_CONFIG_FILE) -> CheckResult:
     hint = restart_hint() + "; the start sets the static channel"
 
     try:
-        config = json.loads(config_file.read_text())
+        config_map = json.loads(config_file.read_text())
     except FileNotFoundError:
         return failed(f"{config_file} is missing", hint)
     except (OSError, ValueError):
         return failed(f"{config_file} is not valid JSON", hint)
 
-    if not isinstance(config, dict) or "channel" not in config:
+    if not isinstance(config_map, dict) or "channel" not in config_map:
         return failed(f"{config_file} sets no channel, expected 'static'", hint)
 
-    if config["channel"] != "static":
-        return failed(f"the channel in {config_file} is {config['channel']!r}, expected 'static'", hint)
+    if config_map["channel"] != "static":
+        return failed(f"the channel in {config_file} is {config_map['channel']!r}, expected 'static'", hint)
 
     return passed("channel is static")
 

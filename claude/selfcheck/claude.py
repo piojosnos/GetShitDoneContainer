@@ -60,7 +60,7 @@ def no_home_copy_result(copy_path_list: list[Path] = CLAUDE_HOME_COPY_PATH_LIST)
     return passed("no copy of Claude under the home")
 
 
-def sorted_text_list(value) -> list[str] | None:
+def sorted_text_list(value: object) -> list[str] | None:
     if not isinstance(value, list):
         return None
 
@@ -81,28 +81,28 @@ def managed_settings_result(
     config_dir: Path = CLAUDE_CONFIG_DIR,
 ) -> CheckResult:
     try:
-        settings = json.loads(settings_file.read_text())
+        settings_map = json.loads(settings_file.read_text())
     except FileNotFoundError:
         return failed(f"{settings_file} is missing", rebuild_hint())
     except (OSError, ValueError):
         return failed(f"{settings_file} is not valid JSON", rebuild_hint())
 
-    permissions = {}
+    permissions_map = {}
 
-    if isinstance(settings, dict) and isinstance(settings.get("permissions"), dict):
-        permissions = settings["permissions"]
+    if isinstance(settings_map, dict) and isinstance(settings_map.get("permissions"), dict):
+        permissions_map = settings_map["permissions"]
 
     expected_directory_list = [str(bundle_dir)]
     expected_deny_list = sorted([f"Edit(/{config_dir}/.best-practices-skills)", f"Edit(/{config_dir}/skills/**)"])
     problem_list = []
 
-    if sorted_text_list(permissions.get("additionalDirectories")) != expected_directory_list:
+    if sorted_text_list(permissions_map.get("additionalDirectories")) != expected_directory_list:
         problem_list.append(
-            f"additionalDirectories is {permissions.get('additionalDirectories')}, expected {expected_directory_list}"
+            f"additionalDirectories is {permissions_map.get('additionalDirectories')}, expected {expected_directory_list}"
         )
 
-    if sorted_text_list(permissions.get("deny")) != expected_deny_list:
-        problem_list.append(f"deny is {permissions.get('deny')}, expected {expected_deny_list}")
+    if sorted_text_list(permissions_map.get("deny")) != expected_deny_list:
+        problem_list.append(f"deny is {permissions_map.get('deny')}, expected {expected_deny_list}")
 
     if problem_list:
         return failed("; ".join(problem_list), rebuild_hint())

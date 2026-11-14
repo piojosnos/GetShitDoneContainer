@@ -124,7 +124,7 @@ def test_first_output_line_takes_stdout_then_stderr(bin1):
 def test_tool_result_passes_when_the_line_starts_with_the_pin_and_a_space(bin1):
     write_stand_in(bin1, "tool1", 'echo "tool1 1.2.3 (build1)"')
 
-    result = sbx_selfcheck.tool_result("tool1", ["--version"], "tool1 1.2.3", environment=environment_with(bin1))
+    result = sbx_selfcheck.tool_result("tool1", ["--version"], "tool1 1.2.3", environment_map=environment_with(bin1))
 
     assert result.passed
     assert str(bin1 / "tool1") in result.detail
@@ -134,7 +134,7 @@ def test_tool_result_passes_when_the_line_starts_with_the_pin_and_a_space(bin1):
 def test_tool_result_fails_for_a_longer_version_with_the_rebuild_command(bin1):
     write_stand_in(bin1, "tool1", 'echo "tool1 1.2.30"')
 
-    result = sbx_selfcheck.tool_result("tool1", ["--version"], "tool1 1.2.3", environment=environment_with(bin1))
+    result = sbx_selfcheck.tool_result("tool1", ["--version"], "tool1 1.2.3", environment_map=environment_with(bin1))
 
     assert not result.passed
     assert "tool1 reports 'tool1 1.2.30'; the pin is 'tool1 1.2.3'" in result.detail
@@ -144,7 +144,7 @@ def test_tool_result_fails_for_a_longer_version_with_the_rebuild_command(bin1):
 def test_tool_result_fails_when_the_version_command_exits_non_zero(bin1):
     write_stand_in(bin1, "tool1", 'echo "tool1 1.2.3"; exit 1')
 
-    result = sbx_selfcheck.tool_result("tool1", ["--version"], "tool1 1.2.3", environment=environment_with(bin1))
+    result = sbx_selfcheck.tool_result("tool1", ["--version"], "tool1 1.2.3", environment_map=environment_with(bin1))
 
     assert not result.passed
     assert "the pin is" in result.detail
@@ -154,7 +154,7 @@ def test_tool_result_fails_when_the_required_text_is_missing(bin1):
     write_stand_in(bin1, "tool1", 'echo "tool1 1.2.3 (build1)"')
 
     result = sbx_selfcheck.tool_result(
-        "tool1", ["--version"], "tool1 1.2.3", required_text="vendor1", environment=environment_with(bin1)
+        "tool1", ["--version"], "tool1 1.2.3", required_text="vendor1", environment_map=environment_with(bin1)
     )
 
     assert not result.passed
@@ -165,14 +165,14 @@ def test_tool_result_passes_when_the_required_text_is_on_stderr(bin1):
     write_stand_in(bin1, "tool1", 'echo "tool1 1.2.3"; echo "vendor1" >&2')
 
     result = sbx_selfcheck.tool_result(
-        "tool1", ["--version"], "tool1 1.2.3", required_text="vendor1", environment=environment_with(bin1)
+        "tool1", ["--version"], "tool1 1.2.3", required_text="vendor1", environment_map=environment_with(bin1)
     )
 
     assert result.passed
 
 
 def test_tool_result_fails_for_a_command_that_is_not_on_the_path(bin1):
-    result = sbx_selfcheck.tool_result("missing1", environment={"PATH": str(bin1)})
+    result = sbx_selfcheck.tool_result("missing1", environment_map={"PATH": str(bin1)})
 
     assert not result.passed
     assert result.detail == "missing1 is not on PATH"
@@ -182,7 +182,7 @@ def test_tool_result_fails_for_a_command_that_is_not_on_the_path(bin1):
 def test_tool_result_fails_when_the_tool_resolves_under_the_forbidden_root(bin1):
     write_stand_in(bin1, "tool1", 'echo "tool1 1.2.3"')
 
-    result = sbx_selfcheck.tool_result("tool1", environment=environment_with(bin1), home_root=str(bin1.parent))
+    result = sbx_selfcheck.tool_result("tool1", environment_map=environment_with(bin1), home_root=str(bin1.parent))
 
     assert not result.passed
     assert f"tool1 resolves to {bin1 / 'tool1'}, under {bin1.parent}, not the image" in result.detail
@@ -195,7 +195,7 @@ def test_tool_result_follows_a_link_to_the_real_file_before_judging_the_folder(t
     write_stand_in(real_dir, "tool1", 'echo "tool1 1.2.3"')
     (bin1 / "tool1").symlink_to(real_dir / "tool1")
 
-    result = sbx_selfcheck.tool_result("tool1", environment=environment_with(bin1), home_root=str(real_dir))
+    result = sbx_selfcheck.tool_result("tool1", environment_map=environment_with(bin1), home_root=str(real_dir))
 
     assert not result.passed
     assert str(real_dir / "tool1") in result.detail
@@ -206,7 +206,7 @@ def test_tool_result_fails_for_a_binary_of_another_machine(bin1):
     (bin1 / "tool1").write_bytes(other_machine_header)
     (bin1 / "tool1").chmod(0o755)
 
-    result = sbx_selfcheck.tool_result("tool1", environment=environment_with(bin1))
+    result = sbx_selfcheck.tool_result("tool1", environment_map=environment_with(bin1))
 
     assert not result.passed
     assert f"tool1 is built for ELF machine 0x28, not {platform.machine()}" in result.detail

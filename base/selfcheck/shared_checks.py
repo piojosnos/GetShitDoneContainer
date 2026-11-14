@@ -311,8 +311,8 @@ def owned_by_result(path_list: list[Path], owner_name: str) -> CheckResult:
     return passed(f"{len(path_list)} paths are owned by {owner_name}")
 
 
-def safe_directory_result(environment: Mapping[str, str] | None = None) -> CheckResult:
-    completed = run_command(["git", "config", "--system", "--get-all", "safe.directory"], environment)
+def safe_directory_result(environment_map: Mapping[str, str] | None = None) -> CheckResult:
+    completed = run_command(["git", "config", "--system", "--get-all", "safe.directory"], environment_map)
 
     for line in completed.stdout.splitlines():
         if line.strip() == "*":
@@ -321,11 +321,11 @@ def safe_directory_result(environment: Mapping[str, str] | None = None) -> Check
     return failed("the system git config does not set safe.directory to *", rebuild_hint())
 
 
-def git_identity_result(environment: Mapping[str, str] | None = None) -> CheckResult:
+def git_identity_result(environment_map: Mapping[str, str] | None = None) -> CheckResult:
     empty_list = []
 
     for key in ["user.name", "user.email"]:
-        completed = run_command(["git", "config", "--global", key], environment)
+        completed = run_command(["git", "config", "--global", key], environment_map)
 
         if not completed.stdout.strip():
             empty_list.append(key)
@@ -341,7 +341,7 @@ def git_identity_result(environment: Mapping[str, str] | None = None) -> CheckRe
 
 def bundle_env_result(
     versions_file: Path = VERSIONS_FILE,
-    environment: Mapping[str, str] | None = None,
+    environment_map: Mapping[str, str] | None = None,
 ) -> CheckResult:
     pinned_url = pin_value("BUNDLE_REPO_URL", versions_file)
 
@@ -350,7 +350,7 @@ def bundle_env_result(
 
     return environment_values_result(
         {"BUNDLE_REPO_URL": pinned_url, "SBX_BUNDLE_DIR": str(BUNDLE_DIR)},
-        environment,
+        environment_map,
     )
 
 
@@ -505,13 +505,13 @@ def versions_line_file_result(
 
 def interactive_versions_line_result(
     versions_line_file: Path = TOOL_VERSIONS_FILE,
-    environment: Mapping[str, str] | None = None,
+    environment_map: Mapping[str, str] | None = None,
 ) -> CheckResult:
     if not versions_line_file.is_file():
         return failed(f"{versions_line_file} is missing", rebuild_hint())
 
     expected_text = versions_line_file.read_text()
-    completed = run_command(["bash", "-i"], history_free_environment(environment))
+    completed = run_command(["bash", "-i"], history_free_environment(environment_map))
 
     if completed.stdout != expected_text:
         return failed(
@@ -522,11 +522,11 @@ def interactive_versions_line_result(
     return passed(f"an interactive shell prints {versions_line_file} once")
 
 
-def quiet_shells_result(environment: Mapping[str, str] | None = None) -> CheckResult:
+def quiet_shells_result(environment_map: Mapping[str, str] | None = None) -> CheckResult:
     problem_list = []
 
     for flag in QUIET_SHELL_FLAG_LIST:
-        completed = run_command(["bash", flag, "true"], environment)
+        completed = run_command(["bash", flag, "true"], environment_map)
 
         if completed.stdout or completed.stderr:
             problem_list.append(f"bash {flag} true printed '{first_output_line(completed)}'")

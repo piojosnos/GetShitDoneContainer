@@ -12,6 +12,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from types import ModuleType
 from typing import Callable, Mapping, TextIO
 
 WORKSPACE_DIR = Path("/home/sandbox/workspace")
@@ -97,7 +98,7 @@ def shell_hint() -> str:
 
 def run_command(
     argument_list: list[str],
-    environment: Mapping[str, str] | None = None,
+    environment_map: Mapping[str, str] | None = None,
 ) -> subprocess.CompletedProcess:
     return subprocess.run(
         argument_list,
@@ -106,7 +107,7 @@ def run_command(
         text=True,
         timeout=COMMAND_TIMEOUT_SECONDS,
         check=False,
-        env=environment,
+        env=environment_map,
     )
 
 
@@ -141,7 +142,7 @@ def missing_pin_result(name: str) -> CheckResult:
 
 
 def mount_point_set(mountinfo_text: str) -> set[str]:
-    mount_point_collection = set()
+    mount_point_found_set = set()
 
     for line in mountinfo_text.splitlines():
         field_list = line.split()
@@ -149,9 +150,9 @@ def mount_point_set(mountinfo_text: str) -> set[str]:
         if len(field_list) < 5:
             continue
 
-        mount_point_collection.add(field_list[4])
+        mount_point_found_set.add(field_list[4])
 
-    return mount_point_collection
+    return mount_point_found_set
 
 
 def read_mount_point_set(mountinfo_file: Path = MOUNTINFO_FILE) -> set[str]:
@@ -181,7 +182,7 @@ def root_owned_result(path_mode_list: list[tuple[str, int]]) -> CheckResult:
     return passed(f"{len(path_mode_list)} paths are root-owned with their modes")
 
 
-def protected_paths_problem_list(path_list: list[Path], mount_point_collection: set[str]) -> list[str]:
+def protected_paths_problem_list(path_list: list[Path], mount_point_found_set: set[str]) -> list[str]:
     problem_list = []
 
     for path in path_list:
@@ -199,7 +200,7 @@ def protected_paths_problem_list(path_list: list[Path], mount_point_collection: 
             if os.access(entry, os.W_OK):
                 problem_list.append(f"{entry} is writable")
 
-        for mount_point in sorted(mount_point_collection):
+        for mount_point in sorted(mount_point_found_set):
             if mount_point == str(path) or mount_point.startswith(str(path) + "/"):
                 problem_list.append(f"{mount_point} is a mount point")
 
@@ -225,20 +226,20 @@ def protected_paths_result(path_list: list[Path], mountinfo_file: Path = MOUNTIN
 
 def environment_values_result(
     expected_value_by_name_map: Mapping[str, str],
-    environment: Mapping[str, str] | None = None,
+    environment_map: Mapping[str, str] | None = None,
 ) -> CheckResult:
-    if environment is None:
-        environment = os.environ
+    if environment_map is None:
+        environment_map = os.environ
 
     problem_list = []
     pair_list = []
 
     for name, expected_value in expected_value_by_name_map.items():
-        if name not in environment:
+        if name not in environment_map:
             problem_list.append(f"{name} is not set")
             continue
 
-        actual_value = environment[name]
+        actual_value = environment_map[name]
 
         if actual_value != expected_value:
             problem_list.append(f"{name} is '{actual_value}', expected '{expected_value}'")
@@ -303,9 +304,9 @@ def version_problem(
     version_argument_list: list[str],
     expected_text: str,
     required_text: str,
-    environment: Mapping[str, str] | None,
+    environment_map: Mapping[str, str] | None,
 ) -> tuple[str, str]:
-    completed = run_command([found_path] + version_argument_list, environment)
+    completed = run_command([found_path] + version_argument_list, environment_map)
     line = first_output_line(completed)
 
     if completed.returncode != 0 or not version_matches(line, expected_text):
@@ -322,13 +323,13 @@ def tool_result(
     version_argument_list: list[str] | None = None,
     expected_text: str = "",
     required_text: str = "",
-    environment: Mapping[str, str] | None = None,
+    environment_map: Mapping[str, str] | None = None,
     home_root: str = HOME_ROOT,
 ) -> CheckResult:
-    if environment is None:
-        environment = os.environ
+    if environment_map is None:
+        environment_map = os.environ
 
-    found_path = shutil.which(command_name, path=environment.get("PATH", ""))
+    found_path = shutil.which(command_name, path=environment_map.get("PATH", ""))
 
     if found_path is None:
         return failed(f"{command_name} is not on PATH", rebuild_hint())
@@ -350,7 +351,7 @@ def tool_result(
         return passed(real_path)
 
     problem, line = version_problem(
-        command_name, found_path, version_argument_list, expected_text, required_text, environment
+        command_name, found_path, version_argument_list, expected_text, required_text, environment_map
     )
 
     if problem:
@@ -569,17 +570,17 @@ def home_links_result(link_target_list: list[tuple[Path, Path]]) -> CheckResult:
     return passed(", ".join(pair_list))
 
 
-def history_free_environment(environment: Mapping[str, str] | None = None) -> dict[str, str]:
-    if environment is None:
-        environment = os.environ
+def history_free_environment(environment_map: Mapping[str, str] | None = None) -> dict[str, str]:
+    if environment_map is None:
+        environment_map = os.environ
 
-    history_free = dict(environment)
-    history_free["HISTFILE"] = "/dev/null"
+    history_free_environment_map = dict(environment_map)
+    history_free_environment_map["HISTFILE"] = "/dev/null"
 
-    return history_free
+    return history_free_environment_map
 
 
-def load_check_module(module_path: Path):
+def load_check_module(module_path: Path) -> ModuleType:
     module_name = AGENT_MODULE_PREFIX + module_path.stem
     spec = importlib.util.spec_from_file_location(module_name, module_path)
 
@@ -604,8 +605,8 @@ def module_check_list(module_path: Path) -> list[Check]:
 
     try:
         module = load_check_module(module_path)
-    except Exception as error:
-        return [load_failure_check(name, f"{module_path} did not load: {type(error).__name__}: {error}")]
+    except Exception as e:
+        return [load_failure_check(name, f"{module_path} did not load: {type(e).__name__}: {e}")]
 
     if not hasattr(module, "CHECK_LIST"):
         return [load_failure_check(name, f"{module_path} defines no CHECK_LIST")]
@@ -633,9 +634,9 @@ def collect_checks(shared_check_list: list[Check], checks_dir: Path) -> list[Che
 def run_check(check: Check) -> CheckResult:
     try:
         return check.function()
-    except Exception as error:
+    except Exception as e:
         return failed(
-            f"raised {type(error).__name__}: {error}",
+            f"raised {type(e).__name__}: {e}",
             "this is a bug in the self-check or a broken image; " + rebuild_hint(),
         )
 
