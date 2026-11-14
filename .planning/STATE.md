@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 08
 current_phase_name: In-image self-check
 status: executing
-stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-11-14T18:27:32.078Z"
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-11-14T18:32:52.894Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 08 execution started
-state_head: 61d10c6231e35390fa59aaad5299920e02b00bec
+state_head: 8e3552ed98225fdfe90e7ba6ca52f8927b609f23
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 21
-  completed_plans: 15
+  completed_plans: 16
   percent: 29
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 08 (In-image self-check) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 Status: Ready to execute
 Last activity: 2026-11-14 — Phase 08 execution started
 
@@ -172,6 +172,7 @@ Last activity: 2026-11-14 — Phase 08 execution started
 | Phase 07 P02 | 4 min | 3 tasks | 14 files |
 | Phase 07 P03 | 25 min | 3 tasks | 5 files |
 | Phase 08 P01 | 3 min | 3 tasks | 14 files |
+| Phase 08 P02 | 4 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -334,6 +335,7 @@ Recent decisions affecting current work:
 - [Phase 07]: Plan 07-02: BASE_IMAGE and CLAUDE_IMAGE are uppercase unexported globals set by host_init — shellcheck reports a lowercase library global as unassigned; build.sh must not see them
 - [Phase 07]: 07-03: clean.sh keeps its code; docker image prune -a -f already removes unused :test and :local images, so only its comment and the docs changed
 - [Phase 08]: Launcher runs /usr/bin/python3 -I and imports only its own resolved folder; Python sources live in */selfcheck/, never */bin/ (shellcheck would reject them)
+- [Phase 08]: H-34 pins the expected check counts (51 Claude, 49 Cursor) as constants and matches the test root by SHA-256 fingerprint, never by a certificate count
 
 ### Pending Todos
 
@@ -403,8 +405,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T18:27:32.016Z
-Stopped at: Completed 08-01-PLAN.md
+Last session: 2026-11-14T18:32:52.833Z
+Stopped at: Completed 08-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
