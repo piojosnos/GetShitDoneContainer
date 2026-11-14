@@ -186,18 +186,18 @@ def test_state_writable_fails_for_a_missing_folder(tmp_path):
     assert not result.passed
 
 
-def test_owned_by_uid_paths_skips_tolerated_skipped_and_linked_trees(state_tree):
-    path_list = shared_checks.owned_by_uid_paths(state_tree, os.getuid(), {"cache/npm"}, {"gsd-core"})
+def test_scan_owned_state_skips_tolerated_skipped_and_linked_trees(state_tree):
+    path_list = shared_checks.scan_owned_state(state_tree, os.getuid(), {"cache/npm"}, {"gsd-core"})[0]
 
     assert path_list == ["cache", "sub1", "sub1/link1", "sub1/notes1"]
 
 
-def test_owned_by_uid_paths_finds_nothing_for_another_owner(state_tree):
-    assert shared_checks.owned_by_uid_paths(state_tree, os.getuid() + 1, set(), set()) == []
+def test_scan_owned_state_finds_nothing_for_another_owner(state_tree):
+    assert shared_checks.scan_owned_state(state_tree, os.getuid() + 1, set(), set())[0] == []
 
 
-def test_owned_by_uid_paths_reports_a_link_without_following_it(state_tree):
-    path_list = shared_checks.owned_by_uid_paths(state_tree, os.getuid(), set(), set())
+def test_scan_owned_state_reports_a_link_without_following_it(state_tree):
+    path_list = shared_checks.scan_owned_state(state_tree, os.getuid(), set(), set())[0]
 
     assert "sub1/link1" in path_list
     assert not any(path.startswith("sub1/link1/") for path in path_list)
@@ -270,6 +270,59 @@ def test_scan_owned_state_counts_tolerated_paths_and_skips_cache_folders(tmp_pat
     assert result == (["cache", "sub1"], 5)
 
 
+@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 folder")
+def test_scan_owned_state_marks_a_reported_folder_it_cannot_open(tmp_path, restorable_mode):
+    state1 = tmp_path / "state1"
+    write_file(state1 / "sub1" / "private1" / "file1")
+    restorable_mode(state1 / "sub1" / "private1", 0o000)
+
+    result = shared_checks.scan_owned_state(state1, os.getuid(), set(), set())
+
+    assert result == (["sub1", "sub1/private1 (unreadable)"], 0)
+
+
+@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 folder")
+def test_scan_owned_state_reports_an_unreadable_folder_of_another_owner(tmp_path, restorable_mode):
+    state1 = tmp_path / "state1"
+    write_file(state1 / "sub1" / "private1" / "file1")
+    restorable_mode(state1 / "sub1" / "private1", 0o000)
+
+    result = shared_checks.scan_owned_state(state1, os.getuid() + 1, set(), set())
+
+    assert result == (["sub1/private1 (unreadable)"], 0)
+
+
+@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 folder")
+def test_scan_owned_state_tolerates_an_unreadable_folder_in_a_sync_folder(tmp_path, restorable_mode):
+    state1 = tmp_path / "state1"
+    write_file(state1 / "sub1" / "gsd-core" / "file1")
+    restorable_mode(state1 / "sub1" / "gsd-core", 0o000)
+
+    result = shared_checks.scan_owned_state(state1, os.getuid(), set(), {"gsd-core"})
+
+    assert result == (["sub1"], 1)
+
+
+def test_scan_owned_state_finds_nothing_in_a_missing_state_folder(tmp_path):
+    assert shared_checks.scan_owned_state(tmp_path / "state1", os.getuid(), set(), set()) == ([], 0)
+
+
+@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 folder")
+def test_root_owned_state_names_an_unreadable_folder_with_the_mac_fix(tmp_path, restorable_mode):
+    state1 = tmp_path / "state1"
+    write_file(state1 / "sub1" / "private1" / "file1")
+    restorable_mode(state1 / "sub1" / "private1", 0o000)
+
+    result = shared_checks.root_owned_state_result(state1, os.getuid())
+
+    assert not result.passed
+    assert "or unreadable" in result.detail
+    assert "sub1/private1 (unreadable)" in result.detail
+    assert "raised" not in result.detail
+    assert result.hint.startswith("give the paths back to the sandbox user")
+    assert str(state1) in result.hint
+
+
 def test_root_owned_state_names_the_tolerated_count_on_a_pass(tmp_path):
     state1 = tmp_path / "state1"
     state1.mkdir()
@@ -284,7 +337,7 @@ def test_state_walk_never_opens_a_file(state_tree, restorable_mode):
     unreadable1 = state_tree / "sub1" / "notes1"
     restorable_mode(unreadable1, 0o000)
 
-    path_list = shared_checks.owned_by_uid_paths(state_tree, os.getuid(), set(), set())
+    path_list = shared_checks.scan_owned_state(state_tree, os.getuid(), set(), set())[0]
 
     assert "sub1/notes1" in path_list
 
