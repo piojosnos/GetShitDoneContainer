@@ -22,10 +22,10 @@ Milestone v2.0 Simple tooling. Decisions behind them: `.planning/research/v2-sim
 
 ### Self-check
 
-- [x] **CHECK-01**: `sbx-selfcheck` (Python, in the image) prints one PASS or FAIL line per named check; the base image holds the runner and the shared checks, each agent image adds its own checks.
-- [x] **CHECK-02**: One host check runs `sbx-selfcheck` with `docker exec` in a Claude and a Cursor test sandbox and asserts no FAIL and each agent's expected check count; the in-container parts of H-01, H-04, H-05, H-06, H-12, H-13, H-14, H-15, H-22, H-25 and H-30 are deleted.
-- [x] **CHECK-03**: The root certificate is checked automatically: a throwaway `openssl` certificate is built into the test base image and the self-check finds it in the system bundle and Java `cacerts`.
-- [x] **CHECK-04**: The self-check doubles as the doctor: each FAIL prints a fix hint (with the Mac command where one is needed); no skill wraps it.
+- [ ] **CHECK-01**: `sbx-selfcheck` (Python, in the image) prints one PASS or FAIL line per named check; the base image holds the runner and the shared checks, each agent image adds its own checks.
+- [ ] **CHECK-02**: One host check runs `sbx-selfcheck` with `docker exec` in a Claude and a Cursor test sandbox and asserts no FAIL and each agent's expected check count; the in-container parts of H-01, H-04, H-05, H-06, H-12, H-13, H-14, H-15, H-22, H-25 and H-30 are deleted.
+- [ ] **CHECK-03**: The root certificate is checked automatically: a throwaway `openssl` certificate is built into the test base image and the self-check finds it in the system bundle and Java `cacerts`.
+- [ ] **CHECK-04**: The self-check doubles as the doctor: each FAIL prints a fix hint (with the Mac command where one is needed); no skill wraps it.
 
 ### sbx-init
 
@@ -80,10 +80,10 @@ Tracked, not in this roadmap.
 | DIET-05 | Phase 6 | Complete |
 | IMG-01 | Phase 7 | Complete |
 | IMG-02 | Phase 7 | Complete |
-| CHECK-01 | Phase 8 | Complete |
-| CHECK-02 | Phase 8 | Complete |
-| CHECK-03 | Phase 8 | Complete |
-| CHECK-04 | Phase 8 | Complete |
+| CHECK-01 | Phase 8 | Gaps Found |
+| CHECK-02 | Phase 8 | Gaps Found |
+| CHECK-03 | Phase 8 | Gaps Found |
+| CHECK-04 | Phase 8 | Gaps Found |
 | INIT-01 | Phase 9 | Pending |
 | INIT-02 | Phase 9 | Pending |
 | INIT-03 | Phase 9 | Pending |
