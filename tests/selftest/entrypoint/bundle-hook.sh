@@ -163,6 +163,23 @@ case_bad_mode() {
 }
 
 # ------------------------------------------------------------------------------
+# Case: the Cursor hook links skills only and keeps a rules folder of your own
+# ------------------------------------------------------------------------------
+case_cursor_hook() {
+  local hookOut
+
+  echo '--- the Cursor hook'
+  new_sandbox cursorhook
+  CONFIG=$WS/state/cursor
+  mkdir -p "$CONFIG/rules"
+  echo mine >"$CONFIG/rules/mine.mdc"
+  env PATH="$REPO/base/bin:$PATH" CURSOR_CONFIG_DIR="$CONFIG" SBX_BUNDLE_DIR="$WS/best-practices" bash "$REPO/cursor/start.d/10-best-practices" >"$WORK/cursorhook.out" 2>"$WORK/cursorhook.err" </dev/null
+  HOOK_RC=$?
+  hookOut="$HOOK_RC:$(readlink "$CONFIG/skills/sbx-one") $(readlink "$CONFIG/skills/sbx-two"):$(if [ -d "$CONFIG/rules" ] && [ ! -L "$CONFIG/rules" ]; then echo folder; fi):$(cat "$CONFIG/rules/mine.mdc")"
+  expect "bundle hook: the Cursor hook links skills only and keeps a rules folder of your own" equals "$hookOut" "0:../../../best-practices/skills/sbx-one ../../../best-practices/skills/sbx-two:folder:mine"
+}
+
+# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -174,5 +191,6 @@ case_no_clone
 case_clone_without_skills
 case_bad_inputs
 case_skills_only
+case_cursor_hook
 case_bad_mode
 finish_cases
