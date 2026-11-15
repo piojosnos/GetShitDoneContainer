@@ -52,11 +52,14 @@ RUN chmod 755 /etc/sbx/start.d/*
 # The Cursor checks for sbx-selfcheck
 # ------------------------------------------------------------------------------
 # The runner in the base image runs every file in each folder under
-# /etc/sbx/selfcheck.d, here /etc/sbx/selfcheck.d/cursor.
+# /etc/sbx/selfcheck.d, here /etc/sbx/selfcheck.d/cursor. What those checks share
+# goes to /usr/local/lib/sbx-selfcheck/agents, which the runner never loads as a
+# check; the launcher puts it on the import path.
 # ------------------------------------------------------------------------------
-RUN mkdir -p /etc/sbx/selfcheck.d/cursor
+RUN mkdir -p /etc/sbx/selfcheck.d/cursor /usr/local/lib/sbx-selfcheck/agents
 COPY --chmod=644 cursor/selfcheck/*.py /etc/sbx/selfcheck.d/cursor/
-RUN PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /etc/sbx/selfcheck.d/cursor/*.py \
+COPY --chmod=644 cursor/selfcheck/lib/*.py /usr/local/lib/sbx-selfcheck/agents/
+RUN PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /etc/sbx/selfcheck.d/cursor/*.py /usr/local/lib/sbx-selfcheck/agents/*.py \
     && rm -rf /tmp/sbx-pycache
 
 # ------------------------------------------------------------------------------

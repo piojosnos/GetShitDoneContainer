@@ -48,7 +48,7 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 | | |
 |---|---|
-| Runs | pytest on the runner, its libraries and the check files of `sbx-selfcheck` (`base/selfcheck/`, `base/selfcheck/checks/`, `claude/selfcheck/`, `cursor/selfcheck/`), one test file per library and per check file, against real files, git, openssl and keytool in a temp folder |
+| Runs | pytest on the runner, its libraries and the check files of `sbx-selfcheck` (`base/selfcheck/`, `base/selfcheck/checks/`, `claude/selfcheck/`, `cursor/selfcheck/` and the agent libraries in their `lib/` folders), one test file per library and per check file, against real files, git, openssl and keytool in a temp folder |
 | Where | A Linux sandbox with uv (the dev sandbox). `./host-test.sh` does not run it |
 | Catches | A check line too many or too few, a FAIL without a fix, a broken or missing checks file, the parsers (`versions.env`, `keytool`, the certificate bundle, mountinfo), the bundle links, the root-owned walk, version and fingerprint matching, the certificate checks against the recorded fingerprints, and check counts that drift from H-34's constants |
 | Does not catch | Whether the checks pass in a real image (H-34 does) |

@@ -61,11 +61,14 @@ RUN chmod 755 /etc/sbx/start.d/* \
 # The Claude checks for sbx-selfcheck
 # ------------------------------------------------------------------------------
 # The runner in the base image runs every file in each folder under
-# /etc/sbx/selfcheck.d, here /etc/sbx/selfcheck.d/claude.
+# /etc/sbx/selfcheck.d, here /etc/sbx/selfcheck.d/claude. What those checks share
+# goes to /usr/local/lib/sbx-selfcheck/agents, which the runner never loads as a
+# check; the launcher puts it on the import path.
 # ------------------------------------------------------------------------------
-RUN mkdir -p /etc/sbx/selfcheck.d/claude
+RUN mkdir -p /etc/sbx/selfcheck.d/claude /usr/local/lib/sbx-selfcheck/agents
 COPY --chmod=644 claude/selfcheck/*.py /etc/sbx/selfcheck.d/claude/
-RUN PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /etc/sbx/selfcheck.d/claude/*.py \
+COPY --chmod=644 claude/selfcheck/lib/*.py /usr/local/lib/sbx-selfcheck/agents/
+RUN PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /etc/sbx/selfcheck.d/claude/*.py /usr/local/lib/sbx-selfcheck/agents/*.py \
     && rm -rf /tmp/sbx-pycache
 
 # ------------------------------------------------------------------------------

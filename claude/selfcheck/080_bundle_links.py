@@ -7,9 +7,8 @@
 
 from bundle_links import bundle_links_result
 from check_result import Check, CheckResult
-from paths import BUNDLE_DIR, STATE_DIR
-
-_CONFIG_DIR = STATE_DIR / "claude"
+from claude_shared import CONFIG_DIR
+from paths import BUNDLE_DIR
 
 
 # ------------------------------------------------------------------------------
@@ -17,7 +16,7 @@ _CONFIG_DIR = STATE_DIR / "claude"
 # ------------------------------------------------------------------------------
 
 def _check_claude_bundle_links() -> CheckResult:
-    return bundle_links_result(_CONFIG_DIR, BUNDLE_DIR, True)
+    return bundle_links_result(CONFIG_DIR, BUNDLE_DIR, True)
 
 
 CHECK_LIST = [Check("claude-bundle-links", _check_claude_bundle_links)]

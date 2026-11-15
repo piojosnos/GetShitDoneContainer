@@ -14,6 +14,8 @@ _WRAPPER_MODE_LIST = [
     ("/etc/sbx/start.d/10-best-practices", 0o755),
     ("/etc/claude-code", 0o755),
     ("/etc/claude-code/managed-settings.json", 0o644),
+    ("/usr/local/lib/sbx-selfcheck/agents", 0o755),
+    ("/usr/local/lib/sbx-selfcheck/agents/claude_shared.py", 0o644),
     ("/etc/sbx/selfcheck.d/claude", 0o755),
     ("/etc/sbx/selfcheck.d/claude/010_tool_claude.py", 0o644),
     ("/etc/sbx/selfcheck.d/claude/020_tool_ccusage.py", 0o644),

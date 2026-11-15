@@ -14,4 +14,4 @@ gsd_synced = load_agent_check("claude", "070_gsd_synced")
 # ------------------------------------------------------------------------------
 
 def test_the_check_reads_the_agent_folder_under_the_state_folder():
-    assert gsd_synced._CONFIG_DIR == paths.STATE_DIR / "claude"
+    assert gsd_synced.CONFIG_DIR == paths.STATE_DIR / "claude"

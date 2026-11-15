@@ -7,9 +7,8 @@
 
 from bundle_links import bundle_links_result
 from check_result import Check, CheckResult
-from paths import BUNDLE_DIR, STATE_DIR
-
-_CONFIG_DIR = STATE_DIR / "cursor"
+from cursor_shared import CONFIG_DIR
+from paths import BUNDLE_DIR
 
 
 # ------------------------------------------------------------------------------
@@ -17,7 +16,7 @@ _CONFIG_DIR = STATE_DIR / "cursor"
 # ------------------------------------------------------------------------------
 
 def _check_cursor_bundle_links() -> CheckResult:
-    return bundle_links_result(_CONFIG_DIR, BUNDLE_DIR, False)
+    return bundle_links_result(CONFIG_DIR, BUNDLE_DIR, False)
 
 
 CHECK_LIST = [Check("cursor-bundle-links", _check_cursor_bundle_links)]

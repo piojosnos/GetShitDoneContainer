@@ -14,7 +14,7 @@ credentials = load_agent_check("cursor", "060_credentials")
 # ------------------------------------------------------------------------------
 
 def test_the_check_reads_the_agent_folder_under_the_state_folder():
-    assert credentials._CONFIG_DIR == paths.STATE_DIR / "cursor"
+    assert credentials.CONFIG_DIR == paths.STATE_DIR / "cursor"
 
 
 def test_the_login_hint_names_the_command_that_logs_in():

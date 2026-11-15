@@ -11,5 +11,5 @@ dev = ["pytest==9.2.0"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/selftest/selfcheck"]
-pythonpath = ["base/selfcheck"]
+pythonpath = ["base/selfcheck", "claude/selfcheck/lib", "cursor/selfcheck/lib"]
 addopts = "-p no:cacheprovider"

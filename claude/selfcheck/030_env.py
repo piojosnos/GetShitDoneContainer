@@ -6,10 +6,8 @@
 # ------------------------------------------------------------------------------
 
 from check_result import Check, CheckResult
+from claude_shared import CONFIG_DIR
 from environment_values import environment_values_result
-from paths import STATE_DIR
-
-_CONFIG_DIR = STATE_DIR / "claude"
 
 
 # ------------------------------------------------------------------------------
@@ -17,7 +15,7 @@ _CONFIG_DIR = STATE_DIR / "claude"
 # ------------------------------------------------------------------------------
 
 def _check_claude_env() -> CheckResult:
-    return environment_values_result({"CLAUDE_CONFIG_DIR": str(_CONFIG_DIR), "DISABLE_UPDATES": "1"})
+    return environment_values_result({"CLAUDE_CONFIG_DIR": str(CONFIG_DIR), "DISABLE_UPDATES": "1"})
 
 
 CHECK_LIST = [Check("claude-env", _check_claude_env)]

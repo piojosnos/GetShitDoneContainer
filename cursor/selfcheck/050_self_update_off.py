@@ -9,11 +9,10 @@ import json
 from pathlib import Path
 
 from check_result import Check, CheckResult, failed, passed
+from cursor_shared import CONFIG_DIR
 from hints import restart_hint
-from paths import STATE_DIR
 
-_CONFIG_DIR = STATE_DIR / "cursor"
-_CLI_CONFIG_FILE = _CONFIG_DIR / "cli-config.json"
+_CLI_CONFIG_FILE = CONFIG_DIR / "cli-config.json"
 
 
 # ------------------------------------------------------------------------------

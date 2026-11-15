@@ -9,10 +9,10 @@ import json
 from pathlib import Path
 
 from check_result import Check, CheckResult, failed, problem_list_result
+from claude_shared import CONFIG_DIR
 from hints import rebuild_hint
-from paths import BUNDLE_DIR, STATE_DIR
+from paths import BUNDLE_DIR
 
-_CONFIG_DIR = STATE_DIR / "claude"
 _MANAGED_SETTINGS_FILE = Path("/etc/claude-code/managed-settings.json")
 
 
@@ -38,7 +38,7 @@ def _sorted_text_list(value: object) -> list[str] | None:
 def managed_settings_result(
     settings_file: Path = _MANAGED_SETTINGS_FILE,
     bundle_dir: Path = BUNDLE_DIR,
-    config_dir: Path = _CONFIG_DIR,
+    config_dir: Path = CONFIG_DIR,
 ) -> CheckResult:
     try:
         settings_map = json.loads(settings_file.read_text())

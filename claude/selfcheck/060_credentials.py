@@ -7,9 +7,8 @@
 
 from agent_config import login_file_result
 from check_result import Check, CheckResult
-from paths import STATE_DIR
+from claude_shared import CONFIG_DIR
 
-_CONFIG_DIR = STATE_DIR / "claude"
 _LOGIN_HINT = "log in once: run sbx-claude in this sandbox and follow the login"
 
 
@@ -18,7 +17,7 @@ _LOGIN_HINT = "log in once: run sbx-claude in this sandbox and follow the login"
 # ------------------------------------------------------------------------------
 
 def _check_claude_credentials() -> CheckResult:
-    return login_file_result(_CONFIG_DIR / ".credentials.json", _LOGIN_HINT)
+    return login_file_result(CONFIG_DIR / ".credentials.json", _LOGIN_HINT)
 
 
 CHECK_LIST = [Check("claude-credentials", _check_claude_credentials)]

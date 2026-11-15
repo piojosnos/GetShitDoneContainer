@@ -15,8 +15,11 @@ from pathlib import Path
 def run() -> int:
     sys.dont_write_bytecode = True
     # The isolated system interpreter ignores PYTHONPATH and the user site, so the
-    # only code it imports is the folder this file sits in.
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    # only code it imports is the folder this file sits in and its agents folder,
+    # where an agent image keeps the library its checks share.
+    launcher_dir = Path(__file__).resolve().parent
+    sys.path.insert(0, str(launcher_dir))
+    sys.path.append(str(launcher_dir / "agents"))
 
     import runner
 

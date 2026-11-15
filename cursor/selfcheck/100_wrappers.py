@@ -13,6 +13,8 @@ _WRAPPER_MODE_LIST = [
     ("/etc/sbx/start.d/02-no-self-update", 0o755),
     ("/etc/sbx/start.d/05-gsd", 0o755),
     ("/etc/sbx/start.d/10-best-practices", 0o755),
+    ("/usr/local/lib/sbx-selfcheck/agents", 0o755),
+    ("/usr/local/lib/sbx-selfcheck/agents/cursor_shared.py", 0o644),
     ("/etc/sbx/selfcheck.d/cursor", 0o755),
     ("/etc/sbx/selfcheck.d/cursor/010_tool_cursor_agent.py", 0o644),
     ("/etc/sbx/selfcheck.d/cursor/030_env.py", 0o644),

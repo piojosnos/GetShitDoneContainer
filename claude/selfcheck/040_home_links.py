@@ -6,10 +6,10 @@
 # ------------------------------------------------------------------------------
 
 from check_result import Check, CheckResult
+from claude_shared import CONFIG_DIR
 from home_links import home_links_result
-from paths import HOME_DIR, STATE_DIR
+from paths import HOME_DIR
 
-_CONFIG_DIR = STATE_DIR / "claude"
 _HOME_LINK = HOME_DIR / ".claude"
 
 
@@ -18,7 +18,7 @@ _HOME_LINK = HOME_DIR / ".claude"
 # ------------------------------------------------------------------------------
 
 def _check_claude_home_links() -> CheckResult:
-    return home_links_result([(_HOME_LINK, _CONFIG_DIR)])
+    return home_links_result([(_HOME_LINK, CONFIG_DIR)])
 
 
 CHECK_LIST = [Check("claude-home-links", _check_claude_home_links)]

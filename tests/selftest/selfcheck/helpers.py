@@ -49,6 +49,10 @@ def agent_checks_dir(agent_name: str) -> Path:
     return REPO_DIR / agent_name / "selfcheck"
 
 
+def agent_lib_dir(agent_name: str) -> Path:
+    return REPO_DIR / agent_name / "selfcheck" / "lib"
+
+
 def load_agent_check(agent_name: str, name: str):
     return runner.load_check_module(agent_checks_dir(agent_name) / f"{name}.py")
 
