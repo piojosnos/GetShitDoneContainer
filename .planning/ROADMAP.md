@@ -37,7 +37,7 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
 - [x] **Phase 6: Test diet**: the tests check only our setup, nothing waits for a person, and the guard self-test and every stand-in docker are gone (completed 2026-11-13)
 - [x] **Phase 06.1: Cursor agent image** (INSERTED): a separate Cursor image; a sandbox picks Claude or Cursor when it is added (completed 2026-11-14)
 - [x] **Phase 7: Separate test images**: a test run builds and checks its own image tags and never replaces the images the sandboxes run (completed 2026-11-14)
-- [ ] **Phase 8: In-image self-check**: `sbx-selfcheck` in the image checks the sandbox, replaces most host probes and doubles as the doctor
+- [x] **Phase 8: In-image self-check**: `sbx-selfcheck` in the image checks the sandbox, replaces most host probes and doubles as the doctor (completed 2026-11-15)
 - [ ] **Phase 9: sbx-init replaces the start hooks**: the user runs `sbx-init` to sync GSD and link the bundle; a container start runs no hooks
 - [ ] **Phase 10: Host side to Python**: the Mac commands and host tests are Python run through `uv`, with one JSON registry file per sandbox
 - [ ] **Phase 11: CI widened**: GitHub runs the guard, builds the test images and runs the Linux-runnable checks on every PR push
@@ -138,7 +138,7 @@ Plans:
   3. `./host-test.sh` makes a throwaway root certificate with `openssl`, builds it into the test base image, and the self-check finds it in the system bundle and in Java `cacerts`; no certificate is committed.
   4. Each FAIL line carries a fix hint, with the Mac command when the fix is on the Mac; no skill wraps the self-check.
 
-**Plans**: 13/13 plans executed
+**Plans**: 13/13 plans complete
 
 Plans:
 **Wave 1**
@@ -229,7 +229,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 |-------|-----------|----------------|--------|-----------|
 | 6. Test diet | v2.0 | 6/6 | Complete    | 2026-11-13 |
 | 7. Separate test images | v2.0 | 3/3 | Complete    | 2026-11-14 |
-| 8. In-image self-check | v2.0 | 13/13 | In Progress|  |
+| 8. In-image self-check | v2.0 | 13/13 | Complete    | 2026-11-15 |
 | 9. sbx-init replaces the start hooks | v2.0 | 0/TBD | Not started | - |
 | 10. Host side to Python | v2.0 | 0/TBD | Not started | - |
 | 11. CI widened | v2.0 | 0/TBD | Not started | - |
