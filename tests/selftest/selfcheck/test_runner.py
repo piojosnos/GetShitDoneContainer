@@ -111,6 +111,35 @@ def test_raising_check_becomes_a_fail_line_with_the_rebuild_hint(agents1, monkey
     assert line_list[3] == "PASS: agent1: detail_agent1"
 
 
+@pytest.mark.parametrize(
+    "returned_value, type_name",
+    [
+        pytest.param(None, "NoneType", id="none"),
+        pytest.param(True, "bool", id="bool"),
+        pytest.param(("check1", "detail1"), "tuple", id="tuple"),
+    ],
+)
+def test_a_check_that_returns_no_result_becomes_a_fail_line_with_the_rebuild_hint(
+    agents1, monkeypatch, returned_value, type_name
+):
+    monkeypatch.setenv("SBX_NAME", "sbx1")
+
+    def run_returning():
+        return returned_value
+
+    status, line_list = run_lines([Check("check1", run_returning), passing_check("check2")], agents1)
+
+    assert status == 1
+    assert line_list == [
+        f"FAIL: check1: returned {type_name} instead of a CheckResult",
+        "      fix: this is a bug in the self-check or a broken image; "
+        "rebuild the image and recreate the sandbox: on the Mac run: sbx-upgrade sbx1",
+        "PASS: check2: detail_check2",
+        "PASS: agent1: detail_agent1",
+        "sbx-selfcheck: 3 checks, 1 failed",
+    ]
+
+
 def test_newlines_in_detail_and_hint_print_as_spaces():
     result = CheckResult(False, "detail1\r\ndetail2\ndetail3", "hint1\nhint2")
 
