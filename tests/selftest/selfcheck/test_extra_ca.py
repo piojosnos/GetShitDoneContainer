@@ -2,7 +2,8 @@
 # Tests of the extra root certificate checks
 # ------------------------------------------------------------------------------
 # The certificates are made by openssl and the keystores by keytool, both real,
-# inside tmp_path.
+# inside tmp_path. A file stands for /etc/sbx/extra-ca.pem, the sign that a
+# certificate was installed.
 # ------------------------------------------------------------------------------
 
 import subprocess
@@ -58,6 +59,19 @@ def certs2(make_certificate) -> Path:
     return make_certificate("certs2")
 
 
+@pytest.fixture
+def installed1(tmp_path, certs1) -> Path:
+    installed_file = tmp_path / "installed1.pem"
+    installed_file.write_text(certs1.read_text())
+
+    return installed_file
+
+
+@pytest.fixture
+def absent1(tmp_path) -> Path:
+    return tmp_path / "absent1.pem"
+
+
 def write_expected(expected_file: Path, fingerprint_list: list[str]) -> Path:
     expected_file.write_text("".join(fingerprint + "\n" for fingerprint in fingerprint_list))
 
@@ -82,9 +96,9 @@ def bundle1(tmp_path, certs1, certs2) -> Path:
 # ------------------------------------------------------------------------------
 
 def test_system_bundle_passes_when_the_requested_certificate_is_in_the_bundle_and_prints_its_fingerprint(
-    expected1, bundle1, certs1
+    expected1, bundle1, installed1, certs1
 ):
-    result = extra_ca.system_bundle_result(expected1, bundle1)
+    result = extra_ca.system_bundle_result(expected1, bundle1, installed1)
 
     assert result.passed
     assert openssl_fingerprint(certs1) in result.detail
@@ -144,18 +158,54 @@ def test_system_bundle_fails_when_the_bundle_file_is_missing(tmp_path, expected1
     assert "missing1.crt is missing" in result.detail
 
 
-def test_system_bundle_passes_when_no_certificate_was_requested_and_reads_no_bundle(tmp_path):
-    result = extra_ca.system_bundle_result(tmp_path / "missing1", tmp_path / "missing2.crt")
+def test_system_bundle_passes_when_no_certificate_was_requested_and_reads_no_bundle(tmp_path, absent1):
+    result = extra_ca.system_bundle_result(tmp_path / "missing1", tmp_path / "missing2.crt", absent1)
 
     assert result.passed
     assert result.detail == "no extra root certificate requested"
 
 
-def test_system_bundle_treats_an_empty_fingerprint_file_as_not_requested(tmp_path):
-    result = extra_ca.system_bundle_result(write_expected(tmp_path / "expected2", []), tmp_path / "missing2.crt")
+def test_system_bundle_treats_an_empty_fingerprint_file_as_not_requested_when_no_certificate_is_installed(tmp_path, absent1):
+    result = extra_ca.system_bundle_result(write_expected(tmp_path / "expected2", []), tmp_path / "missing2.crt", absent1)
 
     assert result.passed
     assert result.detail == "no extra root certificate requested"
+
+
+# ------------------------------------------------------------------------------
+# A certificate installed without a recorded fingerprint
+# ------------------------------------------------------------------------------
+
+def test_system_bundle_fails_when_a_certificate_is_installed_but_no_fingerprint_file_exists(
+    tmp_path, bundle1, installed1
+):
+    result = extra_ca.system_bundle_result(tmp_path / "missing1", bundle1, installed1)
+
+    assert not result.passed
+    assert "installed" in result.detail
+    assert "fingerprint was not recorded" in result.detail
+    assert "sbx-upgrade" in result.hint
+
+
+def test_system_bundle_fails_when_a_certificate_is_installed_but_the_fingerprint_file_is_empty(
+    tmp_path, bundle1, installed1
+):
+    result = extra_ca.system_bundle_result(write_expected(tmp_path / "expected2", []), bundle1, installed1)
+
+    assert not result.passed
+    assert "fingerprint was not recorded" in result.detail
+
+
+def test_system_bundle_fails_when_a_fingerprint_is_recorded_but_no_certificate_is_installed(
+    tmp_path, expected1, absent1, certs1, certs2
+):
+    bundle2 = tmp_path / "bundle2.crt"
+    bundle2.write_text(certs2.read_text())
+
+    result = extra_ca.system_bundle_result(expected1, bundle2, absent1)
+
+    assert not result.passed
+    assert openssl_fingerprint(certs1) in result.detail
 
 
 # ------------------------------------------------------------------------------
@@ -163,12 +213,12 @@ def test_system_bundle_treats_an_empty_fingerprint_file_as_not_requested(tmp_pat
 # ------------------------------------------------------------------------------
 
 def test_java_cacerts_passes_when_the_requested_certificate_is_in_the_store_and_prints_its_fingerprint(
-    tmp_path, expected1, certs1
+    tmp_path, expected1, installed1, certs1
 ):
     store1 = tmp_path / "store1.p12"
     import_into_store(store1, certs1, "alias1")
 
-    result = extra_ca.java_cacerts_result(expected1, keystore_arguments(store1))
+    result = extra_ca.java_cacerts_result(expected1, keystore_arguments(store1), installed1)
 
     assert result.passed
     assert openssl_fingerprint(certs1) in result.detail
@@ -204,8 +254,33 @@ def test_java_cacerts_reports_a_keytool_failure_with_its_first_line(tmp_path, ex
     assert "keytool" in result.detail
 
 
-def test_java_cacerts_passes_when_no_certificate_was_requested_without_running_keytool(tmp_path):
-    result = extra_ca.java_cacerts_result(tmp_path / "missing1", keystore_arguments(tmp_path / "missing2.p12"))
+def test_java_cacerts_passes_when_no_certificate_was_requested_without_running_keytool(tmp_path, absent1):
+    result = extra_ca.java_cacerts_result(tmp_path / "missing1", keystore_arguments(tmp_path / "missing2.p12"), absent1)
 
     assert result.passed
     assert result.detail == "no extra root certificate requested"
+
+
+def test_java_cacerts_fails_when_a_certificate_is_installed_but_no_fingerprint_file_exists_without_running_keytool(
+    tmp_path, installed1
+):
+    result = extra_ca.java_cacerts_result(
+        tmp_path / "missing1", keystore_arguments(tmp_path / "missing2.p12"), installed1
+    )
+
+    assert not result.passed
+    assert "installed" in result.detail
+    assert "fingerprint was not recorded" in result.detail
+    assert "sbx-upgrade" in result.hint
+
+
+def test_java_cacerts_fails_when_a_fingerprint_is_recorded_but_no_certificate_is_installed(
+    tmp_path, expected1, absent1, certs2
+):
+    store1 = tmp_path / "store1.p12"
+    import_into_store(store1, certs2, "alias1")
+
+    result = extra_ca.java_cacerts_result(expected1, keystore_arguments(store1), absent1)
+
+    assert not result.passed
+    assert "is not in Java cacerts" in result.detail

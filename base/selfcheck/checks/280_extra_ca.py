@@ -2,8 +2,10 @@
 # Checks: the extra root certificates are trusted
 # ------------------------------------------------------------------------------
 # build.sh records the SHA-256 fingerprint of each root certificate it adds in
-# /etc/sbx/extra-ca-fingerprints, one per line. No file means no certificate was
-# requested. The image puts this file in /usr/local/lib/sbx-selfcheck/checks/.
+# /etc/sbx/extra-ca-fingerprints, one per line. No certificate installed (no
+# /etc/sbx/extra-ca.pem) and no fingerprint means none was requested; a
+# certificate without a recorded fingerprint fails. The image puts this file in
+# /usr/local/lib/sbx-selfcheck/checks/.
 # ------------------------------------------------------------------------------
 
 import hashlib
@@ -15,6 +17,7 @@ from commands import first_output_line, run_command
 from hints import rebuild_hint
 
 _EXPECTED_FINGERPRINTS_FILE = Path("/etc/sbx/extra-ca-fingerprints")
+_INSTALLED_CERTIFICATES_FILE = Path("/etc/sbx/extra-ca.pem")
 _SYSTEM_BUNDLE_FILE = Path("/etc/ssl/certs/ca-certificates.crt")
 _KEYTOOL_STORE_ARGUMENT_TUPLE = ("-cacerts", "-storepass", "changeit")
 _NOT_REQUESTED_TEXT = "no extra root certificate requested"
@@ -38,6 +41,22 @@ def _expected_fingerprint_list(expected_file: Path) -> list[str]:
             fingerprint_list.append(line.strip().upper())
 
     return fingerprint_list
+
+
+def _expected_list_or_result(expected_file: Path, installed_file: Path) -> tuple[list[str], CheckResult | None]:
+    expected_list = _expected_fingerprint_list(expected_file)
+
+    if expected_list:
+        return expected_list, None
+
+    if installed_file.is_file():
+        return [], failed(
+            f"a root certificate is installed ({installed_file}) but its expected fingerprint was not recorded "
+            f"by the build ({expected_file} is missing or empty)",
+            rebuild_hint(),
+        )
+
+    return [], passed(_NOT_REQUESTED_TEXT)
 
 
 # ------------------------------------------------------------------------------
@@ -97,11 +116,12 @@ def _missing_result(
 def system_bundle_result(
     expected_file: Path = _EXPECTED_FINGERPRINTS_FILE,
     bundle_file: Path = _SYSTEM_BUNDLE_FILE,
+    installed_file: Path = _INSTALLED_CERTIFICATES_FILE,
 ) -> CheckResult:
-    expected_list = _expected_fingerprint_list(expected_file)
+    expected_list, early_result = _expected_list_or_result(expected_file, installed_file)
 
-    if not expected_list:
-        return passed(_NOT_REQUESTED_TEXT)
+    if early_result:
+        return early_result
 
     if not bundle_file.is_file():
         return failed(f"{bundle_file} is missing", rebuild_hint())
@@ -121,11 +141,12 @@ def system_bundle_result(
 def java_cacerts_result(
     expected_file: Path = _EXPECTED_FINGERPRINTS_FILE,
     keytool_argument_tuple: tuple[str, ...] = _KEYTOOL_STORE_ARGUMENT_TUPLE,
+    installed_file: Path = _INSTALLED_CERTIFICATES_FILE,
 ) -> CheckResult:
-    expected_list = _expected_fingerprint_list(expected_file)
+    expected_list, early_result = _expected_list_or_result(expected_file, installed_file)
 
-    if not expected_list:
-        return passed(_NOT_REQUESTED_TEXT)
+    if early_result:
+        return early_result
 
     completed = run_command(["keytool", "-list", *keytool_argument_tuple])
 

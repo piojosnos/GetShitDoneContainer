@@ -86,7 +86,7 @@ What trusts the root, and how:
 - The trade-off: the images trust anything the proxy signs (see "Threat model").
 - Known limit: a Node program run by a non-interactive `docker exec` does not get `NODE_EXTRA_CA_CERTS`. Run it from `sbx-shell`.
 
-`sbx-selfcheck` in a sandbox shell confirms that each fingerprint in `/etc/sbx/extra-ca-fingerprints` is in the system store and in Java `cacerts` (its `extra-ca-system-bundle` and `extra-ca-java-cacerts` lines). A root lost in the build fails there; without a file it prints `no extra root certificate requested`. The commands below also prove each tool gets through the proxy.
+`sbx-selfcheck` in a sandbox shell confirms that each fingerprint in `/etc/sbx/extra-ca-fingerprints` is in the system store and in Java `cacerts` (its `extra-ca-system-bundle` and `extra-ca-java-cacerts` lines). A root lost in the build fails there, and so does a root installed without its recorded fingerprint; with neither it prints `no extra root certificate requested`. The commands below also prove each tool gets through the proxy.
 
 Check a new build by hand: run these in a sandbox shell. Each prints a status code, a version or a login. None may print `curl: (60)`, `UNABLE_TO_VERIFY_LEAF_SIGNATURE`, `CERTIFICATE_VERIFY_FAILED` or `PKIX path building failed`.
 
