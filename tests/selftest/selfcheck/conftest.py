@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from helpers import write_versions
+
 sys.dont_write_bytecode = True
 
 REPO_DIR = Path(__file__).resolve().parents[3]
@@ -44,6 +46,20 @@ def make_certificate(tmp_path):
 
 
 @pytest.fixture
+def restorable_mode():
+    restore_list = []
+
+    def lower_mode(path: Path, mode: int) -> None:
+        restore_list.append((path, path.stat().st_mode))
+        path.chmod(mode)
+
+    yield lower_mode
+
+    for path, mode in reversed(restore_list):
+        path.chmod(mode)
+
+
+@pytest.fixture
 def check_name_list_of():
     def names_of(check_list: list) -> list[str]:
         name_list = []
@@ -62,3 +78,21 @@ def agent_module():
         return sbx_selfcheck.load_check_module(REPO_DIR / agent_name / "selfcheck" / f"{agent_name}.py")
 
     return load_agent_module
+
+
+@pytest.fixture
+def versions1(tmp_path) -> Path:
+    return write_versions(tmp_path / "versions1.env")
+
+
+@pytest.fixture
+def bin1(tmp_path) -> Path:
+    bin_dir = tmp_path / "bin1"
+    bin_dir.mkdir()
+
+    return bin_dir
+
+
+@pytest.fixture
+def line1(tmp_path) -> Path:
+    return tmp_path / "line1"

@@ -8,16 +8,19 @@ import tempfile
 from pathlib import Path
 from typing import Mapping
 
-from sbx_selfcheck import (
-    BUNDLE_DIR,
-    Check,
-    CheckResult,
+from agent_helpers import (
     bundle_links_result,
-    environment_values_result,
-    failed,
     gsd_synced_result,
     home_links_result,
     login_file_result,
+    versions_line_result,
+)
+from selfcheck_core import (
+    BUNDLE_DIR,
+    Check,
+    CheckResult,
+    environment_values_result,
+    failed,
     missing_pin_result,
     passed,
     pin_value,
@@ -25,7 +28,6 @@ from sbx_selfcheck import (
     restart_hint,
     root_owned_result,
     tool_result,
-    versions_line_result,
 )
 
 CURSOR_CONFIG_DIR = Path("/home/sandbox/workspace/state/cursor")

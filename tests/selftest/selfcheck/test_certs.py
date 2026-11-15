@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-import shared_checks
+import checks_certs
 
 KEYTOOL_PASSWORD = "changeit"
 BEGIN_MARKER = "-----BEGIN CERTIFICATE-----"
@@ -76,7 +76,7 @@ def bundle1(tmp_path, certs1, certs2) -> Path:
 def test_pem_block_list_splits_two_certificates_joined_by_a_blank_line(certs1, certs2):
     text = certs1.read_text() + "\n" + certs2.read_text()
 
-    block_list = shared_checks.pem_block_list(text)
+    block_list = checks_certs.pem_block_list(text)
 
     assert len(block_list) == 2
     assert block_list[0].startswith(BEGIN_MARKER)
@@ -87,17 +87,17 @@ def test_pem_block_list_splits_two_certificates_joined_by_a_blank_line(certs1, c
 def test_pem_block_list_ignores_text_around_the_blocks(certs1):
     text = "comment line1\n" + certs1.read_text() + "trailing line2\n"
 
-    assert len(shared_checks.pem_block_list(text)) == 1
+    assert len(checks_certs.pem_block_list(text)) == 1
 
 
 def test_pem_block_list_of_text_without_a_certificate_is_empty():
-    assert shared_checks.pem_block_list("nothing here\n") == []
+    assert checks_certs.pem_block_list("nothing here\n") == []
 
 
 def test_pem_fingerprint_equals_the_one_openssl_prints(certs1):
-    block = shared_checks.pem_block_list(certs1.read_text())[0]
+    block = checks_certs.pem_block_list(certs1.read_text())[0]
 
-    assert shared_checks.pem_fingerprint(block) == openssl_fingerprint(certs1)
+    assert checks_certs.pem_fingerprint(block) == openssl_fingerprint(certs1)
 
 
 def test_extra_cert_fingerprint_map_is_keyed_by_the_file_stem(tmp_path, certs1, certs2):
@@ -107,7 +107,7 @@ def test_extra_cert_fingerprint_map_is_keyed_by_the_file_stem(tmp_path, certs1, 
     shutil.copy(certs2, extra2 / "sbx-extra-ca-2.crt")
     shutil.copy(certs2, extra2 / "other1.crt")
 
-    fingerprint_by_alias_map = shared_checks.extra_cert_fingerprint_by_alias_map(extra2)
+    fingerprint_by_alias_map = checks_certs.extra_cert_fingerprint_by_alias_map(extra2)
 
     assert fingerprint_by_alias_map == {
         "sbx-extra-ca-1": openssl_fingerprint(certs1),
@@ -123,12 +123,12 @@ def test_keytool_helpers_read_the_aliases_and_fingerprints_of_a_listing(tmp_path
         ["keytool", "-list"] + keystore_arguments(store1), check=True, capture_output=True, text=True
     ).stdout
 
-    assert shared_checks.keytool_alias_set(listing) == {"alias1", "alias2"}
-    assert shared_checks.keytool_fingerprint_set(listing) == {openssl_fingerprint(certs1), openssl_fingerprint(certs2)}
+    assert checks_certs.keytool_alias_set(listing) == {"alias1", "alias2"}
+    assert checks_certs.keytool_fingerprint_set(listing) == {openssl_fingerprint(certs1), openssl_fingerprint(certs2)}
 
 
 def test_system_bundle_passes_and_prints_the_alias_and_the_fingerprint(extra1, bundle1, certs1):
-    result = shared_checks.system_bundle_result(extra1, bundle1)
+    result = checks_certs.system_bundle_result(extra1, bundle1)
 
     assert result.passed
     assert "sbx-extra-ca-1" in result.detail
@@ -139,7 +139,7 @@ def test_system_bundle_fails_naming_the_certificate_the_bundle_lacks(tmp_path, e
     bundle2 = tmp_path / "bundle2.crt"
     bundle2.write_text(certs2.read_text())
 
-    result = shared_checks.system_bundle_result(extra1, bundle2)
+    result = checks_certs.system_bundle_result(extra1, bundle2)
 
     assert not result.passed
     assert "sbx-extra-ca-1" in result.detail
@@ -150,15 +150,15 @@ def test_system_bundle_is_not_fooled_by_a_bundle_with_as_many_other_certificates
     bundle2 = tmp_path / "bundle2.crt"
     bundle2.write_text(certs2.read_text())
 
-    assert len(shared_checks.pem_block_list(bundle2.read_text())) == 1
-    assert not shared_checks.system_bundle_result(extra1, bundle2).passed
+    assert len(checks_certs.pem_block_list(bundle2.read_text())) == 1
+    assert not checks_certs.system_bundle_result(extra1, bundle2).passed
 
 
 def test_system_bundle_passes_with_no_extra_certificate_and_reads_no_bundle(tmp_path):
     empty_dir = tmp_path / "empty1"
     empty_dir.mkdir()
 
-    result = shared_checks.system_bundle_result(empty_dir, tmp_path / "missing1.crt")
+    result = checks_certs.system_bundle_result(empty_dir, tmp_path / "missing1.crt")
 
     assert result.passed
     assert result.detail == "no extra root certificate installed"
@@ -168,7 +168,7 @@ def test_java_cacerts_passes_when_the_alias_and_the_fingerprint_are_in_the_store
     store1 = tmp_path / "store1.p12"
     import_into_store(store1, certs1, "sbx-extra-ca-1")
 
-    result = shared_checks.java_cacerts_result(extra1, keystore_arguments(store1))
+    result = checks_certs.java_cacerts_result(extra1, keystore_arguments(store1))
 
     assert result.passed
     assert "sbx-extra-ca-1" in result.detail
@@ -180,7 +180,7 @@ def test_java_cacerts_fails_naming_the_second_certificate_the_store_lacks(tmp_pa
     import_into_store(store1, certs1, "sbx-extra-ca-1")
     shutil.copy(certs2, extra1 / "sbx-extra-ca-2.crt")
 
-    result = shared_checks.java_cacerts_result(extra1, keystore_arguments(store1))
+    result = checks_certs.java_cacerts_result(extra1, keystore_arguments(store1))
 
     assert not result.passed
     assert "sbx-extra-ca-2" in result.detail
@@ -196,7 +196,7 @@ def test_java_cacerts_fails_naming_the_alias_when_the_certificate_sits_under_ano
     import_into_store(store1, certs2, "other1")
     shutil.copy(certs2, extra1 / "sbx-extra-ca-2.crt")
 
-    result = shared_checks.java_cacerts_result(extra1, keystore_arguments(store1))
+    result = checks_certs.java_cacerts_result(extra1, keystore_arguments(store1))
 
     assert not result.passed
     assert "sbx-extra-ca-2" in result.detail
@@ -206,14 +206,14 @@ def test_java_cacerts_fails_when_the_alias_holds_another_certificate(tmp_path, e
     store1 = tmp_path / "store1.p12"
     import_into_store(store1, certs2, "sbx-extra-ca-1")
 
-    result = shared_checks.java_cacerts_result(extra1, keystore_arguments(store1))
+    result = checks_certs.java_cacerts_result(extra1, keystore_arguments(store1))
 
     assert not result.passed
     assert "sbx-extra-ca-1" in result.detail
 
 
 def test_java_cacerts_reports_a_keytool_failure_with_its_first_line(tmp_path, extra1):
-    result = shared_checks.java_cacerts_result(extra1, keystore_arguments(tmp_path / "missing1.p12"))
+    result = checks_certs.java_cacerts_result(extra1, keystore_arguments(tmp_path / "missing1.p12"))
 
     assert not result.passed
     assert "keytool" in result.detail
@@ -223,7 +223,7 @@ def test_java_cacerts_with_no_extra_certificate_passes_without_running_keytool(t
     empty_dir = tmp_path / "empty1"
     empty_dir.mkdir()
 
-    result = shared_checks.java_cacerts_result(empty_dir, keystore_arguments(tmp_path / "missing1.p12"))
+    result = checks_certs.java_cacerts_result(empty_dir, keystore_arguments(tmp_path / "missing1.p12"))
 
     assert result.passed
     assert result.detail == "no extra root certificate installed"

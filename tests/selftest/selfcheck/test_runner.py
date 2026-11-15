@@ -9,9 +9,10 @@ from pathlib import Path
 import pytest
 
 import sbx_selfcheck
-from sbx_selfcheck import Check, CheckResult, failed, passed
+import selfcheck_core
+from selfcheck_core import Check, CheckResult, failed, passed
 
-AGENT_FILE_TEMPLATE = """from sbx_selfcheck import Check, passed
+AGENT_FILE_TEMPLATE = """from selfcheck_core import Check, passed
 
 
 def check_{name}():
@@ -331,27 +332,27 @@ def test_the_launcher_file_exits_two_for_an_argument(repo_dir):
 def test_hint_builders_name_the_sandbox_from_sbx_name(monkeypatch):
     monkeypatch.setenv("SBX_NAME", "sbx1")
 
-    assert sbx_selfcheck.rebuild_hint() == "rebuild the image and recreate the sandbox: on the Mac run: sbx-upgrade sbx1"
-    assert sbx_selfcheck.restart_hint() == "restart the sandbox: on the Mac run: sbx-stop sbx1, then sbx-start sbx1"
-    assert sbx_selfcheck.start_hint().endswith("on the Mac run: sbx-start sbx1, then sbx-shell sbx1")
-    assert sbx_selfcheck.shell_hint().endswith("on the Mac run: sbx-shell sbx1")
+    assert selfcheck_core.rebuild_hint() == "rebuild the image and recreate the sandbox: on the Mac run: sbx-upgrade sbx1"
+    assert selfcheck_core.restart_hint() == "restart the sandbox: on the Mac run: sbx-stop sbx1, then sbx-start sbx1"
+    assert selfcheck_core.start_hint().endswith("on the Mac run: sbx-start sbx1, then sbx-shell sbx1")
+    assert selfcheck_core.shell_hint().endswith("on the Mac run: sbx-shell sbx1")
 
 
 def test_hint_builders_say_name_when_sbx_name_is_unset_or_empty(monkeypatch):
     monkeypatch.delenv("SBX_NAME", raising=False)
 
-    assert sbx_selfcheck.rebuild_hint().endswith("on the Mac run: sbx-upgrade NAME")
-    assert "on the Mac run: sbx-" in sbx_selfcheck.restart_hint()
-    assert "on the Mac run: sbx-" in sbx_selfcheck.start_hint()
-    assert "on the Mac run: sbx-" in sbx_selfcheck.shell_hint()
+    assert selfcheck_core.rebuild_hint().endswith("on the Mac run: sbx-upgrade NAME")
+    assert "on the Mac run: sbx-" in selfcheck_core.restart_hint()
+    assert "on the Mac run: sbx-" in selfcheck_core.start_hint()
+    assert "on the Mac run: sbx-" in selfcheck_core.shell_hint()
 
     monkeypatch.setenv("SBX_NAME", "")
 
-    assert sbx_selfcheck.shell_hint().endswith("sbx-shell NAME")
+    assert selfcheck_core.shell_hint().endswith("sbx-shell NAME")
 
 
 def test_environment_values_result_passes_for_a_matching_mapping():
-    result = sbx_selfcheck.environment_values_result(
+    result = selfcheck_core.environment_values_result(
         {"VAR1": "value1", "VAR2": "value2"},
         {"VAR1": "value1", "VAR2": "value2", "VAR3": "other"},
     )
@@ -363,7 +364,7 @@ def test_environment_values_result_passes_for_a_matching_mapping():
 def test_environment_values_result_names_each_wrong_or_missing_variable(monkeypatch):
     monkeypatch.setenv("SBX_NAME", "sbx1")
 
-    result = sbx_selfcheck.environment_values_result(
+    result = selfcheck_core.environment_values_result(
         {"VAR1": "value1", "VAR2": "value2", "VAR3": "value3"},
         {"VAR1": "other1", "VAR3": "value3"},
     )
@@ -390,7 +391,7 @@ def test_every_line_is_pass_fail_fix_or_the_summary(tmp_path):
 def test_the_base_files_name_no_agent(repo_dir):
     base_dir = repo_dir / "base" / "selfcheck"
 
-    for file_name in ("sbx-selfcheck", "sbx_selfcheck.py", "shared_checks.py"):
+    for file_name in sorted(path.name for path in base_dir.iterdir() if path.suffix == ".py" or path.name == "sbx-selfcheck"):
         text = (base_dir / file_name).read_text().lower()
 
         assert "claude" not in text

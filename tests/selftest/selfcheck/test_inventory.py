@@ -7,6 +7,7 @@ import shutil
 from pathlib import Path
 
 import sbx_selfcheck
+import selfcheck_core
 import shared_checks
 
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -59,7 +60,7 @@ def test_every_name_is_lowercase_words_joined_by_hyphens_and_none_says_skip(agen
 def test_every_entry_is_a_check_with_a_callable_function(agent_module):
     for check_list in [shared_checks.CHECK_LIST, agent_module("claude").CHECK_LIST, agent_module("cursor").CHECK_LIST]:
         for check in check_list:
-            assert isinstance(check, sbx_selfcheck.Check)
+            assert isinstance(check, selfcheck_core.Check)
             assert callable(check.function)
 
 
@@ -75,3 +76,51 @@ def test_collect_checks_loads_both_agent_files_without_a_load_failure(repo_dir, 
 
     for check in check_list:
         assert not check.name.startswith("load-"), check.name
+
+
+def test_the_shared_list_holds_the_checks_in_the_final_order(check_name_list_of):
+    name_list = check_name_list_of(shared_checks.CHECK_LIST)
+
+    assert name_list == [
+        "workspace-mount",
+        "project-folder",
+        "state-folders",
+        "state-writable",
+        "no-root-owned-state",
+        "user-sandbox",
+        "home-layout",
+        "home-owners",
+        "architecture",
+        "git-safe-directory",
+        "git-identity",
+        "env-state-paths",
+        "env-bundle",
+        "java-home",
+        "tool-git",
+        "tool-bash",
+        "tool-gh",
+        "tool-node",
+        "tool-python",
+        "tool-uv",
+        "tool-java",
+        "tool-keytool",
+        "tool-maven",
+        "tool-gsd",
+        "tool-jq",
+        "tool-rg",
+        "tool-unzip",
+        "tool-zip",
+        "tool-ssh",
+        "tool-make",
+        "tool-gcc",
+        "tzdata",
+        "versions-record",
+        "versions-line-file",
+        "versions-line-interactive",
+        "versions-line-quiet",
+        "wrappers-root-owned",
+        "image-paths-protected",
+        "no-bundle-copy",
+        "extra-ca-system-bundle",
+        "extra-ca-java-cacerts",
+    ]

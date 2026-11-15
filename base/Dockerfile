@@ -240,10 +240,9 @@ RUN printf 'gsd %s | node %s | jdk %s | mvn %s | python %s\n' \
 # ------------------------------------------------------------------------------
 RUN mkdir -p /usr/local/lib/sbx-selfcheck /etc/sbx/selfcheck.d
 COPY --chmod=755 base/selfcheck/sbx-selfcheck /usr/local/lib/sbx-selfcheck/sbx-selfcheck
-COPY --chmod=644 base/selfcheck/sbx_selfcheck.py /usr/local/lib/sbx-selfcheck/sbx_selfcheck.py
-COPY --chmod=644 base/selfcheck/shared_checks.py /usr/local/lib/sbx-selfcheck/shared_checks.py
+COPY --chmod=644 base/selfcheck/*.py /usr/local/lib/sbx-selfcheck/
 RUN ln -s /usr/local/lib/sbx-selfcheck/sbx-selfcheck /usr/local/bin/sbx-selfcheck \
-    && PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /usr/local/lib/sbx-selfcheck/sbx-selfcheck /usr/local/lib/sbx-selfcheck/sbx_selfcheck.py /usr/local/lib/sbx-selfcheck/shared_checks.py \
+    && PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /usr/local/lib/sbx-selfcheck/sbx-selfcheck /usr/local/lib/sbx-selfcheck/*.py \
     && rm -rf /tmp/sbx-pycache
 
 # ------------------------------------------------------------------------------
