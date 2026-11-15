@@ -12,6 +12,7 @@ Scope:
 - Default run: exec-bit restore, `git status --short`, image IDs before, `./host-test.sh`, image IDs and `sbx-hosttest-*` containers after.
 - Exceptional cases through options, not new code each time: for example `--grep PATTERN` appends matching `host-test.log` lines, and arguments after `--` go to `host-test.sh`.
 - Plain bash, thin, BSD and macOS portable.
+- The exec-bit restore is its own standalone script, not a step inside the glue script: the glue script calls it. It must work in any git repo (no project paths or names), so the user can copy it to another project that has the same problem. It restores the exec bit on every file `git diff --summary` reports as `mode change 100755 => 100644`, then prints `git status --short`.
 
 Cost: one more script to keep in step with `host-test.sh`; the README, the test checklist and the Mac checkpoint text of future plans point to it.
 
