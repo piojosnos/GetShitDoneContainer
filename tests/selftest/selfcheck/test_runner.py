@@ -120,10 +120,10 @@ def test_newlines_in_detail_and_hint_print_as_spaces(agents1):
     assert line_list[:2] == ["FAIL: check1: detail1  detail2 detail3", "      fix: hint1 hint2"]
 
 
-def test_agent_files_run_after_the_shared_list_sorted_by_file_name(tmp_path):
-    write_agent_file(tmp_path, "agent2")
-    write_agent_file(tmp_path, "agent1")
-    (tmp_path / "notes.txt").write_text("not a checks file")
+def test_agent_files_run_after_the_shared_list_sorted_by_file_name(tmp_path, group1):
+    write_agent_file(group1, "agent2")
+    write_agent_file(group1, "agent1")
+    (group1 / "notes.txt").write_text("not a checks file")
 
     status, line_list = run_lines([passing_check("check1")], tmp_path)
 
@@ -136,9 +136,27 @@ def test_agent_files_run_after_the_shared_list_sorted_by_file_name(tmp_path):
     ]
 
 
-def test_the_order_is_the_same_on_every_run(tmp_path):
-    write_agent_file(tmp_path, "agent2")
-    write_agent_file(tmp_path, "agent1")
+def test_agent_folders_run_in_folder_name_order_and_a_loose_file_is_ignored(tmp_path):
+    write_agent_file(tmp_path / "group2", "agent3")
+    write_agent_file(tmp_path / "group1", "agent2")
+    write_agent_file(tmp_path / "group1", "agent1")
+    (tmp_path / "loose1.py").write_text("raise RuntimeError('not loaded')\n")
+
+    status, line_list = run_lines([passing_check("check1")], tmp_path)
+
+    assert status == 0
+    assert line_list == [
+        "PASS: check1: detail_check1",
+        "PASS: agent1: detail_agent1",
+        "PASS: agent2: detail_agent2",
+        "PASS: agent3: detail_agent3",
+        "sbx-selfcheck: 4 checks, 0 failed",
+    ]
+
+
+def test_the_order_is_the_same_on_every_run(tmp_path, group1):
+    write_agent_file(group1, "agent2")
+    write_agent_file(group1, "agent1")
     check_list = [passing_check("check2"), passing_check("check1")]
 
     status1, lines1 = run_lines(check_list, tmp_path)
@@ -163,7 +181,7 @@ def expected_no_agent_checks_lines(checks_dir: Path) -> list[str]:
     ]
 
 
-def test_empty_and_missing_agent_folders_fail_naming_the_folder(tmp_path):
+def test_empty_and_missing_agent_folders_fail_naming_the_folder(tmp_path, group1):
     empty_dir = tmp_path / "empty1"
     empty_dir.mkdir()
     missing_dir = tmp_path / "missing1"
@@ -177,8 +195,8 @@ def test_empty_and_missing_agent_folders_fail_naming_the_folder(tmp_path):
     assert missing_lines == expected_no_agent_checks_lines(missing_dir)
 
 
-def test_an_agent_file_with_an_empty_check_list_is_no_agent_checks(tmp_path):
-    (tmp_path / "agent1.py").write_text("CHECK_LIST = []\n")
+def test_an_agent_file_with_an_empty_check_list_is_no_agent_checks(tmp_path, group1):
+    (group1 / "agent1.py").write_text("CHECK_LIST = []\n")
 
     status, line_list = run_lines([passing_check("check1")], tmp_path)
 
@@ -186,8 +204,8 @@ def test_an_agent_file_with_an_empty_check_list_is_no_agent_checks(tmp_path):
     assert line_list == expected_no_agent_checks_lines(tmp_path)
 
 
-def test_a_broken_agent_file_alone_is_one_load_failure(tmp_path):
-    (tmp_path / "agent1.py").write_text("def broken(:\n")
+def test_a_broken_agent_file_alone_is_one_load_failure(tmp_path, group1):
+    (group1 / "agent1.py").write_text("def broken(:\n")
 
     status, line_list = run_lines([passing_check("check1")], tmp_path)
 
@@ -201,7 +219,7 @@ def test_a_broken_agent_file_alone_is_one_load_failure(tmp_path):
 
     assert status == 1
     assert len(fail_line_list) == 1
-    assert fail_line_list[0].startswith("FAIL: load-agent1: ")
+    assert fail_line_list[0].startswith("FAIL: load-group1-agent1: ")
     assert line_list[-1] == "sbx-selfcheck: 2 checks, 1 failed"
 
 
@@ -212,29 +230,29 @@ def test_an_empty_shared_list_prints_the_agent_lines_only(agents1):
     assert line_list == ["PASS: agent1: detail_agent1", "sbx-selfcheck: 1 checks, 0 failed"]
 
 
-def test_an_agent_file_with_a_syntax_error_is_one_load_failure(tmp_path):
-    (tmp_path / "agent1.py").write_text("def broken(:\n")
-    write_agent_file(tmp_path, "agent2")
+def test_an_agent_file_with_a_syntax_error_is_one_load_failure(tmp_path, group1):
+    (group1 / "agent1.py").write_text("def broken(:\n")
+    write_agent_file(group1, "agent2")
 
     status, line_list = run_lines([], tmp_path)
 
     assert status == 1
-    assert line_list[0].startswith("FAIL: load-agent1: ")
+    assert line_list[0].startswith("FAIL: load-group1-agent1: ")
     assert "did not load: SyntaxError" in line_list[0]
     assert line_list[1].endswith(hints.rebuild_hint())
     assert line_list[2] == "PASS: agent2: detail_agent2"
     assert line_list[3] == "sbx-selfcheck: 2 checks, 1 failed"
 
 
-def test_an_agent_file_without_a_check_list_is_one_load_failure(tmp_path):
-    (tmp_path / "agent2.py").write_text("VALUE1 = 1\n")
-    write_agent_file(tmp_path, "agent1")
+def test_an_agent_file_without_a_check_list_is_one_load_failure(tmp_path, group1):
+    (group1 / "agent2.py").write_text("VALUE1 = 1\n")
+    write_agent_file(group1, "agent1")
 
     status, line_list = run_lines([], tmp_path)
 
     assert status == 1
     assert line_list[0] == "PASS: agent1: detail_agent1"
-    assert line_list[1].startswith("FAIL: load-agent2: ")
+    assert line_list[1].startswith("FAIL: load-group1-agent2: ")
     assert line_list[1].endswith("agent2.py defines no CHECK_LIST")
     assert line_list[2].startswith("      fix: ")
 
@@ -250,8 +268,8 @@ def test_an_agent_file_without_a_check_list_is_one_load_failure(tmp_path):
     ],
     ids=["none", "number", "text", "list_of_text", "list_with_a_text_item"],
 )
-def test_an_agent_file_with_a_malformed_check_list_is_one_load_failure(tmp_path, check_list_text):
-    agent_file = tmp_path / "agent1.py"
+def test_an_agent_file_with_a_malformed_check_list_is_one_load_failure(tmp_path, group1, check_list_text):
+    agent_file = group1 / "agent1.py"
     agent_file.write_text(check_list_text)
 
     status, line_list = run_lines([passing_check("check1")], tmp_path)
@@ -259,7 +277,7 @@ def test_an_agent_file_with_a_malformed_check_list_is_one_load_failure(tmp_path,
     assert status == 1
     assert line_list == [
         "PASS: check1: detail_check1",
-        f"FAIL: load-agent1: {agent_file} defines a CHECK_LIST that is not a list of checks",
+        f"FAIL: load-group1-agent1: {agent_file} defines a CHECK_LIST that is not a list of checks",
         "      fix: " + hints.rebuild_hint(),
         "sbx-selfcheck: 2 checks, 1 failed",
     ]
@@ -307,9 +325,9 @@ def test_the_launcher_file_exits_two_for_an_argument(repo_dir):
 # Line format and base files
 # ------------------------------------------------------------------------------
 
-def test_every_line_is_pass_fail_fix_or_the_summary(tmp_path):
-    (tmp_path / "agent1.py").write_text("raise RuntimeError('detail1')\n")
-    write_agent_file(tmp_path, "agent2")
+def test_every_line_is_pass_fail_fix_or_the_summary(tmp_path, group1):
+    (group1 / "agent1.py").write_text("raise RuntimeError('detail1')\n")
+    write_agent_file(group1, "agent2")
     check_list = [passing_check("check1"), failing_check("check2", "hint1")]
 
     status, line_list = run_lines(check_list, tmp_path)

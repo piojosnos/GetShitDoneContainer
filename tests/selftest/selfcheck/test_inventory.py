@@ -12,7 +12,7 @@ from pathlib import Path
 
 import check_result
 import sbx_selfcheck
-from helpers import SHARED_CHECKS_DIR
+from helpers import SHARED_CHECKS_DIR, agent_checks_dir
 
 
 # ------------------------------------------------------------------------------
@@ -40,49 +40,49 @@ def expected_count(repo_dir: Path, constant_name: str) -> int:
 # Inventory
 # ------------------------------------------------------------------------------
 
-def test_the_lists_hold_the_declared_check_counts(shared_check_list, agent_module):
+def test_the_lists_hold_the_declared_check_counts(shared_check_list, agent_check_list_of):
     assert len(shared_check_list) == SHARED_CHECK_COUNT
-    assert len(agent_module("claude").CHECK_LIST) == CLAUDE_CHECK_COUNT
-    assert len(agent_module("cursor").CHECK_LIST) == CURSOR_CHECK_COUNT
+    assert len(agent_check_list_of("claude")) == CLAUDE_CHECK_COUNT
+    assert len(agent_check_list_of("cursor")) == CURSOR_CHECK_COUNT
 
 
-def test_the_shared_list_plus_each_agent_list_equals_the_count_h34_expects(shared_check_list, agent_module, repo_dir):
-    claude_total = len(shared_check_list) + len(agent_module("claude").CHECK_LIST)
-    cursor_total = len(shared_check_list) + len(agent_module("cursor").CHECK_LIST)
+def test_the_shared_list_plus_each_agent_list_equals_the_count_h34_expects(shared_check_list, agent_check_list_of, repo_dir):
+    claude_total = len(shared_check_list) + len(agent_check_list_of("claude"))
+    cursor_total = len(shared_check_list) + len(agent_check_list_of("cursor"))
 
     assert claude_total == expected_count(repo_dir, "expectedClaudeCount")
     assert cursor_total == expected_count(repo_dir, "expectedCursorCount")
 
 
-def test_no_name_repeats_within_one_image(shared_check_list, agent_module):
+def test_no_name_repeats_within_one_image(shared_check_list, agent_check_list_of):
     for agent_name in ["claude", "cursor"]:
         name_list = []
 
-        for check in shared_check_list + agent_module(agent_name).CHECK_LIST:
+        for check in shared_check_list + agent_check_list_of(agent_name):
             name_list.append(check.name)
 
         assert len(name_list) == len(set(name_list)), agent_name
 
 
-def test_every_name_is_lowercase_words_joined_by_hyphens_and_none_says_skip(shared_check_list, agent_module):
-    for check_list in [shared_check_list, agent_module("claude").CHECK_LIST, agent_module("cursor").CHECK_LIST]:
+def test_every_name_is_lowercase_words_joined_by_hyphens_and_none_says_skip(shared_check_list, agent_check_list_of):
+    for check_list in [shared_check_list, agent_check_list_of("claude"), agent_check_list_of("cursor")]:
         for check in check_list:
             assert NAME_PATTERN.match(check.name), check.name
             assert "skip" not in check.name, check.name
 
 
-def test_every_entry_is_a_check_with_a_callable_function(shared_check_list, agent_module):
-    for check_list in [shared_check_list, agent_module("claude").CHECK_LIST, agent_module("cursor").CHECK_LIST]:
+def test_every_entry_is_a_check_with_a_callable_function(shared_check_list, agent_check_list_of):
+    for check_list in [shared_check_list, agent_check_list_of("claude"), agent_check_list_of("cursor")]:
         for check in check_list:
             assert isinstance(check, check_result.Check)
             assert callable(check.function)
 
 
-def test_collect_checks_loads_both_agent_files_without_a_load_failure(repo_dir, tmp_path):
+def test_collect_checks_loads_both_agent_folders_without_a_load_failure(repo_dir, tmp_path):
     folder1 = tmp_path / "folder1"
     folder1.mkdir()
-    shutil.copy(repo_dir / "claude" / "selfcheck" / "claude.py", folder1)
-    shutil.copy(repo_dir / "cursor" / "selfcheck" / "cursor.py", folder1)
+    shutil.copytree(repo_dir / "claude" / "selfcheck", folder1 / "claude")
+    shutil.copytree(repo_dir / "cursor" / "selfcheck", folder1 / "cursor")
 
     check_list = sbx_selfcheck.collect_checks(SHARED_CHECKS_DIR, folder1)
 
@@ -156,3 +156,42 @@ def test_every_shared_check_file_is_named_with_a_three_digit_prefix_and_ends_in_
     for check_file in sorted(SHARED_CHECKS_DIR.glob("*.py")):
         assert NAME_FILE_PATTERN.match(check_file.name), check_file.name
         assert "\nCHECK_LIST" in check_file.read_text(), check_file.name
+
+
+def test_the_claude_check_names_are_the_twelve_in_order(agent_check_list_of, check_name_list_of):
+    assert check_name_list_of(agent_check_list_of("claude")) == [
+        "tool-claude",
+        "tool-ccusage",
+        "claude-env",
+        "claude-home-links",
+        "claude-no-home-copy",
+        "claude-credentials",
+        "claude-gsd-synced",
+        "claude-bundle-links",
+        "claude-managed-settings",
+        "claude-wrappers",
+        "claude-image-paths-protected",
+        "claude-versions-line",
+    ]
+
+
+def test_the_cursor_check_names_are_the_ten_in_order(agent_check_list_of, check_name_list_of):
+    assert check_name_list_of(agent_check_list_of("cursor")) == [
+        "tool-cursor-agent",
+        "cursor-env",
+        "cursor-home-links",
+        "cursor-self-update-off",
+        "cursor-credentials",
+        "cursor-gsd-synced",
+        "cursor-bundle-links",
+        "cursor-wrappers",
+        "cursor-image-paths-protected",
+        "cursor-versions-line",
+    ]
+
+
+def test_every_agent_check_file_is_named_with_a_three_digit_prefix_and_ends_in_a_check_list():
+    for agent_name in ["claude", "cursor"]:
+        for check_file in sorted(agent_checks_dir(agent_name).glob("*.py")):
+            assert NAME_FILE_PATTERN.match(check_file.name), check_file.name
+            assert "\nCHECK_LIST" in check_file.read_text(), check_file.name

@@ -45,6 +45,14 @@ def load_shared_check(name: str):
     return sbx_selfcheck.load_check_module(SHARED_CHECKS_DIR / f"{name}.py")
 
 
+def agent_checks_dir(agent_name: str) -> Path:
+    return REPO_DIR / agent_name / "selfcheck"
+
+
+def load_agent_check(agent_name: str, name: str):
+    return sbx_selfcheck.load_check_module(agent_checks_dir(agent_name) / f"{name}.py")
+
+
 def write_mountinfo(mountinfo_file: Path, mount_point_list: list[str]) -> None:
     line_list = [ROOT_MOUNT_LINE]
 
@@ -96,4 +104,5 @@ def run_lines(check_list: list[Check], agent_checks_dir: Path) -> tuple[int, lis
 
 
 def write_agent_file(checks_dir: Path, name: str) -> None:
+    checks_dir.mkdir(parents=True, exist_ok=True)
     (checks_dir / f"{name}.py").write_text(AGENT_FILE_TEMPLATE.format(name=name))

@@ -357,7 +357,7 @@ sbx-selfcheck: 53 checks, 1 failed
 - Each FAIL line has a `fix:` line under it. When the fix is on the Mac, it says so and gives the command, such as `sbx-upgrade NAME`.
 - Exit status 0 means every check passed.
 - It changes nothing, apart from a test file it makes and removes in `state/`.
-- The base image holds the runner and the shared checks (tools and pins, user and home, git, environment, state folder, image paths, extra root certificates), one file per concern in `/usr/local/lib/sbx-selfcheck/checks/`; the runner loads the files in name order. Adding a check is adding a file. The Claude and Cursor images add their own in `/etc/sbx/selfcheck.d/` (CLI version, login file, GSD sync, bundle links, wrappers).
+- The base image holds the runner and the shared checks (tools and pins, user and home, git, environment, state folder, image paths, extra root certificates), one file per concern in `/usr/local/lib/sbx-selfcheck/checks/`; the runner loads the files in name order. Adding a check is adding a file. The Claude and Cursor images add their own, one file per concern too, in `/etc/sbx/selfcheck.d/claude/` and `/etc/sbx/selfcheck.d/cursor/` (CLI version, login file, GSD sync, bundle links, wrappers).
 - A fresh sandbox fails the login and git identity checks until you log in and run `sbx-gh-login`.
 - In a container started without `sbx-start`, the checks that need the sandbox's mounts fail and say to start it with `sbx-start`.
 

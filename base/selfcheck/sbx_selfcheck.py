@@ -32,7 +32,7 @@ _USAGE_TEXT = "Usage: sbx-selfcheck (no arguments)"
 # ------------------------------------------------------------------------------
 
 def load_check_module(module_path: Path) -> ModuleType:
-    module_name = _CHECK_MODULE_PREFIX + module_path.stem
+    module_name = _CHECK_MODULE_PREFIX + module_path.parent.name + "_" + module_path.stem
     spec = importlib.util.spec_from_file_location(module_name, module_path)
 
     if spec is None or spec.loader is None:
@@ -63,7 +63,7 @@ def _is_check_list(value: object) -> bool:
 
 
 def _module_check_list(module_path: Path) -> list[Check]:
-    name = "load-" + module_path.stem.replace("_", "-")
+    name = "load-" + module_path.parent.name + "-" + module_path.stem.replace("_", "-")
 
     try:
         module = load_check_module(module_path)
@@ -91,7 +91,12 @@ def dir_check_list(checks_dir: Path) -> list[Check]:
 
 
 def collect_agent_checks(agent_checks_dir: Path) -> list[Check]:
-    agent_check_list = dir_check_list(agent_checks_dir)
+    agent_check_list = []
+
+    if agent_checks_dir.is_dir():
+        for agent_dir in sorted(agent_checks_dir.iterdir()):
+            if agent_dir.is_dir():
+                agent_check_list.extend(dir_check_list(agent_dir))
 
     if agent_check_list:
         return agent_check_list

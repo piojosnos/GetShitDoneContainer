@@ -60,10 +60,12 @@ RUN chmod 755 /etc/sbx/start.d/* \
 # ------------------------------------------------------------------------------
 # The Claude checks for sbx-selfcheck
 # ------------------------------------------------------------------------------
-# The runner in the base image runs every file in /etc/sbx/selfcheck.d.
+# The runner in the base image runs every file in each folder under
+# /etc/sbx/selfcheck.d, here /etc/sbx/selfcheck.d/claude.
 # ------------------------------------------------------------------------------
-COPY --chmod=644 claude/selfcheck/claude.py /etc/sbx/selfcheck.d/claude.py
-RUN PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /etc/sbx/selfcheck.d/claude.py \
+RUN mkdir -p /etc/sbx/selfcheck.d/claude
+COPY --chmod=644 claude/selfcheck/*.py /etc/sbx/selfcheck.d/claude/
+RUN PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /etc/sbx/selfcheck.d/claude/*.py \
     && rm -rf /tmp/sbx-pycache
 
 # ------------------------------------------------------------------------------

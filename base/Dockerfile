@@ -236,7 +236,7 @@ RUN printf 'gsd %s | node %s | jdk %s | mvn %s | python %s\n' \
 # sbx-selfcheck: the runner, its libraries and the shared checks
 # ------------------------------------------------------------------------------
 # Root-owned and read-only to the sandbox user. Each agent image adds its checks
-# file to /etc/sbx/selfcheck.d. A syntax error in any file stops the build here.
+# folder to /etc/sbx/selfcheck.d. A syntax error in any file stops the build here.
 # ------------------------------------------------------------------------------
 RUN mkdir -p /usr/local/lib/sbx-selfcheck/checks /etc/sbx/selfcheck.d
 COPY --chmod=755 base/selfcheck/sbx-selfcheck /usr/local/lib/sbx-selfcheck/sbx-selfcheck
