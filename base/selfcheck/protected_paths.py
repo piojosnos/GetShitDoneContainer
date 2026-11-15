@@ -8,34 +8,27 @@
 import os
 from pathlib import Path
 
-from check_result import CheckResult, failed, passed
+from check_result import CheckResult, capped_problem_detail, failed, passed
 from hints import rebuild_hint
 from mounts import MOUNTINFO_FILE, read_mount_point_set
 from paths import is_under, path_is_present
-
-_REPORTED_PROBLEM_LIMIT = 10
+from tree_walk import walk_tree
 
 
 # ------------------------------------------------------------------------------
 # Problems under one path
 # ------------------------------------------------------------------------------
 
-def _entry_list_under(path: Path) -> list[Path]:
-    entry_list = [path]
-
-    for current_dir, dir_name_list, file_name_list in path.walk(follow_symlinks=False):
-        for name in dir_name_list + file_name_list:
-            entry_list.append(current_dir / name)
-
-    return entry_list
-
-
 def _writable_entry_problem_list(path: Path) -> list[str]:
     problem_list = []
 
-    for entry in _entry_list_under(path):
+    def report_writable(entry: Path, entry_stat: os.stat_result) -> bool:
         if os.access(entry, os.W_OK):
             problem_list.append(f"{entry} is writable")
+
+        return True
+
+    walk_tree([path], report_writable)
 
     return problem_list
 
@@ -72,10 +65,7 @@ def protected_paths_result(path_list: list[Path], mountinfo_file: Path = MOUNTIN
     problem_list = _protected_paths_problem_list(path_list, read_mount_point_set(mountinfo_file))
 
     if problem_list:
-        return failed(
-            f"{len(problem_list)} problems: " + "; ".join(problem_list[:_REPORTED_PROBLEM_LIMIT]),
-            rebuild_hint(),
-        )
+        return failed(capped_problem_detail(problem_list), rebuild_hint())
 
     path_text_list = []
 

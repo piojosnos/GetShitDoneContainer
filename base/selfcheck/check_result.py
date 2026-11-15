@@ -48,5 +48,9 @@ def problem_list_result(problem_list: list[str], hint: str, passed_detail: str) 
     return passed(passed_detail)
 
 
+def capped_problem_detail(problem_list: list[str], limit: int = 10) -> str:
+    return f"{len(problem_list)} problems: " + "; ".join(problem_list[:limit])
+
+
 def one_line(text: str) -> str:
     return text.replace("\r", " ").replace("\n", " ")

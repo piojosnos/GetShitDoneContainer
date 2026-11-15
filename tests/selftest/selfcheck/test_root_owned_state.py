@@ -229,13 +229,10 @@ def test_root_owned_state_prints_the_owner_fix_for_a_folder_it_cannot_search(tmp
 
 def test_scan_owned_state_lets_an_entry_error_other_than_permission_surface(tmp_path):
     state1 = tmp_path / "state1"
-    entry1 = FailingStatPath(state1 / "file1")
-
-    def read_entry1(folder_path):
-        return [entry1]
+    write_file(state1 / "file1")
 
     with pytest.raises(OSError) as raised:
-        root_owned_state.scan_owned_state(state1, os.getuid(), set(), set(), read_entry1)
+        root_owned_state.scan_owned_state(FailingStatPath(state1), os.getuid(), set(), set())
 
     assert raised.value.errno == errno.EIO
 

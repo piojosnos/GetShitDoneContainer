@@ -6,14 +6,13 @@
 # ------------------------------------------------------------------------------
 
 import os
-import stat
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Mapping
+from typing import Mapping
 
 from check_result import Check, CheckResult, failed, passed
 from hints import mac_hint, sandbox_name
 from paths import STATE_DIR
+from tree_walk import ProblemKind, walk_tree
 from users import SANDBOX_GID, SANDBOX_UID
 
 _OWNER_FIX_IMAGE = "sbx-base:local"
@@ -27,84 +26,15 @@ _UNREADABLE_SUFFIX = " (unreadable)"
 # The scan of the state folder
 # ------------------------------------------------------------------------------
 
-@dataclass(frozen=True)
-class _ScanRules:
-    state_dir: Path
-    owner_uid: int
-    skipped_relative_set: set[str]
-    tolerated_folder_set: set[str]
-
-
 def _is_tolerated_path(relative_path: Path, tolerated_folder_set: set[str]) -> bool:
     return len(relative_path.parts) >= 2 and relative_path.parts[1] in tolerated_folder_set
 
 
-def _mark_unreadable_folder(reported_list: list[str], relative_dir: Path, tolerated_folder_set: set[str]) -> None:
-    if _is_tolerated_path(relative_dir, tolerated_folder_set):
-        return
-
+def _mark_unreadable_folder(reported_list: list[str], relative_dir: Path) -> None:
     if relative_dir.as_posix() in reported_list:
         reported_list.remove(relative_dir.as_posix())
 
     reported_list.append(relative_dir.as_posix() + _UNREADABLE_SUFFIX)
-
-
-def _read_entry_list(folder: Path) -> list[Path]:
-    return list(folder.iterdir())
-
-
-def _entry_list_or_none(
-    current_dir: Path,
-    rules: _ScanRules,
-    entry_reader: Callable[[Path], list[Path]],
-    reported_list: list[str],
-) -> list[Path] | None:
-    try:
-        return entry_reader(current_dir)
-    except FileNotFoundError:
-        return None
-    except OSError:
-        relative_dir = current_dir.relative_to(rules.state_dir)
-        _mark_unreadable_folder(reported_list, relative_dir, rules.tolerated_folder_set)
-
-        return None
-
-
-def _scan_entry_list(
-    entry_list: list[Path],
-    current_dir: Path,
-    rules: _ScanRules,
-    reported_list: list[str],
-    pending_dir_list: list[Path],
-) -> int:
-    tolerated_count = 0
-
-    for entry in entry_list:
-        relative_path = entry.relative_to(rules.state_dir)
-
-        if relative_path.as_posix() in rules.skipped_relative_set:
-            continue
-
-        try:
-            entry_stat = entry.lstat()
-        except FileNotFoundError:
-            continue
-        except PermissionError:
-            # An entry stat needs search permission on its folder, so every other entry would fail the same way.
-            relative_dir = current_dir.relative_to(rules.state_dir)
-            _mark_unreadable_folder(reported_list, relative_dir, rules.tolerated_folder_set)
-            break
-
-        if entry_stat.st_uid == rules.owner_uid:
-            if _is_tolerated_path(relative_path, rules.tolerated_folder_set):
-                tolerated_count += 1
-            else:
-                reported_list.append(relative_path.as_posix())
-
-        if stat.S_ISDIR(entry_stat.st_mode):
-            pending_dir_list.append(entry)
-
-    return tolerated_count
 
 
 def scan_owned_state(
@@ -112,21 +42,32 @@ def scan_owned_state(
     owner_uid: int,
     skipped_relative_set: set[str],
     tolerated_folder_set: set[str],
-    entry_reader: Callable[[Path], list[Path]] = _read_entry_list,
 ) -> tuple[list[str], int]:
-    rules = _ScanRules(state_dir, owner_uid, skipped_relative_set, tolerated_folder_set)
     reported_list = []
     tolerated_count = 0
-    pending_dir_list = [state_dir]
 
-    while pending_dir_list:
-        current_dir = pending_dir_list.pop()
-        entry_list = _entry_list_or_none(current_dir, rules, entry_reader, reported_list)
+    def scan_entry(entry: Path, entry_stat: os.stat_result) -> bool:
+        nonlocal tolerated_count
+        relative_path = entry.relative_to(state_dir)
 
-        if entry_list is None:
-            continue
+        if relative_path.as_posix() in skipped_relative_set:
+            return False
 
-        tolerated_count += _scan_entry_list(entry_list, current_dir, rules, reported_list, pending_dir_list)
+        if entry_stat.st_uid != owner_uid or entry == state_dir:
+            return True
+
+        if _is_tolerated_path(relative_path, tolerated_folder_set):
+            tolerated_count += 1
+        else:
+            reported_list.append(relative_path.as_posix())
+
+        return True
+
+    for walk_problem in walk_tree([state_dir], scan_entry):
+        relative_dir = walk_problem.path.relative_to(state_dir)
+
+        if walk_problem.kind == ProblemKind.UNREADABLE_FOLDER and not _is_tolerated_path(relative_dir, tolerated_folder_set):
+            _mark_unreadable_folder(reported_list, relative_dir)
 
     return sorted(reported_list), tolerated_count
 
