@@ -7,7 +7,9 @@
 # plants a git identity and a fake login before each run. The Cursor sandbox
 # runs on its own folder with a space in its path and its own registry inside
 # the run folder. It is removed before H-34 ends, because H-32 and H-33 compare
-# every sbx- container.
+# every sbx- container. The test images are always built with a root certificate,
+# so no certificate check may print that none was requested; that would mean the
+# build lost the certificate and its fingerprint together.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -136,6 +138,26 @@ check_selfcheck_output() {
 }
 
 # ------------------------------------------------------------------------------
+# check_certificate_requested LABEL OUTPUT_FILE: no certificate check says none was requested
+# ------------------------------------------------------------------------------
+# Always returns 0 and reports only through add_problem. A FAIL line is already
+# reported by check_selfcheck_output.
+# ------------------------------------------------------------------------------
+check_certificate_requested() {
+  local label=$1
+  local outputFile=$2
+  local checkName
+
+  for checkName in extra-ca-system-bundle extra-ca-java-cacerts; do
+    if grep -Fq "PASS: $checkName: no extra root certificate requested" "$outputFile" 2>/dev/null; then
+      add_problem "$label: $checkName says no extra root certificate was requested, but the test image is built with one; the build lost the certificate and its fingerprint; output: $outputFile"
+    fi
+  done
+
+  return 0
+}
+
+# ------------------------------------------------------------------------------
 # report_selfcheck_summary LABEL OUTPUT_FILE: prints the summary line as INFO
 # ------------------------------------------------------------------------------
 report_selfcheck_summary() {
@@ -153,6 +175,7 @@ check_claude_sandbox() {
   run_selfcheck "$CONTAINER" "$outputFile"
   check_selfcheck_status "Claude test sandbox" "$outputFile"
   check_selfcheck_output "Claude test sandbox" "$outputFile" "$expectedClaudeCount"
+  check_certificate_requested "Claude test sandbox" "$outputFile"
   report_selfcheck_summary "Claude test sandbox" "$outputFile"
 }
 
@@ -206,6 +229,7 @@ check_cursor_sandbox() {
   run_selfcheck "$cursorContainer" "$outputFile"
   check_selfcheck_status "Cursor test sandbox" "$outputFile"
   check_selfcheck_output "Cursor test sandbox" "$outputFile" "$expectedCursorCount"
+  check_certificate_requested "Cursor test sandbox" "$outputFile"
   report_selfcheck_summary "Cursor test sandbox" "$outputFile"
 }
 
