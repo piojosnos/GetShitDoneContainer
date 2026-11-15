@@ -222,6 +222,7 @@ def scan_owned_state(
 
     while pending_dir_list:
         current_dir = pending_dir_list.pop()
+        relative_dir = current_dir.relative_to(state_dir)
 
         try:
             with os.scandir(current_dir) as entry_iterator:
@@ -229,7 +230,7 @@ def scan_owned_state(
         except FileNotFoundError:
             continue
         except OSError:
-            mark_unreadable_folder(reported_list, current_dir.relative_to(state_dir), tolerated_folder_set)
+            mark_unreadable_folder(reported_list, relative_dir, tolerated_folder_set)
             continue
 
         for entry in entry_list:
@@ -242,8 +243,9 @@ def scan_owned_state(
                 entry_stat = entry.stat(follow_symlinks=False)
             except FileNotFoundError:
                 continue
-            except OSError:
-                mark_unreadable_folder(reported_list, current_dir.relative_to(state_dir), tolerated_folder_set)
+            except PermissionError:
+                # An entry stat needs search permission on its folder, so every other entry would fail the same way.
+                mark_unreadable_folder(reported_list, relative_dir, tolerated_folder_set)
                 break
 
             if entry_stat.st_uid == owner_uid:
