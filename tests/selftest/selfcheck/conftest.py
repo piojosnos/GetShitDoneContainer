@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-import sbx_selfcheck
+import runner
 from helpers import REPO_DIR, SHARED_CHECKS_DIR, agent_checks_dir, write_agent_file, write_versions
 
 
@@ -73,13 +73,13 @@ def check_name_list_of():
 
 @pytest.fixture
 def shared_check_list():
-    return sbx_selfcheck.dir_check_list(SHARED_CHECKS_DIR)
+    return runner.dir_check_list(SHARED_CHECKS_DIR)
 
 
 @pytest.fixture
 def agent_check_list_of():
     def check_list_of(agent_name: str) -> list:
-        return sbx_selfcheck.dir_check_list(agent_checks_dir(agent_name))
+        return runner.dir_check_list(agent_checks_dir(agent_name))
 
     return check_list_of
 

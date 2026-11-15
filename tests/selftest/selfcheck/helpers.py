@@ -10,7 +10,7 @@ import io
 import os
 from pathlib import Path
 
-import sbx_selfcheck
+import runner
 from check_result import Check
 
 REPO_DIR = Path(__file__).resolve().parents[3]
@@ -42,7 +42,7 @@ def environment_with(folder: Path) -> dict[str, str]:
 
 
 def load_shared_check(name: str):
-    return sbx_selfcheck.load_check_module(SHARED_CHECKS_DIR / f"{name}.py")
+    return runner.load_check_module(SHARED_CHECKS_DIR / f"{name}.py")
 
 
 def agent_checks_dir(agent_name: str) -> Path:
@@ -50,7 +50,7 @@ def agent_checks_dir(agent_name: str) -> Path:
 
 
 def load_agent_check(agent_name: str, name: str):
-    return sbx_selfcheck.load_check_module(agent_checks_dir(agent_name) / f"{name}.py")
+    return runner.load_check_module(agent_checks_dir(agent_name) / f"{name}.py")
 
 
 def write_mountinfo(mountinfo_file: Path, mount_point_list: list[str]) -> None:
@@ -98,7 +98,7 @@ def write_versions(versions_file: Path, extra_line_list: list[str] | None = None
 
 def run_lines(check_list: list[Check], agent_checks_dir: Path) -> tuple[int, list[str]]:
     output = io.StringIO()
-    status = sbx_selfcheck.report_checks(check_list + sbx_selfcheck.collect_agent_checks(agent_checks_dir), output)
+    status = runner.report_checks(check_list + runner.collect_agent_checks(agent_checks_dir), output)
 
     return status, output.getvalue().splitlines()
 

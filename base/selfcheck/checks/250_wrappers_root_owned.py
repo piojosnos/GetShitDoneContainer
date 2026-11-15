@@ -26,7 +26,7 @@ _BASE_WRAPPER_MODE_LIST = [
     ("/usr/local/lib/sbx-selfcheck/pins.py", 0o644),
     ("/usr/local/lib/sbx-selfcheck/protected_paths.py", 0o644),
     ("/usr/local/lib/sbx-selfcheck/root_owned.py", 0o644),
-    ("/usr/local/lib/sbx-selfcheck/sbx_selfcheck.py", 0o644),
+    ("/usr/local/lib/sbx-selfcheck/runner.py", 0o644),
     ("/usr/local/lib/sbx-selfcheck/tools.py", 0o644),
     ("/usr/local/lib/sbx-selfcheck/users.py", 0o644),
     ("/usr/local/lib/sbx-selfcheck/versions_text.py", 0o644),

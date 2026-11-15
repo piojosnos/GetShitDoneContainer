@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# The sbx-selfcheck runner
+# The sbx-selfcheck runner: loads the check files, runs them and prints
 # ------------------------------------------------------------------------------
 # Prints one PASS or FAIL line per check, and a fix line under each FAIL. The
 # image puts this file in /usr/local/lib/sbx-selfcheck/.

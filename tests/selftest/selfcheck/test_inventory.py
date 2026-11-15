@@ -11,7 +11,7 @@ import shutil
 from pathlib import Path
 
 import check_result
-import sbx_selfcheck
+import runner
 from helpers import SHARED_CHECKS_DIR, agent_checks_dir
 
 
@@ -84,7 +84,7 @@ def test_collect_checks_loads_both_agent_folders_without_a_load_failure(repo_dir
     shutil.copytree(repo_dir / "claude" / "selfcheck", folder1 / "claude")
     shutil.copytree(repo_dir / "cursor" / "selfcheck", folder1 / "cursor")
 
-    check_list = sbx_selfcheck.collect_checks(SHARED_CHECKS_DIR, folder1)
+    check_list = runner.collect_checks(SHARED_CHECKS_DIR, folder1)
 
     assert len(check_list) == SHARED_CHECK_COUNT + CLAUDE_CHECK_COUNT + CURSOR_CHECK_COUNT
 

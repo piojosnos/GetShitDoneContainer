@@ -12,8 +12,8 @@ from pathlib import Path
 import pytest
 
 import hints
-import sbx_selfcheck
-from check_result import Check, CheckResult, passed, failed
+import runner
+from check_result import Check, CheckResult, failed, passed
 from helpers import AGENT_FILE_TEMPLATE, run_lines, write_agent_file
 
 
@@ -288,7 +288,7 @@ def test_an_agent_file_with_a_malformed_check_list_is_one_load_failure(tmp_path,
 # ------------------------------------------------------------------------------
 
 def test_main_with_an_argument_exits_two_with_one_usage_line_on_stderr(tmp_path, capsys):
-    status = sbx_selfcheck.main(["extra"], tmp_path, tmp_path)
+    status = runner.main(["extra"], tmp_path, tmp_path)
 
     captured = capsys.readouterr()
     assert status == 2
@@ -297,7 +297,7 @@ def test_main_with_an_argument_exits_two_with_one_usage_line_on_stderr(tmp_path,
 
 
 def test_main_without_arguments_runs_the_checks_on_stdout(shared1, agents1, capsys):
-    status = sbx_selfcheck.main([], shared1, agents1)
+    status = runner.main([], shared1, agents1)
 
     captured = capsys.readouterr()
     assert status == 0
