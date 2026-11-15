@@ -138,7 +138,7 @@ Plans:
   3. `./host-test.sh` makes a throwaway root certificate with `openssl`, builds it into the test base image, and the self-check finds it in the system bundle and in Java `cacerts`; no certificate is committed.
   4. Each FAIL line carries a fix hint, with the Mac command when the fix is on the Mac; no skill wraps the self-check.
 
-**Plans**: 12/12 plans executed
+**Plans**: 12/13 plans executed
 
 Plans:
 **Wave 1**
@@ -174,6 +174,9 @@ Gap closure, from the phase verification (the `no-root-owned-state` fix line can
 
 **Wave 10** *(blocked on Wave 9 completion)*
 - [x] 08-12-PLAN.md: the two review warnings fixed (an unsearchable state folder and a malformed CHECK_LIST), the info findings deferred to Phase 10
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 08-13-PLAN.md: the last two review findings fixed (a check that returns no CheckResult, and one failing state entry no longer marks its whole folder)
 
 ### Phase 9: sbx-init replaces the start hooks
 
