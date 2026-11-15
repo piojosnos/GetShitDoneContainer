@@ -1,6 +1,8 @@
 # Tests of the sandbox checks and the helpers they stand on. They run the logic
 # on real files, real permissions and the real git, inside tmp_path.
 
+import contextlib
+import errno
 import os
 import subprocess
 from pathlib import Path
@@ -372,6 +374,34 @@ def test_root_owned_state_prints_the_owner_fix_for_a_folder_it_cannot_search(tmp
         "      fix: give the paths back to the sandbox user from a throwaway root container"
     )
     assert line_list[1].endswith(f"--volumes-from sbx-name1 sbx-base:local -R 1000:1000 {state1}")
+
+
+# A real folder cannot make an entry stat fail with an error other than permission, so this test stubs the listing.
+class FailingStatEntry:
+    def __init__(self, path: str, error: OSError):
+        self.path = path
+        self.error = error
+
+    def stat(self, follow_symlinks: bool = True):
+        raise self.error
+
+    def is_dir(self, follow_symlinks: bool = True) -> bool:
+        return False
+
+
+def test_scan_owned_state_lets_an_entry_error_other_than_permission_surface(tmp_path, monkeypatch):
+    state1 = tmp_path / "state1"
+    entry1 = FailingStatEntry(str(state1 / "file1"), OSError(errno.EIO, "I/O error"))
+
+    def list_entry1(folder_path):
+        return contextlib.nullcontext([entry1])
+
+    monkeypatch.setattr(shared_checks.os, "scandir", list_entry1)
+
+    with pytest.raises(OSError) as raised:
+        shared_checks.scan_owned_state(state1, os.getuid(), set(), set())
+
+    assert raised.value.errno == errno.EIO
 
 
 def test_root_owned_state_names_the_tolerated_count_on_a_pass(tmp_path):
