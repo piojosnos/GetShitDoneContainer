@@ -5,11 +5,11 @@ titles: json
 findings:
   - id: WR-03
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "a check that returns something other than a CheckResult still crashes the runner"
   - id: IN-09
     severity: info
-    disposition: open
+    disposition: fixed
     title: "one failing entry marks the whole folder and drops its siblings"
   - id: WR-01
     severity: warning
@@ -39,7 +39,7 @@ findings:
     severity: info
     disposition: deferred
     title: "root_run leaves an unnamed container behind when it times out"
-open: 2
+open: 0
 total: 9
 recorded: 2026-11-14T23:13:51.467Z
 ---
@@ -48,8 +48,8 @@ recorded: 2026-11-14T23:13:51.467Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-03 | warning | open | - |
-| IN-09 | info | open | - |
+| WR-03 | warning | fixed | a63844b, 9cd424b: a check that returns something other than a CheckResult is that check's own FAIL with the rebuild fix, plan 08-13 |
+| IN-09 | info | fixed | 41cad9a, 4621eb0: only a PermissionError names the folder as unreadable, any other entry error surfaces as the runner's raised FAIL, and the relative folder path is computed once, plan 08-13 |
 | WR-01 | warning | fixed | 6c1e974, 8fe8562: a folder that lists but cannot be searched is named with (unreadable) and gets the Mac owner fix, plan 08-12 (not in the current review) |
 | WR-02 | warning | fixed | 72e8daf, 5d4ef02: a CHECK_LIST that is not a list of checks is that file's load FAIL with the rebuild fix, plan 08-12 (not in the current review) |
 | IN-01 | info | deferred | Phase 10: needs a call on the hint for an unreadable folder the sandbox user owns (skip it or give it a chmod hint); in the 2026-11-14 selfcheck-review-follow-ups todo (not in the current review) |
