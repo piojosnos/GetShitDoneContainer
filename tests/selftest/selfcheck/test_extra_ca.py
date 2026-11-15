@@ -5,7 +5,6 @@
 # inside tmp_path.
 # ------------------------------------------------------------------------------
 
-import shutil
 import subprocess
 from pathlib import Path
 
@@ -59,13 +58,15 @@ def certs2(make_certificate) -> Path:
     return make_certificate("certs2")
 
 
-@pytest.fixture
-def extra1(tmp_path, certs1) -> Path:
-    extra_dir = tmp_path / "extra1"
-    extra_dir.mkdir()
-    shutil.copy(certs1, extra_dir / "sbx-extra-ca-1.crt")
+def write_expected(expected_file: Path, fingerprint_list: list[str]) -> Path:
+    expected_file.write_text("".join(fingerprint + "\n" for fingerprint in fingerprint_list))
 
-    return extra_dir
+    return expected_file
+
+
+@pytest.fixture
+def expected1(tmp_path, certs1) -> Path:
+    return write_expected(tmp_path / "expected1", [openssl_fingerprint(certs1)])
 
 
 @pytest.fixture
@@ -77,141 +78,134 @@ def bundle1(tmp_path, certs1, certs2) -> Path:
 
 
 # ------------------------------------------------------------------------------
-# Extra root certificates
+# System bundle
 # ------------------------------------------------------------------------------
 
-def test_system_bundle_reads_two_certificates_joined_by_a_blank_line_and_names_each_by_its_file_stem(
-    tmp_path, certs1, certs2
+def test_system_bundle_passes_when_the_requested_certificate_is_in_the_bundle_and_prints_its_fingerprint(
+    expected1, bundle1, certs1
 ):
-    extra2 = tmp_path / "extra2"
-    extra2.mkdir()
-    shutil.copy(certs1, extra2 / "sbx-extra-ca-1.crt")
-    shutil.copy(certs2, extra2 / "sbx-extra-ca-2.crt")
-    shutil.copy(certs2, extra2 / "other1.crt")
+    result = extra_ca.system_bundle_result(expected1, bundle1)
+
+    assert result.passed
+    assert openssl_fingerprint(certs1) in result.detail
+
+
+def test_system_bundle_reads_two_certificates_joined_by_a_blank_line(tmp_path, certs1, certs2):
+    expected2 = write_expected(tmp_path / "expected2", [openssl_fingerprint(certs1), openssl_fingerprint(certs2)])
     bundle2 = tmp_path / "bundle2.crt"
     bundle2.write_text(certs1.read_text() + "\n" + certs2.read_text())
 
-    result = extra_ca.system_bundle_result(extra2, bundle2)
+    result = extra_ca.system_bundle_result(expected2, bundle2)
 
     assert result.passed
-    assert f"sbx-extra-ca-1 {openssl_fingerprint(certs1)}" in result.detail
-    assert f"sbx-extra-ca-2 {openssl_fingerprint(certs2)}" in result.detail
-    assert "other1" not in result.detail
+    assert openssl_fingerprint(certs1) in result.detail
+    assert openssl_fingerprint(certs2) in result.detail
 
 
-def test_system_bundle_ignores_text_around_the_certificates(tmp_path, extra1, certs1):
+def test_system_bundle_ignores_text_around_the_certificates(tmp_path, expected1, certs1):
     bundle2 = tmp_path / "bundle2.crt"
     bundle2.write_text("comment line1\n" + certs1.read_text() + "trailing line2\n")
 
-    assert extra_ca.system_bundle_result(extra1, bundle2).passed
+    assert extra_ca.system_bundle_result(expected1, bundle2).passed
 
 
-def test_system_bundle_fails_for_a_bundle_without_a_certificate(tmp_path, extra1):
+def test_system_bundle_accepts_a_lowercase_fingerprint_in_the_file(tmp_path, bundle1, certs1):
+    expected2 = write_expected(tmp_path / "expected2", [openssl_fingerprint(certs1).lower()])
+
+    assert extra_ca.system_bundle_result(expected2, bundle1).passed
+
+
+def test_system_bundle_fails_naming_the_requested_certificate_the_bundle_lacks(tmp_path, expected1, certs1, certs2):
+    bundle2 = tmp_path / "bundle2.crt"
+    bundle2.write_text(certs2.read_text())
+
+    result = extra_ca.system_bundle_result(expected1, bundle2)
+
+    assert not result.passed
+    assert openssl_fingerprint(certs1) in result.detail
+    assert openssl_fingerprint(certs2) not in result.detail
+    assert "sbx-upgrade" in result.hint
+
+
+def test_system_bundle_fails_for_a_bundle_without_a_certificate(tmp_path, expected1, certs1):
     bundle2 = tmp_path / "bundle2.crt"
     bundle2.write_text("nothing here\n")
 
-    result = extra_ca.system_bundle_result(extra1, bundle2)
+    result = extra_ca.system_bundle_result(expected1, bundle2)
 
     assert not result.passed
-    assert "sbx-extra-ca-1" in result.detail
-
-
-def test_system_bundle_passes_and_prints_the_alias_and_the_fingerprint(extra1, bundle1, certs1):
-    result = extra_ca.system_bundle_result(extra1, bundle1)
-
-    assert result.passed
-    assert "sbx-extra-ca-1" in result.detail
     assert openssl_fingerprint(certs1) in result.detail
 
 
-def test_system_bundle_fails_naming_the_certificate_the_bundle_lacks(tmp_path, extra1, certs2):
-    bundle2 = tmp_path / "bundle2.crt"
-    bundle2.write_text(certs2.read_text())
-
-    result = extra_ca.system_bundle_result(extra1, bundle2)
+def test_system_bundle_fails_when_the_bundle_file_is_missing(tmp_path, expected1):
+    result = extra_ca.system_bundle_result(expected1, tmp_path / "missing1.crt")
 
     assert not result.passed
-    assert "sbx-extra-ca-1" in result.detail
-    assert "sbx-upgrade" in result.hint
+    assert "missing1.crt is missing" in result.detail
 
 
-def test_system_bundle_is_not_fooled_by_a_bundle_with_as_many_other_certificates(tmp_path, extra1, certs2):
-    bundle2 = tmp_path / "bundle2.crt"
-    bundle2.write_text(certs2.read_text())
-
-    assert not extra_ca.system_bundle_result(extra1, bundle2).passed
-
-
-def test_system_bundle_passes_with_no_extra_certificate_and_reads_no_bundle(tmp_path):
-    empty_dir = tmp_path / "empty1"
-    empty_dir.mkdir()
-
-    result = extra_ca.system_bundle_result(empty_dir, tmp_path / "missing1.crt")
+def test_system_bundle_passes_when_no_certificate_was_requested_and_reads_no_bundle(tmp_path):
+    result = extra_ca.system_bundle_result(tmp_path / "missing1", tmp_path / "missing2.crt")
 
     assert result.passed
-    assert result.detail == "no extra root certificate installed"
+    assert result.detail == "no extra root certificate requested"
 
 
-def test_java_cacerts_passes_when_the_alias_and_the_fingerprint_are_in_the_store(tmp_path, extra1, certs1):
-    store1 = tmp_path / "store1.p12"
-    import_into_store(store1, certs1, "sbx-extra-ca-1")
-
-    result = extra_ca.java_cacerts_result(extra1, keystore_arguments(store1))
+def test_system_bundle_treats_an_empty_fingerprint_file_as_not_requested(tmp_path):
+    result = extra_ca.system_bundle_result(write_expected(tmp_path / "expected2", []), tmp_path / "missing2.crt")
 
     assert result.passed
-    assert "sbx-extra-ca-1" in result.detail
-    assert openssl_fingerprint(certs1) in result.detail
+    assert result.detail == "no extra root certificate requested"
 
 
-def test_java_cacerts_fails_naming_the_second_certificate_the_store_lacks(tmp_path, extra1, certs1, certs2):
-    store1 = tmp_path / "store1.p12"
-    import_into_store(store1, certs1, "sbx-extra-ca-1")
-    shutil.copy(certs2, extra1 / "sbx-extra-ca-2.crt")
+# ------------------------------------------------------------------------------
+# Java cacerts
+# ------------------------------------------------------------------------------
 
-    result = extra_ca.java_cacerts_result(extra1, keystore_arguments(store1))
-
-    assert not result.passed
-    assert "sbx-extra-ca-2" in result.detail
-    assert "sbx-extra-ca-1" not in result.detail
-    assert "sbx-upgrade" in result.hint
-
-
-def test_java_cacerts_fails_naming_the_alias_when_the_certificate_sits_under_another_alias(
-    tmp_path, extra1, certs1, certs2
+def test_java_cacerts_passes_when_the_requested_certificate_is_in_the_store_and_prints_its_fingerprint(
+    tmp_path, expected1, certs1
 ):
     store1 = tmp_path / "store1.p12"
-    import_into_store(store1, certs1, "sbx-extra-ca-1")
-    import_into_store(store1, certs2, "other1")
-    shutil.copy(certs2, extra1 / "sbx-extra-ca-2.crt")
+    import_into_store(store1, certs1, "alias1")
 
-    result = extra_ca.java_cacerts_result(extra1, keystore_arguments(store1))
+    result = extra_ca.java_cacerts_result(expected1, keystore_arguments(store1))
 
-    assert not result.passed
-    assert "sbx-extra-ca-2" in result.detail
+    assert result.passed
+    assert openssl_fingerprint(certs1) in result.detail
 
 
-def test_java_cacerts_fails_when_the_alias_holds_another_certificate(tmp_path, extra1, certs2):
+def test_java_cacerts_fails_naming_the_second_requested_certificate_the_store_lacks(tmp_path, certs1, certs2):
     store1 = tmp_path / "store1.p12"
-    import_into_store(store1, certs2, "sbx-extra-ca-1")
+    import_into_store(store1, certs1, "alias1")
+    expected2 = write_expected(tmp_path / "expected2", [openssl_fingerprint(certs1), openssl_fingerprint(certs2)])
 
-    result = extra_ca.java_cacerts_result(extra1, keystore_arguments(store1))
+    result = extra_ca.java_cacerts_result(expected2, keystore_arguments(store1))
 
     assert not result.passed
-    assert "sbx-extra-ca-1" in result.detail
+    assert openssl_fingerprint(certs2) in result.detail
+    assert openssl_fingerprint(certs1) not in result.detail
+    assert "sbx-upgrade" in result.hint
 
 
-def test_java_cacerts_reports_a_keytool_failure_with_its_first_line(tmp_path, extra1):
-    result = extra_ca.java_cacerts_result(extra1, keystore_arguments(tmp_path / "missing1.p12"))
+def test_java_cacerts_fails_when_the_store_holds_only_another_certificate(tmp_path, expected1, certs1, certs2):
+    store1 = tmp_path / "store1.p12"
+    import_into_store(store1, certs2, "alias1")
+
+    result = extra_ca.java_cacerts_result(expected1, keystore_arguments(store1))
+
+    assert not result.passed
+    assert openssl_fingerprint(certs1) in result.detail
+
+
+def test_java_cacerts_reports_a_keytool_failure_with_its_first_line(tmp_path, expected1):
+    result = extra_ca.java_cacerts_result(expected1, keystore_arguments(tmp_path / "missing1.p12"))
 
     assert not result.passed
     assert "keytool" in result.detail
 
 
-def test_java_cacerts_with_no_extra_certificate_passes_without_running_keytool(tmp_path):
-    empty_dir = tmp_path / "empty1"
-    empty_dir.mkdir()
-
-    result = extra_ca.java_cacerts_result(empty_dir, keystore_arguments(tmp_path / "missing1.p12"))
+def test_java_cacerts_passes_when_no_certificate_was_requested_without_running_keytool(tmp_path):
+    result = extra_ca.java_cacerts_result(tmp_path / "missing1", keystore_arguments(tmp_path / "missing2.p12"))
 
     assert result.passed
-    assert result.detail == "no extra root certificate installed"
+    assert result.detail == "no extra root certificate requested"

@@ -48,6 +48,20 @@ RUN --mount=type=bind,from=cacert,target=/mnt \
     fi
 
 # ------------------------------------------------------------------------------
+# Optional extra root certificate: the fingerprints sbx-selfcheck expects
+# ------------------------------------------------------------------------------
+# build.sh computes them from the same file and passes them as a space separated
+# list, apart from the mounted folder, so a lost certificate cannot take its
+# expectation with it. Empty means no certificate was requested.
+# ------------------------------------------------------------------------------
+ARG EXTRA_CA_FINGERPRINTS
+RUN if [ -n "$EXTRA_CA_FINGERPRINTS" ]; then \
+      mkdir -p /etc/sbx \
+      && printf '%s\n' "$EXTRA_CA_FINGERPRINTS" | tr ' ' '\n' > /etc/sbx/extra-ca-fingerprints \
+      && chmod 644 /etc/sbx/extra-ca-fingerprints; \
+    fi
+
+# ------------------------------------------------------------------------------
 # Node.js from the official tarball
 # ------------------------------------------------------------------------------
 # Checked against nodejs.org SHASUMS256.txt; builds natively on arm64.

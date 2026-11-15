@@ -82,11 +82,11 @@ What trusts the root, and how:
 | Node programs | `NODE_EXTRA_CA_CERTS`, set by `/etc/bash.bashrc` |
 
 - The Cursor CLI trusts the extra root through the system store, and the build downloads it from `downloads.cursor.com`.
-- `/etc/sbx/extra-ca.pem` holds the added certificates. It exists only in an image built with a root.
+- `/etc/sbx/extra-ca.pem` holds the added certificates, and `/etc/sbx/extra-ca-fingerprints` their SHA-256 fingerprints, one per line, as `build.sh` computed them. Both exist only in an image built with a root.
 - The trade-off: the images trust anything the proxy signs (see "Threat model").
 - Known limit: a Node program run by a non-interactive `docker exec` does not get `NODE_EXTRA_CA_CERTS`. Run it from `sbx-shell`.
 
-`sbx-selfcheck` in a sandbox shell confirms each added root is in the system store and in Java `cacerts` (its `extra-ca-system-bundle` and `extra-ca-java-cacerts` lines). The commands below also prove each tool gets through the proxy.
+`sbx-selfcheck` in a sandbox shell confirms that each fingerprint in `/etc/sbx/extra-ca-fingerprints` is in the system store and in Java `cacerts` (its `extra-ca-system-bundle` and `extra-ca-java-cacerts` lines). A root lost in the build fails there; without a file it prints `no extra root certificate requested`. The commands below also prove each tool gets through the proxy.
 
 Check a new build by hand: run these in a sandbox shell. Each prints a status code, a version or a login. None may print `curl: (60)`, `UNABLE_TO_VERIFY_LEAF_SIGNATURE`, `CERTIFICATE_VERIFY_FAILED` or `PKIX path building failed`.
 
@@ -393,7 +393,7 @@ Run `./host-test.sh` on the Mac after building, or after a change under `base/`,
 | Login survives a rebuild | H-09 and H-29 (a planted fake credentials file and session file survive a rebuild and `sbx-upgrade`) | `./host-test.sh` |
 | Versions match the pins | H-34 (`sbx-selfcheck` compares every tool and the tool versions line with `versions.env`, in a Claude and a Cursor test sandbox), H-25 (the image's `versions.env` equals the repo's), the pin digests step | `./host-test.sh` |
 | The home is not hidden | H-34 (`.bashrc` and `.local` in `/home/sandbox`, and every tool resolves into the image, not under `/home`) | `./host-test.sh` |
-| An extra root certificate is trusted | H-34 (a throwaway root built into the test images is in the system store and Java `cacerts` of both test sandboxes) | `./host-test.sh` |
+| An extra root certificate is trusted | H-34 (the self-check compares the fingerprint `build.sh` recorded for a throwaway root with the system store and Java `cacerts` of both test sandboxes) | `./host-test.sh` |
 | Works behind a company proxy | The checklist in "Behind a company HTTPS proxy", by hand | Set `SBX_CA_CERT`, run `sbx-upgrade NAME`, then the checklist in a sandbox shell |
 
 - The host checks run a Claude sandbox, and H-34 also starts a Cursor test sandbox and runs `sbx-selfcheck` in it. A Cursor login and prompt are still checked by hand: add a Cursor sandbox, log in, send one prompt, then run `sbx-upgrade` and check the login is still there.

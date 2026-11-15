@@ -157,12 +157,15 @@ agent_images_have_one_from_line() {
 # ------------------------------------------------------------------------------
 # every_dockerfile_arg_is_pinned: ARGs and versions.env pins match both ways
 # ------------------------------------------------------------------------------
+# EXTRA_CA_FINGERPRINTS is the one ARG that is not a pin: build.sh derives it
+# from SBX_CA_CERT, and empty means no extra root certificate.
+# ------------------------------------------------------------------------------
 every_dockerfile_arg_is_pinned() {
   local ok=0
   local argName
   local pinName
 
-  for argName in $(grep -hE '^ARG [^=]*$' $DOCKERFILES | sed 's/^ARG //'); do
+  for argName in $(grep -hE '^ARG [^=]*$' $DOCKERFILES | sed 's/^ARG //' | grep -Fvx 'EXTRA_CA_FINGERPRINTS'); do
     if ! grep -q "^${argName}=" versions.env; then
       echo "    a Dockerfile declares ARG $argName, which versions.env does not set"
       ok=1

@@ -33,25 +33,10 @@ containerStateDir=/home/sandbox/workspace/state
 cursorName=hosttest-cursor
 cursorContainer=sbx-hosttest-cursor
 plantText="h34-$$-$(date +%s)"
-rootCaFingerprint=""
 cursorAdded=0
 selfcheckStatus=0
 sbxDir=""
 sbxStatus=0
-
-# ------------------------------------------------------------------------------
-# read_root_ca_fingerprint: sets rootCaFingerprint from the test root
-# ------------------------------------------------------------------------------
-read_root_ca_fingerprint() {
-  local certFile
-
-  certFile=$(test_root_ca_file)
-  rootCaFingerprint=$(cert_fingerprint "$certFile")
-
-  if [ -z "$rootCaFingerprint" ]; then
-    add_problem "there is no test root certificate at $certFile; bash tests/host/run-all.sh makes it"
-  fi
-}
 
 # ------------------------------------------------------------------------------
 # plant_identity CONTAINER: sets a git identity that holds only the run text
@@ -112,18 +97,16 @@ check_selfcheck_status() {
 }
 
 # ------------------------------------------------------------------------------
-# check_selfcheck_output LABEL OUTPUT_FILE EXPECTED_COUNT: count, FAILs, root
+# check_selfcheck_output LABEL OUTPUT_FILE EXPECTED_COUNT: count and FAIL lines
 # ------------------------------------------------------------------------------
-# Always returns 0 and reports only through add_problem. The certificate lines
-# match the test root's fingerprint, never a certificate count, since your own
-# root may sit next to it. An empty fingerprint skips that part: its problem is
-# already recorded.
+# Always returns 0 and reports only through add_problem. The certificate checks
+# compare the fingerprints the image recorded, so a FAIL line covers them.
 # ------------------------------------------------------------------------------
 check_selfcheck_output() {
   local label=$1
   local outputFile=$2
   local expectedCount=$3
-  local lineCount line pendingFail checkName
+  local lineCount line pendingFail
 
   lineCount=$(grep -Ec '^(PASS|FAIL): ' "$outputFile" 2>/dev/null)
   lineCount=${lineCount:-0}
@@ -153,16 +136,6 @@ check_selfcheck_output() {
   if [ -n "$pendingFail" ]; then
     add_problem "$pendingFail"
   fi
-
-  if [ -z "$rootCaFingerprint" ]; then
-    return 0
-  fi
-
-  for checkName in extra-ca-system-bundle extra-ca-java-cacerts; do
-    if ! grep -F -- "PASS: $checkName: " "$outputFile" 2>/dev/null | grep -qF -- "$rootCaFingerprint"; then
-      add_problem "$label: no PASS line of $checkName names the test root certificate $rootCaFingerprint"
-    fi
-  done
 
   return 0
 }
@@ -373,11 +346,10 @@ remove_cursor_sandbox() {
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-34 || exit 1
 sbx_test_setup H-34 h34 || exit 1
-read_root_ca_fingerprint
 check_claude_sandbox
 check_owner_fix
 remove_planted_folder
 check_cursor_sandbox
 remove_cursor_sandbox
 report_check H-34 "sbx-selfcheck failed, printed the wrong number of checks, the Cursor test sandbox did not start or go away, or the owner fix round trip failed" \
-  "sbx-selfcheck printed $expectedClaudeCount PASS lines in the Claude test sandbox and $expectedCursorCount in a Cursor test sandbox, found the test root certificate in the system bundle and Java cacerts in both, failed no-root-owned-state on a planted root-owned folder with the Mac owner fix and passed after running it, and the Cursor test sandbox is gone"
+  "sbx-selfcheck printed $expectedClaudeCount PASS lines in the Claude test sandbox and $expectedCursorCount in a Cursor test sandbox, failed no-root-owned-state on a planted root-owned folder with the Mac owner fix and passed after running it, and the Cursor test sandbox is gone"
