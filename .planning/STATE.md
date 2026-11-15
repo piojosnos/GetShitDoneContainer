@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 08
 current_phase_name: In-image self-check
 status: verifying
-stopped_at: Completed 08-12-PLAN.md
-last_updated: "2026-11-14T23:11:50.149Z"
+stopped_at: Completed 08-13-PLAN.md
+last_updated: "2026-11-15T00:05:38.355Z"
 last_activity: 2026-11-14
 last_activity_desc: Phase 08 execution started
-state_head: 976c8305c71e91c8d1d49337ea162cce09a67a25
+state_head: 6fdcd14f9610f841dad31f9f277d6582c1516717
 progress:
   total_phases: 7
   completed_phases: 2
-  total_plans: 26
-  completed_plans: 26
+  total_plans: 27
+  completed_plans: 27
   percent: 29
 ---
 
@@ -183,6 +183,7 @@ Last activity: 2026-11-14 — Phase 08 execution started
 | Phase 08 P10 | 15 min | 3 tasks | 8 files |
 | Phase 08 P11 | 1h | 3 tasks | 3 files |
 | Phase 08 P12 | 20 min | 3 tasks | 6 files |
+| Phase 08 P13 | 10 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -360,6 +361,8 @@ Recent decisions affecting current work:
 - [Phase 08]: IN-08 deferred to Phase 10 where the bash host checks are rewritten in Python; CHECK-01 to CHECK-04 marked complete after the approved Mac run
 - [Phase 08]: 08-12: a folder that lists but cannot be searched is reported as the folder, once, with (unreadable) and the Mac owner fix
 - [Phase 08]: 08-12: CHECK_LIST must be a list of Check; any other shape is that file's load failure and none of its checks run
+- [Phase 08]: run_check validates the returned value with isinstance; a non-CheckResult is that check's own FAIL with the rebuild fix
+- [Phase 08]: scan_owned_state names a folder unreadable only on PermissionError at an entry stat; any other entry error surfaces as the runner's raised FAIL
 
 ### Pending Todos
 
@@ -429,8 +432,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T23:11:50.073Z
-Stopped at: Completed 08-12-PLAN.md
+Last session: 2026-11-15T00:05:38.277Z
+Stopped at: Completed 08-13-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

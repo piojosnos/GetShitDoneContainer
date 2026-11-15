@@ -138,7 +138,7 @@ Plans:
   3. `./host-test.sh` makes a throwaway root certificate with `openssl`, builds it into the test base image, and the self-check finds it in the system bundle and in Java `cacerts`; no certificate is committed.
   4. Each FAIL line carries a fix hint, with the Mac command when the fix is on the Mac; no skill wraps the self-check.
 
-**Plans**: 12/13 plans executed
+**Plans**: 13/13 plans executed
 
 Plans:
 **Wave 1**
@@ -176,7 +176,7 @@ Gap closure, from the phase verification (the `no-root-owned-state` fix line can
 - [x] 08-12-PLAN.md: the two review warnings fixed (an unsearchable state folder and a malformed CHECK_LIST), the info findings deferred to Phase 10
 
 **Wave 11** *(blocked on Wave 10 completion)*
-- [ ] 08-13-PLAN.md: the last two review findings fixed (a check that returns no CheckResult, and one failing state entry no longer marks its whole folder)
+- [x] 08-13-PLAN.md: the last two review findings fixed (a check that returns no CheckResult, and one failing state entry no longer marks its whole folder)
 
 ### Phase 9: sbx-init replaces the start hooks
 
@@ -229,7 +229,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 |-------|-----------|----------------|--------|-----------|
 | 6. Test diet | v2.0 | 6/6 | Complete    | 2026-11-13 |
 | 7. Separate test images | v2.0 | 3/3 | Complete    | 2026-11-14 |
-| 8. In-image self-check | v2.0 | 12/12 | In Progress|  |
+| 8. In-image self-check | v2.0 | 13/13 | In Progress|  |
 | 9. sbx-init replaces the start hooks | v2.0 | 0/TBD | Not started | - |
 | 10. Host side to Python | v2.0 | 0/TBD | Not started | - |
 | 11. CI widened | v2.0 | 0/TBD | Not started | - |
