@@ -14,11 +14,8 @@ import checks_tools
 import selfcheck_core
 import shared_checks
 from helpers import environment_with, write_stand_in, write_versions
+from helpers import environment_with, write_stand_in, write_versions
 
-
-# ------------------------------------------------------------------------------
-# Bundle copy check
-# ------------------------------------------------------------------------------
 
 def test_no_bundle_copy_passes_when_the_path_is_absent_and_fails_when_present(tmp_path):
     copy1 = tmp_path / "copy1"
@@ -135,11 +132,14 @@ def test_history_free_environment_points_the_history_at_dev_null_and_leaves_the_
     assert environment1["HISTFILE"] == "/home/sandbox/history1"
 
 
-def test_history_free_environment_defaults_to_the_process_environment(monkeypatch):
-    monkeypatch.setenv("HISTFILE", "/home/sandbox/history1")
+def test_history_free_environment_defaults_to_the_process_environment():
+    history_before = os.environ.get("HISTFILE")
 
-    assert checks_tools.history_free_environment()["HISTFILE"] == "/dev/null"
-    assert os.environ["HISTFILE"] == "/home/sandbox/history1"
+    result_environment = checks_tools.history_free_environment()
+
+    assert result_environment["HISTFILE"] == "/dev/null"
+    assert result_environment["PATH"] == os.environ["PATH"]
+    assert os.environ.get("HISTFILE") == history_before
 
 
 def test_versions_record_passes_when_every_shared_pin_has_a_value(versions1):

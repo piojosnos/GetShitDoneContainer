@@ -8,10 +8,7 @@ from pathlib import Path
 
 import pytest
 
-
-# ------------------------------------------------------------------------------
-# Constants and helpers
-# ------------------------------------------------------------------------------
+import selfcheck_core
 
 CURSOR_CHECK_NAME_LIST = [
     "tool-cursor-agent",
@@ -231,8 +228,7 @@ def test_self_update_result_passes_for_the_static_channel_and_names_no_other_key
     assert "other1" not in result.detail + result.hint
 
 
-def test_self_update_result_fails_for_another_channel_bad_text_and_a_missing_file(agent_module, tmp_path, monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "name1")
+def test_self_update_result_fails_for_another_channel_bad_text_and_a_missing_file(agent_module, tmp_path):
     cursor = agent_module("cursor")
     stable1 = tmp_path / "stable1.json"
     stable1.write_text(json.dumps({"channel": "stable", "other1": 1}))
@@ -251,7 +247,7 @@ def test_self_update_result_fails_for_another_channel_bad_text_and_a_missing_fil
 
     for result in [stable_result, text_result, list_result, missing_result]:
         assert not result.passed
-        assert "on the Mac run: sbx-stop name1" in result.hint
+        assert result.hint.startswith(selfcheck_core.restart_hint())
 
 
 def test_the_cursor_check_names_are_the_ten_in_order(agent_module, check_name_list_of):

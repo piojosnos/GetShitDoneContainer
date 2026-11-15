@@ -15,11 +15,7 @@ import pytest
 
 import selfcheck_core
 from helpers import TEMURIN_PIN1, environment_with, write_stand_in
-
-
-# ------------------------------------------------------------------------------
-# Constants and helpers
-# ------------------------------------------------------------------------------
+from helpers import TEMURIN_PIN1, environment_with, write_stand_in
 
 ROOT_MOUNT_LINE = "1 0 8:1 / / rw - ext4 /dev/sda1 rw"
 MOUNT_LINE_TEMPLATE = "{number} 1 8:2 / {mount_point} rw,noatime - ext4 /dev/sda2 rw"
@@ -74,14 +70,12 @@ def test_pin_value_is_empty_for_a_missing_name_or_file(tmp_path):
     assert selfcheck_core.pin_value("NAME1", tmp_path / "missing1") == ""
 
 
-def test_missing_pin_result_fails_with_the_mac_rebuild_command(monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "name1")
-
+def test_missing_pin_result_fails_with_the_mac_rebuild_command():
     result = selfcheck_core.missing_pin_result("NAME1")
 
     assert not result.passed
     assert "NAME1" in result.detail
-    assert "on the Mac run: sbx-upgrade name1" in result.hint
+    assert result.hint == selfcheck_core.rebuild_hint()
 
 
 def test_run_command_captures_text_output_and_closes_stdin():

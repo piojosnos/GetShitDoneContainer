@@ -4,6 +4,7 @@
 # The image puts this file in /usr/local/lib/sbx-selfcheck/.
 # ------------------------------------------------------------------------------
 
+import os
 from pathlib import Path
 from typing import Mapping
 
@@ -37,7 +38,7 @@ STATE_PATH_BY_NAME_MAP = {
 
 def bundle_env_result(
     versions_file: Path = VERSIONS_FILE,
-    environment_map: Mapping[str, str] | None = None,
+    environment_map: Mapping[str, str] = os.environ,
 ) -> CheckResult:
     pinned_url = pin_value("BUNDLE_REPO_URL", versions_file)
 

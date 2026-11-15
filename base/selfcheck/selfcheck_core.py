@@ -64,8 +64,8 @@ def failed(detail: str, hint: str) -> CheckResult:
     return CheckResult(False, detail, hint)
 
 
-def sandbox_name() -> str:
-    name = os.environ.get("SBX_NAME", "")
+def sandbox_name(environment_map: Mapping[str, str] = os.environ) -> str:
+    name = environment_map.get("SBX_NAME", "")
 
     if not name:
         return UNSET_SANDBOX_NAME
@@ -77,24 +77,24 @@ def mac_hint(action_text: str, command_text: str) -> str:
     return f"{action_text}: on the Mac run: {command_text}"
 
 
-def rebuild_hint() -> str:
-    return mac_hint("rebuild the image and recreate the sandbox", f"sbx-upgrade {sandbox_name()}")
+def rebuild_hint(environment_map: Mapping[str, str] = os.environ) -> str:
+    return mac_hint("rebuild the image and recreate the sandbox", f"sbx-upgrade {sandbox_name(environment_map)}")
 
 
-def restart_hint() -> str:
-    name = sandbox_name()
+def restart_hint(environment_map: Mapping[str, str] = os.environ) -> str:
+    name = sandbox_name(environment_map)
 
     return mac_hint("restart the sandbox", f"sbx-stop {name}, then sbx-start {name}")
 
 
-def start_hint() -> str:
-    name = sandbox_name()
+def start_hint(environment_map: Mapping[str, str] = os.environ) -> str:
+    name = sandbox_name(environment_map)
 
     return mac_hint("run sbx-selfcheck in a sandbox started with sbx-start", f"sbx-start {name}, then sbx-shell {name}")
 
 
-def shell_hint() -> str:
-    return mac_hint("open the sandbox shell with sbx-shell", f"sbx-shell {sandbox_name()}")
+def shell_hint(environment_map: Mapping[str, str] = os.environ) -> str:
+    return mac_hint("open the sandbox shell with sbx-shell", f"sbx-shell {sandbox_name(environment_map)}")
 
 
 # ------------------------------------------------------------------------------
@@ -103,7 +103,7 @@ def shell_hint() -> str:
 
 def run_command(
     argument_list: list[str],
-    environment_map: Mapping[str, str] | None = None,
+    environment_map: Mapping[str, str] = os.environ,
 ) -> subprocess.CompletedProcess:
     return subprocess.run(
         argument_list,
@@ -239,11 +239,8 @@ def protected_paths_result(path_list: list[Path], mountinfo_file: Path = MOUNTIN
 
 def environment_values_result(
     expected_value_by_name_map: Mapping[str, str],
-    environment_map: Mapping[str, str] | None = None,
+    environment_map: Mapping[str, str] = os.environ,
 ) -> CheckResult:
-    if environment_map is None:
-        environment_map = os.environ
-
     problem_list = []
     pair_list = []
 
@@ -261,7 +258,10 @@ def environment_values_result(
         pair_list.append(f"{name}={actual_value}")
 
     if problem_list:
-        return failed("; ".join(problem_list), "open a fresh shell with sbx-shell; if it stays, " + rebuild_hint())
+        return failed(
+            "; ".join(problem_list),
+            "open a fresh shell with sbx-shell; if it stays, " + rebuild_hint(environment_map),
+        )
 
     return passed(", ".join(pair_list))
 
@@ -321,7 +321,7 @@ def version_problem(
     version_argument_list: list[str],
     expected_text: str,
     required_text: str,
-    environment_map: Mapping[str, str] | None,
+    environment_map: Mapping[str, str],
 ) -> tuple[str, str]:
     completed = run_command([found_path] + version_argument_list, environment_map)
     line = first_output_line(completed)
@@ -340,12 +340,9 @@ def tool_result(
     version_argument_list: list[str] | None = None,
     expected_text: str = "",
     required_text: str = "",
-    environment_map: Mapping[str, str] | None = None,
+    environment_map: Mapping[str, str] = os.environ,
     home_root: str = HOME_ROOT,
 ) -> CheckResult:
-    if environment_map is None:
-        environment_map = os.environ
-
     found_path = shutil.which(command_name, path=environment_map.get("PATH", ""))
 
     if found_path is None:

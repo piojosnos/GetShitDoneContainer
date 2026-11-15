@@ -75,10 +75,7 @@ PROTECTED_PATH_LIST = [Path("/etc/sbx"), Path("/usr/local/bin"), Path("/usr/loca
 # Shell environment
 # ------------------------------------------------------------------------------
 
-def history_free_environment(environment_map: Mapping[str, str] | None = None) -> dict[str, str]:
-    if environment_map is None:
-        environment_map = os.environ
-
+def history_free_environment(environment_map: Mapping[str, str] = os.environ) -> dict[str, str]:
     history_free_environment_map = dict(environment_map)
     history_free_environment_map["HISTFILE"] = "/dev/null"
 
@@ -239,7 +236,7 @@ def versions_line_file_result(
 
 def interactive_versions_line_result(
     versions_line_file: Path = TOOL_VERSIONS_FILE,
-    environment_map: Mapping[str, str] | None = None,
+    environment_map: Mapping[str, str] = os.environ,
 ) -> CheckResult:
     if not versions_line_file.is_file():
         return failed(f"{versions_line_file} is missing", rebuild_hint())
@@ -256,7 +253,7 @@ def interactive_versions_line_result(
     return passed(f"an interactive shell prints {versions_line_file} once")
 
 
-def quiet_shells_result(environment_map: Mapping[str, str] | None = None) -> CheckResult:
+def quiet_shells_result(environment_map: Mapping[str, str] = os.environ) -> CheckResult:
     problem_list = []
 
     for flag in QUIET_SHELL_FLAG_LIST:

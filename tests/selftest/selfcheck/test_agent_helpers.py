@@ -12,10 +12,6 @@ import agent_helpers
 import selfcheck_core
 
 
-# ------------------------------------------------------------------------------
-# Versions line
-# ------------------------------------------------------------------------------
-
 def test_versions_line_result_passes_for_the_prefix_and_the_base_text(versions1, line1):
     line1.write_text("tool1 1 | " + selfcheck_core.expected_base_versions_text(versions1) + "\n")
 
@@ -156,8 +152,7 @@ def test_gsd_synced_result_passes_when_the_synced_version_is_the_pin(tmp_path):
     assert GSD_PIN1 in result.detail
 
 
-def test_gsd_synced_result_fails_for_another_version_and_for_a_missing_file(tmp_path, monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "name1")
+def test_gsd_synced_result_fails_for_another_version_and_for_a_missing_file(tmp_path):
     versions1 = write_gsd_pin(tmp_path)
     config1 = tmp_path / "config1"
     config2 = tmp_path / "config2"
@@ -169,9 +164,9 @@ def test_gsd_synced_result_fails_for_another_version_and_for_a_missing_file(tmp_
 
     assert not other_result.passed
     assert "1.14.0" in other_result.detail
-    assert "on the Mac run: sbx-stop name1" in other_result.hint
+    assert other_result.hint.startswith(selfcheck_core.restart_hint())
     assert not missing_result.passed
-    assert "on the Mac run: sbx-stop name1" in missing_result.hint
+    assert missing_result.hint.startswith(selfcheck_core.restart_hint())
 
 
 def test_gsd_synced_result_fails_when_the_pin_is_missing(tmp_path):
@@ -322,8 +317,7 @@ def test_home_links_result_passes_when_each_link_holds_its_target_text(tmp_path)
     assert str(link2) in result.detail
 
 
-def test_home_links_result_fails_for_a_folder_in_place_of_a_link_and_for_another_target(tmp_path, monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "name1")
+def test_home_links_result_fails_for_a_folder_in_place_of_a_link_and_for_another_target(tmp_path):
     target1 = tmp_path / "target1"
     target2 = tmp_path / "target2"
     target1.mkdir()
@@ -340,4 +334,4 @@ def test_home_links_result_fails_for_a_folder_in_place_of_a_link_and_for_another
     assert str(folder1) in folder_result.detail
     assert not target_result.passed
     assert str(link2) in target_result.detail
-    assert "sbx-upgrade name1" in target_result.hint
+    assert target_result.hint == selfcheck_core.rebuild_hint()

@@ -1,25 +1,19 @@
 # ------------------------------------------------------------------------------
 # Shared setup of the sbx-selfcheck tests
 # ------------------------------------------------------------------------------
-# Bytecode stays off so the source folders get no __pycache__. The base
-# selfcheck folder goes on sys.path as the launcher does.
+# The base selfcheck folder reaches sys.path through the pytest pythonpath
+# setting in pyproject.toml, the way the launcher puts it there.
 # ------------------------------------------------------------------------------
 
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
 
+import sbx_selfcheck
 from helpers import write_versions
 
-sys.dont_write_bytecode = True
-
 REPO_DIR = Path(__file__).resolve().parents[3]
-
-sys.path.insert(0, str(REPO_DIR / "base" / "selfcheck"))
-
-import sbx_selfcheck  # noqa: E402
 
 
 # ------------------------------------------------------------------------------

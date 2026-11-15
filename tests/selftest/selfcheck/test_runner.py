@@ -16,11 +16,6 @@ import sbx_selfcheck
 import selfcheck_core
 from selfcheck_core import Check, CheckResult, failed, passed
 
-
-# ------------------------------------------------------------------------------
-# Constants and helpers
-# ------------------------------------------------------------------------------
-
 AGENT_FILE_TEMPLATE = """from selfcheck_core import Check, passed
 
 
@@ -109,9 +104,7 @@ def test_failed_refuses_an_empty_or_blank_hint():
         failed("detail1", "   ")
 
 
-def test_raising_check_becomes_a_fail_line_with_the_rebuild_hint(agents1, monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "sbx1")
-
+def test_raising_check_becomes_a_fail_line_with_the_rebuild_hint(agents1):
     def run_raising() -> CheckResult:
         raise RuntimeError("line1\nline2")
 
@@ -120,7 +113,7 @@ def test_raising_check_becomes_a_fail_line_with_the_rebuild_hint(agents1, monkey
     assert status == 1
     assert line_list[0] == "FAIL: check1: raised RuntimeError: line1 line2"
     assert line_list[1].startswith("      fix: ")
-    assert "on the Mac run: sbx-upgrade sbx1" in line_list[1]
+    assert line_list[1].endswith(selfcheck_core.rebuild_hint())
     assert line_list[2] == "PASS: check2: detail_check2"
     assert line_list[3] == "PASS: agent1: detail_agent1"
 
@@ -134,10 +127,8 @@ def test_raising_check_becomes_a_fail_line_with_the_rebuild_hint(agents1, monkey
     ],
 )
 def test_a_check_that_returns_no_result_becomes_a_fail_line_with_the_rebuild_hint(
-    agents1, monkeypatch, returned_value, type_name
+    agents1, returned_value, type_name
 ):
-    monkeypatch.setenv("SBX_NAME", "sbx1")
-
     def run_returning():
         return returned_value
 
@@ -147,7 +138,7 @@ def test_a_check_that_returns_no_result_becomes_a_fail_line_with_the_rebuild_hin
     assert line_list == [
         f"FAIL: check1: returned {type_name} instead of a CheckResult",
         "      fix: this is a bug in the self-check or a broken image; "
-        "rebuild the image and recreate the sandbox: on the Mac run: sbx-upgrade sbx1",
+        + selfcheck_core.rebuild_hint(),
         "PASS: check2: detail_check2",
         "PASS: agent1: detail_agent1",
         "sbx-selfcheck: 3 checks, 1 failed",
@@ -200,13 +191,12 @@ def expected_no_agent_checks_lines(checks_dir: Path) -> list[str]:
     return [
         "PASS: check1: detail_check1",
         f"FAIL: load-agent-checks: found no agent checks in {checks_dir}, so the image's own checks did not run",
-        "      fix: rebuild the image and recreate the sandbox: on the Mac run: sbx-upgrade sbx1",
+        "      fix: " + selfcheck_core.rebuild_hint(),
         "sbx-selfcheck: 2 checks, 1 failed",
     ]
 
 
-def test_empty_and_missing_agent_folders_fail_naming_the_folder(tmp_path, monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "sbx1")
+def test_empty_and_missing_agent_folders_fail_naming_the_folder(tmp_path):
     empty_dir = tmp_path / "empty1"
     empty_dir.mkdir()
     missing_dir = tmp_path / "missing1"
@@ -220,8 +210,7 @@ def test_empty_and_missing_agent_folders_fail_naming_the_folder(tmp_path, monkey
     assert missing_lines == expected_no_agent_checks_lines(missing_dir)
 
 
-def test_an_agent_file_with_an_empty_check_list_is_no_agent_checks(tmp_path, monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "sbx1")
+def test_an_agent_file_with_an_empty_check_list_is_no_agent_checks(tmp_path):
     (tmp_path / "agent1.py").write_text("CHECK_LIST = []\n")
 
     status, line_list = run_lines([passing_check("check1")], tmp_path)
@@ -230,8 +219,7 @@ def test_an_agent_file_with_an_empty_check_list_is_no_agent_checks(tmp_path, mon
     assert line_list == expected_no_agent_checks_lines(tmp_path)
 
 
-def test_a_broken_agent_file_alone_is_one_load_failure(tmp_path, monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "sbx1")
+def test_a_broken_agent_file_alone_is_one_load_failure(tmp_path):
     (tmp_path / "agent1.py").write_text("def broken(:\n")
 
     status, line_list = run_lines([passing_check("check1")], tmp_path)
@@ -257,8 +245,7 @@ def test_an_empty_shared_list_prints_the_agent_lines_only(agents1):
     assert line_list == ["PASS: agent1: detail_agent1", "sbx-selfcheck: 1 checks, 0 failed"]
 
 
-def test_an_agent_file_with_a_syntax_error_is_one_load_failure(tmp_path, monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "sbx1")
+def test_an_agent_file_with_a_syntax_error_is_one_load_failure(tmp_path):
     (tmp_path / "agent1.py").write_text("def broken(:\n")
     write_agent_file(tmp_path, "agent2")
 
@@ -267,7 +254,7 @@ def test_an_agent_file_with_a_syntax_error_is_one_load_failure(tmp_path, monkeyp
     assert status == 1
     assert line_list[0].startswith("FAIL: load-agent1: ")
     assert "did not load: SyntaxError" in line_list[0]
-    assert "on the Mac run: sbx-upgrade sbx1" in line_list[1]
+    assert line_list[1].endswith(selfcheck_core.rebuild_hint())
     assert line_list[2] == "PASS: agent2: detail_agent2"
     assert line_list[3] == "sbx-selfcheck: 2 checks, 1 failed"
 
@@ -296,8 +283,7 @@ def test_an_agent_file_without_a_check_list_is_one_load_failure(tmp_path):
     ],
     ids=["none", "number", "text", "list_of_text", "list_with_a_text_item"],
 )
-def test_an_agent_file_with_a_malformed_check_list_is_one_load_failure(tmp_path, monkeypatch, check_list_text):
-    monkeypatch.setenv("SBX_NAME", "sbx1")
+def test_an_agent_file_with_a_malformed_check_list_is_one_load_failure(tmp_path, check_list_text):
     agent_file = tmp_path / "agent1.py"
     agent_file.write_text(check_list_text)
 
@@ -307,7 +293,7 @@ def test_an_agent_file_with_a_malformed_check_list_is_one_load_failure(tmp_path,
     assert line_list == [
         "PASS: check1: detail_check1",
         f"FAIL: load-agent1: {agent_file} defines a CHECK_LIST that is not a list of checks",
-        "      fix: rebuild the image and recreate the sandbox: on the Mac run: sbx-upgrade sbx1",
+        "      fix: " + selfcheck_core.rebuild_hint(),
         "sbx-selfcheck: 2 checks, 1 failed",
     ]
 
@@ -354,26 +340,25 @@ def test_the_launcher_file_exits_two_for_an_argument(repo_dir):
 # Hint builders and environment values
 # ------------------------------------------------------------------------------
 
-def test_hint_builders_name_the_sandbox_from_sbx_name(monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "sbx1")
+def test_hint_builders_name_the_sandbox_from_sbx_name():
+    environment1 = {"SBX_NAME": "sbx1"}
 
-    assert selfcheck_core.rebuild_hint() == "rebuild the image and recreate the sandbox: on the Mac run: sbx-upgrade sbx1"
-    assert selfcheck_core.restart_hint() == "restart the sandbox: on the Mac run: sbx-stop sbx1, then sbx-start sbx1"
-    assert selfcheck_core.start_hint().endswith("on the Mac run: sbx-start sbx1, then sbx-shell sbx1")
-    assert selfcheck_core.shell_hint().endswith("on the Mac run: sbx-shell sbx1")
+    assert selfcheck_core.rebuild_hint(environment1) == (
+        "rebuild the image and recreate the sandbox: on the Mac run: sbx-upgrade sbx1"
+    )
+    assert selfcheck_core.restart_hint(environment1) == (
+        "restart the sandbox: on the Mac run: sbx-stop sbx1, then sbx-start sbx1"
+    )
+    assert selfcheck_core.start_hint(environment1).endswith("on the Mac run: sbx-start sbx1, then sbx-shell sbx1")
+    assert selfcheck_core.shell_hint(environment1).endswith("on the Mac run: sbx-shell sbx1")
 
 
-def test_hint_builders_say_name_when_sbx_name_is_unset_or_empty(monkeypatch):
-    monkeypatch.delenv("SBX_NAME", raising=False)
-
-    assert selfcheck_core.rebuild_hint().endswith("on the Mac run: sbx-upgrade NAME")
-    assert "on the Mac run: sbx-" in selfcheck_core.restart_hint()
-    assert "on the Mac run: sbx-" in selfcheck_core.start_hint()
-    assert "on the Mac run: sbx-" in selfcheck_core.shell_hint()
-
-    monkeypatch.setenv("SBX_NAME", "")
-
-    assert selfcheck_core.shell_hint().endswith("sbx-shell NAME")
+def test_hint_builders_say_name_when_sbx_name_is_unset_or_empty():
+    assert selfcheck_core.rebuild_hint({}).endswith("on the Mac run: sbx-upgrade NAME")
+    assert selfcheck_core.restart_hint({}).endswith("sbx-stop NAME, then sbx-start NAME")
+    assert selfcheck_core.start_hint({}).endswith("sbx-start NAME, then sbx-shell NAME")
+    assert selfcheck_core.shell_hint({}).endswith("sbx-shell NAME")
+    assert selfcheck_core.shell_hint({"SBX_NAME": ""}).endswith("sbx-shell NAME")
 
 
 def test_environment_values_result_passes_for_a_matching_mapping():
@@ -386,12 +371,10 @@ def test_environment_values_result_passes_for_a_matching_mapping():
     assert result.detail == "VAR1=value1, VAR2=value2"
 
 
-def test_environment_values_result_names_each_wrong_or_missing_variable(monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "sbx1")
-
+def test_environment_values_result_names_each_wrong_or_missing_variable():
     result = selfcheck_core.environment_values_result(
         {"VAR1": "value1", "VAR2": "value2", "VAR3": "value3"},
-        {"VAR1": "other1", "VAR3": "value3"},
+        {"VAR1": "other1", "VAR3": "value3", "SBX_NAME": "sbx1"},
     )
 
     assert not result.passed

@@ -10,7 +10,7 @@ import platform
 import pwd
 import tempfile
 from pathlib import Path
-from typing import Mapping
+from typing import Callable, Mapping
 
 from selfcheck_core import (
     ELF_MACHINE_BY_UNAME_MAP,
@@ -168,11 +168,17 @@ def mark_unreadable_folder(reported_list: list[str], relative_dir: Path, tolerat
     reported_list.append(relative_dir.as_posix() + UNREADABLE_SUFFIX)
 
 
+def read_entry_list(folder: Path) -> list[os.DirEntry]:
+    with os.scandir(folder) as entry_iterator:
+        return list(entry_iterator)
+
+
 def scan_owned_state(
     state_dir: Path,
     owner_uid: int,
     skipped_relative_set: set[str],
     tolerated_folder_set: set[str],
+    entry_reader: Callable[[Path], list[os.DirEntry]] = read_entry_list,
 ) -> tuple[list[str], int]:
     reported_list = []
     tolerated_count = 0
@@ -183,8 +189,7 @@ def scan_owned_state(
         relative_dir = current_dir.relative_to(state_dir)
 
         try:
-            with os.scandir(current_dir) as entry_iterator:
-                entry_list = list(entry_iterator)
+            entry_list = entry_reader(current_dir)
         except FileNotFoundError:
             continue
         except OSError:
@@ -218,16 +223,20 @@ def scan_owned_state(
     return sorted(reported_list), tolerated_count
 
 
-def owner_fix_hint(state_dir: Path) -> str:
+def owner_fix_hint(state_dir: Path, environment_map: Mapping[str, str] = os.environ) -> str:
     return mac_hint(
         "give the paths back to the sandbox user from a throwaway root container, "
         "since the sandbox cannot change owners",
         "docker run --rm --network none -u root --entrypoint chown "
-        f"--volumes-from sbx-{sandbox_name()} {OWNER_FIX_IMAGE} -R {SANDBOX_UID}:{SANDBOX_GID} {state_dir}",
+        f"--volumes-from sbx-{sandbox_name(environment_map)} {OWNER_FIX_IMAGE} -R {SANDBOX_UID}:{SANDBOX_GID} {state_dir}",
     )
 
 
-def root_owned_state_result(state_dir: Path, owner_uid: int) -> CheckResult:
+def root_owned_state_result(
+    state_dir: Path,
+    owner_uid: int,
+    environment_map: Mapping[str, str] = os.environ,
+) -> CheckResult:
     reported_list, tolerated_count = scan_owned_state(state_dir, owner_uid, SKIPPED_STATE_DIR_SET, GSD_SYNC_FOLDER_SET)
 
     if not reported_list:
@@ -236,7 +245,7 @@ def root_owned_state_result(state_dir: Path, owner_uid: int) -> CheckResult:
     return failed(
         f"{len(reported_list)} paths under state/ are owned by uid {owner_uid} or unreadable: "
         + ", ".join(reported_list[:REPORTED_PATH_LIMIT]),
-        owner_fix_hint(state_dir),
+        owner_fix_hint(state_dir, environment_map),
     )
 
 
@@ -284,7 +293,7 @@ def owned_by_result(path_list: list[Path], owner_name: str) -> CheckResult:
 # Git checks
 # ------------------------------------------------------------------------------
 
-def safe_directory_result(environment_map: Mapping[str, str] | None = None) -> CheckResult:
+def safe_directory_result(environment_map: Mapping[str, str] = os.environ) -> CheckResult:
     completed = run_command(["git", "config", "--system", "--get-all", "safe.directory"], environment_map)
 
     for line in completed.stdout.splitlines():
@@ -294,7 +303,7 @@ def safe_directory_result(environment_map: Mapping[str, str] | None = None) -> C
     return failed("the system git config does not set safe.directory to *", rebuild_hint())
 
 
-def git_identity_result(environment_map: Mapping[str, str] | None = None) -> CheckResult:
+def git_identity_result(environment_map: Mapping[str, str] = os.environ) -> CheckResult:
     empty_list = []
 
     for key in ["user.name", "user.email"]:

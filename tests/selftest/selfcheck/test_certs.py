@@ -13,11 +13,6 @@ import pytest
 
 import checks_certs
 
-
-# ------------------------------------------------------------------------------
-# Constants and helpers
-# ------------------------------------------------------------------------------
-
 KEYTOOL_PASSWORD = "changeit"
 BEGIN_MARKER = "-----BEGIN CERTIFICATE-----"
 END_MARKER = "-----END CERTIFICATE-----"

@@ -5,7 +5,6 @@
 # tmp_path.
 # ------------------------------------------------------------------------------
 
-import contextlib
 import errno
 import os
 import platform
@@ -18,12 +17,8 @@ import checks_sandbox
 import sbx_selfcheck
 import selfcheck_core
 
-
-# ------------------------------------------------------------------------------
-# Constants and helpers
-# ------------------------------------------------------------------------------
-
 CURRENT_USER = checks_sandbox.user_name_of(os.getuid())
+NAMED_ENVIRONMENT = {"SBX_NAME": "name1"}
 ROOT_MOUNT_LINE = "1 0 8:1 / / rw - ext4 /dev/sda1 rw"
 MOUNT_LINE_TEMPLATE = "{number} 1 8:2 / {mount_point} rw,noatime - ext4 /dev/sda2 rw"
 
@@ -72,8 +67,7 @@ def test_workspace_mount_passes_when_listed_and_writable(tmp_path):
     assert str(workspace1) in result.detail
 
 
-def test_workspace_mount_fails_with_the_start_hint_when_not_listed(tmp_path, monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "name1")
+def test_workspace_mount_fails_with_the_start_hint_when_not_listed(tmp_path):
     workspace1 = tmp_path / "workspace1"
     workspace1.mkdir()
     mountinfo1 = tmp_path / "mountinfo1"
@@ -83,7 +77,7 @@ def test_workspace_mount_fails_with_the_start_hint_when_not_listed(tmp_path, mon
 
     assert not result.passed
     assert "in a sandbox started with sbx-start" in result.hint
-    assert "on the Mac run: sbx-start name1" in result.hint
+    assert result.hint == selfcheck_core.start_hint()
 
 
 @pytest.mark.skipif(os.getuid() == 0, reason="root can write to a read-only folder")
@@ -211,12 +205,11 @@ def make_fourteen_path_tree(state1: Path) -> None:
         write_file(state1 / "sub1" / f"file{number:02d}")
 
 
-def test_root_owned_state_fails_with_the_total_and_at_most_ten_paths(tmp_path, monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "name1")
+def test_root_owned_state_fails_with_the_total_and_at_most_ten_paths(tmp_path):
     state1 = tmp_path / "state1"
     make_fourteen_path_tree(state1)
 
-    result = checks_sandbox.root_owned_state_result(state1, os.getuid())
+    result = checks_sandbox.root_owned_state_result(state1, os.getuid(), NAMED_ENVIRONMENT)
 
     assert not result.passed
     assert "14 paths" in result.detail
@@ -229,24 +222,22 @@ def test_root_owned_state_fails_with_the_total_and_at_most_ten_paths(tmp_path, m
     )
 
 
-def test_root_owned_state_hint_says_name_when_sbx_name_is_unset(tmp_path, monkeypatch):
-    monkeypatch.delenv("SBX_NAME", raising=False)
+def test_root_owned_state_hint_says_name_when_sbx_name_is_unset(tmp_path):
     state1 = tmp_path / "state1"
     make_fourteen_path_tree(state1)
 
-    result = checks_sandbox.root_owned_state_result(state1, os.getuid())
+    result = checks_sandbox.root_owned_state_result(state1, os.getuid(), {})
 
     assert not result.passed
     assert "--volumes-from sbx-NAME sbx-base:local -R 1000:1000" in result.hint
 
 
-def test_root_owned_state_prints_the_mac_owner_fix_under_its_fail_line(tmp_path, monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "name1")
+def test_root_owned_state_prints_the_mac_owner_fix_under_its_fail_line(tmp_path):
     state1 = tmp_path / "state1"
     make_fourteen_path_tree(state1)
 
     def scan_state1():
-        return checks_sandbox.root_owned_state_result(state1, os.getuid())
+        return checks_sandbox.root_owned_state_result(state1, os.getuid(), NAMED_ENVIRONMENT)
 
     check = selfcheck_core.Check("no-root-owned-state", scan_state1)
     line_list = sbx_selfcheck.outcome_lines(check.name, sbx_selfcheck.run_check(check))
@@ -350,15 +341,14 @@ def test_scan_owned_state_tolerates_a_folder_it_cannot_search_in_a_sync_folder(t
 
 
 @pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 444 folder")
-def test_root_owned_state_prints_the_owner_fix_for_a_folder_it_cannot_search(tmp_path, restorable_mode, monkeypatch):
-    monkeypatch.setenv("SBX_NAME", "name1")
+def test_root_owned_state_prints_the_owner_fix_for_a_folder_it_cannot_search(tmp_path, restorable_mode):
     state1 = tmp_path / "state1"
     write_file(state1 / "sub1" / "private1" / "file1")
     write_file(state1 / "sub1" / "private1" / "file2")
     restorable_mode(state1 / "sub1" / "private1", 0o444)
 
     def scan_state1():
-        return checks_sandbox.root_owned_state_result(state1, os.getuid())
+        return checks_sandbox.root_owned_state_result(state1, os.getuid(), NAMED_ENVIRONMENT)
 
     check = selfcheck_core.Check("no-root-owned-state", scan_state1)
     line_list = sbx_selfcheck.outcome_lines(check.name, sbx_selfcheck.run_check(check))
@@ -375,7 +365,7 @@ def test_root_owned_state_prints_the_owner_fix_for_a_folder_it_cannot_search(tmp
     assert line_list[1].endswith(f"--volumes-from sbx-name1 sbx-base:local -R 1000:1000 {state1}")
 
 
-# A real folder cannot make an entry stat fail with an error other than permission, so this test stubs the listing.
+# A real folder cannot make an entry stat fail with an error other than permission, so this test passes a listing that does.
 class FailingStatEntry:
     def __init__(self, path: str, error: OSError):
         self.path = path
@@ -388,17 +378,15 @@ class FailingStatEntry:
         return False
 
 
-def test_scan_owned_state_lets_an_entry_error_other_than_permission_surface(tmp_path, monkeypatch):
+def test_scan_owned_state_lets_an_entry_error_other_than_permission_surface(tmp_path):
     state1 = tmp_path / "state1"
     entry1 = FailingStatEntry(str(state1 / "file1"), OSError(errno.EIO, "I/O error"))
 
-    def list_entry1(folder_path):
-        return contextlib.nullcontext([entry1])
-
-    monkeypatch.setattr(checks_sandbox.os, "scandir", list_entry1)
+    def read_entry1(folder_path):
+        return [entry1]
 
     with pytest.raises(OSError) as raised:
-        checks_sandbox.scan_owned_state(state1, os.getuid(), set(), set())
+        checks_sandbox.scan_owned_state(state1, os.getuid(), set(), set(), read_entry1)
 
     assert raised.value.errno == errno.EIO
 

@@ -58,10 +58,7 @@ THROWAWAY_HOME_PREFIX = "sbx-selfcheck-cursor-"
 # Cursor version and update checks
 # ------------------------------------------------------------------------------
 
-def cursor_version_result(expected_version: str, environment_map: Mapping[str, str] | None = None) -> CheckResult:
-    if environment_map is None:
-        environment_map = os.environ
-
+def cursor_version_result(expected_version: str, environment_map: Mapping[str, str] = os.environ) -> CheckResult:
     throwaway_home = tempfile.mkdtemp(prefix=THROWAWAY_HOME_PREFIX)
 
     try:
