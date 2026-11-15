@@ -1,6 +1,9 @@
-# Tests that tie the three check lists to the counts the host test H-34 expects,
-# and that keep every name unique and well formed. The lists load through the
-# runner's own loader, so they are what the image runs.
+# ------------------------------------------------------------------------------
+# Tests of the check inventory
+# ------------------------------------------------------------------------------
+# They tie the check lists to the counts H-34 expects and keep every name unique
+# and well formed. The lists load through the runner's own loader.
+# ------------------------------------------------------------------------------
 
 import re
 import shutil
@@ -9,6 +12,11 @@ from pathlib import Path
 import sbx_selfcheck
 import selfcheck_core
 import shared_checks
+
+
+# ------------------------------------------------------------------------------
+# Constants and helpers
+# ------------------------------------------------------------------------------
 
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 SHARED_CHECK_COUNT = 41
@@ -25,6 +33,10 @@ def expected_count(repo_dir: Path, constant_name: str) -> int:
 
     raise AssertionError(f"{constant_name} is not set in {host_test_file}")
 
+
+# ------------------------------------------------------------------------------
+# Inventory
+# ------------------------------------------------------------------------------
 
 def test_the_lists_hold_the_declared_check_counts(agent_module):
     assert len(shared_checks.CHECK_LIST) == SHARED_CHECK_COUNT

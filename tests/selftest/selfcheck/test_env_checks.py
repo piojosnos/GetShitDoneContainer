@@ -1,4 +1,6 @@
-# Tests of the shared environment checks.
+# ------------------------------------------------------------------------------
+# Tests of the shared environment checks
+# ------------------------------------------------------------------------------
 
 import checks_env
 import selfcheck_core
@@ -32,6 +34,5 @@ def test_bundle_env_fails_through_the_missing_pin_when_the_pin_is_absent(tmp_pat
 
     assert not result.passed
     assert "BUNDLE_REPO_URL is not in" in result.detail
-
 
 

@@ -1,10 +1,17 @@
-# Tests of the Claude and Cursor check files.
+# ------------------------------------------------------------------------------
+# Tests of the Claude and Cursor check files
+# ------------------------------------------------------------------------------
 
 import json
 import os
 from pathlib import Path
 
 import pytest
+
+
+# ------------------------------------------------------------------------------
+# Constants and helpers
+# ------------------------------------------------------------------------------
 
 CURSOR_CHECK_NAME_LIST = [
     "tool-cursor-agent",
@@ -45,6 +52,10 @@ def write_managed_settings(settings_file: Path, directory_list: list[str], deny_
 def deny_entry_list(config_dir: Path) -> list[str]:
     return [f"Edit(/{config_dir}/.best-practices-skills)", f"Edit(/{config_dir}/skills/**)"]
 
+
+# ------------------------------------------------------------------------------
+# Claude checks
+# ------------------------------------------------------------------------------
 
 def test_managed_settings_result_passes_for_the_clone_and_the_two_deny_entries(agent_module, tmp_path):
     claude = agent_module("claude")
@@ -144,6 +155,10 @@ def test_claude_no_home_copy_passes_when_no_copy_exists_and_fails_naming_each_co
     assert str(copy_link1) in failing_result.detail
     assert "remove ~/.local/share/claude and ~/.local/bin/claude" in failing_result.hint
 
+
+# ------------------------------------------------------------------------------
+# Cursor checks
+# ------------------------------------------------------------------------------
 
 def write_cursor_stand_in(folder: Path, home_record_file: Path) -> None:
     stand_in = folder / "cursor-agent"

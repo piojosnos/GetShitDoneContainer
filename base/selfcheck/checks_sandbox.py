@@ -1,5 +1,9 @@
-# The shared checks of the sandbox itself: user, workspace mount, state folders,
-# home, git and architecture. The image puts this file in /usr/local/lib/sbx-selfcheck/.
+# ------------------------------------------------------------------------------
+# The shared checks of the sandbox itself
+# ------------------------------------------------------------------------------
+# User, workspace mount, state folders, home, git and architecture. The image
+# puts this file in /usr/local/lib/sbx-selfcheck/.
+# ------------------------------------------------------------------------------
 
 import os
 import platform
@@ -28,6 +32,11 @@ from selfcheck_core import (
     start_hint,
 )
 
+
+# ------------------------------------------------------------------------------
+# Constants
+# ------------------------------------------------------------------------------
+
 SANDBOX_UID = 1000
 SANDBOX_GID = 1000
 OWNER_FIX_IMAGE = "sbx-base:local"
@@ -39,6 +48,10 @@ REPORTED_PATH_LIMIT = 10
 UNREADABLE_SUFFIX = " (unreadable)"
 STATE_WRITE_PROBE_PREFIX = ".sbx-selfcheck-"
 
+
+# ------------------------------------------------------------------------------
+# User and workspace checks
+# ------------------------------------------------------------------------------
 
 def user_name_of(uid: int) -> str:
     try:
@@ -99,6 +112,10 @@ def project_folder_result(workspace_dir: Path, project_name: str) -> CheckResult
 
     return passed(f"{project_dir} exists")
 
+
+# ------------------------------------------------------------------------------
+# State folder checks
+# ------------------------------------------------------------------------------
 
 def state_folders_result(state_dir: Path, state_dirs_text: str) -> CheckResult:
     folder_list = BASE_STATE_DIR_LIST + state_dirs_text.split()
@@ -223,6 +240,10 @@ def root_owned_state_result(state_dir: Path, owner_uid: int) -> CheckResult:
     )
 
 
+# ------------------------------------------------------------------------------
+# Home checks
+# ------------------------------------------------------------------------------
+
 def home_layout_result(home_dir: Path = HOME_DIR) -> CheckResult:
     missing_list = []
 
@@ -259,6 +280,10 @@ def owned_by_result(path_list: list[Path], owner_name: str) -> CheckResult:
     return passed(f"{len(path_list)} paths are owned by {owner_name}")
 
 
+# ------------------------------------------------------------------------------
+# Git checks
+# ------------------------------------------------------------------------------
+
 def safe_directory_result(environment_map: Mapping[str, str] | None = None) -> CheckResult:
     completed = run_command(["git", "config", "--system", "--get-all", "safe.directory"], environment_map)
 
@@ -287,6 +312,10 @@ def git_identity_result(environment_map: Mapping[str, str] | None = None) -> Che
     return passed("user.name and user.email are set")
 
 
+# ------------------------------------------------------------------------------
+# Architecture check
+# ------------------------------------------------------------------------------
+
 def architecture_result() -> CheckResult:
     machine = platform.machine()
 
@@ -295,6 +324,10 @@ def architecture_result() -> CheckResult:
 
     return passed(f"{machine}, ELF machine 0x{ELF_MACHINE_BY_UNAME_MAP[machine]:02X}")
 
+
+# ------------------------------------------------------------------------------
+# Check entries
+# ------------------------------------------------------------------------------
 
 def check_workspace_mount() -> CheckResult:
     return workspace_mount_result()

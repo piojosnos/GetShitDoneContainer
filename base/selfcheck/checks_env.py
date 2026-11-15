@@ -1,5 +1,8 @@
-# The shared checks of the environment variables. The image puts this file in
-# /usr/local/lib/sbx-selfcheck/.
+# ------------------------------------------------------------------------------
+# The shared checks of the environment variables
+# ------------------------------------------------------------------------------
+# The image puts this file in /usr/local/lib/sbx-selfcheck/.
+# ------------------------------------------------------------------------------
 
 from pathlib import Path
 from typing import Mapping
@@ -14,6 +17,11 @@ from selfcheck_core import (
     pin_value,
 )
 
+
+# ------------------------------------------------------------------------------
+# Constants
+# ------------------------------------------------------------------------------
+
 STATE_PATH_BY_NAME_MAP = {
     "HISTFILE": "/home/sandbox/workspace/state/shell/bash_history",
     "GH_CONFIG_DIR": "/home/sandbox/workspace/state/gh",
@@ -22,6 +30,10 @@ STATE_PATH_BY_NAME_MAP = {
     "UV_CACHE_DIR": "/home/sandbox/workspace/state/cache/uv",
 }
 
+
+# ------------------------------------------------------------------------------
+# Environment checks
+# ------------------------------------------------------------------------------
 
 def bundle_env_result(
     versions_file: Path = VERSIONS_FILE,
@@ -37,6 +49,10 @@ def bundle_env_result(
         environment_map,
     )
 
+
+# ------------------------------------------------------------------------------
+# Check entries
+# ------------------------------------------------------------------------------
 
 def check_env_state_paths() -> CheckResult:
     return environment_values_result(STATE_PATH_BY_NAME_MAP)

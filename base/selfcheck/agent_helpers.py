@@ -1,6 +1,9 @@
-# The helpers the agent check files share: links into the home and the
-# bundle, the login file, the GSD sync and the versions line. The image puts it in
-# /usr/local/lib/sbx-selfcheck/.
+# ------------------------------------------------------------------------------
+# The helpers the agent check files share
+# ------------------------------------------------------------------------------
+# Links into the home and the bundle, the login file, the GSD sync, the versions
+# line. The image puts this file in /usr/local/lib/sbx-selfcheck/.
+# ------------------------------------------------------------------------------
 
 import os
 from pathlib import Path
@@ -19,10 +22,19 @@ from selfcheck_core import (
     restart_hint,
 )
 
+
+# ------------------------------------------------------------------------------
+# Constants
+# ------------------------------------------------------------------------------
+
 RULES_LINK_TEXT = "../../best-practices/rules"
 SKILL_LINK_TEXT_TEMPLATE = "../../../best-practices/skills/{name}"
 BUNDLE_SKILL_LIST_NAME = ".best-practices-skills"
 
+
+# ------------------------------------------------------------------------------
+# Versions line
+# ------------------------------------------------------------------------------
 
 def versions_line_result(
     prefix_text: str,
@@ -47,6 +59,10 @@ def versions_line_result(
 
     return passed(f"the line is {expected_line}")
 
+
+# ------------------------------------------------------------------------------
+# Login file and GSD sync
+# ------------------------------------------------------------------------------
 
 def login_file_result(login_file: Path, login_hint: str) -> CheckResult:
     if not login_file.is_file() or login_file.stat().st_size == 0:
@@ -74,6 +90,10 @@ def gsd_synced_result(config_dir: Path, versions_file: Path = VERSIONS_FILE) -> 
 
     return passed(f"GSD {pinned_version} in {config_dir}")
 
+
+# ------------------------------------------------------------------------------
+# Bundle links
+# ------------------------------------------------------------------------------
 
 def bundle_skill_name_list(bundle_dir: Path) -> list[str]:
     skills_dir = bundle_dir / "skills"
@@ -189,6 +209,10 @@ def bundle_links_result(config_dir: Path, bundle_dir: Path, links_rules: bool) -
 
     return passed(detail)
 
+
+# ------------------------------------------------------------------------------
+# Home links
+# ------------------------------------------------------------------------------
 
 def home_links_result(link_target_list: list[tuple[Path, Path]]) -> CheckResult:
     problem_list = []

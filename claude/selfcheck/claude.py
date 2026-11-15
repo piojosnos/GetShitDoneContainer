@@ -1,5 +1,9 @@
-# The checks of the Claude image. The image copies this file to
-# /etc/sbx/selfcheck.d/claude.py and the runner loads it after the shared checks.
+# ------------------------------------------------------------------------------
+# The checks of the Claude image
+# ------------------------------------------------------------------------------
+# The image copies this file to /etc/sbx/selfcheck.d/claude.py; the runner loads
+# it after the shared checks.
+# ------------------------------------------------------------------------------
 
 import json
 import os
@@ -27,6 +31,11 @@ from selfcheck_core import (
     tool_result,
 )
 
+
+# ------------------------------------------------------------------------------
+# Constants
+# ------------------------------------------------------------------------------
+
 CLAUDE_CONFIG_DIR = Path("/home/sandbox/workspace/state/claude")
 CLAUDE_HOME_LINK = Path("/home/sandbox/.claude")
 CLAUDE_HOME_COPY_PATH_LIST = [
@@ -45,6 +54,10 @@ CLAUDE_WRAPPER_MODE_LIST = [
 CLAUDE_PROTECTED_PATH_LIST = [Path("/etc/claude-code")]
 CLAUDE_LOGIN_HINT = "log in once: run sbx-claude in this sandbox and follow the login"
 
+
+# ------------------------------------------------------------------------------
+# Claude home and settings checks
+# ------------------------------------------------------------------------------
 
 def no_home_copy_result(copy_path_list: list[Path] = CLAUDE_HOME_COPY_PATH_LIST) -> CheckResult:
     found_path_list = []
@@ -111,6 +124,10 @@ def managed_settings_result(
 
     return passed(f"{settings_file} names {bundle_dir} and denies edits of the skill list and the skills")
 
+
+# ------------------------------------------------------------------------------
+# Check entries
+# ------------------------------------------------------------------------------
 
 def check_tool_claude() -> CheckResult:
     pinned_version = pin_value("CLAUDE_CODE_VERSION")

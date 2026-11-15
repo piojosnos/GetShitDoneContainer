@@ -1,10 +1,12 @@
 #!/usr/bin/python3 -I
-# sbx-selfcheck: checks the sandbox it runs in and prints one PASS or FAIL line
-# per check, with a fix line under each FAIL. Exit 0 when every check passed, 1
-# when one failed, 2 for a usage error. The image puts this launcher in
-# /usr/local/lib/sbx-selfcheck/ and links it at /usr/local/bin/sbx-selfcheck.
-# The isolated system interpreter ignores PYTHONPATH and the user site, so the
-# only code it imports is the folder this file sits in.
+# ------------------------------------------------------------------------------
+# sbx-selfcheck: checks the sandbox it runs in
+# ------------------------------------------------------------------------------
+# Prints one PASS or FAIL line per check, with a fix line under each FAIL. Exit
+# 0 when every check passed, 1 when one failed, 2 for a usage error. The image
+# puts this launcher in /usr/local/lib/sbx-selfcheck/ and links it at
+# /usr/local/bin/sbx-selfcheck.
+# ------------------------------------------------------------------------------
 
 import sys
 from pathlib import Path
@@ -12,6 +14,8 @@ from pathlib import Path
 
 def run() -> int:
     sys.dont_write_bytecode = True
+    # The isolated system interpreter ignores PYTHONPATH and the user site, so the
+    # only code it imports is the folder this file sits in.
     sys.path.insert(0, str(Path(__file__).resolve().parent))
 
     import sbx_selfcheck
@@ -19,6 +23,10 @@ def run() -> int:
 
     return sbx_selfcheck.main(sys.argv[1:], shared_checks.CHECK_LIST, sbx_selfcheck.AGENT_CHECKS_DIR)
 
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     sys.exit(run())

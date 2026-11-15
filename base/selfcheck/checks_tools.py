@@ -1,5 +1,9 @@
-# The shared checks of what the image holds: tools, versions record, wrappers and
-# protected paths. The image puts this file in /usr/local/lib/sbx-selfcheck/.
+# ------------------------------------------------------------------------------
+# The shared checks of what the image holds
+# ------------------------------------------------------------------------------
+# Tools, the versions record and line, wrappers and protected paths. The image
+# puts this file in /usr/local/lib/sbx-selfcheck/.
+# ------------------------------------------------------------------------------
 
 import os
 import platform
@@ -26,6 +30,11 @@ from selfcheck_core import (
     run_command,
     tool_result,
 )
+
+
+# ------------------------------------------------------------------------------
+# Constants
+# ------------------------------------------------------------------------------
 
 BUNDLE_COPY_PATH = Path("/opt/sbx/best-practices")
 BASE_WRAPPER_MODE_LIST = [
@@ -62,6 +71,10 @@ FIRST_LINES_LIMIT = 3
 PROTECTED_PATH_LIST = [Path("/etc/sbx"), Path("/usr/local/bin"), Path("/usr/local/lib/sbx-selfcheck")]
 
 
+# ------------------------------------------------------------------------------
+# Shell environment
+# ------------------------------------------------------------------------------
+
 def history_free_environment(environment_map: Mapping[str, str] | None = None) -> dict[str, str]:
     if environment_map is None:
         environment_map = os.environ
@@ -72,12 +85,20 @@ def history_free_environment(environment_map: Mapping[str, str] | None = None) -
     return history_free_environment_map
 
 
+# ------------------------------------------------------------------------------
+# Image file checks
+# ------------------------------------------------------------------------------
+
 def no_bundle_copy_result(bundle_copy_path: Path = BUNDLE_COPY_PATH) -> CheckResult:
     if os.path.lexists(bundle_copy_path):
         return failed(f"the image holds a bundle copy at {bundle_copy_path}", rebuild_hint())
 
     return passed(f"no bundle copy at {bundle_copy_path}")
 
+
+# ------------------------------------------------------------------------------
+# Tool and tzdata checks
+# ------------------------------------------------------------------------------
 
 def tool_gh_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
     gh_version = pin_value("GH_VERSION", versions_file)
@@ -158,6 +179,10 @@ def tzdata_result(utc_zone_file: Path = UTC_ZONE_FILE) -> CheckResult:
 
     return passed(f"{utc_zone_file} exists")
 
+
+# ------------------------------------------------------------------------------
+# Versions record and line checks
+# ------------------------------------------------------------------------------
 
 def first_lines(text: str) -> str:
     line_list = []
@@ -245,6 +270,10 @@ def quiet_shells_result(environment_map: Mapping[str, str] | None = None) -> Che
 
     return passed("bash -c true and bash -lc true print nothing")
 
+
+# ------------------------------------------------------------------------------
+# Check entries
+# ------------------------------------------------------------------------------
 
 def check_tool_git() -> CheckResult:
     return tool_result("git")

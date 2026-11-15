@@ -1,8 +1,9 @@
-# Tests of the shared tool and image checks: tool pins, the versions record and
-# line, the interactive and quiet shells, the bundle copy. They run real binaries
-# (bash) and, where a tool's output must vary, a small stand-in executable written
-# into tmp_path and put first on the PATH of the environment passed in. Nothing
-# is mocked.
+# ------------------------------------------------------------------------------
+# Tests of the shared tool and image checks
+# ------------------------------------------------------------------------------
+# Tool pins, the versions record and line, the shells and the bundle copy. Real
+# bash; a stand-in executable where output must vary.
+# ------------------------------------------------------------------------------
 
 import os
 import shutil
@@ -14,6 +15,10 @@ import selfcheck_core
 import shared_checks
 from helpers import environment_with, write_stand_in, write_versions
 
+
+# ------------------------------------------------------------------------------
+# Bundle copy check
+# ------------------------------------------------------------------------------
 
 def test_no_bundle_copy_passes_when_the_path_is_absent_and_fails_when_present(tmp_path):
     copy1 = tmp_path / "copy1"
@@ -34,6 +39,10 @@ def test_no_bundle_copy_fails_for_a_dangling_link(tmp_path):
 
     assert not checks_tools.no_bundle_copy_result(copy1).passed
 
+
+# ------------------------------------------------------------------------------
+# Tool and tzdata checks
+# ------------------------------------------------------------------------------
 
 def test_tool_gh_without_its_pin_reports_the_missing_pin_and_runs_nothing(tmp_path):
     empty_versions = tmp_path / "empty1.env"
@@ -111,6 +120,10 @@ def test_tool_keytool_resolves_to_the_jdk_outside_the_home():
     assert result.detail == expected_path
     assert not result.detail.startswith("/home/")
 
+
+# ------------------------------------------------------------------------------
+# History-free environment, versions record and line file
+# ------------------------------------------------------------------------------
 
 def test_history_free_environment_points_the_history_at_dev_null_and_leaves_the_input_alone():
     environment1 = {"PATH": "/usr/bin", "HISTFILE": "/home/sandbox/history1"}
@@ -196,6 +209,10 @@ def test_versions_line_file_reports_a_missing_pin(tmp_path, line1):
 
     assert checks_tools.versions_line_file_result(line1, empty_versions).detail.startswith("GSD_CORE_VERSION is not in ")
 
+
+# ------------------------------------------------------------------------------
+# Interactive and quiet shells
+# ------------------------------------------------------------------------------
 
 def test_interactive_shell_passes_when_it_prints_the_file_once_and_only_on_stdout(tmp_path, bin1, line1):
     line1.write_text("line one of the file\n")

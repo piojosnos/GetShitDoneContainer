@@ -1,8 +1,9 @@
-# Tests of the helpers the agent checks share. They run on real files and real
-# links inside tmp_path: a fake config folder state1/agent1, a fake clone
-# best-practices next to state1, and links made with the same relative targets as
-# sbx-link-bundle. No login file is ever read; a planted token must show up
+# ------------------------------------------------------------------------------
+# Tests of the helpers the agent checks share
+# ------------------------------------------------------------------------------
+# Real files and links inside tmp_path. A planted login token must show up
 # nowhere in a result.
+# ------------------------------------------------------------------------------
 
 import os
 from pathlib import Path
@@ -10,6 +11,10 @@ from pathlib import Path
 import agent_helpers
 import selfcheck_core
 
+
+# ------------------------------------------------------------------------------
+# Versions line
+# ------------------------------------------------------------------------------
 
 def test_versions_line_result_passes_for_the_prefix_and_the_base_text(versions1, line1):
     line1.write_text("tool1 1 | " + selfcheck_core.expected_base_versions_text(versions1) + "\n")
@@ -55,6 +60,10 @@ def test_versions_line_result_reports_a_missing_pin(tmp_path, line1):
     assert result.detail.startswith("GSD_CORE_VERSION is not in ")
 
 
+# ------------------------------------------------------------------------------
+# Constants and helpers
+# ------------------------------------------------------------------------------
+
 GSD_PIN1 = "1.15.0"
 TOKEN_TEXT1 = "token1"
 RULES_LINK_TEXT = "../../best-practices/rules"
@@ -97,6 +106,10 @@ def make_bundle_tree(base_dir: Path, skill_name_list: list[str], links_rules: bo
 
     return config_dir, clone_dir
 
+
+# ------------------------------------------------------------------------------
+# Login file and GSD sync
+# ------------------------------------------------------------------------------
 
 def test_login_file_result_passes_for_a_non_empty_file_and_never_shows_its_text(tmp_path):
     login_file1 = tmp_path / "login1.json"
@@ -172,6 +185,10 @@ def test_gsd_synced_result_fails_when_the_pin_is_missing(tmp_path):
     assert not result.passed
     assert "GSD_CORE_VERSION" in result.detail
 
+
+# ------------------------------------------------------------------------------
+# Bundle links
+# ------------------------------------------------------------------------------
 
 def test_bundle_links_result_passes_on_a_linked_tree_with_the_list_in_any_order(tmp_path):
     config1, clone1 = make_bundle_tree(tmp_path, ["skill-a", "skill-b"], True)
@@ -285,6 +302,10 @@ def test_bundle_links_result_without_rules_mode_passes_on_a_tree_with_no_rules_l
     assert "2 skills linked" in result.detail
     assert "rules" not in result.detail
 
+
+# ------------------------------------------------------------------------------
+# Home links
+# ------------------------------------------------------------------------------
 
 def test_home_links_result_passes_when_each_link_holds_its_target_text(tmp_path):
     target1 = tmp_path / "target1"

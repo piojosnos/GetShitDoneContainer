@@ -1,6 +1,9 @@
-# The primitives of sbx-selfcheck: the result type, the hint builders, the command and
-# pin readers, and the result builders both the shared and the agent checks use.
-# The image puts it in /usr/local/lib/sbx-selfcheck/.
+# ------------------------------------------------------------------------------
+# The primitives of sbx-selfcheck
+# ------------------------------------------------------------------------------
+# The result type, the hints and the result builders the checks and the runner
+# share. The image puts this file in /usr/local/lib/sbx-selfcheck/.
+# ------------------------------------------------------------------------------
 
 import os
 import platform
@@ -10,6 +13,11 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Mapping
+
+
+# ------------------------------------------------------------------------------
+# Constants
+# ------------------------------------------------------------------------------
 
 WORKSPACE_DIR = Path("/home/sandbox/workspace")
 STATE_DIR = WORKSPACE_DIR / "state"
@@ -27,6 +35,10 @@ ELF_MACHINE_OFFSET = 18
 TOOL_VERSIONS_FILE = Path("/etc/sbx/tool-versions")
 HOME_DIR = Path("/home/sandbox")
 
+
+# ------------------------------------------------------------------------------
+# Check result and hints
+# ------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class CheckResult:
@@ -85,6 +97,10 @@ def shell_hint() -> str:
     return mac_hint("open the sandbox shell with sbx-shell", f"sbx-shell {sandbox_name()}")
 
 
+# ------------------------------------------------------------------------------
+# Commands and pins
+# ------------------------------------------------------------------------------
+
 def run_command(
     argument_list: list[str],
     environment_map: Mapping[str, str] | None = None,
@@ -129,6 +145,10 @@ def pin_value(name: str, versions_file: Path = VERSIONS_FILE) -> str:
 def missing_pin_result(name: str) -> CheckResult:
     return failed(f"{name} is not in {VERSIONS_FILE}", rebuild_hint())
 
+
+# ------------------------------------------------------------------------------
+# Mounts and root-owned paths
+# ------------------------------------------------------------------------------
 
 def mount_point_set(mountinfo_text: str) -> set[str]:
     mount_point_found_set = set()
@@ -213,6 +233,10 @@ def protected_paths_result(path_list: list[Path], mountinfo_file: Path = MOUNTIN
     return passed(f"nothing under {', '.join(path_text_list)} is writable or mounted")
 
 
+# ------------------------------------------------------------------------------
+# Environment values
+# ------------------------------------------------------------------------------
+
 def environment_values_result(
     expected_value_by_name_map: Mapping[str, str],
     environment_map: Mapping[str, str] | None = None,
@@ -241,6 +265,10 @@ def environment_values_result(
 
     return passed(", ".join(pair_list))
 
+
+# ------------------------------------------------------------------------------
+# Tool and version results
+# ------------------------------------------------------------------------------
 
 def is_under(path_text: str, root_text: str) -> bool:
     return path_text == root_text or path_text.startswith(root_text + "/")
@@ -348,6 +376,10 @@ def tool_result(
 
     return passed(f"{real_path}, {line}")
 
+
+# ------------------------------------------------------------------------------
+# Expected versions text
+# ------------------------------------------------------------------------------
 
 def expected_base_versions_text(versions_file: Path = VERSIONS_FILE, python_version: str | None = None) -> str:
     if python_version is None:

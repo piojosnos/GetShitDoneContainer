@@ -1,5 +1,9 @@
-# The checks of the Cursor image. The image copies this file to
-# /etc/sbx/selfcheck.d/cursor.py and the runner loads it after the shared checks.
+# ------------------------------------------------------------------------------
+# The checks of the Cursor image
+# ------------------------------------------------------------------------------
+# The image copies this file to /etc/sbx/selfcheck.d/cursor.py; the runner loads
+# it after the shared checks.
+# ------------------------------------------------------------------------------
 
 import json
 import os
@@ -30,6 +34,11 @@ from selfcheck_core import (
     tool_result,
 )
 
+
+# ------------------------------------------------------------------------------
+# Constants
+# ------------------------------------------------------------------------------
+
 CURSOR_CONFIG_DIR = Path("/home/sandbox/workspace/state/cursor")
 CURSOR_HOME_LINK_LIST = [Path("/home/sandbox/.cursor"), Path("/home/sandbox/.config/cursor")]
 CLI_CONFIG_FILE = CURSOR_CONFIG_DIR / "cli-config.json"
@@ -44,6 +53,10 @@ CURSOR_PROTECTED_PATH_LIST = [Path("/usr/local/lib/cursor-agent")]
 CURSOR_LOGIN_HINT = "log in once: run cursor-agent login in this sandbox and open the link on the Mac"
 THROWAWAY_HOME_PREFIX = "sbx-selfcheck-cursor-"
 
+
+# ------------------------------------------------------------------------------
+# Cursor version and update checks
+# ------------------------------------------------------------------------------
 
 def cursor_version_result(expected_version: str, environment_map: Mapping[str, str] | None = None) -> CheckResult:
     if environment_map is None:
@@ -79,6 +92,10 @@ def self_update_result(config_file: Path = CLI_CONFIG_FILE) -> CheckResult:
 
     return passed("channel is static")
 
+
+# ------------------------------------------------------------------------------
+# Check entries
+# ------------------------------------------------------------------------------
 
 def check_tool_cursor_agent() -> CheckResult:
     pinned_version = pin_value("CURSOR_AGENT_VERSION")

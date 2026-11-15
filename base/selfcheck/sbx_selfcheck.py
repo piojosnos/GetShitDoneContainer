@@ -1,6 +1,9 @@
-# The sbx-selfcheck runner. The image puts it in /usr/local/lib/sbx-selfcheck/, next
-# to the launcher and the shared checks. Every check returns one result; the runner
-# prints one PASS or FAIL line per check, and a fix line right under each FAIL.
+# ------------------------------------------------------------------------------
+# The sbx-selfcheck runner
+# ------------------------------------------------------------------------------
+# Prints one PASS or FAIL line per check, and a fix line under each FAIL. The
+# image puts this file in /usr/local/lib/sbx-selfcheck/.
+# ------------------------------------------------------------------------------
 
 import importlib.util
 import sys
@@ -16,12 +19,21 @@ from selfcheck_core import (
     rebuild_hint,
 )
 
+
+# ------------------------------------------------------------------------------
+# Constants
+# ------------------------------------------------------------------------------
+
 AGENT_CHECKS_DIR = Path("/etc/sbx/selfcheck.d")
 AGENT_CHECKS_CHECK_NAME = "load-agent-checks"
 AGENT_MODULE_PREFIX = "sbx_selfcheck_agent_"
 FIX_LINE_INDENT = "      "
 USAGE_TEXT = "Usage: sbx-selfcheck (no arguments)"
 
+
+# ------------------------------------------------------------------------------
+# Loading the agent checks
+# ------------------------------------------------------------------------------
 
 def load_check_module(module_path: Path) -> ModuleType:
     module_name = AGENT_MODULE_PREFIX + module_path.stem
@@ -89,6 +101,10 @@ def collect_checks(shared_check_list: list[Check], checks_dir: Path) -> list[Che
 
     return check_list
 
+
+# ------------------------------------------------------------------------------
+# Running and printing
+# ------------------------------------------------------------------------------
 
 def run_check(check: Check) -> CheckResult:
     try:

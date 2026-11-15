@@ -1,8 +1,9 @@
-# Tests of the sbx-selfcheck primitives: the pin and command readers, the tool
-# result and its version helpers, and the root-owned and protected-path results.
-# They run real binaries (python3, git, bash) and, where a tool's output must vary,
-# a small stand-in executable written into tmp_path and put first on the PATH of
-# the environment passed in. Nothing is mocked.
+# ------------------------------------------------------------------------------
+# Tests of the sbx-selfcheck primitives
+# ------------------------------------------------------------------------------
+# Pin and command readers, the tool result and the root-owned and protected path
+# results. Real binaries; a stand-in executable where output must vary.
+# ------------------------------------------------------------------------------
 
 import os
 import platform
@@ -14,6 +15,11 @@ import pytest
 
 import selfcheck_core
 from helpers import TEMURIN_PIN1, environment_with, write_stand_in
+
+
+# ------------------------------------------------------------------------------
+# Constants and helpers
+# ------------------------------------------------------------------------------
 
 ROOT_MOUNT_LINE = "1 0 8:1 / / rw - ext4 /dev/sda1 rw"
 MOUNT_LINE_TEMPLATE = "{number} 1 8:2 / {mount_point} rw,noatime - ext4 /dev/sda2 rw"
@@ -32,6 +38,10 @@ def write_file(path: Path, text: str = "text1") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
 
+
+# ------------------------------------------------------------------------------
+# Mount, pin and command readers
+# ------------------------------------------------------------------------------
 
 def test_mount_point_set_reads_the_fifth_field_of_each_line():
     text = ROOT_MOUNT_LINE + "\n" + MOUNT_LINE_TEMPLATE.format(number=2, mount_point="/mount1") + "\n"
@@ -86,6 +96,10 @@ def test_run_command_passes_the_given_environment():
 
     assert completed.stdout.strip() == "NAME1=value1"
 
+
+# ------------------------------------------------------------------------------
+# Root-owned and protected path results
+# ------------------------------------------------------------------------------
 
 def test_root_owned_passes_on_the_real_root_files():
     result = selfcheck_core.root_owned_result([("/etc/passwd", 0o644), ("/etc", 0o755)])
@@ -199,6 +213,10 @@ def test_protected_paths_do_not_follow_a_link_while_walking(tmp_path):
 
     assert "link1/file1" not in result.detail
 
+
+# ------------------------------------------------------------------------------
+# Version, ELF and tool results
+# ------------------------------------------------------------------------------
 
 CURRENT_PYTHON_TEXT = f"Python {platform.python_version()}"
 
@@ -367,6 +385,10 @@ def test_tool_result_without_a_version_command_passes_with_the_resolved_path_onl
     assert result.passed
     assert result.detail == os.path.realpath(shutil.which("git"))
 
+
+# ------------------------------------------------------------------------------
+# Expected base versions text
+# ------------------------------------------------------------------------------
 
 BASE_VERSIONS_TEXT1 = "gsd 1.15.0 | node 24.21.0 | jdk 21.0.12 | mvn 3.9.11 | python 3.12.3"
 

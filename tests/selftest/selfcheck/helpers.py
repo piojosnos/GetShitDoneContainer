@@ -1,5 +1,8 @@
-# Plain helpers the selfcheck tests share: a pins file, a stand-in executable and
-# a PATH that puts a folder first.
+# ------------------------------------------------------------------------------
+# Plain helpers the selfcheck tests share
+# ------------------------------------------------------------------------------
+# A pins file, a stand-in executable and a PATH that puts a folder first.
+# ------------------------------------------------------------------------------
 
 import os
 from pathlib import Path

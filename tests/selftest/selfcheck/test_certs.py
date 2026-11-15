@@ -1,6 +1,9 @@
-# Tests of the extra root certificate checks. The certificates are made by
-# openssl and the keystores by keytool, both real, inside tmp_path; nothing is
-# committed.
+# ------------------------------------------------------------------------------
+# Tests of the extra root certificate checks
+# ------------------------------------------------------------------------------
+# The certificates are made by openssl and the keystores by keytool, both real,
+# inside tmp_path.
+# ------------------------------------------------------------------------------
 
 import shutil
 import subprocess
@@ -9,6 +12,11 @@ from pathlib import Path
 import pytest
 
 import checks_certs
+
+
+# ------------------------------------------------------------------------------
+# Constants and helpers
+# ------------------------------------------------------------------------------
 
 KEYTOOL_PASSWORD = "changeit"
 BEGIN_MARKER = "-----BEGIN CERTIFICATE-----"
@@ -73,6 +81,10 @@ def bundle1(tmp_path, certs1, certs2) -> Path:
     return bundle_file
 
 
+# ------------------------------------------------------------------------------
+# Certificate parsing
+# ------------------------------------------------------------------------------
+
 def test_pem_block_list_splits_two_certificates_joined_by_a_blank_line(certs1, certs2):
     text = certs1.read_text() + "\n" + certs2.read_text()
 
@@ -127,6 +139,10 @@ def test_keytool_helpers_read_the_aliases_and_fingerprints_of_a_listing(tmp_path
     assert checks_certs.keytool_fingerprint_set(listing) == {openssl_fingerprint(certs1), openssl_fingerprint(certs2)}
 
 
+# ------------------------------------------------------------------------------
+# System bundle check
+# ------------------------------------------------------------------------------
+
 def test_system_bundle_passes_and_prints_the_alias_and_the_fingerprint(extra1, bundle1, certs1):
     result = checks_certs.system_bundle_result(extra1, bundle1)
 
@@ -163,6 +179,10 @@ def test_system_bundle_passes_with_no_extra_certificate_and_reads_no_bundle(tmp_
     assert result.passed
     assert result.detail == "no extra root certificate installed"
 
+
+# ------------------------------------------------------------------------------
+# Java cacerts check
+# ------------------------------------------------------------------------------
 
 def test_java_cacerts_passes_when_the_alias_and_the_fingerprint_are_in_the_store(tmp_path, extra1, certs1):
     store1 = tmp_path / "store1.p12"

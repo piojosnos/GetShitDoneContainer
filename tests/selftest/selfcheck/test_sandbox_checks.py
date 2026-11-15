@@ -1,5 +1,9 @@
-# Tests of the shared sandbox checks. They run the logic on real files, real
-# permissions and the real git, inside tmp_path.
+# ------------------------------------------------------------------------------
+# Tests of the shared sandbox checks
+# ------------------------------------------------------------------------------
+# They run the logic on real files, real permissions and the real git, inside
+# tmp_path.
+# ------------------------------------------------------------------------------
 
 import contextlib
 import errno
@@ -13,6 +17,11 @@ import pytest
 import checks_sandbox
 import sbx_selfcheck
 import selfcheck_core
+
+
+# ------------------------------------------------------------------------------
+# Constants and helpers
+# ------------------------------------------------------------------------------
 
 CURRENT_USER = checks_sandbox.user_name_of(os.getuid())
 ROOT_MOUNT_LINE = "1 0 8:1 / / rw - ext4 /dev/sda1 rw"
@@ -46,6 +55,10 @@ def state_tree(tmp_path):
 
     return state1
 
+
+# ------------------------------------------------------------------------------
+# Workspace and project folder checks
+# ------------------------------------------------------------------------------
 
 def test_workspace_mount_passes_when_listed_and_writable(tmp_path):
     workspace1 = tmp_path / "workspace1"
@@ -112,6 +125,10 @@ def test_project_folder_fails_for_an_empty_name(tmp_path):
     assert "SBX_NAME is not set" in result.detail
 
 
+# ------------------------------------------------------------------------------
+# State folder checks
+# ------------------------------------------------------------------------------
+
 def make_state_folders(state1: Path, name_list: list[str]) -> None:
     for name in name_list:
         (state1 / name).mkdir(parents=True)
@@ -165,6 +182,10 @@ def test_state_writable_fails_for_a_missing_folder(tmp_path):
 
     assert not result.passed
 
+
+# ------------------------------------------------------------------------------
+# Root-owned state scan
+# ------------------------------------------------------------------------------
 
 def test_scan_owned_state_skips_tolerated_skipped_and_linked_trees(state_tree):
     path_list = checks_sandbox.scan_owned_state(state_tree, os.getuid(), {"cache/npm"}, {"gsd-core"})[0]
@@ -401,6 +422,10 @@ def test_state_walk_never_opens_a_file(state_tree, restorable_mode):
     assert "sub1/notes1" in path_list
 
 
+# ------------------------------------------------------------------------------
+# Home, owner and git checks
+# ------------------------------------------------------------------------------
+
 def git_environment(system_file: Path, global_file: Path) -> dict[str, str]:
     return {
         "PATH": os.environ["PATH"],
@@ -517,6 +542,10 @@ def test_git_identity_names_only_the_empty_one(tmp_path):
     assert "user.email" in result.detail
     assert "user.name" not in result.detail
 
+
+# ------------------------------------------------------------------------------
+# Architecture check
+# ------------------------------------------------------------------------------
 
 def test_architecture_passes_with_the_machine_and_its_elf_value():
     result = checks_sandbox.architecture_result()

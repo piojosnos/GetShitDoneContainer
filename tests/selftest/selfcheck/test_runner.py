@@ -1,5 +1,9 @@
-# Tests of the sbx-selfcheck runner: line format, fix lines, order, load
-# failures, exit codes and hint builders. They run against real files in tmp_path.
+# ------------------------------------------------------------------------------
+# Tests of the sbx-selfcheck runner
+# ------------------------------------------------------------------------------
+# Line format, fix lines, order, load failures, exit codes and hint builders.
+# They run against real files in tmp_path.
+# ------------------------------------------------------------------------------
 
 import io
 import subprocess
@@ -11,6 +15,11 @@ import pytest
 import sbx_selfcheck
 import selfcheck_core
 from selfcheck_core import Check, CheckResult, failed, passed
+
+
+# ------------------------------------------------------------------------------
+# Constants and helpers
+# ------------------------------------------------------------------------------
 
 AGENT_FILE_TEMPLATE = """from selfcheck_core import Check, passed
 
@@ -56,6 +65,10 @@ def agents1(tmp_path) -> Path:
 
     return agents_dir
 
+
+# ------------------------------------------------------------------------------
+# Output lines and order
+# ------------------------------------------------------------------------------
 
 def test_passing_checks_print_one_pass_line_each_in_list_order(agents1):
     check_list = [passing_check("check1"), passing_check("check2"), passing_check("check3")]
@@ -179,6 +192,10 @@ def test_the_order_is_the_same_on_every_run(tmp_path):
     assert lines1[1] == "PASS: check1: detail_check1"
 
 
+# ------------------------------------------------------------------------------
+# Load failures
+# ------------------------------------------------------------------------------
+
 def expected_no_agent_checks_lines(checks_dir: Path) -> list[str]:
     return [
         "PASS: check1: detail_check1",
@@ -295,6 +312,10 @@ def test_an_agent_file_with_a_malformed_check_list_is_one_load_failure(tmp_path,
     ]
 
 
+# ------------------------------------------------------------------------------
+# Main and the launcher
+# ------------------------------------------------------------------------------
+
 def test_main_with_an_argument_exits_two_with_one_usage_line_on_stderr(tmp_path, capsys):
     status = sbx_selfcheck.main(["extra"], [passing_check("check1")], tmp_path)
 
@@ -328,6 +349,10 @@ def test_the_launcher_file_exits_two_for_an_argument(repo_dir):
     assert completed.stdout == ""
     assert completed.stderr == "Usage: sbx-selfcheck (no arguments)\n"
 
+
+# ------------------------------------------------------------------------------
+# Hint builders and environment values
+# ------------------------------------------------------------------------------
 
 def test_hint_builders_name_the_sandbox_from_sbx_name(monkeypatch):
     monkeypatch.setenv("SBX_NAME", "sbx1")
@@ -373,6 +398,10 @@ def test_environment_values_result_names_each_wrong_or_missing_variable(monkeypa
     assert result.detail == "VAR1 is 'other1', expected 'value1'; VAR2 is not set"
     assert result.hint.endswith("on the Mac run: sbx-upgrade sbx1")
 
+
+# ------------------------------------------------------------------------------
+# Line format and base files
+# ------------------------------------------------------------------------------
 
 def test_every_line_is_pass_fail_fix_or_the_summary(tmp_path):
     (tmp_path / "agent1.py").write_text("raise RuntimeError('detail1')\n")

@@ -1,5 +1,8 @@
-# The shared checks of the extra root certificates. The image puts this file in
-# /usr/local/lib/sbx-selfcheck/.
+# ------------------------------------------------------------------------------
+# The shared checks of the extra root certificates
+# ------------------------------------------------------------------------------
+# The image puts this file in /usr/local/lib/sbx-selfcheck/.
+# ------------------------------------------------------------------------------
 
 import hashlib
 import ssl
@@ -16,6 +19,11 @@ from selfcheck_core import (
     run_command,
 )
 
+
+# ------------------------------------------------------------------------------
+# Constants
+# ------------------------------------------------------------------------------
+
 EXTRA_CA_DIR = Path("/usr/local/share/ca-certificates")
 SYSTEM_BUNDLE_FILE = Path("/etc/ssl/certs/ca-certificates.crt")
 KEYTOOL_STORE_ARGUMENT_LIST = ["-cacerts", "-storepass", "changeit"]
@@ -25,6 +33,10 @@ PEM_END_MARKER = "-----END CERTIFICATE-----"
 KEYTOOL_FINGERPRINT_PREFIX = "Certificate fingerprint (SHA-256): "
 KEYTOOL_ALIAS_LINE_END = "trustedCertEntry,"
 
+
+# ------------------------------------------------------------------------------
+# Certificate parsing
+# ------------------------------------------------------------------------------
 
 def pem_block_list(text: str) -> list[str]:
     block_list = []
@@ -88,6 +100,10 @@ def extra_certificates_text(fingerprint_by_alias_map: Mapping[str, str]) -> str:
 
     return ", ".join(pair_list)
 
+
+# ------------------------------------------------------------------------------
+# Trust store checks
+# ------------------------------------------------------------------------------
 
 def system_bundle_result(
     extra_ca_dir: Path = EXTRA_CA_DIR,
@@ -153,6 +169,10 @@ def java_cacerts_result(
         + extra_certificates_text(fingerprint_by_alias_map)
     )
 
+
+# ------------------------------------------------------------------------------
+# Check entries
+# ------------------------------------------------------------------------------
 
 def check_extra_ca_system_bundle() -> CheckResult:
     return system_bundle_result()

@@ -1,6 +1,9 @@
-# Shared setup of the sbx-selfcheck tests. Bytecode stays off before any repo
-# module is imported, so the source folders get no __pycache__; the base
-# selfcheck folder goes on sys.path the way the launcher puts it there.
+# ------------------------------------------------------------------------------
+# Shared setup of the sbx-selfcheck tests
+# ------------------------------------------------------------------------------
+# Bytecode stays off so the source folders get no __pycache__. The base
+# selfcheck folder goes on sys.path as the launcher does.
+# ------------------------------------------------------------------------------
 
 import subprocess
 import sys
@@ -18,6 +21,10 @@ sys.path.insert(0, str(REPO_DIR / "base" / "selfcheck"))
 
 import sbx_selfcheck  # noqa: E402
 
+
+# ------------------------------------------------------------------------------
+# Fixtures
+# ------------------------------------------------------------------------------
 
 @pytest.fixture
 def repo_dir() -> Path:
