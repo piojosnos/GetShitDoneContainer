@@ -25,14 +25,14 @@ STATE_DIR = WORKSPACE_DIR / "state"
 BUNDLE_DIR = WORKSPACE_DIR / "best-practices"
 VERSIONS_FILE = Path("/etc/sbx/versions.env")
 MOUNTINFO_FILE = Path("/proc/self/mountinfo")
-COMMAND_TIMEOUT_SECONDS = 60
-REPORTED_PROBLEM_LIMIT = 10
-UNSET_SANDBOX_NAME = "NAME"
+_COMMAND_TIMEOUT_SECONDS = 60
+_REPORTED_PROBLEM_LIMIT = 10
+_UNSET_SANDBOX_NAME = "NAME"
 ELF_MACHINE_BY_UNAME_MAP = {"aarch64": 0xB7, "x86_64": 0x3E}
-HOME_ROOT = "/home"
-ELF_HEADER_LENGTH = 20
-ELF_MAGIC = b"\x7fELF"
-ELF_MACHINE_OFFSET = 18
+_HOME_ROOT = "/home"
+_ELF_HEADER_LENGTH = 20
+_ELF_MAGIC = b"\x7fELF"
+_ELF_MACHINE_OFFSET = 18
 TOOL_VERSIONS_FILE = Path("/etc/sbx/tool-versions")
 
 
@@ -75,7 +75,7 @@ def sandbox_name(environment_map: Mapping[str, str] = os.environ) -> str:
     name = environment_map.get("SBX_NAME", "")
 
     if not name:
-        return UNSET_SANDBOX_NAME
+        return _UNSET_SANDBOX_NAME
 
     return name
 
@@ -105,7 +105,7 @@ def shell_hint(environment_map: Mapping[str, str] = os.environ) -> str:
 
 
 # ------------------------------------------------------------------------------
-# Commands and pins
+# Commands and command output
 # ------------------------------------------------------------------------------
 
 def run_command(
@@ -117,11 +117,28 @@ def run_command(
         stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
-        timeout=COMMAND_TIMEOUT_SECONDS,
+        timeout=_COMMAND_TIMEOUT_SECONDS,
         check=False,
         env=environment_map,
     )
 
+
+def first_output_line(completed: subprocess.CompletedProcess) -> str:
+    for output_text in [completed.stdout, completed.stderr]:
+        for line in output_text.splitlines():
+            if line.strip():
+                return line.strip()
+
+    return ""
+
+
+def one_line(text: str) -> str:
+    return text.replace("\r", " ").replace("\n", " ")
+
+
+# ------------------------------------------------------------------------------
+# Pins and versions text
+# ------------------------------------------------------------------------------
 
 def parse_versions_text(text: str) -> dict[str, str]:
     value_by_name_map = {}
@@ -142,7 +159,7 @@ def parse_versions_text(text: str) -> dict[str, str]:
     return value_by_name_map
 
 
-def pin_value(name: str, versions_file: Path = VERSIONS_FILE) -> str:
+def _pin_value(name: str, versions_file: Path = VERSIONS_FILE) -> str:
     if not versions_file.is_file():
         return ""
 
@@ -160,7 +177,7 @@ def pin_map_or_missing(
     value_by_name_map = {}
 
     for name in pin_name_list:
-        value = pin_value(name, versions_file)
+        value = _pin_value(name, versions_file)
 
         if not value:
             return {}, missing_pin_result(name)
@@ -170,11 +187,51 @@ def pin_map_or_missing(
     return value_by_name_map, None
 
 
+def image_tag(image_pin: str) -> str:
+    return image_pin.partition("@")[0].rpartition(":")[2]
+
+
+def jdk_version(temurin_pin: str) -> str:
+    return image_tag(temurin_pin).partition("_")[0]
+
+
+def expected_base_versions_text(versions_file: Path = VERSIONS_FILE, python_version: str | None = None) -> str:
+    if python_version is None:
+        python_version = platform.python_version()
+
+    gsd_version = _pin_value("GSD_CORE_VERSION", versions_file)
+    node_version = _pin_value("NODE_VERSION", versions_file)
+    temurin_image = _pin_value("TEMURIN_IMAGE", versions_file)
+    maven_version = _pin_value("MAVEN_VERSION", versions_file)
+
+    for name, value in [
+        ("GSD_CORE_VERSION", gsd_version),
+        ("NODE_VERSION", node_version),
+        ("TEMURIN_IMAGE", temurin_image),
+        ("MAVEN_VERSION", maven_version),
+    ]:
+        if not value:
+            raise KeyError(name)
+
+    return (
+        f"gsd {gsd_version} | node {node_version} | jdk {jdk_version(temurin_image)}"
+        f" | mvn {maven_version} | python {python_version}"
+    )
+
+
 # ------------------------------------------------------------------------------
 # Mounts and root-owned paths
 # ------------------------------------------------------------------------------
 
-def mount_point_set(mountinfo_text: str) -> set[str]:
+def path_is_present(path: Path) -> bool:
+    return path.is_symlink() or path.exists()
+
+
+def _is_under(path_text: str, root_text: str) -> bool:
+    return path_text == root_text or path_text.startswith(root_text + "/")
+
+
+def _mount_point_set(mountinfo_text: str) -> set[str]:
     mount_point_found_set = set()
 
     for line in mountinfo_text.splitlines():
@@ -189,11 +246,7 @@ def mount_point_set(mountinfo_text: str) -> set[str]:
 
 
 def read_mount_point_set(mountinfo_file: Path = MOUNTINFO_FILE) -> set[str]:
-    return mount_point_set(mountinfo_file.read_text())
-
-
-def path_is_present(path: Path) -> bool:
-    return path.is_symlink() or path.exists()
+    return _mount_point_set(mountinfo_file.read_text())
 
 
 def root_owned_result(path_mode_list: list[tuple[str, int]]) -> CheckResult:
@@ -218,7 +271,37 @@ def root_owned_result(path_mode_list: list[tuple[str, int]]) -> CheckResult:
     )
 
 
-def protected_paths_problem_list(path_list: list[Path], mount_point_found_set: set[str]) -> list[str]:
+def _entry_list_under(path: Path) -> list[Path]:
+    entry_list = [path]
+
+    for current_dir, dir_name_list, file_name_list in path.walk(follow_symlinks=False):
+        for name in dir_name_list + file_name_list:
+            entry_list.append(current_dir / name)
+
+    return entry_list
+
+
+def _writable_entry_problem_list(path: Path) -> list[str]:
+    problem_list = []
+
+    for entry in _entry_list_under(path):
+        if os.access(entry, os.W_OK):
+            problem_list.append(f"{entry} is writable")
+
+    return problem_list
+
+
+def _mount_point_problem_list(path: Path, mount_point_found_set: set[str]) -> list[str]:
+    problem_list = []
+
+    for mount_point in sorted(mount_point_found_set):
+        if _is_under(mount_point, str(path)):
+            problem_list.append(f"{mount_point} is a mount point")
+
+    return problem_list
+
+
+def _protected_paths_problem_list(path_list: list[Path], mount_point_found_set: set[str]) -> list[str]:
     problem_list = []
 
     for path in path_list:
@@ -226,29 +309,18 @@ def protected_paths_problem_list(path_list: list[Path], mount_point_found_set: s
             problem_list.append(f"{path} is missing")
             continue
 
-        entry_list = [path]
-
-        for current_dir, dir_name_list, file_name_list in path.walk(follow_symlinks=False):
-            for name in dir_name_list + file_name_list:
-                entry_list.append(current_dir / name)
-
-        for entry in entry_list:
-            if os.access(entry, os.W_OK):
-                problem_list.append(f"{entry} is writable")
-
-        for mount_point in sorted(mount_point_found_set):
-            if mount_point == str(path) or mount_point.startswith(str(path) + "/"):
-                problem_list.append(f"{mount_point} is a mount point")
+        problem_list.extend(_writable_entry_problem_list(path))
+        problem_list.extend(_mount_point_problem_list(path, mount_point_found_set))
 
     return problem_list
 
 
 def protected_paths_result(path_list: list[Path], mountinfo_file: Path = MOUNTINFO_FILE) -> CheckResult:
-    problem_list = protected_paths_problem_list(path_list, read_mount_point_set(mountinfo_file))
+    problem_list = _protected_paths_problem_list(path_list, read_mount_point_set(mountinfo_file))
 
     if problem_list:
         return failed(
-            f"{len(problem_list)} problems: " + "; ".join(problem_list[:REPORTED_PROBLEM_LIMIT]),
+            f"{len(problem_list)} problems: " + "; ".join(problem_list[:_REPORTED_PROBLEM_LIMIT]),
             rebuild_hint(),
         )
 
@@ -292,47 +364,26 @@ def environment_values_result(
 
 
 # ------------------------------------------------------------------------------
-# Tool and version results
+# Tool results
 # ------------------------------------------------------------------------------
 
-def is_under(path_text: str, root_text: str) -> bool:
-    return path_text == root_text or path_text.startswith(root_text + "/")
-
-
-def elf_machine(path: Path) -> int | None:
+def _elf_machine(path: Path) -> int | None:
     with path.open("rb") as binary_file:
-        header = binary_file.read(ELF_HEADER_LENGTH)
+        header = binary_file.read(_ELF_HEADER_LENGTH)
 
-    if len(header) < ELF_HEADER_LENGTH or not header.startswith(ELF_MAGIC):
+    if len(header) < _ELF_HEADER_LENGTH or not header.startswith(_ELF_MAGIC):
         return None
 
-    return int.from_bytes(header[ELF_MACHINE_OFFSET:ELF_MACHINE_OFFSET + 2], "little")
+    return int.from_bytes(header[_ELF_MACHINE_OFFSET:_ELF_MACHINE_OFFSET + 2], "little")
 
 
-def version_matches(line: str, expected_text: str) -> bool:
+def _version_matches(line: str, expected_text: str) -> bool:
     return line == expected_text or line.startswith(expected_text + " ")
 
 
-def image_tag(image_pin: str) -> str:
-    return image_pin.partition("@")[0].rpartition(":")[2]
-
-
-def jdk_version(temurin_pin: str) -> str:
-    return image_tag(temurin_pin).partition("_")[0]
-
-
-def first_output_line(completed: subprocess.CompletedProcess) -> str:
-    for output_text in [completed.stdout, completed.stderr]:
-        for line in output_text.splitlines():
-            if line.strip():
-                return line.strip()
-
-    return ""
-
-
-def native_machine_problem(real_path: str, command_name: str) -> str:
+def _native_machine_problem(real_path: str, command_name: str) -> str:
     expected_machine = ELF_MACHINE_BY_UNAME_MAP.get(platform.machine())
-    actual_machine = elf_machine(Path(real_path))
+    actual_machine = _elf_machine(Path(real_path))
 
     if expected_machine is None or actual_machine is None or actual_machine == expected_machine:
         return ""
@@ -340,7 +391,7 @@ def native_machine_problem(real_path: str, command_name: str) -> str:
     return f"{command_name} is built for ELF machine 0x{actual_machine:02X}, not {platform.machine()}"
 
 
-def version_problem(
+def _version_problem(
     command_name: str,
     found_path: str,
     version_argument_list: list[str],
@@ -351,7 +402,7 @@ def version_problem(
     completed = run_command([found_path] + version_argument_list, environment_map)
     line = first_output_line(completed)
 
-    if completed.returncode != 0 or not version_matches(line, expected_text):
+    if completed.returncode != 0 or not _version_matches(line, expected_text):
         return f"{command_name} reports '{line}'; the pin is '{expected_text}'", ""
 
     if required_text and required_text not in completed.stdout + completed.stderr:
@@ -366,7 +417,7 @@ def tool_result(
     expected_text: str = "",
     required_text: str = "",
     environment_map: Mapping[str, str] = os.environ,
-    home_root: str = HOME_ROOT,
+    home_root: str = _HOME_ROOT,
 ) -> CheckResult:
     found_path = shutil.which(command_name, path=environment_map.get("PATH", ""))
 
@@ -375,13 +426,13 @@ def tool_result(
 
     real_path = str(Path(found_path).resolve())
 
-    if is_under(real_path, home_root):
+    if _is_under(real_path, home_root):
         return failed(
             f"{command_name} resolves to {real_path}, under {home_root}, not the image",
             f"a copy under {home_root} hides the image's {command_name}: remove it, or take its folder off PATH in this sandbox",
         )
 
-    machine_problem = native_machine_problem(real_path, command_name)
+    machine_problem = _native_machine_problem(real_path, command_name)
 
     if machine_problem:
         return failed(machine_problem, rebuild_hint())
@@ -389,7 +440,7 @@ def tool_result(
     if version_argument_list is None:
         return passed(real_path)
 
-    problem, line = version_problem(
+    problem, line = _version_problem(
         command_name, found_path, version_argument_list, expected_text, required_text, environment_map
     )
 
@@ -397,35 +448,3 @@ def tool_result(
         return failed(problem, rebuild_hint())
 
     return passed(f"{real_path}, {line}")
-
-
-# ------------------------------------------------------------------------------
-# Expected versions text
-# ------------------------------------------------------------------------------
-
-def expected_base_versions_text(versions_file: Path = VERSIONS_FILE, python_version: str | None = None) -> str:
-    if python_version is None:
-        python_version = platform.python_version()
-
-    gsd_version = pin_value("GSD_CORE_VERSION", versions_file)
-    node_version = pin_value("NODE_VERSION", versions_file)
-    temurin_image = pin_value("TEMURIN_IMAGE", versions_file)
-    maven_version = pin_value("MAVEN_VERSION", versions_file)
-
-    for name, value in [
-        ("GSD_CORE_VERSION", gsd_version),
-        ("NODE_VERSION", node_version),
-        ("TEMURIN_IMAGE", temurin_image),
-        ("MAVEN_VERSION", maven_version),
-    ]:
-        if not value:
-            raise KeyError(name)
-
-    return (
-        f"gsd {gsd_version} | node {node_version} | jdk {jdk_version(temurin_image)}"
-        f" | mvn {maven_version} | python {python_version}"
-    )
-
-
-def one_line(text: str) -> str:
-    return text.replace("\r", " ").replace("\n", " ")

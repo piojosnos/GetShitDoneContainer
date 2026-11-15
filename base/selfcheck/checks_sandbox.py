@@ -10,6 +10,7 @@ import platform
 import pwd
 import stat
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Mapping
 
@@ -39,33 +40,33 @@ from selfcheck_core import (
 # Constants
 # ------------------------------------------------------------------------------
 
-SANDBOX_UID = 1000
-SANDBOX_GID = 1000
-OWNER_FIX_IMAGE = "sbx-base:local"
-SANDBOX_USER = "sandbox"
-BASE_STATE_DIR_LIST = ["shell", "gh", "git"]
-SKIPPED_STATE_DIR_SET = {"cache/npm", "cache/uv", "m2"}
-GSD_SYNC_FOLDER_SET = {"gsd-core", "hooks", "scripts"}
-REPORTED_PATH_LIMIT = 10
-UNREADABLE_SUFFIX = " (unreadable)"
-STATE_WRITE_PROBE_PREFIX = ".sbx-selfcheck-"
+_SANDBOX_UID = 1000
+_SANDBOX_GID = 1000
+_OWNER_FIX_IMAGE = "sbx-base:local"
+_SANDBOX_USER = "sandbox"
+_BASE_STATE_DIR_LIST = ["shell", "gh", "git"]
+_SKIPPED_STATE_DIR_SET = {"cache/npm", "cache/uv", "m2"}
+_GSD_SYNC_FOLDER_SET = {"gsd-core", "hooks", "scripts"}
+_REPORTED_PATH_LIMIT = 10
+_UNREADABLE_SUFFIX = " (unreadable)"
+_STATE_WRITE_PROBE_PREFIX = ".sbx-selfcheck-"
 
 
 # ------------------------------------------------------------------------------
 # User and workspace checks
 # ------------------------------------------------------------------------------
 
-def user_name_of(uid: int) -> str:
+def _user_name_of(uid: int) -> str:
     try:
         return pwd.getpwuid(uid).pw_name
     except KeyError:
         return "unknown"
 
 
-def user_result(expected_uid: int, expected_gid: int, expected_name: str) -> CheckResult:
+def _user_result(expected_uid: int, expected_gid: int, expected_name: str) -> CheckResult:
     actual_uid = os.getuid()
     actual_gid = os.getgid()
-    actual_name = user_name_of(actual_uid)
+    actual_name = _user_name_of(actual_uid)
     actual_text = f"uid {actual_uid}, gid {actual_gid}, name {actual_name}"
     expected_text = f"uid {expected_uid}, gid {expected_gid}, name {expected_name}"
 
@@ -78,8 +79,8 @@ def user_result(expected_uid: int, expected_gid: int, expected_name: str) -> Che
     )
 
 
-def check_user_sandbox() -> CheckResult:
-    return user_result(SANDBOX_UID, SANDBOX_GID, SANDBOX_USER)
+def _check_user_sandbox() -> CheckResult:
+    return _user_result(_SANDBOX_UID, _SANDBOX_GID, _SANDBOX_USER)
 
 
 def workspace_mount_result(
@@ -91,7 +92,7 @@ def workspace_mount_result(
 
     if not os.access(workspace_dir, os.W_OK):
         return failed(
-            f"{workspace_dir} is not writable by {user_name_of(os.getuid())}",
+            f"{workspace_dir} is not writable by {_user_name_of(os.getuid())}",
             "make the project folder writable by your Mac user, then " + restart_hint(),
         )
 
@@ -117,7 +118,7 @@ def project_folder_result(workspace_dir: Path, project_name: str) -> CheckResult
 # ------------------------------------------------------------------------------
 
 def state_folders_result(state_dir: Path, state_dirs_text: str) -> CheckResult:
-    folder_list = BASE_STATE_DIR_LIST + state_dirs_text.split()
+    folder_list = _BASE_STATE_DIR_LIST + state_dirs_text.split()
     missing_list = []
 
     for folder in folder_list:
@@ -135,7 +136,7 @@ def state_folders_result(state_dir: Path, state_dirs_text: str) -> CheckResult:
 
 def state_writable_result(state_dir: Path) -> CheckResult:
     try:
-        probe_descriptor, probe_name = tempfile.mkstemp(dir=state_dir, prefix=STATE_WRITE_PROBE_PREFIX)
+        probe_descriptor, probe_name = tempfile.mkstemp(dir=state_dir, prefix=_STATE_WRITE_PROBE_PREFIX)
     except OSError as e:
         return failed(
             f"cannot make a file in {state_dir}: {e}",
@@ -150,22 +151,84 @@ def state_writable_result(state_dir: Path) -> CheckResult:
     return passed(f"{state_dir} is writable")
 
 
-def is_tolerated_path(relative_path: Path, tolerated_folder_set: set[str]) -> bool:
+@dataclass(frozen=True)
+class _ScanRules:
+    state_dir: Path
+    owner_uid: int
+    skipped_relative_set: set[str]
+    tolerated_folder_set: set[str]
+
+
+def _is_tolerated_path(relative_path: Path, tolerated_folder_set: set[str]) -> bool:
     return len(relative_path.parts) >= 2 and relative_path.parts[1] in tolerated_folder_set
 
 
-def mark_unreadable_folder(reported_list: list[str], relative_dir: Path, tolerated_folder_set: set[str]) -> None:
-    if is_tolerated_path(relative_dir, tolerated_folder_set):
+def _mark_unreadable_folder(reported_list: list[str], relative_dir: Path, tolerated_folder_set: set[str]) -> None:
+    if _is_tolerated_path(relative_dir, tolerated_folder_set):
         return
 
     if relative_dir.as_posix() in reported_list:
         reported_list.remove(relative_dir.as_posix())
 
-    reported_list.append(relative_dir.as_posix() + UNREADABLE_SUFFIX)
+    reported_list.append(relative_dir.as_posix() + _UNREADABLE_SUFFIX)
 
 
-def read_entry_list(folder: Path) -> list[Path]:
+def _read_entry_list(folder: Path) -> list[Path]:
     return list(folder.iterdir())
+
+
+def _entry_list_or_none(
+    current_dir: Path,
+    rules: _ScanRules,
+    entry_reader: Callable[[Path], list[Path]],
+    reported_list: list[str],
+) -> list[Path] | None:
+    try:
+        return entry_reader(current_dir)
+    except FileNotFoundError:
+        return None
+    except OSError:
+        relative_dir = current_dir.relative_to(rules.state_dir)
+        _mark_unreadable_folder(reported_list, relative_dir, rules.tolerated_folder_set)
+
+        return None
+
+
+def _scan_entry_list(
+    entry_list: list[Path],
+    current_dir: Path,
+    rules: _ScanRules,
+    reported_list: list[str],
+    pending_dir_list: list[Path],
+) -> int:
+    tolerated_count = 0
+
+    for entry in entry_list:
+        relative_path = entry.relative_to(rules.state_dir)
+
+        if relative_path.as_posix() in rules.skipped_relative_set:
+            continue
+
+        try:
+            entry_stat = entry.lstat()
+        except FileNotFoundError:
+            continue
+        except PermissionError:
+            # An entry stat needs search permission on its folder, so every other entry would fail the same way.
+            relative_dir = current_dir.relative_to(rules.state_dir)
+            _mark_unreadable_folder(reported_list, relative_dir, rules.tolerated_folder_set)
+            break
+
+        if entry_stat.st_uid == rules.owner_uid:
+            if _is_tolerated_path(relative_path, rules.tolerated_folder_set):
+                tolerated_count += 1
+            else:
+                reported_list.append(relative_path.as_posix())
+
+        if stat.S_ISDIR(entry_stat.st_mode):
+            pending_dir_list.append(entry)
+
+    return tolerated_count
 
 
 def scan_owned_state(
@@ -173,57 +236,31 @@ def scan_owned_state(
     owner_uid: int,
     skipped_relative_set: set[str],
     tolerated_folder_set: set[str],
-    entry_reader: Callable[[Path], list[Path]] = read_entry_list,
+    entry_reader: Callable[[Path], list[Path]] = _read_entry_list,
 ) -> tuple[list[str], int]:
+    rules = _ScanRules(state_dir, owner_uid, skipped_relative_set, tolerated_folder_set)
     reported_list = []
     tolerated_count = 0
     pending_dir_list = [state_dir]
 
     while pending_dir_list:
         current_dir = pending_dir_list.pop()
-        relative_dir = current_dir.relative_to(state_dir)
+        entry_list = _entry_list_or_none(current_dir, rules, entry_reader, reported_list)
 
-        try:
-            entry_list = entry_reader(current_dir)
-        except FileNotFoundError:
-            continue
-        except OSError:
-            mark_unreadable_folder(reported_list, relative_dir, tolerated_folder_set)
+        if entry_list is None:
             continue
 
-        for entry in entry_list:
-            relative_path = entry.relative_to(state_dir)
-
-            if relative_path.as_posix() in skipped_relative_set:
-                continue
-
-            try:
-                entry_stat = entry.lstat()
-            except FileNotFoundError:
-                continue
-            except PermissionError:
-                # An entry stat needs search permission on its folder, so every other entry would fail the same way.
-                mark_unreadable_folder(reported_list, relative_dir, tolerated_folder_set)
-                break
-
-            if entry_stat.st_uid == owner_uid:
-                if is_tolerated_path(relative_path, tolerated_folder_set):
-                    tolerated_count += 1
-                else:
-                    reported_list.append(relative_path.as_posix())
-
-            if stat.S_ISDIR(entry_stat.st_mode):
-                pending_dir_list.append(entry)
+        tolerated_count += _scan_entry_list(entry_list, current_dir, rules, reported_list, pending_dir_list)
 
     return sorted(reported_list), tolerated_count
 
 
-def owner_fix_hint(state_dir: Path, environment_map: Mapping[str, str] = os.environ) -> str:
+def _owner_fix_hint(state_dir: Path, environment_map: Mapping[str, str] = os.environ) -> str:
     return mac_hint(
         "give the paths back to the sandbox user from a throwaway root container, "
         "since the sandbox cannot change owners",
         "docker run --rm --network none -u root --entrypoint chown "
-        f"--volumes-from sbx-{sandbox_name(environment_map)} {OWNER_FIX_IMAGE} -R {SANDBOX_UID}:{SANDBOX_GID} {state_dir}",
+        f"--volumes-from sbx-{sandbox_name(environment_map)} {_OWNER_FIX_IMAGE} -R {_SANDBOX_UID}:{_SANDBOX_GID} {state_dir}",
     )
 
 
@@ -232,15 +269,15 @@ def root_owned_state_result(
     owner_uid: int,
     environment_map: Mapping[str, str] = os.environ,
 ) -> CheckResult:
-    reported_list, tolerated_count = scan_owned_state(state_dir, owner_uid, SKIPPED_STATE_DIR_SET, GSD_SYNC_FOLDER_SET)
+    reported_list, tolerated_count = scan_owned_state(state_dir, owner_uid, _SKIPPED_STATE_DIR_SET, _GSD_SYNC_FOLDER_SET)
 
     if not reported_list:
         return passed(f"no root-owned path under state/ outside the GSD sync folders ({tolerated_count} tolerated)")
 
     return failed(
         f"{len(reported_list)} paths under state/ are owned by uid {owner_uid} or unreadable: "
-        + ", ".join(reported_list[:REPORTED_PATH_LIMIT]),
-        owner_fix_hint(state_dir, environment_map),
+        + ", ".join(reported_list[:_REPORTED_PATH_LIMIT]),
+        _owner_fix_hint(state_dir, environment_map),
     )
 
 
@@ -261,8 +298,8 @@ def home_layout_result(home_dir: Path = HOME_DIR) -> CheckResult:
     return passed(f".bashrc and .local exist in {home_dir}")
 
 
-def owner_name_of_path(path: Path) -> str:
-    return user_name_of(path.stat().st_uid)
+def _owner_name_of_path(path: Path) -> str:
+    return _user_name_of(path.stat().st_uid)
 
 
 def owned_by_result(path_list: list[Path], owner_name: str) -> CheckResult:
@@ -273,7 +310,7 @@ def owned_by_result(path_list: list[Path], owner_name: str) -> CheckResult:
             problem_list.append(f"{path} is missing")
             continue
 
-        actual_owner = owner_name_of_path(path)
+        actual_owner = _owner_name_of_path(path)
 
         if actual_owner != owner_name:
             problem_list.append(f"{path} is owned by {actual_owner}, expected {owner_name}")
@@ -330,56 +367,56 @@ def architecture_result() -> CheckResult:
 # Check entries
 # ------------------------------------------------------------------------------
 
-def check_workspace_mount() -> CheckResult:
+def _check_workspace_mount() -> CheckResult:
     return workspace_mount_result()
 
 
-def check_project_folder() -> CheckResult:
+def _check_project_folder() -> CheckResult:
     return project_folder_result(WORKSPACE_DIR, os.environ.get("SBX_NAME", ""))
 
 
-def check_state_folders() -> CheckResult:
+def _check_state_folders() -> CheckResult:
     return state_folders_result(STATE_DIR, os.environ.get("SBX_STATE_DIRS", ""))
 
 
-def check_state_writable() -> CheckResult:
+def _check_state_writable() -> CheckResult:
     return state_writable_result(STATE_DIR)
 
 
-def check_no_root_owned_state() -> CheckResult:
+def _check_no_root_owned_state() -> CheckResult:
     return root_owned_state_result(STATE_DIR, 0)
 
 
-def check_home_layout() -> CheckResult:
+def _check_home_layout() -> CheckResult:
     return home_layout_result()
 
 
-def check_home_owners() -> CheckResult:
-    return owned_by_result([HOME_DIR / ".local", HOME_DIR / ".local" / "state"], SANDBOX_USER)
+def _check_home_owners() -> CheckResult:
+    return owned_by_result([HOME_DIR / ".local", HOME_DIR / ".local" / "state"], _SANDBOX_USER)
 
 
-def check_git_safe_directory() -> CheckResult:
+def _check_git_safe_directory() -> CheckResult:
     return safe_directory_result()
 
 
-def check_git_identity() -> CheckResult:
+def _check_git_identity() -> CheckResult:
     return git_identity_result()
 
 
-def check_architecture() -> CheckResult:
+def _check_architecture() -> CheckResult:
     return architecture_result()
 
 
 SANDBOX_CHECK_LIST = [
-    Check("workspace-mount", check_workspace_mount),
-    Check("project-folder", check_project_folder),
-    Check("state-folders", check_state_folders),
-    Check("state-writable", check_state_writable),
-    Check("no-root-owned-state", check_no_root_owned_state),
-    Check("user-sandbox", check_user_sandbox),
-    Check("home-layout", check_home_layout),
-    Check("home-owners", check_home_owners),
-    Check("architecture", check_architecture),
-    Check("git-safe-directory", check_git_safe_directory),
-    Check("git-identity", check_git_identity),
+    Check("workspace-mount", _check_workspace_mount),
+    Check("project-folder", _check_project_folder),
+    Check("state-folders", _check_state_folders),
+    Check("state-writable", _check_state_writable),
+    Check("no-root-owned-state", _check_no_root_owned_state),
+    Check("user-sandbox", _check_user_sandbox),
+    Check("home-layout", _check_home_layout),
+    Check("home-owners", _check_home_owners),
+    Check("architecture", _check_architecture),
+    Check("git-safe-directory", _check_git_safe_directory),
+    Check("git-identity", _check_git_identity),
 ]

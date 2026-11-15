@@ -27,9 +27,9 @@ from selfcheck_core import (
 # Constants
 # ------------------------------------------------------------------------------
 
-RULES_LINK_TEXT = "../../best-practices/rules"
-SKILL_LINK_TEXT_TEMPLATE = "../../../best-practices/skills/{name}"
-BUNDLE_SKILL_LIST_NAME = ".best-practices-skills"
+_RULES_LINK_TEXT = "../../best-practices/rules"
+_SKILL_LINK_TEXT_TEMPLATE = "../../../best-practices/skills/{name}"
+_BUNDLE_SKILL_LIST_NAME = ".best-practices-skills"
 
 
 # ------------------------------------------------------------------------------
@@ -96,7 +96,7 @@ def gsd_synced_result(config_dir: Path, versions_file: Path = VERSIONS_FILE) -> 
 # Bundle links
 # ------------------------------------------------------------------------------
 
-def bundle_skill_name_list(bundle_dir: Path) -> list[str]:
+def _bundle_skill_name_list(bundle_dir: Path) -> list[str]:
     skills_dir = bundle_dir / "skills"
     skill_name_list = []
 
@@ -110,22 +110,22 @@ def bundle_skill_name_list(bundle_dir: Path) -> list[str]:
     return skill_name_list
 
 
-def link_text(link: Path) -> str | None:
+def _link_text(link: Path) -> str | None:
     try:
         return str(link.readlink())
     except OSError:
         return None
 
 
-def rules_link_problem(config_dir: Path, bundle_dir: Path) -> str:
+def _rules_link_problem(config_dir: Path, bundle_dir: Path) -> str:
     rules_link = config_dir / "rules"
-    actual_text = link_text(rules_link)
+    actual_text = _link_text(rules_link)
 
     if actual_text is None:
         return f"{rules_link} is not a link"
 
-    if actual_text != RULES_LINK_TEXT:
-        return f"{rules_link} links to '{actual_text}', expected '{RULES_LINK_TEXT}'"
+    if actual_text != _RULES_LINK_TEXT:
+        return f"{rules_link} links to '{actual_text}', expected '{_RULES_LINK_TEXT}'"
 
     try:
         same_folder = rules_link.samefile(bundle_dir / "rules")
@@ -138,13 +138,13 @@ def rules_link_problem(config_dir: Path, bundle_dir: Path) -> str:
     return ""
 
 
-def skill_link_problem_list(config_dir: Path, skill_name_list: list[str]) -> list[str]:
+def _skill_link_problem_list(config_dir: Path, skill_name_list: list[str]) -> list[str]:
     problem_list = []
 
     for skill_name in skill_name_list:
         skill_link = config_dir / "skills" / skill_name
-        expected_text = SKILL_LINK_TEXT_TEMPLATE.format(name=skill_name)
-        actual_text = link_text(skill_link)
+        expected_text = _SKILL_LINK_TEXT_TEMPLATE.format(name=skill_name)
+        actual_text = _link_text(skill_link)
 
         if actual_text is None:
             problem_list.append(f"{skill_link} is not a link")
@@ -154,8 +154,8 @@ def skill_link_problem_list(config_dir: Path, skill_name_list: list[str]) -> lis
     return problem_list
 
 
-def skill_list_problem_list(config_dir: Path, skill_name_list: list[str]) -> list[str]:
-    list_file = config_dir / BUNDLE_SKILL_LIST_NAME
+def _skill_list_problem_list(config_dir: Path, skill_name_list: list[str]) -> list[str]:
+    list_file = config_dir / _BUNDLE_SKILL_LIST_NAME
 
     if not list_file.is_file():
         return [f"{list_file} is missing"]
@@ -188,17 +188,17 @@ def bundle_links_result(config_dir: Path, bundle_dir: Path, links_rules: bool) -
     if not needed_dir.is_dir():
         return failed(f"no clone at {bundle_dir}", hint)
 
-    skill_name_list = bundle_skill_name_list(bundle_dir)
+    skill_name_list = _bundle_skill_name_list(bundle_dir)
     problem_list = []
 
     if links_rules:
-        rules_problem = rules_link_problem(config_dir, bundle_dir)
+        rules_problem = _rules_link_problem(config_dir, bundle_dir)
 
         if rules_problem:
             problem_list.append(rules_problem)
 
-    problem_list.extend(skill_link_problem_list(config_dir, skill_name_list))
-    problem_list.extend(skill_list_problem_list(config_dir, skill_name_list))
+    problem_list.extend(_skill_link_problem_list(config_dir, skill_name_list))
+    problem_list.extend(_skill_list_problem_list(config_dir, skill_name_list))
 
     detail = f"{len(skill_name_list)} skills linked from {bundle_dir}"
 
@@ -217,7 +217,7 @@ def home_links_result(link_target_list: list[tuple[Path, Path]]) -> CheckResult:
     pair_list = []
 
     for link, target in link_target_list:
-        actual_text = link_text(link)
+        actual_text = _link_text(link)
 
         if actual_text is None:
             problem_list.append(f"{link} is not a link")

@@ -12,50 +12,6 @@ import agent_helpers
 import selfcheck_core
 
 
-def test_versions_line_result_passes_for_the_prefix_and_the_base_text(versions1, line1):
-    line1.write_text("tool1 1 | " + selfcheck_core.expected_base_versions_text(versions1) + "\n")
-
-    result = agent_helpers.versions_line_result("tool1 1 | ", line1, versions1)
-
-    assert result.passed
-
-
-def test_versions_line_result_fails_when_one_field_differs(versions1, line1):
-    line1.write_text("tool1 1 | " + selfcheck_core.expected_base_versions_text(versions1).replace("node 24.21.0", "node 24.21.1") + "\n")
-
-    result = agent_helpers.versions_line_result("tool1 1 | ", line1, versions1)
-
-    assert not result.passed
-    assert "node 24.21.1" in result.detail
-    assert "node 24.21.0" in result.detail
-    assert "sbx-upgrade" in result.hint
-
-
-def test_versions_line_result_fails_when_the_file_holds_two_lines(versions1, line1):
-    base_text = selfcheck_core.expected_base_versions_text(versions1)
-    line1.write_text("tool1 1 | " + base_text + "\n" + "tool1 1 | " + base_text + "\n")
-
-    assert not agent_helpers.versions_line_result("tool1 1 | ", line1, versions1).passed
-
-
-def test_versions_line_result_fails_when_the_file_is_missing(tmp_path, versions1):
-    result = agent_helpers.versions_line_result("tool1 1 | ", tmp_path / "missing1", versions1)
-
-    assert not result.passed
-    assert "missing1" in result.detail
-
-
-def test_versions_line_result_reports_a_missing_pin(tmp_path, line1):
-    empty_versions = tmp_path / "empty1.env"
-    empty_versions.write_text("")
-    line1.write_text("anything\n")
-
-    result = agent_helpers.versions_line_result("tool1 1 | ", line1, empty_versions)
-
-    assert not result.passed
-    assert result.detail.startswith("GSD_CORE_VERSION is not in ")
-
-
 # ------------------------------------------------------------------------------
 # Constants and helpers
 # ------------------------------------------------------------------------------
@@ -101,6 +57,54 @@ def make_bundle_tree(base_dir: Path, skill_name_list: list[str], links_rules: bo
     (config_dir / ".best-practices-skills").write_text("".join(skill_line_list))
 
     return config_dir, clone_dir
+
+
+# ------------------------------------------------------------------------------
+# Versions line
+# ------------------------------------------------------------------------------
+
+def test_versions_line_result_passes_for_the_prefix_and_the_base_text(versions1, line1):
+    line1.write_text("tool1 1 | " + selfcheck_core.expected_base_versions_text(versions1) + "\n")
+
+    result = agent_helpers.versions_line_result("tool1 1 | ", line1, versions1)
+
+    assert result.passed
+
+
+def test_versions_line_result_fails_when_one_field_differs(versions1, line1):
+    line1.write_text("tool1 1 | " + selfcheck_core.expected_base_versions_text(versions1).replace("node 24.21.0", "node 24.21.1") + "\n")
+
+    result = agent_helpers.versions_line_result("tool1 1 | ", line1, versions1)
+
+    assert not result.passed
+    assert "node 24.21.1" in result.detail
+    assert "node 24.21.0" in result.detail
+    assert "sbx-upgrade" in result.hint
+
+
+def test_versions_line_result_fails_when_the_file_holds_two_lines(versions1, line1):
+    base_text = selfcheck_core.expected_base_versions_text(versions1)
+    line1.write_text("tool1 1 | " + base_text + "\n" + "tool1 1 | " + base_text + "\n")
+
+    assert not agent_helpers.versions_line_result("tool1 1 | ", line1, versions1).passed
+
+
+def test_versions_line_result_fails_when_the_file_is_missing(tmp_path, versions1):
+    result = agent_helpers.versions_line_result("tool1 1 | ", tmp_path / "missing1", versions1)
+
+    assert not result.passed
+    assert "missing1" in result.detail
+
+
+def test_versions_line_result_reports_a_missing_pin(tmp_path, line1):
+    empty_versions = tmp_path / "empty1.env"
+    empty_versions.write_text("")
+    line1.write_text("anything\n")
+
+    result = agent_helpers.versions_line_result("tool1 1 | ", line1, empty_versions)
+
+    assert not result.passed
+    assert result.detail.startswith("GSD_CORE_VERSION is not in ")
 
 
 # ------------------------------------------------------------------------------

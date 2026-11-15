@@ -15,7 +15,12 @@ import selfcheck_core
 import shared_checks
 from helpers import environment_with, write_stand_in, write_versions
 from helpers import environment_with, write_stand_in, write_versions
+from helpers import environment_with, write_stand_in, write_versions
 
+
+# ------------------------------------------------------------------------------
+# Bundle copy check
+# ------------------------------------------------------------------------------
 
 def test_no_bundle_copy_passes_when_the_path_is_absent_and_fails_when_present(tmp_path):
     copy1 = tmp_path / "copy1"
@@ -99,8 +104,16 @@ def test_every_tool_line_has_a_check_of_its_own(check_name_list_of):
     assert "tool-versions" not in name_list
 
 
+def tool_check(name: str) -> selfcheck_core.Check:
+    for check in checks_tools.TOOL_CHECK_LIST:
+        if check.name == "tool-" + name:
+            return check
+
+    raise AssertionError(f"no tool check for {name}")
+
+
 def test_tool_bash_resolves_to_the_image_outside_the_home():
-    result = checks_tools.plain_tool_check("bash").function()
+    result = tool_check("bash").function()
     expected_path = os.path.realpath(shutil.which("bash"))
 
     assert result.passed
@@ -110,7 +123,7 @@ def test_tool_bash_resolves_to_the_image_outside_the_home():
 
 @pytest.mark.skipif(shutil.which("keytool") is None, reason="keytool is not installed here")
 def test_tool_keytool_resolves_to_the_jdk_outside_the_home():
-    result = checks_tools.plain_tool_check("keytool").function()
+    result = tool_check("keytool").function()
     expected_path = os.path.realpath(shutil.which("keytool"))
 
     assert result.passed
@@ -119,28 +132,8 @@ def test_tool_keytool_resolves_to_the_jdk_outside_the_home():
 
 
 # ------------------------------------------------------------------------------
-# History-free environment, versions record and line file
+# Versions record and line file
 # ------------------------------------------------------------------------------
-
-def test_history_free_environment_points_the_history_at_dev_null_and_leaves_the_input_alone():
-    environment1 = {"PATH": "/usr/bin", "HISTFILE": "/home/sandbox/history1"}
-
-    result_environment = checks_tools.history_free_environment(environment1)
-
-    assert result_environment["HISTFILE"] == "/dev/null"
-    assert result_environment["PATH"] == "/usr/bin"
-    assert environment1["HISTFILE"] == "/home/sandbox/history1"
-
-
-def test_history_free_environment_defaults_to_the_process_environment():
-    history_before = os.environ.get("HISTFILE")
-
-    result_environment = checks_tools.history_free_environment()
-
-    assert result_environment["HISTFILE"] == "/dev/null"
-    assert result_environment["PATH"] == os.environ["PATH"]
-    assert os.environ.get("HISTFILE") == history_before
-
 
 def test_versions_record_passes_when_every_shared_pin_has_a_value(versions1):
     result = checks_tools.versions_record_result(versions1)

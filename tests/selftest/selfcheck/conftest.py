@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 import sbx_selfcheck
-from helpers import write_versions
+from helpers import write_agent_file, write_versions
 
 REPO_DIR = Path(__file__).resolve().parents[3]
 
@@ -97,3 +97,12 @@ def bin1(tmp_path) -> Path:
 @pytest.fixture
 def line1(tmp_path) -> Path:
     return tmp_path / "line1"
+
+
+@pytest.fixture
+def agents1(tmp_path) -> Path:
+    agents_dir = tmp_path / "agents1"
+    agents_dir.mkdir()
+    write_agent_file(agents_dir, "agent1")
+
+    return agents_dir

@@ -23,7 +23,7 @@ from selfcheck_core import (
 # Constants
 # ------------------------------------------------------------------------------
 
-STATE_PATH_BY_NAME_MAP = {
+_STATE_PATH_BY_NAME_MAP = {
     "HISTFILE": str(STATE_DIR / "shell" / "bash_history"),
     "GH_CONFIG_DIR": str(STATE_DIR / "gh"),
     "GIT_CONFIG_GLOBAL": str(STATE_DIR / "git" / "config"),
@@ -55,20 +55,20 @@ def bundle_env_result(
 # Check entries
 # ------------------------------------------------------------------------------
 
-def check_env_state_paths() -> CheckResult:
-    return environment_values_result(STATE_PATH_BY_NAME_MAP)
+def _check_env_state_paths() -> CheckResult:
+    return environment_values_result(_STATE_PATH_BY_NAME_MAP)
 
 
-def check_env_bundle() -> CheckResult:
+def _check_env_bundle() -> CheckResult:
     return bundle_env_result()
 
 
-def check_java_home() -> CheckResult:
+def _check_java_home() -> CheckResult:
     return environment_values_result({"JAVA_HOME": "/opt/java/openjdk"})
 
 
 ENV_CHECK_LIST = [
-    Check("env-state-paths", check_env_state_paths),
-    Check("env-bundle", check_env_bundle),
-    Check("java-home", check_java_home),
+    Check("env-state-paths", _check_env_state_paths),
+    Check("env-bundle", _check_env_bundle),
+    Check("java-home", _check_java_home),
 ]

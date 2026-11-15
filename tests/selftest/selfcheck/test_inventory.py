@@ -13,6 +13,11 @@ import sbx_selfcheck
 import selfcheck_core
 import shared_checks
 
+
+# ------------------------------------------------------------------------------
+# Constants and helpers
+# ------------------------------------------------------------------------------
+
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 SHARED_CHECK_COUNT = 41
 CLAUDE_CHECK_COUNT = 12

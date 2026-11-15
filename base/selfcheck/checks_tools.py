@@ -38,8 +38,8 @@ from selfcheck_core import (
 # Constants
 # ------------------------------------------------------------------------------
 
-BUNDLE_COPY_PATH = Path("/opt/sbx/best-practices")
-BASE_WRAPPER_MODE_LIST = [
+_BUNDLE_COPY_PATH = Path("/opt/sbx/best-practices")
+_BASE_WRAPPER_MODE_LIST = [
     ("/usr/local/bin/sbx-gh-login", 0o755),
     ("/usr/local/bin/sbx-bundle-clone", 0o755),
     ("/usr/local/bin/sbx-link-bundle", 0o755),
@@ -58,8 +58,8 @@ BASE_WRAPPER_MODE_LIST = [
     ("/etc/sbx/selfcheck.d", 0o755),
     ("/usr/local/lib/sbx-selfcheck", 0o755),
 ]
-UTC_ZONE_FILE = Path("/usr/share/zoneinfo/UTC")
-SHARED_PIN_NAME_LIST = [
+_UTC_ZONE_FILE = Path("/usr/share/zoneinfo/UTC")
+_SHARED_PIN_NAME_LIST = [
     "GH_VERSION",
     "NODE_VERSION",
     "MAVEN_VERSION",
@@ -68,27 +68,16 @@ SHARED_PIN_NAME_LIST = [
     "UV_IMAGE",
     "BUNDLE_REPO_URL",
 ]
-QUIET_SHELL_FLAG_LIST = ["-c", "-lc"]
-FIRST_LINES_LIMIT = 3
-PROTECTED_PATH_LIST = [Path("/etc/sbx"), Path("/usr/local/bin"), Path("/usr/local/lib/sbx-selfcheck")]
-
-
-# ------------------------------------------------------------------------------
-# Shell environment
-# ------------------------------------------------------------------------------
-
-def history_free_environment(environment_map: Mapping[str, str] = os.environ) -> dict[str, str]:
-    history_free_environment_map = dict(environment_map)
-    history_free_environment_map["HISTFILE"] = "/dev/null"
-
-    return history_free_environment_map
+_QUIET_SHELL_FLAG_LIST = ["-c", "-lc"]
+_FIRST_LINES_LIMIT = 3
+_PROTECTED_PATH_LIST = [Path("/etc/sbx"), Path("/usr/local/bin"), Path("/usr/local/lib/sbx-selfcheck")]
 
 
 # ------------------------------------------------------------------------------
 # Image file checks
 # ------------------------------------------------------------------------------
 
-def no_bundle_copy_result(bundle_copy_path: Path = BUNDLE_COPY_PATH) -> CheckResult:
+def no_bundle_copy_result(bundle_copy_path: Path = _BUNDLE_COPY_PATH) -> CheckResult:
     if path_is_present(bundle_copy_path):
         return failed(f"the image holds a bundle copy at {bundle_copy_path}", rebuild_hint())
 
@@ -164,18 +153,18 @@ def tool_gsd_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
     )
 
 
-def tool_python_result() -> CheckResult:
+def _tool_python_result() -> CheckResult:
     return tool_result("python3", ["--version"], f"Python {platform.python_version()}")
 
 
-def plain_tool_check(command_name: str) -> Check:
+def _plain_tool_check(command_name: str) -> Check:
     def run_tool_check() -> CheckResult:
         return tool_result(command_name)
 
     return Check("tool-" + command_name, run_tool_check)
 
 
-def tzdata_result(utc_zone_file: Path = UTC_ZONE_FILE) -> CheckResult:
+def tzdata_result(utc_zone_file: Path = _UTC_ZONE_FILE) -> CheckResult:
     if not utc_zone_file.exists():
         return failed(f"{utc_zone_file} is missing; tzdata is not installed", rebuild_hint())
 
@@ -186,14 +175,14 @@ def tzdata_result(utc_zone_file: Path = UTC_ZONE_FILE) -> CheckResult:
 # Versions record and line checks
 # ------------------------------------------------------------------------------
 
-def first_lines(text: str) -> str:
+def _first_lines(text: str) -> str:
     line_list = []
 
     for line in text.splitlines():
         if line.strip():
             line_list.append(line.strip())
 
-    return " / ".join(line_list[:FIRST_LINES_LIMIT])
+    return " / ".join(line_list[:_FIRST_LINES_LIMIT])
 
 
 def versions_record_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
@@ -203,7 +192,7 @@ def versions_record_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
     value_by_name_map = parse_versions_text(versions_file.read_text())
     missing_list = []
 
-    for name in SHARED_PIN_NAME_LIST:
+    for name in _SHARED_PIN_NAME_LIST:
         if not value_by_name_map.get(name):
             missing_list.append(name)
 
@@ -234,9 +223,16 @@ def versions_line_file_result(
         return passed(f"the line ends with {base_text}")
 
     return failed(
-        f"{versions_line_file} holds '{first_lines(actual_text)}'; expected one line ending with '{base_text}'",
+        f"{versions_line_file} holds '{_first_lines(actual_text)}'; expected one line ending with '{base_text}'",
         rebuild_hint(),
     )
+
+
+def _history_free_environment(environment_map: Mapping[str, str] = os.environ) -> dict[str, str]:
+    history_free_environment_map = dict(environment_map)
+    history_free_environment_map["HISTFILE"] = "/dev/null"
+
+    return history_free_environment_map
 
 
 def interactive_versions_line_result(
@@ -247,11 +243,11 @@ def interactive_versions_line_result(
         return failed(f"{versions_line_file} is missing", rebuild_hint())
 
     expected_text = versions_line_file.read_text()
-    completed = run_command(["bash", "-i"], history_free_environment(environment_map))
+    completed = run_command(["bash", "-i"], _history_free_environment(environment_map))
 
     if completed.stdout != expected_text:
         return failed(
-            f"an interactive shell printed '{first_lines(completed.stdout)}'; expected the versions line once",
+            f"an interactive shell printed '{_first_lines(completed.stdout)}'; expected the versions line once",
             rebuild_hint(),
         )
 
@@ -261,7 +257,7 @@ def interactive_versions_line_result(
 def quiet_shells_result(environment_map: Mapping[str, str] = os.environ) -> CheckResult:
     problem_list = []
 
-    for flag in QUIET_SHELL_FLAG_LIST:
+    for flag in _QUIET_SHELL_FLAG_LIST:
         completed = run_command(["bash", flag, "true"], environment_map)
 
         if completed.stdout or completed.stderr:
@@ -274,90 +270,90 @@ def quiet_shells_result(environment_map: Mapping[str, str] = os.environ) -> Chec
 # Check entries
 # ------------------------------------------------------------------------------
 
-def check_tool_gh() -> CheckResult:
+def _check_tool_gh() -> CheckResult:
     return tool_gh_result()
 
 
-def check_tool_node() -> CheckResult:
+def _check_tool_node() -> CheckResult:
     return tool_node_result()
 
 
-def check_tool_python() -> CheckResult:
-    return tool_python_result()
+def _check_tool_python() -> CheckResult:
+    return _tool_python_result()
 
 
-def check_tool_uv() -> CheckResult:
+def _check_tool_uv() -> CheckResult:
     return tool_uv_result()
 
 
-def check_tool_java() -> CheckResult:
+def _check_tool_java() -> CheckResult:
     return tool_java_result()
 
 
-def check_tool_maven() -> CheckResult:
+def _check_tool_maven() -> CheckResult:
     return tool_maven_result()
 
 
-def check_tool_gsd() -> CheckResult:
+def _check_tool_gsd() -> CheckResult:
     return tool_gsd_result()
 
 
-def check_tzdata() -> CheckResult:
+def _check_tzdata() -> CheckResult:
     return tzdata_result()
 
 
-def check_versions_record() -> CheckResult:
+def _check_versions_record() -> CheckResult:
     return versions_record_result()
 
 
-def check_versions_line_file() -> CheckResult:
+def _check_versions_line_file() -> CheckResult:
     return versions_line_file_result()
 
 
-def check_versions_line_interactive() -> CheckResult:
+def _check_versions_line_interactive() -> CheckResult:
     return interactive_versions_line_result()
 
 
-def check_versions_line_quiet() -> CheckResult:
+def _check_versions_line_quiet() -> CheckResult:
     return quiet_shells_result()
 
 
-def check_wrappers_root_owned() -> CheckResult:
-    return root_owned_result(BASE_WRAPPER_MODE_LIST)
+def _check_wrappers_root_owned() -> CheckResult:
+    return root_owned_result(_BASE_WRAPPER_MODE_LIST)
 
 
-def check_image_paths_protected() -> CheckResult:
-    return protected_paths_result(PROTECTED_PATH_LIST)
+def _check_image_paths_protected() -> CheckResult:
+    return protected_paths_result(_PROTECTED_PATH_LIST)
 
 
-def check_no_bundle_copy() -> CheckResult:
+def _check_no_bundle_copy() -> CheckResult:
     return no_bundle_copy_result()
 
 
 TOOL_CHECK_LIST = [
-    plain_tool_check("git"),
-    plain_tool_check("bash"),
-    Check("tool-gh", check_tool_gh),
-    Check("tool-node", check_tool_node),
-    Check("tool-python", check_tool_python),
-    Check("tool-uv", check_tool_uv),
-    Check("tool-java", check_tool_java),
-    plain_tool_check("keytool"),
-    Check("tool-maven", check_tool_maven),
-    Check("tool-gsd", check_tool_gsd),
-    plain_tool_check("jq"),
-    plain_tool_check("rg"),
-    plain_tool_check("unzip"),
-    plain_tool_check("zip"),
-    plain_tool_check("ssh"),
-    plain_tool_check("make"),
-    plain_tool_check("gcc"),
-    Check("tzdata", check_tzdata),
-    Check("versions-record", check_versions_record),
-    Check("versions-line-file", check_versions_line_file),
-    Check("versions-line-interactive", check_versions_line_interactive),
-    Check("versions-line-quiet", check_versions_line_quiet),
-    Check("wrappers-root-owned", check_wrappers_root_owned),
-    Check("image-paths-protected", check_image_paths_protected),
-    Check("no-bundle-copy", check_no_bundle_copy),
+    _plain_tool_check("git"),
+    _plain_tool_check("bash"),
+    Check("tool-gh", _check_tool_gh),
+    Check("tool-node", _check_tool_node),
+    Check("tool-python", _check_tool_python),
+    Check("tool-uv", _check_tool_uv),
+    Check("tool-java", _check_tool_java),
+    _plain_tool_check("keytool"),
+    Check("tool-maven", _check_tool_maven),
+    Check("tool-gsd", _check_tool_gsd),
+    _plain_tool_check("jq"),
+    _plain_tool_check("rg"),
+    _plain_tool_check("unzip"),
+    _plain_tool_check("zip"),
+    _plain_tool_check("ssh"),
+    _plain_tool_check("make"),
+    _plain_tool_check("gcc"),
+    Check("tzdata", _check_tzdata),
+    Check("versions-record", _check_versions_record),
+    Check("versions-line-file", _check_versions_line_file),
+    Check("versions-line-interactive", _check_versions_line_interactive),
+    Check("versions-line-quiet", _check_versions_line_quiet),
+    Check("wrappers-root-owned", _check_wrappers_root_owned),
+    Check("image-paths-protected", _check_image_paths_protected),
+    Check("no-bundle-copy", _check_no_bundle_copy),
 ]

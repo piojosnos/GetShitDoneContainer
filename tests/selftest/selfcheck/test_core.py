@@ -8,7 +8,6 @@
 import os
 import platform
 import shutil
-import sys
 from pathlib import Path
 
 import pytest
@@ -16,9 +15,18 @@ import pytest
 import selfcheck_core
 from helpers import TEMURIN_PIN1, environment_with, write_stand_in
 from helpers import TEMURIN_PIN1, environment_with, write_stand_in
+from helpers import TEMURIN_PIN1, environment_with, write_stand_in
+from helpers import TEMURIN_PIN1, environment_with, write_stand_in
+
+
+# ------------------------------------------------------------------------------
+# Constants and helpers
+# ------------------------------------------------------------------------------
 
 ROOT_MOUNT_LINE = "1 0 8:1 / / rw - ext4 /dev/sda1 rw"
 MOUNT_LINE_TEMPLATE = "{number} 1 8:2 / {mount_point} rw,noatime - ext4 /dev/sda2 rw"
+CURRENT_PYTHON_TEXT = f"Python {platform.python_version()}"
+BASE_VERSIONS_TEXT1 = "gsd 1.15.0 | node 24.21.0 | jdk 21.0.12 | mvn 3.9.11 | python 3.12.3"
 
 
 def write_mountinfo(mountinfo_file: Path, mount_point_list: list[str]) -> None:
@@ -39,14 +47,18 @@ def write_file(path: Path, text: str = "text1") -> None:
 # Mount, pin and command readers
 # ------------------------------------------------------------------------------
 
-def test_mount_point_set_reads_the_fifth_field_of_each_line():
-    text = ROOT_MOUNT_LINE + "\n" + MOUNT_LINE_TEMPLATE.format(number=2, mount_point="/mount1") + "\n"
+def test_read_mount_point_set_reads_the_fifth_field_of_each_line(tmp_path):
+    mountinfo1 = tmp_path / "mountinfo1"
+    write_mountinfo(mountinfo1, ["/mount1"])
 
-    assert selfcheck_core.mount_point_set(text) == {"/", "/mount1"}
+    assert selfcheck_core.read_mount_point_set(mountinfo1) == {"/", "/mount1"}
 
 
-def test_mount_point_set_ignores_blank_and_short_lines():
-    assert selfcheck_core.mount_point_set("\n1 0 8:1\n" + ROOT_MOUNT_LINE + "\n") == {"/"}
+def test_read_mount_point_set_ignores_blank_and_short_lines(tmp_path):
+    mountinfo1 = tmp_path / "mountinfo1"
+    mountinfo1.write_text("\n1 0 8:1\n" + ROOT_MOUNT_LINE + "\n")
+
+    assert selfcheck_core.read_mount_point_set(mountinfo1) == {"/"}
 
 
 def test_parse_versions_text_skips_comments_and_blank_lines_and_splits_once():
@@ -55,19 +67,26 @@ def test_parse_versions_text_skips_comments_and_blank_lines_and_splits_once():
     assert selfcheck_core.parse_versions_text(text) == {"NAME1": "a=b", "NAME2": "value2"}
 
 
-def test_pin_value_reads_a_name_from_the_file(tmp_path):
+def test_pin_map_or_missing_reads_the_names_from_the_file(tmp_path):
     versions1 = tmp_path / "versions1"
     versions1.write_text("# comment1\n\nNAME1=a=b\nNAME2=c\n")
 
-    assert selfcheck_core.pin_value("NAME1", versions1) == "a=b"
+    pin_map, missing_result = selfcheck_core.pin_map_or_missing(["NAME1", "NAME2"], versions1)
+
+    assert pin_map == {"NAME1": "a=b", "NAME2": "c"}
+    assert missing_result is None
 
 
-def test_pin_value_is_empty_for_a_missing_name_or_file(tmp_path):
+def test_pin_map_or_missing_names_the_first_missing_name_or_file(tmp_path):
     versions1 = tmp_path / "versions1"
     versions1.write_text("NAME1=a\n")
 
-    assert selfcheck_core.pin_value("NAME2", versions1) == ""
-    assert selfcheck_core.pin_value("NAME1", tmp_path / "missing1") == ""
+    pin_map, missing_result = selfcheck_core.pin_map_or_missing(["NAME1", "NAME2"], versions1)
+    _, missing_file_result = selfcheck_core.pin_map_or_missing(["NAME1"], tmp_path / "missing1")
+
+    assert pin_map == {}
+    assert missing_result.detail.startswith("NAME2 is not in ")
+    assert missing_file_result.detail.startswith("NAME1 is not in ")
 
 
 def test_missing_pin_result_fails_with_the_mac_rebuild_command():
@@ -212,29 +231,6 @@ def test_protected_paths_do_not_follow_a_link_while_walking(tmp_path):
 # Version, ELF and tool results
 # ------------------------------------------------------------------------------
 
-CURRENT_PYTHON_TEXT = f"Python {platform.python_version()}"
-
-
-def test_version_matches_accepts_equal_text_and_text_followed_by_a_space():
-    assert selfcheck_core.version_matches("uv 0.12.21", "uv 0.12.21")
-    assert selfcheck_core.version_matches("uv 0.12.21 (abc 2026-01-01)", "uv 0.12.21")
-
-
-def test_version_matches_rejects_a_longer_or_shorter_version():
-    assert not selfcheck_core.version_matches("uv 0.12.210", "uv 0.12.21")
-    assert not selfcheck_core.version_matches("uv 0.12.2", "uv 0.12.21")
-
-
-def test_is_under_accepts_the_root_itself_and_what_sits_below_it():
-    assert selfcheck_core.is_under("/home/sandbox/x", "/home")
-    assert selfcheck_core.is_under("/home", "/home")
-
-
-def test_is_under_rejects_a_sibling_that_shares_the_prefix_and_other_roots():
-    assert not selfcheck_core.is_under("/homeowner/x", "/home")
-    assert not selfcheck_core.is_under("/usr/bin/git", "/home")
-
-
 def test_image_tag_takes_the_text_after_the_last_colon_before_the_digest():
     assert selfcheck_core.image_tag("ghcr.io/astral-sh/uv:0.12.21@sha256:abc") == "0.12.21"
     assert selfcheck_core.image_tag(TEMURIN_PIN1) == "21.0.12_8-jdk-noble"
@@ -243,26 +239,6 @@ def test_image_tag_takes_the_text_after_the_last_colon_before_the_digest():
 
 def test_jdk_version_is_the_tag_up_to_its_first_underscore():
     assert selfcheck_core.jdk_version(TEMURIN_PIN1) == "21.0.12"
-
-
-def test_elf_machine_of_the_running_interpreter_is_the_machine_of_the_container():
-    interpreter = Path(os.path.realpath(sys.executable))
-
-    assert selfcheck_core.elf_machine(interpreter) == selfcheck_core.ELF_MACHINE_BY_UNAME_MAP[platform.machine()]
-
-
-def test_elf_machine_of_a_text_file_is_none(tmp_path):
-    text_file = tmp_path / "text1.txt"
-    text_file.write_text("not a binary, but longer than twenty bytes\n")
-
-    assert selfcheck_core.elf_machine(text_file) is None
-
-
-def test_elf_machine_of_a_file_shorter_than_the_header_is_none(tmp_path):
-    short_file = tmp_path / "short1"
-    short_file.write_bytes(b"\x7fELF")
-
-    assert selfcheck_core.elf_machine(short_file) is None
 
 
 def test_first_output_line_takes_stdout_then_stderr(bin1):
@@ -282,6 +258,23 @@ def test_tool_result_passes_when_the_line_starts_with_the_pin_and_a_space(bin1):
     assert result.passed
     assert str(bin1 / "tool1") in result.detail
     assert "tool1 1.2.3 (build1)" in result.detail
+
+
+def test_tool_result_passes_when_the_line_equals_the_pin(bin1):
+    write_stand_in(bin1, "tool1", 'echo "tool1 1.2.3"')
+
+    result = selfcheck_core.tool_result("tool1", ["--version"], "tool1 1.2.3", environment_map=environment_with(bin1))
+
+    assert result.passed
+
+
+def test_tool_result_fails_for_a_shorter_version(bin1):
+    write_stand_in(bin1, "tool1", 'echo "tool1 1.2"')
+
+    result = selfcheck_core.tool_result("tool1", ["--version"], "tool1 1.2.3", environment_map=environment_with(bin1))
+
+    assert not result.passed
+    assert "tool1 reports 'tool1 1.2'; the pin is 'tool1 1.2.3'" in result.detail
 
 
 def test_tool_result_fails_for_a_longer_version_with_the_rebuild_command(bin1):
@@ -342,6 +335,18 @@ def test_tool_result_fails_when_the_tool_resolves_under_the_forbidden_root(bin1)
     assert "remove it" in result.hint
 
 
+def test_tool_result_passes_for_a_tool_in_a_sibling_folder_that_shares_the_root_prefix(tmp_path):
+    root1 = tmp_path / "home1"
+    sibling1 = tmp_path / "home10"
+    root1.mkdir()
+    sibling1.mkdir()
+    write_stand_in(sibling1, "tool1", 'echo "tool1 1.2.3"')
+
+    result = selfcheck_core.tool_result("tool1", environment_map=environment_with(sibling1), home_root=str(root1))
+
+    assert result.passed
+
+
 def test_tool_result_follows_a_link_to_the_real_file_before_judging_the_folder(tmp_path, bin1):
     real_dir = tmp_path / "real1"
     real_dir.mkdir()
@@ -366,6 +371,13 @@ def test_tool_result_fails_for_a_binary_of_another_machine(bin1):
     assert "sbx-upgrade" in result.hint
 
 
+def test_tool_result_passes_for_a_file_shorter_than_an_elf_header(bin1):
+    (bin1 / "tool1").write_bytes(b"\x7fELF")
+    (bin1 / "tool1").chmod(0o755)
+
+    assert selfcheck_core.tool_result("tool1", environment_map=environment_with(bin1)).passed
+
+
 def test_tool_result_passes_for_the_python_that_runs_the_checks():
     result = selfcheck_core.tool_result("python3", ["--version"], CURRENT_PYTHON_TEXT)
 
@@ -383,9 +395,6 @@ def test_tool_result_without_a_version_command_passes_with_the_resolved_path_onl
 # ------------------------------------------------------------------------------
 # Expected base versions text
 # ------------------------------------------------------------------------------
-
-BASE_VERSIONS_TEXT1 = "gsd 1.15.0 | node 24.21.0 | jdk 21.0.12 | mvn 3.9.11 | python 3.12.3"
-
 
 def test_expected_base_versions_text_is_built_from_the_pins_and_the_python_version(versions1):
     assert selfcheck_core.expected_base_versions_text(versions1, "3.12.3") == BASE_VERSIONS_TEXT1

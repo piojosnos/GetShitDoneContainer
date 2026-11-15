@@ -5,7 +5,6 @@
 # They run against real files in tmp_path.
 # ------------------------------------------------------------------------------
 
-import io
 import subprocess
 import sys
 from pathlib import Path
@@ -14,18 +13,13 @@ import pytest
 
 import sbx_selfcheck
 import selfcheck_core
+from helpers import AGENT_FILE_TEMPLATE, run_lines, write_agent_file
 from selfcheck_core import Check, CheckResult, failed, passed
 
-AGENT_FILE_TEMPLATE = """from selfcheck_core import Check, passed
 
-
-def check_{name}():
-    return passed("detail_{name}")
-
-
-CHECK_LIST = [Check("{name}", check_{name})]
-"""
-
+# ------------------------------------------------------------------------------
+# Constants and helpers
+# ------------------------------------------------------------------------------
 
 def passing_check(name: str) -> Check:
     def run_passing() -> CheckResult:
@@ -39,26 +33,6 @@ def failing_check(name: str, hint: str) -> Check:
         return failed(f"broken_{name}", hint)
 
     return Check(name, run_failing)
-
-
-def run_lines(shared_check_list: list[Check], checks_dir: Path) -> tuple[int, list[str]]:
-    output = io.StringIO()
-    status = sbx_selfcheck.run_selfcheck(shared_check_list, checks_dir, output)
-
-    return status, output.getvalue().splitlines()
-
-
-def write_agent_file(checks_dir: Path, name: str) -> None:
-    (checks_dir / f"{name}.py").write_text(AGENT_FILE_TEMPLATE.format(name=name))
-
-
-@pytest.fixture
-def agents1(tmp_path) -> Path:
-    agents_dir = tmp_path / "agents1"
-    agents_dir.mkdir()
-    write_agent_file(agents_dir, "agent1")
-
-    return agents_dir
 
 
 # ------------------------------------------------------------------------------
@@ -145,12 +119,13 @@ def test_a_check_that_returns_no_result_becomes_a_fail_line_with_the_rebuild_hin
     ]
 
 
-def test_newlines_in_detail_and_hint_print_as_spaces():
-    result = CheckResult(False, "detail1\r\ndetail2\ndetail3", "hint1\nhint2")
+def test_newlines_in_detail_and_hint_print_as_spaces(agents1):
+    def run_untidy() -> CheckResult:
+        return CheckResult(False, "detail1\r\ndetail2\ndetail3", "hint1\nhint2")
 
-    line_list = sbx_selfcheck.outcome_lines("check1", result)
+    _, line_list = run_lines([Check("check1", run_untidy)], agents1)
 
-    assert line_list == ["FAIL: check1: detail1  detail2 detail3", "      fix: hint1 hint2"]
+    assert line_list[:2] == ["FAIL: check1: detail1  detail2 detail3", "      fix: hint1 hint2"]
 
 
 def test_agent_files_run_after_the_shared_list_sorted_by_file_name(tmp_path):

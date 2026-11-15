@@ -40,19 +40,19 @@ from selfcheck_core import (
 # Constants
 # ------------------------------------------------------------------------------
 
-CURSOR_CONFIG_DIR = STATE_DIR / "cursor"
-CURSOR_HOME_LINK_LIST = [HOME_DIR / ".cursor", HOME_DIR / ".config" / "cursor"]
-CLI_CONFIG_FILE = CURSOR_CONFIG_DIR / "cli-config.json"
-CURSOR_WRAPPER_MODE_LIST = [
+_CURSOR_CONFIG_DIR = STATE_DIR / "cursor"
+_CURSOR_HOME_LINK_LIST = [HOME_DIR / ".cursor", HOME_DIR / ".config" / "cursor"]
+_CLI_CONFIG_FILE = _CURSOR_CONFIG_DIR / "cli-config.json"
+_CURSOR_WRAPPER_MODE_LIST = [
     ("/usr/local/bin/sbx-cursor", 0o755),
     ("/etc/sbx/start.d/02-no-self-update", 0o755),
     ("/etc/sbx/start.d/05-gsd", 0o755),
     ("/etc/sbx/start.d/10-best-practices", 0o755),
     ("/etc/sbx/selfcheck.d/cursor.py", 0o644),
 ]
-CURSOR_PROTECTED_PATH_LIST = [Path("/usr/local/lib/cursor-agent")]
-CURSOR_LOGIN_HINT = "log in once: run cursor-agent login in this sandbox and open the link on the Mac"
-THROWAWAY_HOME_PREFIX = "sbx-selfcheck-cursor-"
+_CURSOR_PROTECTED_PATH_LIST = [Path("/usr/local/lib/cursor-agent")]
+_CURSOR_LOGIN_HINT = "log in once: run cursor-agent login in this sandbox and open the link on the Mac"
+_THROWAWAY_HOME_PREFIX = "sbx-selfcheck-cursor-"
 
 
 # ------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ THROWAWAY_HOME_PREFIX = "sbx-selfcheck-cursor-"
 # ------------------------------------------------------------------------------
 
 def cursor_version_result(expected_version: str, environment_map: Mapping[str, str] = os.environ) -> CheckResult:
-    throwaway_home = tempfile.mkdtemp(prefix=THROWAWAY_HOME_PREFIX)
+    throwaway_home = tempfile.mkdtemp(prefix=_THROWAWAY_HOME_PREFIX)
 
     try:
         cursor_environment_map = dict(environment_map)
@@ -72,7 +72,7 @@ def cursor_version_result(expected_version: str, environment_map: Mapping[str, s
         shutil.rmtree(throwaway_home, ignore_errors=True)
 
 
-def self_update_result(config_file: Path = CLI_CONFIG_FILE) -> CheckResult:
+def self_update_result(config_file: Path = _CLI_CONFIG_FILE) -> CheckResult:
     hint = restart_hint() + "; the start sets the static channel"
 
     try:
@@ -95,7 +95,7 @@ def self_update_result(config_file: Path = CLI_CONFIG_FILE) -> CheckResult:
 # Check entries
 # ------------------------------------------------------------------------------
 
-def check_tool_cursor_agent() -> CheckResult:
+def _check_tool_cursor_agent() -> CheckResult:
     pin_map, missing_result = pin_map_or_missing(["CURSOR_AGENT_VERSION"])
 
     if missing_result:
@@ -104,44 +104,44 @@ def check_tool_cursor_agent() -> CheckResult:
     return cursor_version_result(pin_map["CURSOR_AGENT_VERSION"])
 
 
-def check_cursor_env() -> CheckResult:
-    return environment_values_result({"CURSOR_CONFIG_DIR": str(CURSOR_CONFIG_DIR)})
+def _check_cursor_env() -> CheckResult:
+    return environment_values_result({"CURSOR_CONFIG_DIR": str(_CURSOR_CONFIG_DIR)})
 
 
-def check_cursor_home_links() -> CheckResult:
+def _check_cursor_home_links() -> CheckResult:
     link_target_list = []
 
-    for home_link in CURSOR_HOME_LINK_LIST:
-        link_target_list.append((home_link, CURSOR_CONFIG_DIR))
+    for home_link in _CURSOR_HOME_LINK_LIST:
+        link_target_list.append((home_link, _CURSOR_CONFIG_DIR))
 
     return home_links_result(link_target_list)
 
 
-def check_cursor_self_update_off() -> CheckResult:
+def _check_cursor_self_update_off() -> CheckResult:
     return self_update_result()
 
 
-def check_cursor_credentials() -> CheckResult:
-    return login_file_result(CURSOR_CONFIG_DIR / "auth.json", CURSOR_LOGIN_HINT)
+def _check_cursor_credentials() -> CheckResult:
+    return login_file_result(_CURSOR_CONFIG_DIR / "auth.json", _CURSOR_LOGIN_HINT)
 
 
-def check_cursor_gsd_synced() -> CheckResult:
-    return gsd_synced_result(CURSOR_CONFIG_DIR)
+def _check_cursor_gsd_synced() -> CheckResult:
+    return gsd_synced_result(_CURSOR_CONFIG_DIR)
 
 
-def check_cursor_bundle_links() -> CheckResult:
-    return bundle_links_result(CURSOR_CONFIG_DIR, BUNDLE_DIR, False)
+def _check_cursor_bundle_links() -> CheckResult:
+    return bundle_links_result(_CURSOR_CONFIG_DIR, BUNDLE_DIR, False)
 
 
-def check_cursor_wrappers() -> CheckResult:
-    return root_owned_result(CURSOR_WRAPPER_MODE_LIST)
+def _check_cursor_wrappers() -> CheckResult:
+    return root_owned_result(_CURSOR_WRAPPER_MODE_LIST)
 
 
-def check_cursor_image_paths_protected() -> CheckResult:
-    return protected_paths_result(CURSOR_PROTECTED_PATH_LIST)
+def _check_cursor_image_paths_protected() -> CheckResult:
+    return protected_paths_result(_CURSOR_PROTECTED_PATH_LIST)
 
 
-def check_cursor_versions_line() -> CheckResult:
+def _check_cursor_versions_line() -> CheckResult:
     pin_map, missing_result = pin_map_or_missing(["CURSOR_AGENT_VERSION"])
 
     if missing_result:
@@ -151,14 +151,14 @@ def check_cursor_versions_line() -> CheckResult:
 
 
 CHECK_LIST = [
-    Check("tool-cursor-agent", check_tool_cursor_agent),
-    Check("cursor-env", check_cursor_env),
-    Check("cursor-home-links", check_cursor_home_links),
-    Check("cursor-self-update-off", check_cursor_self_update_off),
-    Check("cursor-credentials", check_cursor_credentials),
-    Check("cursor-gsd-synced", check_cursor_gsd_synced),
-    Check("cursor-bundle-links", check_cursor_bundle_links),
-    Check("cursor-wrappers", check_cursor_wrappers),
-    Check("cursor-image-paths-protected", check_cursor_image_paths_protected),
-    Check("cursor-versions-line", check_cursor_versions_line),
+    Check("tool-cursor-agent", _check_tool_cursor_agent),
+    Check("cursor-env", _check_cursor_env),
+    Check("cursor-home-links", _check_cursor_home_links),
+    Check("cursor-self-update-off", _check_cursor_self_update_off),
+    Check("cursor-credentials", _check_cursor_credentials),
+    Check("cursor-gsd-synced", _check_cursor_gsd_synced),
+    Check("cursor-bundle-links", _check_cursor_bundle_links),
+    Check("cursor-wrappers", _check_cursor_wrappers),
+    Check("cursor-image-paths-protected", _check_cursor_image_paths_protected),
+    Check("cursor-versions-line", _check_cursor_versions_line),
 ]

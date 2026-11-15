@@ -10,6 +10,11 @@ import pytest
 
 import selfcheck_core
 
+
+# ------------------------------------------------------------------------------
+# Constants and helpers
+# ------------------------------------------------------------------------------
+
 CURSOR_CHECK_NAME_LIST = [
     "tool-cursor-agent",
     "cursor-env",

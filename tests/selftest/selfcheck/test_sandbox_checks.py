@@ -8,16 +8,23 @@
 import errno
 import os
 import platform
+import pwd
 import subprocess
 from pathlib import Path
 
 import pytest
 
 import checks_sandbox
-import sbx_selfcheck
 import selfcheck_core
+from helpers import run_lines
+from helpers import run_lines
 
-CURRENT_USER = checks_sandbox.user_name_of(os.getuid())
+
+# ------------------------------------------------------------------------------
+# Constants and helpers
+# ------------------------------------------------------------------------------
+
+CURRENT_USER = pwd.getpwuid(os.getuid()).pw_name
 NAMED_ENVIRONMENT = {"SBX_NAME": "name1"}
 ROOT_MOUNT_LINE = "1 0 8:1 / / rw - ext4 /dev/sda1 rw"
 MOUNT_LINE_TEMPLATE = "{number} 1 8:2 / {mount_point} rw,noatime - ext4 /dev/sda2 rw"
@@ -232,15 +239,14 @@ def test_root_owned_state_hint_says_name_when_sbx_name_is_unset(tmp_path):
     assert "--volumes-from sbx-NAME sbx-base:local -R 1000:1000" in result.hint
 
 
-def test_root_owned_state_prints_the_mac_owner_fix_under_its_fail_line(tmp_path):
+def test_root_owned_state_prints_the_mac_owner_fix_under_its_fail_line(tmp_path, agents1):
     state1 = tmp_path / "state1"
     make_fourteen_path_tree(state1)
 
     def scan_state1():
         return checks_sandbox.root_owned_state_result(state1, os.getuid(), NAMED_ENVIRONMENT)
 
-    check = selfcheck_core.Check("no-root-owned-state", scan_state1)
-    line_list = sbx_selfcheck.outcome_lines(check.name, sbx_selfcheck.run_check(check))
+    _, line_list = run_lines([selfcheck_core.Check("no-root-owned-state", scan_state1)], agents1)
 
     assert line_list[0].startswith("FAIL: no-root-owned-state: 14 paths under state/")
     assert line_list[1] == (
@@ -341,7 +347,7 @@ def test_scan_owned_state_tolerates_a_folder_it_cannot_search_in_a_sync_folder(t
 
 
 @pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 444 folder")
-def test_root_owned_state_prints_the_owner_fix_for_a_folder_it_cannot_search(tmp_path, restorable_mode):
+def test_root_owned_state_prints_the_owner_fix_for_a_folder_it_cannot_search(tmp_path, restorable_mode, agents1):
     state1 = tmp_path / "state1"
     write_file(state1 / "sub1" / "private1" / "file1")
     write_file(state1 / "sub1" / "private1" / "file2")
@@ -350,10 +356,8 @@ def test_root_owned_state_prints_the_owner_fix_for_a_folder_it_cannot_search(tmp
     def scan_state1():
         return checks_sandbox.root_owned_state_result(state1, os.getuid(), NAMED_ENVIRONMENT)
 
-    check = selfcheck_core.Check("no-root-owned-state", scan_state1)
-    line_list = sbx_selfcheck.outcome_lines(check.name, sbx_selfcheck.run_check(check))
+    _, line_list = run_lines([selfcheck_core.Check("no-root-owned-state", scan_state1)], agents1)
 
-    assert len(line_list) == 2
     assert line_list[0] == (
         f"FAIL: no-root-owned-state: 2 paths under state/ are owned by uid {os.getuid()} "
         "or unreadable: sub1, sub1/private1 (unreadable)"
@@ -365,7 +369,8 @@ def test_root_owned_state_prints_the_owner_fix_for_a_folder_it_cannot_search(tmp
     assert line_list[1].endswith(f"--volumes-from sbx-name1 sbx-base:local -R 1000:1000 {state1}")
 
 
-# A real folder cannot make an entry stat fail with an error other than permission, so this test passes a listing that does.
+# A real folder cannot make an entry stat fail with an error other than
+# permission, so this test passes a listing that does.
 class FailingStatPath(type(Path())):
     def lstat(self):
         raise OSError(errno.EIO, "I/O error")

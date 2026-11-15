@@ -13,6 +13,11 @@ import pytest
 
 import checks_certs
 
+
+# ------------------------------------------------------------------------------
+# Constants and helpers
+# ------------------------------------------------------------------------------
+
 KEYTOOL_PASSWORD = "changeit"
 BEGIN_MARKER = "-----BEGIN CERTIFICATE-----"
 END_MARKER = "-----END CERTIFICATE-----"
@@ -77,66 +82,44 @@ def bundle1(tmp_path, certs1, certs2) -> Path:
 
 
 # ------------------------------------------------------------------------------
-# Certificate parsing
+# System bundle check
 # ------------------------------------------------------------------------------
 
-def test_pem_block_list_splits_two_certificates_joined_by_a_blank_line(certs1, certs2):
-    text = certs1.read_text() + "\n" + certs2.read_text()
-
-    block_list = checks_certs.pem_block_list(text)
-
-    assert len(block_list) == 2
-    assert block_list[0].startswith(BEGIN_MARKER)
-    assert block_list[0].endswith(END_MARKER)
-    assert block_list[1].startswith(BEGIN_MARKER)
-
-
-def test_pem_block_list_ignores_text_around_the_blocks(certs1):
-    text = "comment line1\n" + certs1.read_text() + "trailing line2\n"
-
-    assert len(checks_certs.pem_block_list(text)) == 1
-
-
-def test_pem_block_list_of_text_without_a_certificate_is_empty():
-    assert checks_certs.pem_block_list("nothing here\n") == []
-
-
-def test_pem_fingerprint_equals_the_one_openssl_prints(certs1):
-    block = checks_certs.pem_block_list(certs1.read_text())[0]
-
-    assert checks_certs.pem_fingerprint(block) == openssl_fingerprint(certs1)
-
-
-def test_extra_cert_fingerprint_map_is_keyed_by_the_file_stem(tmp_path, certs1, certs2):
+def test_system_bundle_reads_two_certificates_joined_by_a_blank_line_and_names_each_by_its_file_stem(
+    tmp_path, certs1, certs2
+):
     extra2 = tmp_path / "extra2"
     extra2.mkdir()
     shutil.copy(certs1, extra2 / "sbx-extra-ca-1.crt")
     shutil.copy(certs2, extra2 / "sbx-extra-ca-2.crt")
     shutil.copy(certs2, extra2 / "other1.crt")
+    bundle2 = tmp_path / "bundle2.crt"
+    bundle2.write_text(certs1.read_text() + "\n" + certs2.read_text())
 
-    fingerprint_by_alias_map = checks_certs.extra_cert_fingerprint_by_alias_map(extra2)
+    result = checks_certs.system_bundle_result(extra2, bundle2)
 
-    assert fingerprint_by_alias_map == {
-        "sbx-extra-ca-1": openssl_fingerprint(certs1),
-        "sbx-extra-ca-2": openssl_fingerprint(certs2),
-    }
-
-
-def test_keytool_helpers_read_the_aliases_and_fingerprints_of_a_listing(tmp_path, certs1, certs2):
-    store1 = tmp_path / "store1.p12"
-    import_into_store(store1, certs1, "alias1")
-    import_into_store(store1, certs2, "alias2")
-    listing = subprocess.run(
-        ["keytool", "-list", *keystore_arguments(store1)], check=True, capture_output=True, text=True
-    ).stdout
-
-    assert checks_certs.keytool_alias_set(listing) == {"alias1", "alias2"}
-    assert checks_certs.keytool_fingerprint_set(listing) == {openssl_fingerprint(certs1), openssl_fingerprint(certs2)}
+    assert result.passed
+    assert f"sbx-extra-ca-1 {openssl_fingerprint(certs1)}" in result.detail
+    assert f"sbx-extra-ca-2 {openssl_fingerprint(certs2)}" in result.detail
+    assert "other1" not in result.detail
 
 
-# ------------------------------------------------------------------------------
-# System bundle check
-# ------------------------------------------------------------------------------
+def test_system_bundle_ignores_text_around_the_certificates(tmp_path, extra1, certs1):
+    bundle2 = tmp_path / "bundle2.crt"
+    bundle2.write_text("comment line1\n" + certs1.read_text() + "trailing line2\n")
+
+    assert checks_certs.system_bundle_result(extra1, bundle2).passed
+
+
+def test_system_bundle_fails_for_a_bundle_without_a_certificate(tmp_path, extra1):
+    bundle2 = tmp_path / "bundle2.crt"
+    bundle2.write_text("nothing here\n")
+
+    result = checks_certs.system_bundle_result(extra1, bundle2)
+
+    assert not result.passed
+    assert "sbx-extra-ca-1" in result.detail
+
 
 def test_system_bundle_passes_and_prints_the_alias_and_the_fingerprint(extra1, bundle1, certs1):
     result = checks_certs.system_bundle_result(extra1, bundle1)
@@ -161,7 +144,6 @@ def test_system_bundle_is_not_fooled_by_a_bundle_with_as_many_other_certificates
     bundle2 = tmp_path / "bundle2.crt"
     bundle2.write_text(certs2.read_text())
 
-    assert len(checks_certs.pem_block_list(bundle2.read_text())) == 1
     assert not checks_certs.system_bundle_result(extra1, bundle2).passed
 
 
