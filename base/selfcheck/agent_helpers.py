@@ -5,7 +5,6 @@
 # line. The image puts this file in /usr/local/lib/sbx-selfcheck/.
 # ------------------------------------------------------------------------------
 
-import os
 from pathlib import Path
 
 from selfcheck_core import (
@@ -113,7 +112,7 @@ def bundle_skill_name_list(bundle_dir: Path) -> list[str]:
 
 def link_text(link: Path) -> str | None:
     try:
-        return os.readlink(link)
+        return str(link.readlink())
     except OSError:
         return None
 
@@ -129,7 +128,7 @@ def rules_link_problem(config_dir: Path, bundle_dir: Path) -> str:
         return f"{rules_link} links to '{actual_text}', expected '{RULES_LINK_TEXT}'"
 
     try:
-        same_folder = os.path.samefile(rules_link, bundle_dir / "rules")
+        same_folder = rules_link.samefile(bundle_dir / "rules")
     except OSError:
         same_folder = False
 

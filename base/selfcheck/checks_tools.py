@@ -23,6 +23,7 @@ from selfcheck_core import (
     missing_pin_result,
     parse_versions_text,
     passed,
+    path_is_present,
     pin_map_or_missing,
     problem_list_result,
     protected_paths_result,
@@ -88,7 +89,7 @@ def history_free_environment(environment_map: Mapping[str, str] = os.environ) ->
 # ------------------------------------------------------------------------------
 
 def no_bundle_copy_result(bundle_copy_path: Path = BUNDLE_COPY_PATH) -> CheckResult:
-    if os.path.lexists(bundle_copy_path):
+    if path_is_present(bundle_copy_path):
         return failed(f"the image holds a bundle copy at {bundle_copy_path}", rebuild_hint())
 
     return passed(f"no bundle copy at {bundle_copy_path}")

@@ -192,12 +192,16 @@ def read_mount_point_set(mountinfo_file: Path = MOUNTINFO_FILE) -> set[str]:
     return mount_point_set(mountinfo_file.read_text())
 
 
+def path_is_present(path: Path) -> bool:
+    return path.is_symlink() or path.exists()
+
+
 def root_owned_result(path_mode_list: list[tuple[str, int]]) -> CheckResult:
     problem_list = []
 
     for path, expected_mode in path_mode_list:
         try:
-            path_stat = os.stat(path)
+            path_stat = Path(path).stat()
         except FileNotFoundError:
             problem_list.append(f"{path} is missing")
             continue
@@ -218,15 +222,15 @@ def protected_paths_problem_list(path_list: list[Path], mount_point_found_set: s
     problem_list = []
 
     for path in path_list:
-        if not os.path.lexists(path):
+        if not path_is_present(path):
             problem_list.append(f"{path} is missing")
             continue
 
-        entry_list = [str(path)]
+        entry_list = [path]
 
-        for current_dir, dir_name_list, file_name_list in os.walk(path, followlinks=False):
+        for current_dir, dir_name_list, file_name_list in path.walk(follow_symlinks=False):
             for name in dir_name_list + file_name_list:
-                entry_list.append(os.path.join(current_dir, name))
+                entry_list.append(current_dir / name)
 
         for entry in entry_list:
             if os.access(entry, os.W_OK):
@@ -369,7 +373,7 @@ def tool_result(
     if found_path is None:
         return failed(f"{command_name} is not on PATH", rebuild_hint())
 
-    real_path = os.path.realpath(found_path)
+    real_path = str(Path(found_path).resolve())
 
     if is_under(real_path, home_root):
         return failed(

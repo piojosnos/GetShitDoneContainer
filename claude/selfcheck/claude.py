@@ -6,7 +6,6 @@
 # ------------------------------------------------------------------------------
 
 import json
-import os
 from pathlib import Path
 
 from agent_helpers import (
@@ -25,6 +24,7 @@ from selfcheck_core import (
     environment_values_result,
     failed,
     passed,
+    path_is_present,
     pin_map_or_missing,
     problem_list_result,
     protected_paths_result,
@@ -65,7 +65,7 @@ def no_home_copy_result(copy_path_list: list[Path] = CLAUDE_HOME_COPY_PATH_LIST)
     found_path_list = []
 
     for copy_path in copy_path_list:
-        if os.path.lexists(copy_path):
+        if path_is_present(copy_path):
             found_path_list.append(str(copy_path))
 
     if found_path_list:

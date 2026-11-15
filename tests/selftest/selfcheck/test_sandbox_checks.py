@@ -366,21 +366,14 @@ def test_root_owned_state_prints_the_owner_fix_for_a_folder_it_cannot_search(tmp
 
 
 # A real folder cannot make an entry stat fail with an error other than permission, so this test passes a listing that does.
-class FailingStatEntry:
-    def __init__(self, path: str, error: OSError):
-        self.path = path
-        self.error = error
-
-    def stat(self, follow_symlinks: bool = True):
-        raise self.error
-
-    def is_dir(self, follow_symlinks: bool = True) -> bool:
-        return False
+class FailingStatPath(type(Path())):
+    def lstat(self):
+        raise OSError(errno.EIO, "I/O error")
 
 
 def test_scan_owned_state_lets_an_entry_error_other_than_permission_surface(tmp_path):
     state1 = tmp_path / "state1"
-    entry1 = FailingStatEntry(str(state1 / "file1"), OSError(errno.EIO, "I/O error"))
+    entry1 = FailingStatPath(state1 / "file1")
 
     def read_entry1(folder_path):
         return [entry1]

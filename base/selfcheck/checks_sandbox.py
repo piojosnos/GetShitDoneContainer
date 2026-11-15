@@ -8,6 +8,7 @@
 import os
 import platform
 import pwd
+import stat
 import tempfile
 from pathlib import Path
 from typing import Callable, Mapping
@@ -144,7 +145,7 @@ def state_writable_result(state_dir: Path) -> CheckResult:
     try:
         os.close(probe_descriptor)
     finally:
-        os.remove(probe_name)
+        Path(probe_name).unlink()
 
     return passed(f"{state_dir} is writable")
 
@@ -163,9 +164,8 @@ def mark_unreadable_folder(reported_list: list[str], relative_dir: Path, tolerat
     reported_list.append(relative_dir.as_posix() + UNREADABLE_SUFFIX)
 
 
-def read_entry_list(folder: Path) -> list[os.DirEntry]:
-    with os.scandir(folder) as entry_iterator:
-        return list(entry_iterator)
+def read_entry_list(folder: Path) -> list[Path]:
+    return list(folder.iterdir())
 
 
 def scan_owned_state(
@@ -173,7 +173,7 @@ def scan_owned_state(
     owner_uid: int,
     skipped_relative_set: set[str],
     tolerated_folder_set: set[str],
-    entry_reader: Callable[[Path], list[os.DirEntry]] = read_entry_list,
+    entry_reader: Callable[[Path], list[Path]] = read_entry_list,
 ) -> tuple[list[str], int]:
     reported_list = []
     tolerated_count = 0
@@ -192,13 +192,13 @@ def scan_owned_state(
             continue
 
         for entry in entry_list:
-            relative_path = Path(entry.path).relative_to(state_dir)
+            relative_path = entry.relative_to(state_dir)
 
             if relative_path.as_posix() in skipped_relative_set:
                 continue
 
             try:
-                entry_stat = entry.stat(follow_symlinks=False)
+                entry_stat = entry.lstat()
             except FileNotFoundError:
                 continue
             except PermissionError:
@@ -212,8 +212,8 @@ def scan_owned_state(
                 else:
                     reported_list.append(relative_path.as_posix())
 
-            if entry.is_dir(follow_symlinks=False):
-                pending_dir_list.append(Path(entry.path))
+            if stat.S_ISDIR(entry_stat.st_mode):
+                pending_dir_list.append(entry)
 
     return sorted(reported_list), tolerated_count
 
