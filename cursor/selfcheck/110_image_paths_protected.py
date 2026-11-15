@@ -5,12 +5,9 @@
 # after the shared checks.
 # ------------------------------------------------------------------------------
 
-from pathlib import Path
-
 from check_result import Check, CheckResult
+from cursor_shared import IMAGE_ROOT_LIST
 from protected_paths import protected_paths_result
-
-_PROTECTED_PATH_LIST = [Path("/usr/local/lib/cursor-agent")]
 
 
 # ------------------------------------------------------------------------------
@@ -18,7 +15,7 @@ _PROTECTED_PATH_LIST = [Path("/usr/local/lib/cursor-agent")]
 # ------------------------------------------------------------------------------
 
 def _check_cursor_image_paths_protected() -> CheckResult:
-    return protected_paths_result(_PROTECTED_PATH_LIST)
+    return protected_paths_result(IMAGE_ROOT_LIST)
 
 
 CHECK_LIST = [Check("cursor-image-paths-protected", _check_cursor_image_paths_protected)]

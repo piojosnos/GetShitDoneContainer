@@ -1,17 +1,24 @@
 # ------------------------------------------------------------------------------
-# Tests of the Claude image paths protected check
+# Tests of the Claude image paths checks
 # ------------------------------------------------------------------------------
 
 from pathlib import Path
 
+import claude_shared
 from helpers import load_agent_check
 
 image_paths_protected = load_agent_check("claude", "110_image_paths_protected")
+wrappers = load_agent_check("claude", "100_wrappers")
 
 
 # ------------------------------------------------------------------------------
-# Claude image paths protected
+# Claude image roots
 # ------------------------------------------------------------------------------
 
-def test_the_check_protects_the_folder_the_image_installs_the_agent_in():
-    assert image_paths_protected._PROTECTED_PATH_LIST == [Path("/etc/claude-code")]
+def test_the_image_root_is_the_folder_the_image_installs_the_agent_in():
+    assert claude_shared.IMAGE_ROOT_LIST == [Path("/etc/claude-code")]
+
+
+def test_the_ownership_check_and_the_protected_paths_check_share_the_one_roots_list():
+    assert wrappers.IMAGE_ROOT_LIST is claude_shared.IMAGE_ROOT_LIST
+    assert image_paths_protected.IMAGE_ROOT_LIST is claude_shared.IMAGE_ROOT_LIST

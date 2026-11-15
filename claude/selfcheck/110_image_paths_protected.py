@@ -5,12 +5,9 @@
 # after the shared checks.
 # ------------------------------------------------------------------------------
 
-from pathlib import Path
-
 from check_result import Check, CheckResult
+from claude_shared import IMAGE_ROOT_LIST
 from protected_paths import protected_paths_result
-
-_PROTECTED_PATH_LIST = [Path("/etc/claude-code")]
 
 
 # ------------------------------------------------------------------------------
@@ -18,7 +15,7 @@ _PROTECTED_PATH_LIST = [Path("/etc/claude-code")]
 # ------------------------------------------------------------------------------
 
 def _check_claude_image_paths_protected() -> CheckResult:
-    return protected_paths_result(_PROTECTED_PATH_LIST)
+    return protected_paths_result(IMAGE_ROOT_LIST)
 
 
 CHECK_LIST = [Check("claude-image-paths-protected", _check_claude_image_paths_protected)]
