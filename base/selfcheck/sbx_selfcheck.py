@@ -649,12 +649,20 @@ def collect_checks(shared_check_list: list[Check], checks_dir: Path) -> list[Che
 
 def run_check(check: Check) -> CheckResult:
     try:
-        return check.function()
+        result = check.function()
     except Exception as e:
         return failed(
             f"raised {type(e).__name__}: {e}",
             "this is a bug in the self-check or a broken image; " + rebuild_hint(),
         )
+
+    if not isinstance(result, CheckResult):
+        return failed(
+            f"returned {type(result).__name__} instead of a CheckResult",
+            "this is a bug in the self-check or a broken image; " + rebuild_hint(),
+        )
+
+    return result
 
 
 def one_line(text: str) -> str:
