@@ -9,23 +9,24 @@ set -u
 . "$(dirname "$0")/lib.sh"
 
 # ------------------------------------------------------------------------------
-# make_entry_copy: copies the entrypoint and library into WORK/entry
+# make_entry_copy: copies the entrypoint and library into WORK/entry, laid out
+# as in the image: bin/sbx-entrypoint and lib/sbx/sbx-start-lib.sh
 # ------------------------------------------------------------------------------
 # Four lines are appended to the library copy: the workspace, state and hook
 # folders and a mount test that says yes. The folder demo is made.
 # ------------------------------------------------------------------------------
 make_entry_copy() {
-  mkdir -p "$WORK/entry" "$WORK/ws/demo" "$WORK/ws/state" "$WORK/hooks"
+  mkdir -p "$WORK/entry/bin" "$WORK/entry/lib/sbx" "$WORK/ws/demo" "$WORK/ws/state" "$WORK/hooks"
 
-  cp "$ENTRY" "$WORK/entry/sbx-entrypoint"
-  cp "$START_LIB" "$WORK/entry/sbx-start-lib.sh"
+  cp "$ENTRY" "$WORK/entry/bin/sbx-entrypoint"
+  cp "$START_LIB" "$WORK/entry/lib/sbx/sbx-start-lib.sh"
 
   {
     echo "ws=$WORK/ws"
     echo "state=$WORK/ws/state"
     echo "hookDir=$WORK/hooks"
     echo "is_mount() { return 0; }"
-  } >>"$WORK/entry/sbx-start-lib.sh"
+  } >>"$WORK/entry/lib/sbx/sbx-start-lib.sh"
 }
 
 # ------------------------------------------------------------------------------
@@ -52,7 +53,7 @@ case_command_starts_in_project() {
   make_entry_copy
   mkdir -p "$WORK/start"
 
-  ( cd "$WORK" && SBX_NAME=demo bash "$WORK/entry/sbx-entrypoint" pwd -P ) >"$WORK/start/out" 2>&1 </dev/null
+  ( cd "$WORK" && SBX_NAME=demo bash "$WORK/entry/bin/sbx-entrypoint" pwd -P ) >"$WORK/start/out" 2>&1 </dev/null
   startRc=$?
 
   expect "entrypoint: the command starts in the project folder" started_in "$startRc" "$WORK/start/out" "$WORK/ws/demo"
@@ -68,7 +69,7 @@ case_missing_project_stops_start() {
   make_entry_copy
   mkdir -p "$WORK/missing"
 
-  ( cd "$WORK" && SBX_NAME=nosuch bash "$WORK/entry/sbx-entrypoint" echo command-ran ) >"$WORK/missing/out" 2>&1 </dev/null
+  ( cd "$WORK" && SBX_NAME=nosuch bash "$WORK/entry/bin/sbx-entrypoint" echo command-ran ) >"$WORK/missing/out" 2>&1 </dev/null
   missingRc=$?
 
   expect "entrypoint: a missing project folder stops the start before the command" \
@@ -88,7 +89,7 @@ case_nested_state_folders() {
   make_entry_copy
   mkdir -p "$WORK/nested"
 
-  ( cd "$WORK" && SBX_NAME=demo SBX_STATE_DIRS="cache/npm cache/uv m2 claude" bash "$WORK/entry/sbx-entrypoint" true ) >"$WORK/nested/out" 2>&1 </dev/null
+  ( cd "$WORK" && SBX_NAME=demo SBX_STATE_DIRS="cache/npm cache/uv m2 claude" bash "$WORK/entry/bin/sbx-entrypoint" true ) >"$WORK/nested/out" 2>&1 </dev/null
   nestedRc=$?
 
   for folder in cache/npm cache/uv m2 claude shell gh git; do

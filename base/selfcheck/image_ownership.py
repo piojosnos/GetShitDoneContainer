@@ -18,15 +18,13 @@ from tree_walk import ProblemKind, WalkProblem, walk_tree
 
 _EXECUTABLE_BITS = 0o111
 _GROUP_OTHER_WRITE_BITS = 0o022
-_LIBRARY_SUFFIX = ".sh"
 
 
 # ------------------------------------------------------------------------------
 # The rules for one entry
 # ------------------------------------------------------------------------------
 # A link is checked for its owner only: its own mode means nothing, and the file
-# it points to is walked in its own right. A sourced shell library such as
-# sbx-start-lib.sh is the one sbx file that is not executable.
+# it points to is walked in its own right.
 # ------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
@@ -45,7 +43,7 @@ def _must_be_executable(path: Path, entry_stat: os.stat_result, rules: ImageRule
     if path.parent == rules.hook_dir:
         return True
 
-    return path.parent == rules.command_dir and path.name.startswith(COMMAND_PREFIX) and path.suffix != _LIBRARY_SUFFIX
+    return path.parent == rules.command_dir and path.name.startswith(COMMAND_PREFIX)
 
 
 def _entry_problem_list(path: Path, entry_stat: os.stat_result, rules: ImageRules) -> list[str]:

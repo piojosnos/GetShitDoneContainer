@@ -33,13 +33,12 @@ def make_good_tree(tmp_path) -> None:
     write_file(tmp_path / "root1" / "launcher1")
     write_file(tmp_path / "root1" / "sub1" / "file1")
     write_file(tmp_path / "bin1" / "sbx-a")
-    write_file(tmp_path / "bin1" / "sbx-lib.sh")
     write_file(tmp_path / "bin1" / "uv")
 
     for executable in ["root1/hooks1/hook1", "root1/launcher1", "bin1/sbx-a"]:
         (tmp_path / executable).chmod(0o755)
 
-    for path in [tmp_path / "root1" / "sub1" / "file1", tmp_path / "bin1" / "sbx-lib.sh", tmp_path / "bin1" / "uv"]:
+    for path in [tmp_path / "root1" / "sub1" / "file1", tmp_path / "bin1" / "uv"]:
         path.chmod(0o644)
 
     for folder in [tmp_path / "root1", tmp_path / "root1" / "hooks1", tmp_path / "root1" / "sub1", tmp_path / "bin1"]:
@@ -104,15 +103,26 @@ def test_a_hook_the_launcher_an_sbx_command_and_a_folder_must_be_executable(tmp_
     assert f"{tmp_path / relative_path} is not executable (644)" in result.detail
 
 
-def test_an_ordinary_file_and_a_sourced_shell_library_need_no_executable_bit(tmp_path):
+def test_an_ordinary_file_needs_no_executable_bit(tmp_path):
     make_good_tree(tmp_path)
 
     result = image_ownership.image_ownership_result(
-        [tmp_path / "root1" / "sub1" / "file1", tmp_path / "bin1" / "sbx-lib.sh", tmp_path / "bin1" / "uv"],
+        [tmp_path / "root1" / "sub1" / "file1", tmp_path / "bin1" / "uv"],
         rules_for(tmp_path),
     )
 
     assert result.passed
+
+
+def test_every_sbx_command_must_be_executable_whatever_its_name(tmp_path):
+    make_good_tree(tmp_path)
+    write_file(tmp_path / "bin1" / "sbx-b.sh")
+    (tmp_path / "bin1" / "sbx-b.sh").chmod(0o644)
+
+    result = image_ownership.image_ownership_result([tmp_path / "bin1" / "sbx-b.sh"], rules_for(tmp_path))
+
+    assert not result.passed
+    assert f"{tmp_path / 'bin1' / 'sbx-b.sh'} is not executable (644)" in result.detail
 
 
 def test_a_new_file_under_a_root_is_covered_without_any_list(tmp_path):

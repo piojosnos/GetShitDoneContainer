@@ -12,7 +12,7 @@ COMMAND_DIR = Path("/usr/local/bin")
 COMMAND_PREFIX = "sbx-"
 HOOK_DIR = Path("/etc/sbx/start.d")
 LAUNCHER_FILE = Path("/usr/local/lib/sbx-selfcheck/sbx-selfcheck")
-BASE_FOLDER_LIST = [Path("/usr/local/lib/sbx-selfcheck"), Path("/etc/sbx")]
+BASE_FOLDER_LIST = [Path("/usr/local/lib/sbx"), Path("/usr/local/lib/sbx-selfcheck"), Path("/etc/sbx")]
 
 
 # ------------------------------------------------------------------------------

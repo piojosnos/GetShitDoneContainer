@@ -182,12 +182,13 @@ ENV HISTFILE=/home/sandbox/workspace/state/shell/bash_history \
 # ------------------------------------------------------------------------------
 # The entrypoint and its library
 # ------------------------------------------------------------------------------
-# Copied as root: the script is mode 755, the library it sources is 644.
+# Copied as root: the script is mode 755, the library it sources is 644. The
+# library sits in /usr/local/lib/sbx, so /usr/local/bin holds only commands.
 # ------------------------------------------------------------------------------
 COPY base/sbx-entrypoint /usr/local/bin/sbx-entrypoint
-COPY base/sbx-start-lib.sh /usr/local/bin/sbx-start-lib.sh
-RUN chmod 755 /usr/local/bin/sbx-entrypoint \
-    && chmod 644 /usr/local/bin/sbx-start-lib.sh
+COPY base/sbx-start-lib.sh /usr/local/lib/sbx/sbx-start-lib.sh
+RUN chmod 755 /usr/local/bin/sbx-entrypoint /usr/local/lib/sbx \
+    && chmod 644 /usr/local/lib/sbx/sbx-start-lib.sh
 
 # ------------------------------------------------------------------------------
 # The start hooks folder
