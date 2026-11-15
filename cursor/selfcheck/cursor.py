@@ -21,13 +21,14 @@ from agent_helpers import (
 )
 from selfcheck_core import (
     BUNDLE_DIR,
+    HOME_DIR,
+    STATE_DIR,
     Check,
     CheckResult,
     environment_values_result,
     failed,
-    missing_pin_result,
     passed,
-    pin_value,
+    pin_map_or_missing,
     protected_paths_result,
     restart_hint,
     root_owned_result,
@@ -39,8 +40,8 @@ from selfcheck_core import (
 # Constants
 # ------------------------------------------------------------------------------
 
-CURSOR_CONFIG_DIR = Path("/home/sandbox/workspace/state/cursor")
-CURSOR_HOME_LINK_LIST = [Path("/home/sandbox/.cursor"), Path("/home/sandbox/.config/cursor")]
+CURSOR_CONFIG_DIR = STATE_DIR / "cursor"
+CURSOR_HOME_LINK_LIST = [HOME_DIR / ".cursor", HOME_DIR / ".config" / "cursor"]
 CLI_CONFIG_FILE = CURSOR_CONFIG_DIR / "cli-config.json"
 CURSOR_WRAPPER_MODE_LIST = [
     ("/usr/local/bin/sbx-cursor", 0o755),
@@ -95,12 +96,12 @@ def self_update_result(config_file: Path = CLI_CONFIG_FILE) -> CheckResult:
 # ------------------------------------------------------------------------------
 
 def check_tool_cursor_agent() -> CheckResult:
-    pinned_version = pin_value("CURSOR_AGENT_VERSION")
+    pin_map, missing_result = pin_map_or_missing(["CURSOR_AGENT_VERSION"])
 
-    if not pinned_version:
-        return missing_pin_result("CURSOR_AGENT_VERSION")
+    if missing_result:
+        return missing_result
 
-    return cursor_version_result(pinned_version)
+    return cursor_version_result(pin_map["CURSOR_AGENT_VERSION"])
 
 
 def check_cursor_env() -> CheckResult:
@@ -141,12 +142,12 @@ def check_cursor_image_paths_protected() -> CheckResult:
 
 
 def check_cursor_versions_line() -> CheckResult:
-    cursor_version = pin_value("CURSOR_AGENT_VERSION")
+    pin_map, missing_result = pin_map_or_missing(["CURSOR_AGENT_VERSION"])
 
-    if not cursor_version:
-        return missing_pin_result("CURSOR_AGENT_VERSION")
+    if missing_result:
+        return missing_result
 
-    return versions_line_result(f"cursor-agent {cursor_version} | ")
+    return versions_line_result(f"cursor-agent {pin_map['CURSOR_AGENT_VERSION']} | ")
 
 
 CHECK_LIST = [

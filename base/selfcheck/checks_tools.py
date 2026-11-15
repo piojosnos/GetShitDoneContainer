@@ -23,7 +23,8 @@ from selfcheck_core import (
     missing_pin_result,
     parse_versions_text,
     passed,
-    pin_value,
+    pin_map_or_missing,
+    problem_list_result,
     protected_paths_result,
     rebuild_hint,
     root_owned_result,
@@ -98,76 +99,79 @@ def no_bundle_copy_result(bundle_copy_path: Path = BUNDLE_COPY_PATH) -> CheckRes
 # ------------------------------------------------------------------------------
 
 def tool_gh_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
-    gh_version = pin_value("GH_VERSION", versions_file)
+    pin_map, missing_result = pin_map_or_missing(["GH_VERSION"], versions_file)
 
-    if not gh_version:
-        return missing_pin_result("GH_VERSION")
+    if missing_result:
+        return missing_result
 
-    return tool_result("gh", ["--version"], f"gh version {gh_version}")
+    return tool_result("gh", ["--version"], f"gh version {pin_map['GH_VERSION']}")
 
 
 def tool_node_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
-    node_version = pin_value("NODE_VERSION", versions_file)
+    pin_map, missing_result = pin_map_or_missing(["NODE_VERSION"], versions_file)
 
-    if not node_version:
-        return missing_pin_result("NODE_VERSION")
+    if missing_result:
+        return missing_result
 
-    return tool_result("node", ["-v"], f"v{node_version}")
+    return tool_result("node", ["-v"], f"v{pin_map['NODE_VERSION']}")
 
 
 def tool_uv_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
-    uv_image = pin_value("UV_IMAGE", versions_file)
+    pin_map, missing_result = pin_map_or_missing(["UV_IMAGE"], versions_file)
 
-    if not uv_image:
-        return missing_pin_result("UV_IMAGE")
+    if missing_result:
+        return missing_result
 
-    return tool_result("uv", ["--version"], f"uv {image_tag(uv_image)}")
+    return tool_result("uv", ["--version"], f"uv {image_tag(pin_map['UV_IMAGE'])}")
 
 
 def tool_java_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
-    temurin_image = pin_value("TEMURIN_IMAGE", versions_file)
+    pin_map, missing_result = pin_map_or_missing(["TEMURIN_IMAGE"], versions_file)
 
-    if not temurin_image:
-        return missing_pin_result("TEMURIN_IMAGE")
+    if missing_result:
+        return missing_result
 
     return tool_result(
-        "java", ["-version"], f'openjdk version "{jdk_version(temurin_image)}"', required_text="Temurin"
+        "java", ["-version"], f'openjdk version "{jdk_version(pin_map["TEMURIN_IMAGE"])}"', required_text="Temurin"
     )
 
 
 def tool_maven_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
-    maven_version = pin_value("MAVEN_VERSION", versions_file)
-    temurin_image = pin_value("TEMURIN_IMAGE", versions_file)
+    pin_map, missing_result = pin_map_or_missing(["MAVEN_VERSION", "TEMURIN_IMAGE"], versions_file)
 
-    if not maven_version:
-        return missing_pin_result("MAVEN_VERSION")
-
-    if not temurin_image:
-        return missing_pin_result("TEMURIN_IMAGE")
+    if missing_result:
+        return missing_result
 
     return tool_result(
         "mvn",
         ["-v"],
-        f"Apache Maven {maven_version}",
-        required_text=f"Java version: {jdk_version(temurin_image)},",
+        f"Apache Maven {pin_map['MAVEN_VERSION']}",
+        required_text=f"Java version: {jdk_version(pin_map['TEMURIN_IMAGE'])},",
     )
 
 
 def tool_gsd_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
-    gsd_version = pin_value("GSD_CORE_VERSION", versions_file)
+    pin_map, missing_result = pin_map_or_missing(["GSD_CORE_VERSION"], versions_file)
 
-    if not gsd_version:
-        return missing_pin_result("GSD_CORE_VERSION")
+    if missing_result:
+        return missing_result
 
     return tool_result(
         "gsd-tools",
         ["runtime-identity", "--raw"],
-        '{"packageName":"@opengsd/gsd-core","version":"' + gsd_version + '"}',
+        '{"packageName":"@opengsd/gsd-core","version":"' + pin_map["GSD_CORE_VERSION"] + '"}',
     )
 
 
 def tool_python_result() -> CheckResult:
     return tool_result("python3", ["--version"], f"Python {platform.python_version()}")
+
+
+def plain_tool_check(command_name: str) -> Check:
+    def run_tool_check() -> CheckResult:
+        return tool_result(command_name)
+
+    return Check("tool-" + command_name, run_tool_check)
 
 
 def tzdata_result(utc_zone_file: Path = UTC_ZONE_FILE) -> CheckResult:
@@ -262,55 +266,12 @@ def quiet_shells_result(environment_map: Mapping[str, str] = os.environ) -> Chec
         if completed.stdout or completed.stderr:
             problem_list.append(f"bash {flag} true printed '{first_output_line(completed)}'")
 
-    if problem_list:
-        return failed("; ".join(problem_list), rebuild_hint())
-
-    return passed("bash -c true and bash -lc true print nothing")
+    return problem_list_result(problem_list, rebuild_hint(), "bash -c true and bash -lc true print nothing")
 
 
 # ------------------------------------------------------------------------------
 # Check entries
 # ------------------------------------------------------------------------------
-
-def check_tool_git() -> CheckResult:
-    return tool_result("git")
-
-
-def check_tool_bash() -> CheckResult:
-    return tool_result("bash")
-
-
-def check_tool_keytool() -> CheckResult:
-    return tool_result("keytool")
-
-
-def check_tool_jq() -> CheckResult:
-    return tool_result("jq")
-
-
-def check_tool_rg() -> CheckResult:
-    return tool_result("rg")
-
-
-def check_tool_unzip() -> CheckResult:
-    return tool_result("unzip")
-
-
-def check_tool_zip() -> CheckResult:
-    return tool_result("zip")
-
-
-def check_tool_ssh() -> CheckResult:
-    return tool_result("ssh")
-
-
-def check_tool_make() -> CheckResult:
-    return tool_result("make")
-
-
-def check_tool_gcc() -> CheckResult:
-    return tool_result("gcc")
-
 
 def check_tool_gh() -> CheckResult:
     return tool_gh_result()
@@ -373,23 +334,23 @@ def check_no_bundle_copy() -> CheckResult:
 
 
 TOOL_CHECK_LIST = [
-    Check("tool-git", check_tool_git),
-    Check("tool-bash", check_tool_bash),
+    plain_tool_check("git"),
+    plain_tool_check("bash"),
     Check("tool-gh", check_tool_gh),
     Check("tool-node", check_tool_node),
     Check("tool-python", check_tool_python),
     Check("tool-uv", check_tool_uv),
     Check("tool-java", check_tool_java),
-    Check("tool-keytool", check_tool_keytool),
+    plain_tool_check("keytool"),
     Check("tool-maven", check_tool_maven),
     Check("tool-gsd", check_tool_gsd),
-    Check("tool-jq", check_tool_jq),
-    Check("tool-rg", check_tool_rg),
-    Check("tool-unzip", check_tool_unzip),
-    Check("tool-zip", check_tool_zip),
-    Check("tool-ssh", check_tool_ssh),
-    Check("tool-make", check_tool_make),
-    Check("tool-gcc", check_tool_gcc),
+    plain_tool_check("jq"),
+    plain_tool_check("rg"),
+    plain_tool_check("unzip"),
+    plain_tool_check("zip"),
+    plain_tool_check("ssh"),
+    plain_tool_check("make"),
+    plain_tool_check("gcc"),
     Check("tzdata", check_tzdata),
     Check("versions-record", check_versions_record),
     Check("versions-line-file", check_versions_line_file),

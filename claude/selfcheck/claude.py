@@ -18,13 +18,15 @@ from agent_helpers import (
 )
 from selfcheck_core import (
     BUNDLE_DIR,
+    HOME_DIR,
+    STATE_DIR,
     Check,
     CheckResult,
     environment_values_result,
     failed,
-    missing_pin_result,
     passed,
-    pin_value,
+    pin_map_or_missing,
+    problem_list_result,
     protected_paths_result,
     rebuild_hint,
     root_owned_result,
@@ -36,11 +38,11 @@ from selfcheck_core import (
 # Constants
 # ------------------------------------------------------------------------------
 
-CLAUDE_CONFIG_DIR = Path("/home/sandbox/workspace/state/claude")
-CLAUDE_HOME_LINK = Path("/home/sandbox/.claude")
+CLAUDE_CONFIG_DIR = STATE_DIR / "claude"
+CLAUDE_HOME_LINK = HOME_DIR / ".claude"
 CLAUDE_HOME_COPY_PATH_LIST = [
-    Path("/home/sandbox/.local/share/claude"),
-    Path("/home/sandbox/.local/bin/claude"),
+    HOME_DIR / ".local" / "share" / "claude",
+    HOME_DIR / ".local" / "bin" / "claude",
 ]
 MANAGED_SETTINGS_FILE = Path("/etc/claude-code/managed-settings.json")
 CLAUDE_WRAPPER_MODE_LIST = [
@@ -119,10 +121,11 @@ def managed_settings_result(
     if sorted_text_list(permissions_map.get("deny")) != expected_deny_list:
         problem_list.append(f"deny is {permissions_map.get('deny')}, expected {expected_deny_list}")
 
-    if problem_list:
-        return failed("; ".join(problem_list), rebuild_hint())
-
-    return passed(f"{settings_file} names {bundle_dir} and denies edits of the skill list and the skills")
+    return problem_list_result(
+        problem_list,
+        rebuild_hint(),
+        f"{settings_file} names {bundle_dir} and denies edits of the skill list and the skills",
+    )
 
 
 # ------------------------------------------------------------------------------
@@ -130,21 +133,21 @@ def managed_settings_result(
 # ------------------------------------------------------------------------------
 
 def check_tool_claude() -> CheckResult:
-    pinned_version = pin_value("CLAUDE_CODE_VERSION")
+    pin_map, missing_result = pin_map_or_missing(["CLAUDE_CODE_VERSION"])
 
-    if not pinned_version:
-        return missing_pin_result("CLAUDE_CODE_VERSION")
+    if missing_result:
+        return missing_result
 
-    return tool_result("claude", ["--version"], f"{pinned_version} (Claude Code)")
+    return tool_result("claude", ["--version"], f"{pin_map['CLAUDE_CODE_VERSION']} (Claude Code)")
 
 
 def check_tool_ccusage() -> CheckResult:
-    pinned_version = pin_value("CCUSAGE_VERSION")
+    pin_map, missing_result = pin_map_or_missing(["CCUSAGE_VERSION"])
 
-    if not pinned_version:
-        return missing_pin_result("CCUSAGE_VERSION")
+    if missing_result:
+        return missing_result
 
-    return tool_result("ccusage", ["--version"], f"ccusage {pinned_version}")
+    return tool_result("ccusage", ["--version"], f"ccusage {pin_map['CCUSAGE_VERSION']}")
 
 
 def check_claude_env() -> CheckResult:
@@ -184,16 +187,14 @@ def check_claude_image_paths_protected() -> CheckResult:
 
 
 def check_claude_versions_line() -> CheckResult:
-    claude_version = pin_value("CLAUDE_CODE_VERSION")
-    ccusage_version = pin_value("CCUSAGE_VERSION")
+    pin_map, missing_result = pin_map_or_missing(["CLAUDE_CODE_VERSION", "CCUSAGE_VERSION"])
 
-    if not claude_version:
-        return missing_pin_result("CLAUDE_CODE_VERSION")
+    if missing_result:
+        return missing_result
 
-    if not ccusage_version:
-        return missing_pin_result("CCUSAGE_VERSION")
-
-    return versions_line_result(f"claude {claude_version} | ccusage {ccusage_version} | ")
+    return versions_line_result(
+        f"claude {pin_map['CLAUDE_CODE_VERSION']} | ccusage {pin_map['CCUSAGE_VERSION']} | "
+    )
 
 
 CHECK_LIST = [

@@ -15,6 +15,7 @@ from selfcheck_core import (
     failed,
     first_output_line,
     passed,
+    problem_list_result,
     rebuild_hint,
     run_command,
 )
@@ -26,7 +27,7 @@ from selfcheck_core import (
 
 EXTRA_CA_DIR = Path("/usr/local/share/ca-certificates")
 SYSTEM_BUNDLE_FILE = Path("/etc/ssl/certs/ca-certificates.crt")
-KEYTOOL_STORE_ARGUMENT_LIST = ["-cacerts", "-storepass", "changeit"]
+KEYTOOL_STORE_ARGUMENT_TUPLE = ("-cacerts", "-storepass", "changeit")
 NO_EXTRA_CA_TEXT = "no extra root certificate installed"
 PEM_BEGIN_MARKER = "-----BEGIN CERTIFICATE-----"
 PEM_END_MARKER = "-----END CERTIFICATE-----"
@@ -128,25 +129,24 @@ def system_bundle_result(
         if fingerprint not in bundle_fingerprint_set:
             problem_list.append(f"{alias} ({fingerprint}) is not in {bundle_file}")
 
-    if problem_list:
-        return failed("; ".join(problem_list), rebuild_hint())
-
-    return passed(
+    return problem_list_result(
+        problem_list,
+        rebuild_hint(),
         f"{len(fingerprint_by_alias_map)} extra root certificates in the system bundle: "
-        + extra_certificates_text(fingerprint_by_alias_map)
+        + extra_certificates_text(fingerprint_by_alias_map),
     )
 
 
 def java_cacerts_result(
     extra_ca_dir: Path = EXTRA_CA_DIR,
-    keytool_argument_list: list[str] = KEYTOOL_STORE_ARGUMENT_LIST,
+    keytool_argument_tuple: tuple[str, ...] = KEYTOOL_STORE_ARGUMENT_TUPLE,
 ) -> CheckResult:
     fingerprint_by_alias_map = extra_cert_fingerprint_by_alias_map(extra_ca_dir)
 
     if not fingerprint_by_alias_map:
         return passed(NO_EXTRA_CA_TEXT)
 
-    completed = run_command(["keytool", "-list"] + keytool_argument_list)
+    completed = run_command(["keytool", "-list", *keytool_argument_tuple])
 
     if completed.returncode != 0:
         return failed(f"keytool -list failed: {first_output_line(completed)}", rebuild_hint())
@@ -161,12 +161,11 @@ def java_cacerts_result(
         elif fingerprint not in fingerprint_set:
             problem_list.append(f"{alias} ({fingerprint}) is not in Java cacerts")
 
-    if problem_list:
-        return failed("; ".join(problem_list), rebuild_hint())
-
-    return passed(
+    return problem_list_result(
+        problem_list,
+        rebuild_hint(),
         f"{len(fingerprint_by_alias_map)} extra root certificates in Java cacerts: "
-        + extra_certificates_text(fingerprint_by_alias_map)
+        + extra_certificates_text(fingerprint_by_alias_map),
     )
 
 

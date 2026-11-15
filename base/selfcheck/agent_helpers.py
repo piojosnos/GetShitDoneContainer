@@ -17,7 +17,8 @@ from selfcheck_core import (
     missing_pin_result,
     one_line,
     passed,
-    pin_value,
+    pin_map_or_missing,
+    problem_list_result,
     rebuild_hint,
     restart_hint,
 )
@@ -72,11 +73,12 @@ def login_file_result(login_file: Path, login_hint: str) -> CheckResult:
 
 
 def gsd_synced_result(config_dir: Path, versions_file: Path = VERSIONS_FILE) -> CheckResult:
-    pinned_version = pin_value("GSD_CORE_VERSION", versions_file)
+    pin_map, missing_result = pin_map_or_missing(["GSD_CORE_VERSION"], versions_file)
 
-    if not pinned_version:
-        return missing_pin_result("GSD_CORE_VERSION")
+    if missing_result:
+        return missing_result
 
+    pinned_version = pin_map["GSD_CORE_VERSION"]
     version_file = config_dir / "gsd-core" / "VERSION"
     hint = restart_hint() + "; the start syncs GSD"
 
@@ -199,15 +201,12 @@ def bundle_links_result(config_dir: Path, bundle_dir: Path, links_rules: bool) -
     problem_list.extend(skill_link_problem_list(config_dir, skill_name_list))
     problem_list.extend(skill_list_problem_list(config_dir, skill_name_list))
 
-    if problem_list:
-        return failed("; ".join(problem_list), hint)
-
     detail = f"{len(skill_name_list)} skills linked from {bundle_dir}"
 
     if links_rules:
         detail += ", rules linked"
 
-    return passed(detail)
+    return problem_list_result(problem_list, hint, detail)
 
 
 # ------------------------------------------------------------------------------
@@ -228,7 +227,4 @@ def home_links_result(link_target_list: list[tuple[Path, Path]]) -> CheckResult:
         else:
             pair_list.append(f"{link} -> {target}")
 
-    if problem_list:
-        return failed("; ".join(problem_list), rebuild_hint())
-
-    return passed(", ".join(pair_list))
+    return problem_list_result(problem_list, rebuild_hint(), ", ".join(pair_list))

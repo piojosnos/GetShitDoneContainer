@@ -45,8 +45,8 @@ def import_into_store(store_file: Path, certificate_file: Path, alias: str) -> N
     )
 
 
-def keystore_arguments(store_file: Path) -> list[str]:
-    return ["-keystore", str(store_file), "-storepass", KEYTOOL_PASSWORD]
+def keystore_arguments(store_file: Path) -> tuple[str, ...]:
+    return ("-keystore", str(store_file), "-storepass", KEYTOOL_PASSWORD)
 
 
 @pytest.fixture
@@ -127,7 +127,7 @@ def test_keytool_helpers_read_the_aliases_and_fingerprints_of_a_listing(tmp_path
     import_into_store(store1, certs1, "alias1")
     import_into_store(store1, certs2, "alias2")
     listing = subprocess.run(
-        ["keytool", "-list"] + keystore_arguments(store1), check=True, capture_output=True, text=True
+        ["keytool", "-list", *keystore_arguments(store1)], check=True, capture_output=True, text=True
     ).stdout
 
     assert checks_certs.keytool_alias_set(listing) == {"alias1", "alias2"}

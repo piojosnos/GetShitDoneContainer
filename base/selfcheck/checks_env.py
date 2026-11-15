@@ -10,12 +10,12 @@ from typing import Mapping
 
 from selfcheck_core import (
     BUNDLE_DIR,
+    STATE_DIR,
     VERSIONS_FILE,
     Check,
     CheckResult,
     environment_values_result,
-    missing_pin_result,
-    pin_value,
+    pin_map_or_missing,
 )
 
 
@@ -24,11 +24,11 @@ from selfcheck_core import (
 # ------------------------------------------------------------------------------
 
 STATE_PATH_BY_NAME_MAP = {
-    "HISTFILE": "/home/sandbox/workspace/state/shell/bash_history",
-    "GH_CONFIG_DIR": "/home/sandbox/workspace/state/gh",
-    "GIT_CONFIG_GLOBAL": "/home/sandbox/workspace/state/git/config",
-    "NPM_CONFIG_CACHE": "/home/sandbox/workspace/state/cache/npm",
-    "UV_CACHE_DIR": "/home/sandbox/workspace/state/cache/uv",
+    "HISTFILE": str(STATE_DIR / "shell" / "bash_history"),
+    "GH_CONFIG_DIR": str(STATE_DIR / "gh"),
+    "GIT_CONFIG_GLOBAL": str(STATE_DIR / "git" / "config"),
+    "NPM_CONFIG_CACHE": str(STATE_DIR / "cache" / "npm"),
+    "UV_CACHE_DIR": str(STATE_DIR / "cache" / "uv"),
 }
 
 
@@ -40,13 +40,13 @@ def bundle_env_result(
     versions_file: Path = VERSIONS_FILE,
     environment_map: Mapping[str, str] = os.environ,
 ) -> CheckResult:
-    pinned_url = pin_value("BUNDLE_REPO_URL", versions_file)
+    pin_map, missing_result = pin_map_or_missing(["BUNDLE_REPO_URL"], versions_file)
 
-    if not pinned_url:
-        return missing_pin_result("BUNDLE_REPO_URL")
+    if missing_result:
+        return missing_result
 
     return environment_values_result(
-        {"BUNDLE_REPO_URL": pinned_url, "SBX_BUNDLE_DIR": str(BUNDLE_DIR)},
+        {"BUNDLE_REPO_URL": pin_map["BUNDLE_REPO_URL"], "SBX_BUNDLE_DIR": str(BUNDLE_DIR)},
         environment_map,
     )
 

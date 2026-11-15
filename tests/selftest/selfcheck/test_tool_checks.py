@@ -100,7 +100,7 @@ def test_every_tool_line_has_a_check_of_its_own(check_name_list_of):
 
 
 def test_tool_bash_resolves_to_the_image_outside_the_home():
-    result = checks_tools.check_tool_bash()
+    result = checks_tools.plain_tool_check("bash").function()
     expected_path = os.path.realpath(shutil.which("bash"))
 
     assert result.passed
@@ -110,7 +110,7 @@ def test_tool_bash_resolves_to_the_image_outside_the_home():
 
 @pytest.mark.skipif(shutil.which("keytool") is None, reason="keytool is not installed here")
 def test_tool_keytool_resolves_to_the_jdk_outside_the_home():
-    result = checks_tools.check_tool_keytool()
+    result = checks_tools.plain_tool_check("keytool").function()
     expected_path = os.path.realpath(shutil.which("keytool"))
 
     assert result.passed

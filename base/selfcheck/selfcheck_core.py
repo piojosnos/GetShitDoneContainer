@@ -19,7 +19,8 @@ from typing import Callable, Mapping
 # Constants
 # ------------------------------------------------------------------------------
 
-WORKSPACE_DIR = Path("/home/sandbox/workspace")
+HOME_DIR = Path("/home/sandbox")
+WORKSPACE_DIR = HOME_DIR / "workspace"
 STATE_DIR = WORKSPACE_DIR / "state"
 BUNDLE_DIR = WORKSPACE_DIR / "best-practices"
 VERSIONS_FILE = Path("/etc/sbx/versions.env")
@@ -33,7 +34,6 @@ ELF_HEADER_LENGTH = 20
 ELF_MAGIC = b"\x7fELF"
 ELF_MACHINE_OFFSET = 18
 TOOL_VERSIONS_FILE = Path("/etc/sbx/tool-versions")
-HOME_DIR = Path("/home/sandbox")
 
 
 # ------------------------------------------------------------------------------
@@ -62,6 +62,13 @@ def failed(detail: str, hint: str) -> CheckResult:
         raise ValueError("a failed check needs a fix hint")
 
     return CheckResult(False, detail, hint)
+
+
+def problem_list_result(problem_list: list[str], hint: str, passed_detail: str) -> CheckResult:
+    if problem_list:
+        return failed("; ".join(problem_list), hint)
+
+    return passed(passed_detail)
 
 
 def sandbox_name(environment_map: Mapping[str, str] = os.environ) -> str:
@@ -146,6 +153,23 @@ def missing_pin_result(name: str) -> CheckResult:
     return failed(f"{name} is not in {VERSIONS_FILE}", rebuild_hint())
 
 
+def pin_map_or_missing(
+    pin_name_list: list[str],
+    versions_file: Path = VERSIONS_FILE,
+) -> tuple[dict[str, str], CheckResult | None]:
+    value_by_name_map = {}
+
+    for name in pin_name_list:
+        value = pin_value(name, versions_file)
+
+        if not value:
+            return {}, missing_pin_result(name)
+
+        value_by_name_map[name] = value
+
+    return value_by_name_map, None
+
+
 # ------------------------------------------------------------------------------
 # Mounts and root-owned paths
 # ------------------------------------------------------------------------------
@@ -185,10 +209,9 @@ def root_owned_result(path_mode_list: list[tuple[str, int]]) -> CheckResult:
                 f"{path} is {path_stat.st_uid}:{path_stat.st_gid} {actual_mode:o}, expected root:root {expected_mode:o}"
             )
 
-    if problem_list:
-        return failed("; ".join(problem_list), rebuild_hint())
-
-    return passed(f"{len(path_mode_list)} paths are root-owned with their modes")
+    return problem_list_result(
+        problem_list, rebuild_hint(), f"{len(path_mode_list)} paths are root-owned with their modes"
+    )
 
 
 def protected_paths_problem_list(path_list: list[Path], mount_point_found_set: set[str]) -> list[str]:
@@ -257,13 +280,11 @@ def environment_values_result(
 
         pair_list.append(f"{name}={actual_value}")
 
-    if problem_list:
-        return failed(
-            "; ".join(problem_list),
-            "open a fresh shell with sbx-shell; if it stays, " + rebuild_hint(environment_map),
-        )
-
-    return passed(", ".join(pair_list))
+    return problem_list_result(
+        problem_list,
+        "open a fresh shell with sbx-shell; if it stays, " + rebuild_hint(environment_map),
+        ", ".join(pair_list),
+    )
 
 
 # ------------------------------------------------------------------------------

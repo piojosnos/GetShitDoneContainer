@@ -23,6 +23,7 @@ from selfcheck_core import (
     failed,
     mac_hint,
     passed,
+    problem_list_result,
     read_mount_point_set,
     rebuild_hint,
     restart_hint,
@@ -90,10 +91,7 @@ def workspace_mount_result(
     if not os.access(workspace_dir, os.W_OK):
         return failed(
             f"{workspace_dir} is not writable by {user_name_of(os.getuid())}",
-            mac_hint(
-                "make the project folder writable by your Mac user, then restart the sandbox",
-                f"sbx-stop {sandbox_name()}, then sbx-start {sandbox_name()}",
-            ),
+            "make the project folder writable by your Mac user, then " + restart_hint(),
         )
 
     return passed(f"{workspace_dir} is a writable mount point")
@@ -140,10 +138,7 @@ def state_writable_result(state_dir: Path) -> CheckResult:
     except OSError as e:
         return failed(
             f"cannot make a file in {state_dir}: {e}",
-            mac_hint(
-                "make the state folder of the sandbox writable by your Mac user, then restart the sandbox",
-                f"sbx-stop {sandbox_name()}, then sbx-start {sandbox_name()}",
-            ),
+            "make the state folder of the sandbox writable by your Mac user, then " + restart_hint(),
         )
 
     try:
@@ -283,10 +278,7 @@ def owned_by_result(path_list: list[Path], owner_name: str) -> CheckResult:
         if actual_owner != owner_name:
             problem_list.append(f"{path} is owned by {actual_owner}, expected {owner_name}")
 
-    if problem_list:
-        return failed("; ".join(problem_list), rebuild_hint())
-
-    return passed(f"{len(path_list)} paths are owned by {owner_name}")
+    return problem_list_result(problem_list, rebuild_hint(), f"{len(path_list)} paths are owned by {owner_name}")
 
 
 # ------------------------------------------------------------------------------
