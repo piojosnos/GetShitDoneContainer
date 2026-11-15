@@ -8,30 +8,18 @@
 import json
 from pathlib import Path
 
-from agent_helpers import (
-    bundle_links_result,
-    gsd_synced_result,
-    home_links_result,
-    login_file_result,
-    versions_line_result,
-)
-from selfcheck_core import (
-    BUNDLE_DIR,
-    HOME_DIR,
-    STATE_DIR,
-    Check,
-    CheckResult,
-    environment_values_result,
-    failed,
-    passed,
-    path_is_present,
-    pin_map_or_missing,
-    problem_list_result,
-    protected_paths_result,
-    rebuild_hint,
-    root_owned_result,
-    tool_result,
-)
+from agent_config import gsd_synced_result, login_file_result
+from bundle_links import bundle_links_result
+from check_result import Check, CheckResult, failed, passed, problem_list_result
+from environment_values import environment_values_result
+from hints import rebuild_hint
+from home_links import home_links_result
+from paths import BUNDLE_DIR, HOME_DIR, STATE_DIR, path_is_present
+from pins import pin_map_or_missing
+from protected_paths import protected_paths_result
+from root_owned import root_owned_result
+from tools import tool_result
+from versions_text import versions_line_result
 
 
 # ------------------------------------------------------------------------------

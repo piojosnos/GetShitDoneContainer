@@ -12,28 +12,18 @@ import tempfile
 from pathlib import Path
 from typing import Mapping
 
-from agent_helpers import (
-    bundle_links_result,
-    gsd_synced_result,
-    home_links_result,
-    login_file_result,
-    versions_line_result,
-)
-from selfcheck_core import (
-    BUNDLE_DIR,
-    HOME_DIR,
-    STATE_DIR,
-    Check,
-    CheckResult,
-    environment_values_result,
-    failed,
-    passed,
-    pin_map_or_missing,
-    protected_paths_result,
-    restart_hint,
-    root_owned_result,
-    tool_result,
-)
+from agent_config import gsd_synced_result, login_file_result
+from bundle_links import bundle_links_result
+from check_result import Check, CheckResult, failed, passed
+from environment_values import environment_values_result
+from hints import restart_hint
+from home_links import home_links_result
+from paths import BUNDLE_DIR, HOME_DIR, STATE_DIR
+from pins import pin_map_or_missing
+from protected_paths import protected_paths_result
+from root_owned import root_owned_result
+from tools import tool_result
+from versions_text import versions_line_result
 
 
 # ------------------------------------------------------------------------------

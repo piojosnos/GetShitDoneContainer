@@ -21,9 +21,9 @@ host_init
 # ------------------------------------------------------------------------------
 # Expected check counts: the shared checks plus the agent's own
 # ------------------------------------------------------------------------------
-# Count the check entries in the lists of base/selfcheck/checks_*.py and in
-# claude/selfcheck/claude.py or cursor/selfcheck/cursor.py; an inventory test in
-# tests/selftest/selfcheck keeps them equal.
+# Count the check entries in the CHECK_LIST of each file in base/selfcheck/checks/
+# and in claude/selfcheck/claude.py or cursor/selfcheck/cursor.py; an inventory
+# test in tests/selftest/selfcheck keeps them equal.
 # ------------------------------------------------------------------------------
 expectedClaudeCount=53
 expectedCursorCount=51
@@ -129,7 +129,7 @@ check_selfcheck_output() {
   lineCount=${lineCount:-0}
 
   if [ "$lineCount" -ne "$expectedCount" ]; then
-    add_problem "$label: sbx-selfcheck printed $lineCount check lines, expected $expectedCount; first lines: $(first_lines "$(cat "$outputFile" 2>/dev/null)"); checks are declared in the lists of base/selfcheck/checks_*.py and claude/selfcheck/claude.py or cursor/selfcheck/cursor.py, and the count is in tests/host/h34-selfcheck.sh"
+    add_problem "$label: sbx-selfcheck printed $lineCount check lines, expected $expectedCount; first lines: $(first_lines "$(cat "$outputFile" 2>/dev/null)"); checks are declared in the CHECK_LIST of each file in base/selfcheck/checks/ and in claude/selfcheck/claude.py or cursor/selfcheck/cursor.py, and the count is in tests/host/h34-selfcheck.sh"
   fi
 
   pendingFail=""

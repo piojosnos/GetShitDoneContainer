@@ -11,32 +11,28 @@ from pathlib import Path
 from types import ModuleType
 from typing import TextIO
 
-from selfcheck_core import (
-    Check,
-    CheckResult,
-    failed,
-    one_line,
-    rebuild_hint,
-)
+from check_result import Check, CheckResult, failed, one_line
+from hints import rebuild_hint
 
 
 # ------------------------------------------------------------------------------
 # Constants
 # ------------------------------------------------------------------------------
 
+SHARED_CHECKS_DIR = Path(__file__).resolve().parent / "checks"
 AGENT_CHECKS_DIR = Path("/etc/sbx/selfcheck.d")
 _AGENT_CHECKS_CHECK_NAME = "load-agent-checks"
-_AGENT_MODULE_PREFIX = "sbx_selfcheck_agent_"
+_CHECK_MODULE_PREFIX = "sbx_selfcheck_check_"
 _FIX_LINE_INDENT = "      "
 _USAGE_TEXT = "Usage: sbx-selfcheck (no arguments)"
 
 
 # ------------------------------------------------------------------------------
-# Loading the agent checks
+# Loading the checks
 # ------------------------------------------------------------------------------
 
 def load_check_module(module_path: Path) -> ModuleType:
-    module_name = _AGENT_MODULE_PREFIX + module_path.stem
+    module_name = _CHECK_MODULE_PREFIX + module_path.stem
     spec = importlib.util.spec_from_file_location(module_name, module_path)
 
     if spec is None or spec.loader is None:
@@ -67,7 +63,7 @@ def _is_check_list(value: object) -> bool:
 
 
 def _module_check_list(module_path: Path) -> list[Check]:
-    name = "load-" + module_path.stem
+    name = "load-" + module_path.stem.replace("_", "-")
 
     try:
         module = load_check_module(module_path)
@@ -85,21 +81,31 @@ def _module_check_list(module_path: Path) -> list[Check]:
     return list(check_list)
 
 
-def collect_checks(shared_check_list: list[Check], checks_dir: Path) -> list[Check]:
-    check_list = list(shared_check_list)
+def dir_check_list(checks_dir: Path) -> list[Check]:
+    check_list = []
 
     for module_path in sorted(checks_dir.glob("*.py")):
         check_list.extend(_module_check_list(module_path))
 
-    if len(check_list) == len(shared_check_list):
-        check_list.append(
-            _load_failure_check(
-                _AGENT_CHECKS_CHECK_NAME,
-                f"found no agent checks in {checks_dir}, so the image's own checks did not run",
-            )
-        )
-
     return check_list
+
+
+def collect_agent_checks(agent_checks_dir: Path) -> list[Check]:
+    agent_check_list = dir_check_list(agent_checks_dir)
+
+    if agent_check_list:
+        return agent_check_list
+
+    return [
+        _load_failure_check(
+            _AGENT_CHECKS_CHECK_NAME,
+            f"found no agent checks in {agent_checks_dir}, so the image's own checks did not run",
+        )
+    ]
+
+
+def collect_checks(shared_checks_dir: Path, agent_checks_dir: Path) -> list[Check]:
+    return dir_check_list(shared_checks_dir) + collect_agent_checks(agent_checks_dir)
 
 
 # ------------------------------------------------------------------------------
@@ -159,8 +165,7 @@ def _write_summary(output: TextIO, check_count: int, failed_count: int) -> None:
     output.flush()
 
 
-def run_selfcheck(shared_check_list: list[Check], checks_dir: Path, output: TextIO) -> int:
-    check_list = collect_checks(shared_check_list, checks_dir)
+def report_checks(check_list: list[Check], output: TextIO) -> int:
     failed_count = _run_all_checks(check_list, output)
 
     _write_summary(output, len(check_list), failed_count)
@@ -171,10 +176,14 @@ def run_selfcheck(shared_check_list: list[Check], checks_dir: Path, output: Text
     return 0
 
 
-def main(argument_list: list[str], shared_check_list: list[Check], checks_dir: Path) -> int:
+def run_selfcheck(shared_checks_dir: Path, agent_checks_dir: Path, output: TextIO) -> int:
+    return report_checks(collect_checks(shared_checks_dir, agent_checks_dir), output)
+
+
+def main(argument_list: list[str], shared_checks_dir: Path, agent_checks_dir: Path) -> int:
     if argument_list:
         print(_USAGE_TEXT, file=sys.stderr)
 
         return 2
 
-    return run_selfcheck(shared_check_list, checks_dir, sys.stdout)
+    return run_selfcheck(shared_checks_dir, agent_checks_dir, sys.stdout)

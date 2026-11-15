@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 import sbx_selfcheck
-from helpers import write_agent_file, write_versions
+from helpers import SHARED_CHECKS_DIR, write_agent_file, write_versions
 
 REPO_DIR = Path(__file__).resolve().parents[3]
 
@@ -74,6 +74,11 @@ def check_name_list_of():
 
 
 @pytest.fixture
+def shared_check_list():
+    return sbx_selfcheck.dir_check_list(SHARED_CHECKS_DIR)
+
+
+@pytest.fixture
 def agent_module():
     def load_agent_module(agent_name: str):
         return sbx_selfcheck.load_check_module(REPO_DIR / agent_name / "selfcheck" / f"{agent_name}.py")
@@ -97,6 +102,15 @@ def bin1(tmp_path) -> Path:
 @pytest.fixture
 def line1(tmp_path) -> Path:
     return tmp_path / "line1"
+
+
+@pytest.fixture
+def shared1(tmp_path) -> Path:
+    shared_dir = tmp_path / "shared1"
+    shared_dir.mkdir()
+    write_agent_file(shared_dir, "check1")
+
+    return shared_dir
 
 
 @pytest.fixture

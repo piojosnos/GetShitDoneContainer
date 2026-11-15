@@ -1,8 +1,9 @@
 # ------------------------------------------------------------------------------
 # Plain helpers the selfcheck tests share
 # ------------------------------------------------------------------------------
-# A pins file, a stand-in executable, a PATH that puts a folder first, an agent
-# checks file and a runner call.
+# A pins file, a stand-in executable, a PATH that puts a folder first, a
+# mountinfo file, a git environment, check file loading, an agent checks file and
+# a runner call.
 # ------------------------------------------------------------------------------
 
 import io
@@ -10,10 +11,14 @@ import os
 from pathlib import Path
 
 import sbx_selfcheck
-from selfcheck_core import Check
+from check_result import Check
 
+REPO_DIR = Path(__file__).resolve().parents[3]
+SHARED_CHECKS_DIR = REPO_DIR / "base" / "selfcheck" / "checks"
+ROOT_MOUNT_LINE = "1 0 8:1 / / rw - ext4 /dev/sda1 rw"
+MOUNT_LINE_TEMPLATE = "{number} 1 8:2 / {mount_point} rw,noatime - ext4 /dev/sda2 rw"
 TEMURIN_PIN1 = "eclipse-temurin:21.0.12_8-jdk-noble@sha256:abc"
-AGENT_FILE_TEMPLATE = """from selfcheck_core import Check, passed
+AGENT_FILE_TEMPLATE = """from check_result import Check, passed
 
 
 def check_{name}():
@@ -36,6 +41,34 @@ def environment_with(folder: Path) -> dict[str, str]:
     return {"PATH": f"{folder}{os.pathsep}{os.environ['PATH']}"}
 
 
+def load_shared_check(name: str):
+    return sbx_selfcheck.load_check_module(SHARED_CHECKS_DIR / f"{name}.py")
+
+
+def write_mountinfo(mountinfo_file: Path, mount_point_list: list[str]) -> None:
+    line_list = [ROOT_MOUNT_LINE]
+
+    for index, mount_point in enumerate(mount_point_list):
+        line_list.append(MOUNT_LINE_TEMPLATE.format(number=index + 2, mount_point=mount_point))
+
+    mountinfo_file.write_text("\n".join(line_list) + "\n")
+
+
+def write_file(path: Path, text: str = "text1") -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+
+
+def git_environment(system_file: Path, global_file: Path) -> dict[str, str]:
+    return {
+        "PATH": os.environ["PATH"],
+        "HOME": str(global_file.parent),
+        "GIT_CONFIG_SYSTEM": str(system_file),
+        "GIT_CONFIG_GLOBAL": str(global_file),
+        "GIT_CONFIG_NOSYSTEM": "1",
+    }
+
+
 def write_versions(versions_file: Path, extra_line_list: list[str] | None = None) -> Path:
     line_list = [
         "GH_VERSION=2.102.0",
@@ -55,9 +88,9 @@ def write_versions(versions_file: Path, extra_line_list: list[str] | None = None
     return versions_file
 
 
-def run_lines(shared_check_list: list[Check], checks_dir: Path) -> tuple[int, list[str]]:
+def run_lines(check_list: list[Check], agent_checks_dir: Path) -> tuple[int, list[str]]:
     output = io.StringIO()
-    status = sbx_selfcheck.run_selfcheck(shared_check_list, checks_dir, output)
+    status = sbx_selfcheck.report_checks(check_list + sbx_selfcheck.collect_agent_checks(agent_checks_dir), output)
 
     return status, output.getvalue().splitlines()
 

@@ -19,9 +19,8 @@ def run() -> int:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
 
     import sbx_selfcheck
-    import shared_checks
 
-    return sbx_selfcheck.main(sys.argv[1:], shared_checks.CHECK_LIST, sbx_selfcheck.AGENT_CHECKS_DIR)
+    return sbx_selfcheck.main(sys.argv[1:], sbx_selfcheck.SHARED_CHECKS_DIR, sbx_selfcheck.AGENT_CHECKS_DIR)
 
 
 # ------------------------------------------------------------------------------

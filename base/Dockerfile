@@ -233,16 +233,17 @@ RUN printf 'gsd %s | node %s | jdk %s | mvn %s | python %s\n' \
     && printf '%s\n' 'cat /etc/sbx/tool-versions' >> /etc/bash.bashrc
 
 # ------------------------------------------------------------------------------
-# sbx-selfcheck: the runner and the shared checks
+# sbx-selfcheck: the runner, its libraries and the shared checks
 # ------------------------------------------------------------------------------
 # Root-owned and read-only to the sandbox user. Each agent image adds its checks
 # file to /etc/sbx/selfcheck.d. A syntax error in any file stops the build here.
 # ------------------------------------------------------------------------------
-RUN mkdir -p /usr/local/lib/sbx-selfcheck /etc/sbx/selfcheck.d
+RUN mkdir -p /usr/local/lib/sbx-selfcheck/checks /etc/sbx/selfcheck.d
 COPY --chmod=755 base/selfcheck/sbx-selfcheck /usr/local/lib/sbx-selfcheck/sbx-selfcheck
 COPY --chmod=644 base/selfcheck/*.py /usr/local/lib/sbx-selfcheck/
+COPY --chmod=644 base/selfcheck/checks/*.py /usr/local/lib/sbx-selfcheck/checks/
 RUN ln -s /usr/local/lib/sbx-selfcheck/sbx-selfcheck /usr/local/bin/sbx-selfcheck \
-    && PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /usr/local/lib/sbx-selfcheck/sbx-selfcheck /usr/local/lib/sbx-selfcheck/*.py \
+    && PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /usr/local/lib/sbx-selfcheck/sbx-selfcheck /usr/local/lib/sbx-selfcheck/*.py /usr/local/lib/sbx-selfcheck/checks/*.py \
     && rm -rf /tmp/sbx-pycache
 
 # ------------------------------------------------------------------------------

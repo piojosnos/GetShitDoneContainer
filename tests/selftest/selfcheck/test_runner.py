@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # Tests of the sbx-selfcheck runner
 # ------------------------------------------------------------------------------
-# Line format, fix lines, order, load failures, exit codes and hint builders.
+# Line format, fix lines, order, load failures and exit codes.
 # They run against real files in tmp_path.
 # ------------------------------------------------------------------------------
 
@@ -11,10 +11,10 @@ from pathlib import Path
 
 import pytest
 
+import hints
 import sbx_selfcheck
-import selfcheck_core
+from check_result import Check, CheckResult, passed, failed
 from helpers import AGENT_FILE_TEMPLATE, run_lines, write_agent_file
-from selfcheck_core import Check, CheckResult, failed, passed
 
 
 # ------------------------------------------------------------------------------
@@ -70,14 +70,6 @@ def test_failing_check_has_exactly_one_fix_line_before_the_next_check(agents1):
     ]
 
 
-def test_failed_refuses_an_empty_or_blank_hint():
-    with pytest.raises(ValueError):
-        failed("detail1", "")
-
-    with pytest.raises(ValueError):
-        failed("detail1", "   ")
-
-
 def test_raising_check_becomes_a_fail_line_with_the_rebuild_hint(agents1):
     def run_raising() -> CheckResult:
         raise RuntimeError("line1\nline2")
@@ -87,7 +79,7 @@ def test_raising_check_becomes_a_fail_line_with_the_rebuild_hint(agents1):
     assert status == 1
     assert line_list[0] == "FAIL: check1: raised RuntimeError: line1 line2"
     assert line_list[1].startswith("      fix: ")
-    assert line_list[1].endswith(selfcheck_core.rebuild_hint())
+    assert line_list[1].endswith(hints.rebuild_hint())
     assert line_list[2] == "PASS: check2: detail_check2"
     assert line_list[3] == "PASS: agent1: detail_agent1"
 
@@ -112,7 +104,7 @@ def test_a_check_that_returns_no_result_becomes_a_fail_line_with_the_rebuild_hin
     assert line_list == [
         f"FAIL: check1: returned {type_name} instead of a CheckResult",
         "      fix: this is a bug in the self-check or a broken image; "
-        + selfcheck_core.rebuild_hint(),
+        + hints.rebuild_hint(),
         "PASS: check2: detail_check2",
         "PASS: agent1: detail_agent1",
         "sbx-selfcheck: 3 checks, 1 failed",
@@ -166,7 +158,7 @@ def expected_no_agent_checks_lines(checks_dir: Path) -> list[str]:
     return [
         "PASS: check1: detail_check1",
         f"FAIL: load-agent-checks: found no agent checks in {checks_dir}, so the image's own checks did not run",
-        "      fix: " + selfcheck_core.rebuild_hint(),
+        "      fix: " + hints.rebuild_hint(),
         "sbx-selfcheck: 2 checks, 1 failed",
     ]
 
@@ -229,7 +221,7 @@ def test_an_agent_file_with_a_syntax_error_is_one_load_failure(tmp_path):
     assert status == 1
     assert line_list[0].startswith("FAIL: load-agent1: ")
     assert "did not load: SyntaxError" in line_list[0]
-    assert line_list[1].endswith(selfcheck_core.rebuild_hint())
+    assert line_list[1].endswith(hints.rebuild_hint())
     assert line_list[2] == "PASS: agent2: detail_agent2"
     assert line_list[3] == "sbx-selfcheck: 2 checks, 1 failed"
 
@@ -268,7 +260,7 @@ def test_an_agent_file_with_a_malformed_check_list_is_one_load_failure(tmp_path,
     assert line_list == [
         "PASS: check1: detail_check1",
         f"FAIL: load-agent1: {agent_file} defines a CHECK_LIST that is not a list of checks",
-        "      fix: " + selfcheck_core.rebuild_hint(),
+        "      fix: " + hints.rebuild_hint(),
         "sbx-selfcheck: 2 checks, 1 failed",
     ]
 
@@ -278,7 +270,7 @@ def test_an_agent_file_with_a_malformed_check_list_is_one_load_failure(tmp_path,
 # ------------------------------------------------------------------------------
 
 def test_main_with_an_argument_exits_two_with_one_usage_line_on_stderr(tmp_path, capsys):
-    status = sbx_selfcheck.main(["extra"], [passing_check("check1")], tmp_path)
+    status = sbx_selfcheck.main(["extra"], tmp_path, tmp_path)
 
     captured = capsys.readouterr()
     assert status == 2
@@ -286,8 +278,8 @@ def test_main_with_an_argument_exits_two_with_one_usage_line_on_stderr(tmp_path,
     assert captured.err == "Usage: sbx-selfcheck (no arguments)\n"
 
 
-def test_main_without_arguments_runs_the_checks_on_stdout(agents1, capsys):
-    status = sbx_selfcheck.main([], [passing_check("check1")], agents1)
+def test_main_without_arguments_runs_the_checks_on_stdout(shared1, agents1, capsys):
+    status = sbx_selfcheck.main([], shared1, agents1)
 
     captured = capsys.readouterr()
     assert status == 0
@@ -312,52 +304,6 @@ def test_the_launcher_file_exits_two_for_an_argument(repo_dir):
 
 
 # ------------------------------------------------------------------------------
-# Hint builders and environment values
-# ------------------------------------------------------------------------------
-
-def test_hint_builders_name_the_sandbox_from_sbx_name():
-    environment1 = {"SBX_NAME": "sbx1"}
-
-    assert selfcheck_core.rebuild_hint(environment1) == (
-        "rebuild the image and recreate the sandbox: on the Mac run: sbx-upgrade sbx1"
-    )
-    assert selfcheck_core.restart_hint(environment1) == (
-        "restart the sandbox: on the Mac run: sbx-stop sbx1, then sbx-start sbx1"
-    )
-    assert selfcheck_core.start_hint(environment1).endswith("on the Mac run: sbx-start sbx1, then sbx-shell sbx1")
-    assert selfcheck_core.shell_hint(environment1).endswith("on the Mac run: sbx-shell sbx1")
-
-
-def test_hint_builders_say_name_when_sbx_name_is_unset_or_empty():
-    assert selfcheck_core.rebuild_hint({}).endswith("on the Mac run: sbx-upgrade NAME")
-    assert selfcheck_core.restart_hint({}).endswith("sbx-stop NAME, then sbx-start NAME")
-    assert selfcheck_core.start_hint({}).endswith("sbx-start NAME, then sbx-shell NAME")
-    assert selfcheck_core.shell_hint({}).endswith("sbx-shell NAME")
-    assert selfcheck_core.shell_hint({"SBX_NAME": ""}).endswith("sbx-shell NAME")
-
-
-def test_environment_values_result_passes_for_a_matching_mapping():
-    result = selfcheck_core.environment_values_result(
-        {"VAR1": "value1", "VAR2": "value2"},
-        {"VAR1": "value1", "VAR2": "value2", "VAR3": "other"},
-    )
-
-    assert result.passed
-    assert result.detail == "VAR1=value1, VAR2=value2"
-
-
-def test_environment_values_result_names_each_wrong_or_missing_variable():
-    result = selfcheck_core.environment_values_result(
-        {"VAR1": "value1", "VAR2": "value2", "VAR3": "value3"},
-        {"VAR1": "other1", "VAR3": "value3", "SBX_NAME": "sbx1"},
-    )
-
-    assert not result.passed
-    assert result.detail == "VAR1 is 'other1', expected 'value1'; VAR2 is not set"
-    assert result.hint.endswith("on the Mac run: sbx-upgrade sbx1")
-
-
-# ------------------------------------------------------------------------------
 # Line format and base files
 # ------------------------------------------------------------------------------
 
@@ -377,9 +323,10 @@ def test_every_line_is_pass_fail_fix_or_the_summary(tmp_path):
 
 def test_the_base_files_name_no_agent(repo_dir):
     base_dir = repo_dir / "base" / "selfcheck"
+    file_list = list(base_dir.glob("*.py")) + list((base_dir / "checks").glob("*.py")) + [base_dir / "sbx-selfcheck"]
 
-    for file_name in sorted(path.name for path in base_dir.iterdir() if path.suffix == ".py" or path.name == "sbx-selfcheck"):
-        text = (base_dir / file_name).read_text().lower()
+    for base_file in file_list:
+        text = base_file.read_text().lower()
 
-        assert "claude" not in text
-        assert "cursor" not in text
+        assert "claude" not in text, base_file.name
+        assert "cursor" not in text, base_file.name
