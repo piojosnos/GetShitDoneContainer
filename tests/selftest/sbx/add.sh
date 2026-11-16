@@ -203,8 +203,8 @@ folders_absent() {
 # ------------------------------------------------------------------------------
 # Case: a folder that is, holds or sits inside the repo folder is refused
 # ------------------------------------------------------------------------------
-# The script runs from a copy of bin/ and the start library in WORK/box/repo, so
-# a failing case makes folders in the copy and never in the real repo.
+# The script runs from a copy of bin/ alone in WORK/box/repo, so the host scripts
+# need nothing from base/, and a failing case makes folders in the copy and never in the real repo.
 # ------------------------------------------------------------------------------
 case_repo_overlap() {
   local realBin=$BIN
@@ -213,9 +213,8 @@ case_repo_overlap() {
 
   echo '--- the repo folder'
 
-  mkdir -p "$fakeRepo/bin" "$fakeRepo/base"
+  mkdir -p "$fakeRepo/bin"
   cp "$realBin"/sbx-* "$fakeRepo/bin/"
-  cp "$REPO/base/sbx-start-lib.sh" "$fakeRepo/base/"
   BIN=$fakeRepo/bin
 
   run_sbx repois sbx-add repois "$fakeRepo"

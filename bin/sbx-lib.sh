@@ -10,6 +10,14 @@ knownAgentList="claude cursor"
 knownImageTagList="local test"
 startLimitSeconds=120
 
+# Compose lowercases a project name, so two names that differ only in case would
+# share one project.
+nameRulePattern='^[a-z][a-z0-9-]{0,30}$'
+nameRuleText='starts with a lowercase letter, then lowercase letters, digits or hyphens, 31 characters at most'
+
+# Names of the sandbox folder's own folders.
+reservedNameList="state best-practices"
+
 # ------------------------------------------------------------------------------
 # sbx_error MESSAGE: prints the script name and the error on stderr
 # ------------------------------------------------------------------------------
@@ -25,32 +33,6 @@ sbx_error() {
 sbx_usage() {
   echo "Usage: ${scriptName:-${0##*/}}${1:+ $1}" >&2
   exit 2
-}
-
-# ------------------------------------------------------------------------------
-# read_start_variable VARIABLE: prints VARIABLE as base/sbx-start-lib.sh sets it
-# ------------------------------------------------------------------------------
-# The file is sourced in a subshell, so its globals stay out of the caller.
-# ------------------------------------------------------------------------------
-read_start_variable() {
-  ( . "$repoDir/base/sbx-start-lib.sh" && printf '%s' "${!1}" )
-}
-
-# ------------------------------------------------------------------------------
-# load_name_rule: sets the name rule and the reserved names from the image code
-# ------------------------------------------------------------------------------
-# The rule is written once, in the start library the container runs. It is
-# never copied here, so the host scripts and the container cannot disagree.
-# ------------------------------------------------------------------------------
-load_name_rule() {
-  nameRulePattern=$(read_start_variable sandboxNamePattern) || nameRulePattern=""
-  nameRuleText=$(read_start_variable sandboxNameRuleText) || nameRuleText=""
-  reservedNameList=$(read_start_variable sandboxReservedNameList) || reservedNameList=""
-
-  if [ -z "$nameRulePattern" ] || [ -z "$nameRuleText" ]; then
-    sbx_error "cannot read the sandbox name rule from $repoDir/base/sbx-start-lib.sh"
-    return 1
-  fi
 }
 
 # ------------------------------------------------------------------------------
@@ -81,7 +63,7 @@ check_image_tag() {
 }
 
 # ------------------------------------------------------------------------------
-# sbx_init: sets scriptName, repoDir, the registry folder and the name rule
+# sbx_init: sets scriptName, repoDir and the registry folder
 # ------------------------------------------------------------------------------
 # repoDir comes from the place of this library, not from $0, so a test that
 # sources the library finds the repo too. COMPOSE_* variables are unset, and the
@@ -115,7 +97,6 @@ sbx_init() {
   unset COMPOSE_PROJECT_NAME COMPOSE_FILE COMPOSE_PROFILES COMPOSE_PATH_SEPARATOR COMPOSE_ENV_FILES COMPOSE_IGNORE_ORPHANS COMPOSE_REMOVE_ORPHANS
 
   check_image_tag || return 1
-  load_name_rule
 }
 
 # ------------------------------------------------------------------------------
