@@ -22,19 +22,20 @@ One Docker container per project. It sees exactly one folder on your Mac, `$SBX_
 | 3 | Mac | `sbx-add demo /Users/you/sbx-demo` | Registers the sandbox and creates its folders. A third argument, `cursor`, makes a Cursor sandbox. |
 | 4 | Mac | `sbx-upgrade demo` | Builds the images and starts it. |
 | 5 | Mac | `sbx-shell demo` | Opens bash in the project folder. |
-| 6 | Sandbox | `sbx-gh-login` | gh and git login. |
-| 7 | Sandbox | `sbx-bundle-clone` | The best-practices clone. |
-| 8 | Sandbox | `sbx-claude` | Claude. Log in once. A Cursor sandbox runs `cursor-agent` instead; log in once with `cursor-agent login`. |
+| 6 | Sandbox | `sbx-init` | Sets the sandbox up: state folders, GSD, best-practices links. It says to clone first when there is no clone. |
+| 7 | Sandbox | `sbx-gh-login` | gh and git login. |
+| 8 | Sandbox | `sbx-bundle-clone` | The best-practices clone. It runs `sbx-init` again, which links it. |
+| 9 | Sandbox | `sbx-claude` | Claude. Log in once. A Cursor sandbox runs `sbx-cursor` instead; log in once with `sbx-cursor login`. |
 
-Each step is explained below in "Scripts", "Register a sandbox" and "Best-practices bundle".
+Each step is explained below in "Scripts", "Register a sandbox", "Set up a sandbox: sbx-init" and "Best-practices bundle".
 
 ## What the images hold
 
 | Image | Holds |
 |---|---|
-| `sbx-base:local` | Ubuntu 24.04, git, gh, Node.js 24, Python 3 (pip, venv) and uv, the Temurin JDK 21, Maven, jq, ripgrep, zip and unzip, the ssh client, make and a C compiler, shellcheck and hadolint, GSD, and the `sbx-gh-login`, `sbx-bundle-clone` and `sbx-link-bundle` helpers, and `sbx-selfcheck` with the shared checks |
-| `sbx-claude:local` | `sbx-base` plus Claude Code, ccusage, the `sbx-claude` wrapper, the managed settings (no bundle) and the Claude checks of `sbx-selfcheck` |
-| `sbx-cursor:local` | `sbx-base` plus the Cursor CLI (`cursor-agent`), the `sbx-cursor` wrapper and the Cursor checks of `sbx-selfcheck` |
+| `sbx-base:local` | Ubuntu 24.04, git, gh, Node.js 24, Python 3 (pip, venv) and uv, the Temurin JDK 21, Maven, jq, ripgrep, zip and unzip, the ssh client, make and a C compiler, shellcheck and hadolint, GSD, and the `sbx-gh-login` and `sbx-bundle-clone` helpers, `sbx-init` with the shared steps, and `sbx-selfcheck` with the shared checks |
+| `sbx-claude:local` | `sbx-base` plus Claude Code, ccusage, the Claude steps of `sbx-init`, the `sbx-claude` wrapper, the managed settings and the Claude checks of `sbx-selfcheck`. `claude` sits in `/opt/sbx/agents/bin`, off the PATH, and only `sbx-claude` starts it. |
+| `sbx-cursor:local` | `sbx-base` plus the Cursor CLI, the Cursor steps of `sbx-init`, the `sbx-cursor` wrapper and the Cursor checks of `sbx-selfcheck`. `cursor-agent` sits in `/opt/sbx/agents/bin`, off the PATH, and only `sbx-cursor` starts it. |
 
 - Python projects use uv or a venv, because Ubuntu blocks plain pip installs into the system Python. Every version is in `versions.env` (see "Build the images").
 
@@ -115,15 +116,15 @@ export PATH="$HOME/sbx-tools/GetShitDoneContainer/bin:$PATH"
 | Command | What it does |
 |---|---|
 | `sbx-add NAME HOST_PATH [claude\|cursor]` | Registers the sandbox once. Creates the folder, its project folder and `state/`, and writes the registry entry with its agent, claude when left out. Compose starts that agent's image. |
-| `sbx-start NAME` | Checks the folders, runs `docker compose up -d --wait`, then waits up to 120 s for the start hooks. |
-| `sbx-shell NAME` | Starts the sandbox when it does not run (the same checks and wait as `sbx-start`), then opens bash in its project folder. |
+| `sbx-start NAME` | Checks the folders and runs `docker compose up -d --wait`. The container only keeps running; in a new container, run `sbx-init` in a shell before the agent. |
+| `sbx-shell NAME` | Starts the sandbox when it does not run (the same checks as `sbx-start`), then opens bash in its project folder. |
 | `sbx-list` | Lists every registered sandbox with its status and folder, from one `docker ps -a` call. |
 | `sbx-stop NAME` | Runs `docker compose stop`. The container stays; nothing in the folder changes. |
 | `sbx-rm NAME [--unregister] [--yes]` | Runs `docker compose down`: the container and its network go; volumes, images and the folder stay. |
-| `sbx-upgrade NAME [BUILD_OPTION...]` | Builds every image with `./build.sh`, which reads `SBX_CA_CERT` from your shell, then recreates this sandbox and waits for it. Prints the tool versions last. |
+| `sbx-upgrade NAME [BUILD_OPTION...]` | Builds every image with `./build.sh`, which reads `SBX_CA_CERT` from your shell, then recreates this sandbox. The recreate wipes the init marker, so it says to run `sbx-init` in the sandbox shell. Prints the tool versions last. |
 | `sbx-fix-modes NAME` | Sets every file git tracks in the project folder to 644 or 755, as git committed, on the Mac and in the sandbox. Prints how many it changed. |
 
-In the sandbox: `sbx-gh-login`, `sbx-bundle-clone` and `sbx-selfcheck` (both agents), `sbx-claude` (Claude) and `sbx-cursor` (Cursor); see "Best-practices bundle" and "Check a sandbox".
+In the sandbox: `sbx-init`, `sbx-gh-login`, `sbx-bundle-clone` and `sbx-selfcheck` (both agents), `sbx-claude` (Claude) and `sbx-cursor` (Cursor); see "Set up a sandbox: sbx-init", "Best-practices bundle" and "Check a sandbox".
 
 ## Register a sandbox
 
@@ -180,17 +181,16 @@ The files stay either way. The login of the other agent starts empty, in its own
 
 ## Start, enter, stop
 
-`sbx-start`, `sbx-shell` and `sbx-stop` run on the Mac; `sbx-claude` and `cursor-agent` run in the sandbox shell.
+`sbx-start`, `sbx-shell` and `sbx-stop` run on the Mac; `sbx-init`, `sbx-claude` and `sbx-cursor` run in the sandbox shell.
 
-- `sbx-start` returns when the start hooks (the GSD sync and the bundle links) are done, and prints `sbx-shell demo`. A hook that fails stops the container, and `sbx-start` says so.
+- `sbx-start` returns once the container runs, and prints `sbx-shell demo`. A start only keeps the container running; it sets nothing up. In a new or recreated container, run `sbx-init` in a shell (see "Set up a sandbox: sbx-init").
 - A running sandbox on an older image is recreated by `sbx-start`, after a warning (see "Upgrade").
 - `sbx-shell` opens bash in your project folder, `/home/sandbox/workspace/demo`. Open as many shells as you like.
 - It prints the tool versions line, which `sbx-upgrade` also ends with: `claude 2.1.285 | ccusage 20.0.26 | gsd 1.15.0 | node 24.21.0 | jdk 21.0.12 | mvn 3.9.11 | python 3.12.3`. A Cursor sandbox starts it with `cursor-agent 2026.11.11-b912975 | gsd 1.15.0 | node ...`. Scripts and one-off `docker exec` commands stay quiet.
-- A stopped sandbox, or one with no container, is started first, with the same checks and wait as `sbx-start`.
+- A stopped sandbox, or one with no container, is started first, with the same checks as `sbx-start`.
 - A running sandbox is entered as it is: no restart and no recreate, even on an older image (`sbx-list` shows that). Its other shells and Claude sessions stay open.
-- It does not wait for the start hooks of a sandbox that already runs. One started with the raw `docker compose up` may still be in its hooks for a few seconds.
 - It needs a terminal. From a pipe or a script Docker refuses the shell (`the input device is not a TTY`, or on newer Docker `stdin is not a terminal`) after the sandbox has started. Its exit status is the shell's.
-- `sbx-claude` runs `claude`, after a warning when no best-practices clone is linked (see "Best-practices bundle"). Plain `claude` works too. Nothing starts Claude from the Mac.
+- `sbx-claude` refuses with `run sbx-init first` until `sbx-init` has passed in this container, then runs `claude`. Plain `claude` is not on the PATH, so `sbx-claude` is the way in. It puts `/opt/sbx/agents/bin` first on the PATH it hands to Claude, so tools Claude starts (such as `/gsd-review`) still find both CLIs. Nothing starts Claude from the Mac.
 - `sbx-claude` passes its arguments to `claude`. `sbx-claude --dangerously-skip-permissions` runs without permission prompts; Claude can then read and send out the tokens in `state/` (see "Threat model").
 - Log in once with a claude.ai account: Claude prints a URL, the browser shows a code, you paste it at the prompt. The login is written to `$SBX_DIR/state/claude` on the Mac.
 - Sessions are keyed by directory: run `claude --continue` or `claude --resume` from the same directory as before.
@@ -199,10 +199,53 @@ The files stay either way. The login of the other agent starts empty, in its own
 
 A Cursor sandbox:
 
-- `sbx-shell` opens bash as for Claude; start `sbx-cursor` from it. It runs `cursor-agent` with its arguments, after a warning when no best-practices clone is linked. Plain `cursor-agent` works too.
-- Log in once with `cursor-agent login` and open the printed link in the Mac browser.
+- `sbx-shell` opens bash as for Claude; start `sbx-cursor` from it. It refuses with `run sbx-init first` until `sbx-init` has passed in this container, then runs `cursor-agent` with its arguments. Plain `cursor-agent` is not on the PATH.
+- Log in once with `sbx-cursor login` and open the printed link in the Mac browser.
 - The login (`auth.json`) and the settings live in `$SBX_DIR/state/cursor`, so they survive a recreate and `sbx-upgrade`.
-- Self-update is off: every start sets the static channel in `cli-config.json`, so the CLI stays at the version of the image.
+- Self-update is off: `sbx-init` sets the static channel in `cli-config.json`, so the CLI stays at the version of the image.
+
+## Set up a sandbox: sbx-init
+
+`sbx-init` sets a new or recreated container up. Run it in the sandbox shell, once, before the agent.
+
+| Order | Step | What it does | Agent |
+|---|---|---|---|
+| 1 | `state-folders` | Makes the folders under `state/` that the tools write to | both |
+| 2 | `claude-gsd-sync` or `cursor-gsd-sync` | Syncs the image's GSD into the agent's config folder, offline | by agent |
+| 3 | `cursor-self-update-off` | Sets the static channel in `cli-config.json` | Cursor |
+| 4 | `state-owner` | Gives root-owned files in `state/` back to `sandbox` | both |
+| 5 | `claude-best-practices-links` or `cursor-best-practices-links` | Links the best-practices clone into the agent's config folder | by agent |
+
+A Claude sandbox runs 4 steps (1, 2, 4, 5); a Cursor sandbox runs 5.
+
+A full pass in a Claude sandbox:
+
+```text
+OK: state-folders: shell, gh, git, cache/npm, cache/uv, m2, claude exist under /home/sandbox/workspace/state
+OK: claude-gsd-sync: the GSD installer finished into /home/sandbox/workspace/state/claude
+OK: state-owner: 0 paths given back to sandbox
+OK: claude-best-practices-links: 12 skills linked from /home/sandbox/workspace/best-practices, rules linked
+sbx-init: 4 steps passed; run sbx-selfcheck to check the sandbox
+```
+
+The same run with no clone yet:
+
+```text
+OK: state-folders: shell, gh, git, cache/npm, cache/uv, m2, claude exist under /home/sandbox/workspace/state
+OK: claude-gsd-sync: the GSD installer finished into /home/sandbox/workspace/state/claude
+OK: state-owner: 0 paths given back to sandbox
+FAIL: claude-best-practices-links: no best-practices clone at /home/sandbox/workspace/best-practices
+      fix: run sbx-gh-login, then sbx-bundle-clone; it clones the repo and runs sbx-init again
+sbx-init: stopped at claude-best-practices-links
+```
+
+- Each step prints an `OK` or a `FAIL` line, and a `FAIL` has a `fix:` line under it. A full pass ends with `sbx-init: N steps passed; run sbx-selfcheck to check the sandbox`, and exit status 0.
+- It stops at the first `FAIL`, except that the best-practices step links every other skill before it reports a clash.
+- Run it once per new or recreated container. It removes the marker `/home/sandbox/.sbx-init-done` first and writes it, in the container's own layer, only when every step passed, so the wrappers refuse after a failed run. A recreate or `sbx-upgrade` wipes the marker, so run `sbx-init` again; `sbx-stop` and `sbx-start` keep the container and its marker.
+- A rerun redoes every step. It is also how to relink after a `git pull` of the clone that adds or removes a skill.
+- A second run while one runs prints `FAIL: lock: another sbx-init is running` and changes nothing.
+- It checks nothing. `sbx-selfcheck` is the check (see "Check a sandbox"); its `init-marker` line says whether `sbx-init` passed in this container.
+- The marker lives in the container, never in your folder, so a folder moved to another sandbox does not carry it.
 
 ## List sandboxes
 
@@ -470,6 +513,12 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 | Symptom | Fix |
 |---|---|
 | `sbx-selfcheck` prints a FAIL line | Do what its `fix:` line says. A `load-...` line means a checks file in the image is broken or missing; rebuild with `sbx-upgrade NAME`. |
+| `sbx-claude: sbx-init has not passed in this container` (or `sbx-cursor: ...`) | Run `sbx-init`. |
+| `command not found: claude` or `cursor-agent` | The agents are off the PATH. Start them with `sbx-claude` or `sbx-cursor`. |
+| `FAIL: lock: another sbx-init is running` | Wait for that run to finish, then run `sbx-init` again. |
+| `FAIL: claude-best-practices-links: ... is not a link into the best-practices clone` (or `cursor-...`) | A folder or file of yours has the name of a clone skill, or `rules` is a real folder. It was left as it is. Rename or move that path, then run `sbx-init` again. |
+| `FAIL: claude-gsd-sync:` (or `cursor-gsd-sync:`) | Read the log file the line names, fix what it says, then run `sbx-init` again. |
+| `FAIL: state-owner:` | Run the Mac command of its `fix:` line, then run `sbx-init` again. |
 | Claude hangs at start after an unclean stop | Check no claude is running (`docker exec sbx-demo pgrep -a claude` prints nothing), then delete `$SBX_DIR/state/claude/.claude.json.lock`. Everything else in `state/claude` is safe on the Mac. |
 | Console keyless sign-in is lost on recreate | It is stored outside `CLAUDE_CONFIG_DIR`. Log in with a claude.ai account instead. |
 | A check fails only because of the capability drop | Remove the `cap_drop` block from `compose.yml`, keep `no-new-privileges`, and report it. |
