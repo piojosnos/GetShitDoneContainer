@@ -1,26 +1,28 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Runs Claude, after a loud warning when no best-practices clone is linked
+# Runs Claude once sbx-init has passed in this container
 # ------------------------------------------------------------------------------
 # Usage: sbx-claude [claude arguments]
+# The agent lives in the agents folder, which is off the PATH. This wrapper puts
+# that folder first on the PATH it hands to Claude, so Claude and everything it
+# starts find the agents. The calling shell's PATH stays as it is.
+# SBX_INIT_MARKER and SBX_AGENT_BIN_DIR override the marker file and the agents
+# folder for tests; they are not a security boundary.
 # ------------------------------------------------------------------------------
 set -eu
+
+initMarker=${SBX_INIT_MARKER:-/home/sandbox/.sbx-init-done}
+agentBinDir=${SBX_AGENT_BIN_DIR:-/opt/sbx/agents/bin}
 
 # ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
-if [ ! "${CLAUDE_CONFIG_DIR:?CLAUDE_CONFIG_DIR is not set}/rules" -ef "${SBX_BUNDLE_DIR:?SBX_BUNDLE_DIR is not set}/rules" ]; then
-  {
-    echo ""
-    echo "[sbx] ================================================================"
-    echo "[sbx] WARNING: no best-practices clone is linked into Claude."
-    echo "[sbx] Claude starts WITHOUT your standing rules and skills."
-    echo "[sbx] Press Ctrl-C now and run sbx-gh-login, then sbx-bundle-clone."
-    echo "[sbx] If $SBX_BUNDLE_DIR already exists,"
-    echo "[sbx] /etc/sbx/start.d/10-best-practices relinks it."
-    echo "[sbx] ================================================================"
-  } >&2
-  sleep 5
+if [ ! -f "$initMarker" ]; then
+  echo "sbx-claude: sbx-init has not passed in this container; run sbx-init first" >&2
+  exit 1
 fi
+
+PATH=$agentBinDir:$PATH
+export PATH
 
 exec claude "$@"
