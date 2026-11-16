@@ -29,15 +29,27 @@ def test_a_folder_without_sbx_commands_gives_no_roots_but_the_folders(tmp_path):
     assert image_roots.base_root_list(tmp_path / "missing1") == image_roots.BASE_FOLDER_LIST
 
 
-def test_the_base_roots_are_the_library_folders_the_config_folder_and_the_sbx_commands(tmp_path):
+def test_the_base_roots_are_the_library_folders_the_config_folder_the_agents_folder_and_the_sbx_commands(tmp_path):
     write_file(tmp_path / "bin1" / "sbx-a")
 
     assert image_roots.base_root_list(tmp_path / "bin1") == [
-        Path("/usr/local/lib/sbx"),
+        Path("/usr/local/lib/sbx-init"),
         Path("/usr/local/lib/sbx-selfcheck"),
         Path("/etc/sbx"),
+        Path("/opt/sbx/agents"),
         tmp_path / "bin1" / "sbx-a",
     ]
+
+
+def test_both_launchers_are_listed():
+    assert image_roots.LAUNCHER_FILE_LIST == [
+        Path("/usr/local/lib/sbx-selfcheck/sbx-selfcheck"),
+        Path("/usr/local/lib/sbx-init/sbx-init"),
+    ]
+
+
+def test_no_start_hook_folder_is_left_in_the_roots():
+    assert not hasattr(image_roots, "HOOK_DIR")
 
 
 def test_the_ownership_check_and_the_protected_paths_check_share_the_base_roots():

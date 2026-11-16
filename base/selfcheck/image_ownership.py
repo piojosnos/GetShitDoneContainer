@@ -2,18 +2,18 @@
 # Root-owned image files
 # ------------------------------------------------------------------------------
 # Everything under the roots of an image belongs to root and cannot be changed by
-# group or others. Folders, the sbx commands, the start hooks and the launcher
-# are executable. The image puts this file in /usr/local/lib/sbx-selfcheck/.
+# group or others. Folders, the sbx commands and the launchers are executable.
+# The image puts this file in /usr/local/lib/sbx-selfcheck/.
 # ------------------------------------------------------------------------------
 
 import os
 import stat
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from check_result import CheckResult, capped_problem_detail, failed, passed
 from hints import rebuild_hint
-from image_roots import COMMAND_DIR, COMMAND_PREFIX, HOOK_DIR, LAUNCHER_FILE
+from image_roots import COMMAND_DIR, COMMAND_PREFIX, LAUNCHER_FILE_LIST
 from tree_walk import ProblemKind, WalkProblem, walk_tree
 
 _EXECUTABLE_BITS = 0o111
@@ -32,15 +32,11 @@ class ImageRules:
     owner_uid: int = 0
     owner_gid: int = 0
     command_dir: Path = COMMAND_DIR
-    hook_dir: Path = HOOK_DIR
-    launcher_file: Path = LAUNCHER_FILE
+    launcher_file_list: list[Path] = field(default_factory=lambda: list(LAUNCHER_FILE_LIST))
 
 
 def _must_be_executable(path: Path, entry_stat: os.stat_result, rules: ImageRules) -> bool:
-    if stat.S_ISDIR(entry_stat.st_mode) or path == rules.launcher_file:
-        return True
-
-    if path.parent == rules.hook_dir:
+    if stat.S_ISDIR(entry_stat.st_mode) or path in rules.launcher_file_list:
         return True
 
     return path.parent == rules.command_dir and path.name.startswith(COMMAND_PREFIX)
