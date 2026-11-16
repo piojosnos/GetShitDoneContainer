@@ -61,7 +61,7 @@ show_context() {
 }
 
 # ------------------------------------------------------------------------------
-# host_checks: H-01 to H-33; builds every image first
+# host_checks: H-03 to H-34; builds every image first
 # ------------------------------------------------------------------------------
 host_checks() {
   bash tests/host/run-all.sh

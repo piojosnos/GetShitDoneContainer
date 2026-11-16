@@ -72,16 +72,30 @@ build_image() {
 }
 
 # ------------------------------------------------------------------------------
+# cert_fingerprint FILE: prints the SHA-256 fingerprint, uppercase hex, no colons
+# ------------------------------------------------------------------------------
+# Only the text after the equals sign is read, since LibreSSL and OpenSSL word
+# the prefix differently. Prints nothing for an invalid file.
+# ------------------------------------------------------------------------------
+cert_fingerprint() {
+  openssl x509 -noout -fingerprint -sha256 -in "$1" 2>/dev/null </dev/null | sed 's/^[^=]*=//' | tr -d ':' | tr 'a-f' 'A-F'
+}
+
+# ------------------------------------------------------------------------------
 # prepare_extra_cert: with SBX_CA_CERT set, splits it into extraCertDir
 # ------------------------------------------------------------------------------
 # extraCertDir holds one .crt file per certificate. Only certificate blocks are
-# kept, so a key in the same file never reaches the build. It stays empty when
-# the variable is unset or empty.
+# kept, so a key in the same file never reaches the build. extraCertFingerprints
+# holds the SHA-256 fingerprint of each one (uppercase hex, no colons), space
+# separated: the image records them, so its self-check knows what to expect.
+# Both stay empty when the variable is unset or empty.
 # ------------------------------------------------------------------------------
 prepare_extra_cert() {
   local certPath
+  local fingerprint
 
   extraCertDir=""
+  extraCertFingerprints=""
 
   if [ -z "${SBX_CA_CERT:-}" ]; then
     return 0
@@ -118,6 +132,15 @@ prepare_extra_cert() {
       echo "build.sh: SBX_CA_CERT holds a block that is not a valid certificate: $SBX_CA_CERT" >&2
       return 1
     fi
+
+    fingerprint=$(cert_fingerprint "$certPath")
+
+    if [ -z "$fingerprint" ]; then
+      echo "build.sh: could not read the fingerprint of a certificate in $SBX_CA_CERT" >&2
+      return 1
+    fi
+
+    extraCertFingerprints="${extraCertFingerprints:+$extraCertFingerprints }$fingerprint"
   done
 }
 
@@ -125,7 +148,7 @@ prepare_extra_cert() {
 # print_cert_banner: prints a starred banner naming the extra root, if any
 # ------------------------------------------------------------------------------
 # Printed before the first build and after the last. openssl output is only
-# shown, never parsed, because LibreSSL and OpenSSL 3 format it differently.
+# shown; the fingerprints the image records come from cert_fingerprint.
 # ------------------------------------------------------------------------------
 print_cert_banner() {
   local certPath
@@ -165,7 +188,8 @@ prepare_extra_cert || exit 1
 print_cert_banner
 
 if [ -n "$extraCertDir" ]; then
-  build_image base/Dockerfile "sbx-base:$imageTag" --build-context "cacert=$extraCertDir" "$@"
+  build_image base/Dockerfile "sbx-base:$imageTag" --build-context "cacert=$extraCertDir" \
+    --build-arg "EXTRA_CA_FINGERPRINTS=$extraCertFingerprints" "$@"
 else
   build_image base/Dockerfile "sbx-base:$imageTag" "$@"
 fi

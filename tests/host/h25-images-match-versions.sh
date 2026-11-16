@@ -3,7 +3,7 @@
 # H-25: the images match versions.env; a bare build is refused
 # ------------------------------------------------------------------------------
 # Needs: images built; the run folder (not the running sandbox)
-# Claude Code is H-12's; a build without build.sh must name the missing pin.
+# The tools are sbx-selfcheck's (H-34); a build without build.sh must name the missing pin.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -33,47 +33,6 @@ check_record() {
   diffText=$(diff "$recordFile" "$REPO_DIR/versions.env" 2>&1)
   if [ -n "$diffText" ]; then
     add_problem "/etc/sbx/versions.env in $CLAUDE_IMAGE differs from versions.env; rerun ./host-test.sh (it rebuilds the test images): $(first_lines "$diffText")"
-  fi
-}
-
-# ------------------------------------------------------------------------------
-# Checks the GSD and ccusage in the Claude image are the pinned versions
-# ------------------------------------------------------------------------------
-# gsd-tools runtime-identity must name @opengsd/gsd-core at the pin, and ccusage
-# --version must be the pin.
-# ------------------------------------------------------------------------------
-check_tool_versions() {
-  local gsdPin ccusagePin gsdIdentity ccusageVersion
-
-  gsdPin=$(pin_of GSD_CORE_VERSION)
-  ccusagePin=$(pin_of CCUSAGE_VERSION)
-
-  gsdIdentity=$(run_timeout 60 docker run --rm --entrypoint gsd-tools "$CLAUDE_IMAGE" runtime-identity --raw </dev/null 2>&1)
-  if [ "$gsdIdentity" != "{\"packageName\":\"@opengsd/gsd-core\",\"version\":\"$gsdPin\"}" ]; then
-    add_problem "the image's GSD is $(first_lines "$gsdIdentity"); versions.env pins $gsdPin"
-  fi
-
-  ccusageVersion=$(run_timeout 60 docker run --rm --entrypoint ccusage "$CLAUDE_IMAGE" --version </dev/null 2>&1)
-  if [ "$ccusageVersion" != "ccusage $ccusagePin" ]; then
-    add_problem "the image's ccusage is $(first_lines "$ccusageVersion"); versions.env pins $ccusagePin"
-  fi
-}
-
-# ------------------------------------------------------------------------------
-# Checks nothing sits under /home/sandbox/workspace in the Claude image
-# ------------------------------------------------------------------------------
-# The mount would hide anything the image put there.
-# ------------------------------------------------------------------------------
-check_workspace_empty() {
-  local listing listingStatus
-
-  listing=$(run_timeout 60 docker run --rm --entrypoint ls "$CLAUDE_IMAGE" -A /home/sandbox/workspace </dev/null 2>&1)
-  listingStatus=$?
-
-  if [ "$listingStatus" -ne 0 ]; then
-    add_problem "could not list /home/sandbox/workspace in the image (exit $listingStatus): $(first_lines "$listing")"
-  elif [ -n "$listing" ]; then
-    add_problem "the image holds files under /home/sandbox/workspace, which the mount hides: $(first_lines "$listing")"
   fi
 }
 
@@ -111,8 +70,6 @@ check_bare_builds() {
 require_no_arguments "$@" || exit 2
 require_run_folder || exit 1
 check_record
-check_tool_versions
-check_workspace_empty
 check_bare_builds
-report_check H-25 "an image does not match versions.env, or a build without build.sh did not stop" \
-  "the images match versions.env (GSD $(pin_of GSD_CORE_VERSION), ccusage $(pin_of CCUSAGE_VERSION)), nothing sits under the mount point, and a build without build.sh stops naming the missing pin"
+report_check H-25 "the image's versions.env differs from the repo's, or a build without build.sh did not stop" \
+  "the Claude test image's versions.env equals the repo's, and a build without build.sh stops naming the missing pin"

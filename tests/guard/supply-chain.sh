@@ -11,7 +11,7 @@ set -u
 # no_compromised_gsd_package: GSD comes only from @opengsd/gsd-core
 # ------------------------------------------------------------------------------
 no_compromised_gsd_package() {
-  nowhere_matches 'get-shit-done-cc|gsd-build' $SANDBOX_FILES base/bin/* claude/start.d/* cursor/start.d/* claude/bin/* cursor/bin/* claude/managed-settings.json README.md MIGRATION.md tests/host-checklist.md tests/host/*.sh tests/host/support/*.* tests/host/support/bundle/rules/* tests/host/support/bundle/skills/*/* tests/selftest/*.sh tests/selftest/*/*.sh tests/selftest/*/support/*
+  nowhere_matches 'get-shit-done-cc|gsd-build' $SANDBOX_FILES base/bin/* claude/start.d/* cursor/start.d/* claude/bin/* cursor/bin/* claude/managed-settings.json README.md MIGRATION.md tests/host-checklist.md tests/host/*.sh tests/host/support/bundle/rules/* tests/host/support/bundle/skills/*/* tests/selftest/*.sh tests/selftest/*/*.sh tests/selftest/*/support/* base/selfcheck/sbx-selfcheck base/selfcheck/*.py claude/selfcheck/*.py cursor/selfcheck/*.py tests/selftest/selfcheck/*.py pyproject.toml uv.lock
 }
 
 # ------------------------------------------------------------------------------
@@ -157,12 +157,15 @@ agent_images_have_one_from_line() {
 # ------------------------------------------------------------------------------
 # every_dockerfile_arg_is_pinned: ARGs and versions.env pins match both ways
 # ------------------------------------------------------------------------------
+# EXTRA_CA_FINGERPRINTS is the one ARG that is not a pin: build.sh derives it
+# from SBX_CA_CERT, and empty means no extra root certificate.
+# ------------------------------------------------------------------------------
 every_dockerfile_arg_is_pinned() {
   local ok=0
   local argName
   local pinName
 
-  for argName in $(grep -hE '^ARG [^=]*$' $DOCKERFILES | sed 's/^ARG //'); do
+  for argName in $(grep -hE '^ARG [^=]*$' $DOCKERFILES | sed 's/^ARG //' | grep -Fvx 'EXTRA_CA_FINGERPRINTS'); do
     if ! grep -q "^${argName}=" versions.env; then
       echo "    a Dockerfile declares ARG $argName, which versions.env does not set"
       ok=1

@@ -48,6 +48,20 @@ RUN --mount=type=bind,from=cacert,target=/mnt \
     fi
 
 # ------------------------------------------------------------------------------
+# Optional extra root certificate: the fingerprints sbx-selfcheck expects
+# ------------------------------------------------------------------------------
+# build.sh computes them from the same file and passes them as a space separated
+# list, apart from the mounted folder, so a lost certificate cannot take its
+# expectation with it. Empty means no certificate was requested.
+# ------------------------------------------------------------------------------
+ARG EXTRA_CA_FINGERPRINTS
+RUN if [ -n "$EXTRA_CA_FINGERPRINTS" ]; then \
+      mkdir -p /etc/sbx \
+      && printf '%s\n' "$EXTRA_CA_FINGERPRINTS" | tr ' ' '\n' > /etc/sbx/extra-ca-fingerprints \
+      && chmod 644 /etc/sbx/extra-ca-fingerprints; \
+    fi
+
+# ------------------------------------------------------------------------------
 # Node.js from the official tarball
 # ------------------------------------------------------------------------------
 # Checked against nodejs.org SHASUMS256.txt; builds natively on arm64.
@@ -168,12 +182,13 @@ ENV HISTFILE=/home/sandbox/workspace/state/shell/bash_history \
 # ------------------------------------------------------------------------------
 # The entrypoint and its library
 # ------------------------------------------------------------------------------
-# Copied as root: the script is mode 755, the library it sources is 644.
+# Copied as root: the script is mode 755, the library it sources is 644. The
+# library sits in /usr/local/lib/sbx, so /usr/local/bin holds only commands.
 # ------------------------------------------------------------------------------
 COPY base/sbx-entrypoint /usr/local/bin/sbx-entrypoint
-COPY base/sbx-start-lib.sh /usr/local/bin/sbx-start-lib.sh
-RUN chmod 755 /usr/local/bin/sbx-entrypoint \
-    && chmod 644 /usr/local/bin/sbx-start-lib.sh
+COPY base/sbx-start-lib.sh /usr/local/lib/sbx/sbx-start-lib.sh
+RUN chmod 755 /usr/local/bin/sbx-entrypoint /usr/local/lib/sbx \
+    && chmod 644 /usr/local/lib/sbx/sbx-start-lib.sh
 
 # ------------------------------------------------------------------------------
 # The start hooks folder
@@ -231,6 +246,20 @@ RUN printf 'gsd %s | node %s | jdk %s | mvn %s | python %s\n' \
     && chmod 644 /etc/sbx/tool-versions \
     && grep -Eq '^gsd [0-9.]+ \| node [0-9.]+ \| jdk [0-9.]+ \| mvn [0-9.]+ \| python [0-9.]+$' /etc/sbx/tool-versions \
     && printf '%s\n' 'cat /etc/sbx/tool-versions' >> /etc/bash.bashrc
+
+# ------------------------------------------------------------------------------
+# sbx-selfcheck: the runner, its libraries and the shared checks
+# ------------------------------------------------------------------------------
+# Root-owned and read-only to the sandbox user. Each agent image adds its checks
+# folder to /etc/sbx/selfcheck.d. A syntax error in any file stops the build here.
+# ------------------------------------------------------------------------------
+RUN mkdir -p /usr/local/lib/sbx-selfcheck/checks /etc/sbx/selfcheck.d
+COPY --chmod=755 base/selfcheck/sbx-selfcheck /usr/local/lib/sbx-selfcheck/sbx-selfcheck
+COPY --chmod=644 base/selfcheck/*.py /usr/local/lib/sbx-selfcheck/
+COPY --chmod=644 base/selfcheck/checks/*.py /usr/local/lib/sbx-selfcheck/checks/
+RUN ln -s /usr/local/lib/sbx-selfcheck/sbx-selfcheck /usr/local/bin/sbx-selfcheck \
+    && PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /usr/local/lib/sbx-selfcheck/sbx-selfcheck /usr/local/lib/sbx-selfcheck/*.py /usr/local/lib/sbx-selfcheck/checks/*.py \
+    && rm -rf /tmp/sbx-pycache
 
 # ------------------------------------------------------------------------------
 # Home folders: the empty mount target and ~/.local/state

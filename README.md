@@ -32,9 +32,9 @@ Each step is explained below in "Scripts", "Register a sandbox" and "Best-practi
 
 | Image | Holds |
 |---|---|
-| `sbx-base:local` | Ubuntu 24.04, git, gh, Node.js 24, Python 3 (pip, venv) and uv, the Temurin JDK 21, Maven, jq, ripgrep, zip and unzip, the ssh client, make and a C compiler, shellcheck and hadolint, GSD, and the `sbx-gh-login`, `sbx-bundle-clone` and `sbx-link-bundle` helpers |
-| `sbx-claude:local` | `sbx-base` plus Claude Code, ccusage, the `sbx-claude` wrapper and the managed settings (no bundle) |
-| `sbx-cursor:local` | `sbx-base` plus the Cursor CLI (`cursor-agent`) and the `sbx-cursor` wrapper |
+| `sbx-base:local` | Ubuntu 24.04, git, gh, Node.js 24, Python 3 (pip, venv) and uv, the Temurin JDK 21, Maven, jq, ripgrep, zip and unzip, the ssh client, make and a C compiler, shellcheck and hadolint, GSD, and the `sbx-gh-login`, `sbx-bundle-clone` and `sbx-link-bundle` helpers, and `sbx-selfcheck` with the shared checks |
+| `sbx-claude:local` | `sbx-base` plus Claude Code, ccusage, the `sbx-claude` wrapper, the managed settings (no bundle) and the Claude checks of `sbx-selfcheck` |
+| `sbx-cursor:local` | `sbx-base` plus the Cursor CLI (`cursor-agent`), the `sbx-cursor` wrapper and the Cursor checks of `sbx-selfcheck` |
 
 - Python projects use uv or a venv, because Ubuntu blocks plain pip installs into the system Python. Every version is in `versions.env` (see "Build the images").
 
@@ -50,7 +50,7 @@ Each step is explained below in "Scripts", "Register a sandbox" and "Best-practi
 - `SBX_IMAGE_TAG` picks the tag of all three images. Unset or empty means `local`, the images your sandboxes run; `test` gives `sbx-base:test`, `sbx-claude:test` and `sbx-cursor:test` for `./host-test.sh`, which sets it itself. Any other value is refused. The `sbx-*` scripts read it too, so leave it unset in your shell. When it is `test`, `build.sh` and the `sbx-*` scripts name it in a line on stderr.
 - Every version (base OS image, toolchains, GSD, Claude Code, the Cursor CLI) lives in `versions.env`. The Dockerfiles have no default versions, so a plain `docker build` stops and names the missing pin.
 - Plain apt packages are not pinned. They follow the pinned Ubuntu release and pick up its security fixes at each rebuild.
-- In a sandbox shell, `cat /etc/sbx/versions.env` shows the pins the image was built with.
+- In a sandbox shell, `cat /etc/sbx/versions.env` shows the pins the image was built with. `sbx-selfcheck` compares the installed tools with them.
 - A `.dockerignore` lets only `base/`, `claude/`, `cursor/` and `versions.env` into the build. The root of `SBX_CA_CERT` comes in as its own named build context, `cacert`, from a temporary folder, never through the repo folder.
 - `SBX_CA_CERT`, when set, makes `./build.sh` add that root certificate to every image (see "Behind a company HTTPS proxy"). Unset or empty changes nothing.
 - `versions.env` also holds `BUNDLE_REPO_URL`, the repo `sbx-bundle-clone` clones. It is a setting, not a version; change it and rebuild.
@@ -82,9 +82,11 @@ What trusts the root, and how:
 | Node programs | `NODE_EXTRA_CA_CERTS`, set by `/etc/bash.bashrc` |
 
 - The Cursor CLI trusts the extra root through the system store, and the build downloads it from `downloads.cursor.com`.
-- `/etc/sbx/extra-ca.pem` holds the added certificates. It exists only in an image built with a root.
+- `/etc/sbx/extra-ca.pem` holds the added certificates, and `/etc/sbx/extra-ca-fingerprints` their SHA-256 fingerprints, one per line, as `build.sh` computed them. Both exist only in an image built with a root.
 - The trade-off: the images trust anything the proxy signs (see "Threat model").
 - Known limit: a Node program run by a non-interactive `docker exec` does not get `NODE_EXTRA_CA_CERTS`. Run it from `sbx-shell`.
+
+`sbx-selfcheck` in a sandbox shell confirms that each fingerprint in `/etc/sbx/extra-ca-fingerprints` is in the system store and in Java `cacerts` (its `extra-ca-system-bundle` and `extra-ca-java-cacerts` lines). A root lost in the build fails there, and so does a root installed without its recorded fingerprint; with neither it prints `no extra root certificate requested`. The commands below also prove each tool gets through the proxy.
 
 Check a new build by hand: run these in a sandbox shell. Each prints a status code, a version or a login. None may print `curl: (60)`, `UNABLE_TO_VERIFY_LEAF_SIGNATURE`, `CERTIFICATE_VERIFY_FAILED` or `PKIX path building failed`.
 
@@ -121,7 +123,7 @@ export PATH="$HOME/sbx-tools/GetShitDoneContainer/bin:$PATH"
 | `sbx-upgrade NAME [BUILD_OPTION...]` | Builds every image with `./build.sh`, which reads `SBX_CA_CERT` from your shell, then recreates this sandbox and waits for it. Prints the tool versions last. |
 | `sbx-fix-modes NAME` | Sets every file git tracks in the project folder to 644 or 755, as git committed, on the Mac and in the sandbox. Prints how many it changed. |
 
-In the sandbox: `sbx-gh-login` and `sbx-bundle-clone` (both agents), `sbx-claude` (Claude) and `sbx-cursor` (Cursor); see "Best-practices bundle".
+In the sandbox: `sbx-gh-login`, `sbx-bundle-clone` and `sbx-selfcheck` (both agents), `sbx-claude` (Claude) and `sbx-cursor` (Cursor); see "Best-practices bundle" and "Check a sandbox".
 
 ## Register a sandbox
 
@@ -340,6 +342,25 @@ In a sandbox shell, run `ccusage daily`, `ccusage monthly` or `ccusage session`.
 - By default it fetches the current price table from the network when it runs. `--offline` uses the table it ships with.
 - Starting the sandbox needs no network either way.
 
+## Check a sandbox
+
+In a sandbox shell (`sbx-shell NAME`), `sbx-selfcheck` checks that sandbox and prints one line per check.
+
+```text
+PASS: user-sandbox: uid 1000, gid 1000, name sandbox
+FAIL: git-identity: user.email is not set
+      fix: run sbx-gh-login in this sandbox; it asks for the name and email
+...
+sbx-selfcheck: 53 checks, 1 failed
+```
+
+- Each FAIL line has a `fix:` line under it. When the fix is on the Mac, it says so and gives the command, such as `sbx-upgrade NAME`.
+- Exit status 0 means every check passed.
+- It changes nothing, apart from a test file it makes and removes in `state/`.
+- The base image holds the runner and the shared checks (tools and pins, user and home, git, environment, state folder, image paths, extra root certificates), one file per concern in `/usr/local/lib/sbx-selfcheck/checks/`; the runner loads the files in name order. Adding a check is adding a file. The Claude and Cursor images add their own, one file per concern too, in `/etc/sbx/selfcheck.d/claude/` and `/etc/sbx/selfcheck.d/cursor/` (CLI version, login file, GSD sync, bundle links, wrappers). What the checks of one agent share (its config folder) sits in one library file per agent, `claude_shared.py` or `cursor_shared.py`, in `/usr/local/lib/sbx-selfcheck/agents/`; the launcher puts that folder on the import path, and the runner never loads it as a check. The checks that walk folders (the image ownership and protected-paths checks and the root-owned state scan) share one walker, `tree_walk.py`, and keep their rule in a hook. The image checks walk root folders (base: `/usr/local/lib/sbx`, `/usr/local/lib/sbx-selfcheck`, `/etc/sbx` and the `sbx-*` commands; Claude: `/etc/claude-code`; Cursor: `/usr/local/lib/cursor-agent`) and require root ownership, no group or other write, and an executable bit on folders, `sbx-*` commands, start hooks and the launcher, so a new file is covered with no list to update.
+- A fresh sandbox fails the login and git identity checks until you log in and run `sbx-gh-login`.
+- In a container started without `sbx-start`, the checks that need the sandbox's mounts fail and say to start it with `sbx-start`.
+
 ## Threat model
 
 | Isolated | Not isolated |
@@ -370,11 +391,13 @@ Run `./host-test.sh` on the Mac after building, or after a change under `base/`,
 | Question | Proven by | Run |
 |---|---|---|
 | Login survives a rebuild | H-09 and H-29 (a planted fake credentials file and session file survive a rebuild and `sbx-upgrade`) | `./host-test.sh` |
-| Versions match the pins | H-25 (images match `versions.env`), H-30 (tool versions line), the pin digests step | `./host-test.sh` |
-| The home is not hidden | H-05 (`.bashrc` and `.local` in `/home/sandbox`) | `./host-test.sh` |
+| Versions match the pins | H-34 (`sbx-selfcheck` compares every tool and the tool versions line with `versions.env`, in a Claude and a Cursor test sandbox), H-25 (the image's `versions.env` equals the repo's), the pin digests step | `./host-test.sh` |
+| The home is not hidden | H-34 (`.bashrc` and `.local` in `/home/sandbox`, and every tool resolves into the image, not under `/home`) | `./host-test.sh` |
+| An extra root certificate is trusted | H-34 (the self-check compares the fingerprint `build.sh` recorded for a throwaway root with the system store and Java `cacerts` of both test sandboxes) | `./host-test.sh` |
 | Works behind a company proxy | The checklist in "Behind a company HTTPS proxy", by hand | Set `SBX_CA_CERT`, run `sbx-upgrade NAME`, then the checklist in a sandbox shell |
 
-- The host checks run a Claude sandbox. The Cursor image is checked by its build-time smoke test and by hand: add a Cursor sandbox, log in, send one prompt, then run `sbx-upgrade` and check the login is still there.
+- The host checks run a Claude sandbox, and H-34 also starts a Cursor test sandbox and runs `sbx-selfcheck` in it. A Cursor login and prompt are still checked by hand: add a Cursor sandbox, log in, send one prompt, then run `sbx-upgrade` and check the login is still there.
+- `./host-test.sh` makes a throwaway root certificate once, keeps it in `$TMPDIR/sbx-hosttest-root-ca/` with its key deleted, and reuses it, so the test images keep their build cache. With your own `SBX_CA_CERT` set, the test images trust both roots.
 - What each host check proves, and how to read a failure, is in [`tests/host-checklist.md`](tests/host-checklist.md).
 - Every suite is listed in [`tests/README.md`](tests/README.md).
 
@@ -387,7 +410,7 @@ Rebuilds and host-test runs pile up images, build cache and run folders. From th
 ./clean.sh --yes    # removes them
 ```
 
-- Removed: the test sandbox `sbx-hosttest` and its network, every host-test run folder (`sbx-hosttest-*` in the macOS temp folder), the Docker build cache, and every image no container uses.
+- Removed: the test sandbox `sbx-hosttest` and its network, every host-test run folder (`sbx-hosttest-*` in the macOS temp folder), the test root certificate `sbx-hosttest-root-ca` (the next run makes it again), the Docker build cache, and every image no container uses.
 - Kept: every other container, running or stopped, the images those containers use, all volumes, and every sandbox folder and its `state/`.
 - `sbx-base`, `sbx-claude` and `sbx-cursor` go too when no container uses them, under both tags, `:local` and `:test`. `./build.sh` rebuilds the `:local` ones and `./host-test.sh` the `:test` ones; the first build after a clean takes a few minutes.
 - A build that fails with `No space left on device` usually means the Docker Desktop disk is full: run `./clean.sh --yes`, or raise the disk limit in Docker Desktop, Settings, Resources.
@@ -446,6 +469,7 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 
 | Symptom | Fix |
 |---|---|
+| `sbx-selfcheck` prints a FAIL line | Do what its `fix:` line says. A `load-...` line means a checks file in the image is broken or missing; rebuild with `sbx-upgrade NAME`. |
 | Claude hangs at start after an unclean stop | Check no claude is running (`docker exec sbx-demo pgrep -a claude` prints nothing), then delete `$SBX_DIR/state/claude/.claude.json.lock`. Everything else in `state/claude` is safe on the Mac. |
 | Console keyless sign-in is lost on recreate | It is stored outside `CLAUDE_CONFIG_DIR`. Log in with a claude.ai account instead. |
 | A check fails only because of the capability drop | Remove the `cap_drop` block from `compose.yml`, keep `no-new-privileges`, and report it. |

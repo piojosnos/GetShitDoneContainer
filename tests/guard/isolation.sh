@@ -50,7 +50,7 @@ host_scripts_keep_sandbox_data() {
 # ------------------------------------------------------------------------------
 # managed_settings_deny_skill_edits: the managed settings deny Edit on the synced skills
 # ------------------------------------------------------------------------------
-# Host check H-14 reads the same two entries in the image.
+# sbx-selfcheck reads the same two entries in the image (host check H-34).
 # ------------------------------------------------------------------------------
 managed_settings_deny_skill_edits() {
   local ok=0
@@ -78,6 +78,32 @@ host_tests_never_name_the_local_tag() {
 }
 
 # ------------------------------------------------------------------------------
+# owner_fix_hint_matches_container_name: the self-check's Mac fix names the container compose.yml makes
+# ------------------------------------------------------------------------------
+# The fix runs a throwaway root container with --volumes-from sbx-NAME. If the
+# container_name in compose.yml changes, the printed command would name a
+# container that does not exist.
+# ------------------------------------------------------------------------------
+owner_fix_hint_matches_container_name() {
+  local hintFile=base/selfcheck/checks/040_root_owned_state.py
+  local namePrefix
+
+  namePrefix=$(sed -n 's/^ *container_name: "\(.*\)\${SBX_NAME}".*$/\1/p' $COMPOSE | head -n 1)
+
+  if [ -z "$namePrefix" ]; then
+    echo "    $COMPOSE has no container_name of the form \"PREFIX\${SBX_NAME}\""
+    return 1
+  fi
+
+  if ! grep -Fq -- "--volumes-from ${namePrefix}{sandbox_name(" $hintFile; then
+    echo "    $hintFile does not name the container as --volumes-from ${namePrefix}{sandbox_name(...)}, the container_name of $COMPOSE"
+    return 1
+  fi
+
+  return 0
+}
+
+# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -86,4 +112,5 @@ run_rules \
   no_docker_socket_or_privileges \
   host_scripts_keep_sandbox_data \
   managed_settings_deny_skill_edits \
-  host_tests_never_name_the_local_tag || exit 1
+  host_tests_never_name_the_local_tag \
+  owner_fix_hint_matches_container_name || exit 1

@@ -3,7 +3,7 @@
 # H-26: the test sandbox has one bind mount and no privileges (docker inspect)
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running
-# H-04 proves the uid; H-09 checks the mount again after a rebuild.
+# H-34 (sbx-selfcheck) proves the uid; H-09 checks the mount again after a rebuild.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"

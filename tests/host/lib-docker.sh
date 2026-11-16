@@ -35,17 +35,6 @@ build_images() {
 }
 
 # ------------------------------------------------------------------------------
-# expected_arch: the image architecture the daemon should build (or unknown)
-# ------------------------------------------------------------------------------
-expected_arch() {
-  case "$(docker info --format '{{.Architecture}}' </dev/null)" in
-    aarch64) printf 'arm64\n' ;;
-    x86_64) printf 'amd64\n' ;;
-    *) printf 'unknown\n' ;;
-  esac
-}
-
-# ------------------------------------------------------------------------------
 # pin_of NAME: the value of NAME in versions.env; empty when NAME is absent
 # ------------------------------------------------------------------------------
 pin_of() {
@@ -57,4 +46,33 @@ pin_of() {
 # ------------------------------------------------------------------------------
 claude_pin() {
   pin_of CLAUDE_CODE_VERSION
+}
+
+# ------------------------------------------------------------------------------
+# test_root_ca_file: the throwaway root certificate the test images trust
+# ------------------------------------------------------------------------------
+# Kept outside the run folder and reused, so the test images keep their build
+# cache; clean.sh removes it with the run folders.
+# ------------------------------------------------------------------------------
+test_root_ca_file() {
+  local baseDir
+
+  baseDir=${TMPDIR:-/tmp}
+  baseDir=${baseDir%/}
+
+  if [ -z "$baseDir" ]; then
+    baseDir=/tmp
+  fi
+
+  printf '%s/sbx-hosttest-root-ca/root-ca.pem\n' "$baseDir"
+}
+
+# ------------------------------------------------------------------------------
+# cert_fingerprint FILE: SHA-256 fingerprint of FILE, uppercase hex, no colons
+# ------------------------------------------------------------------------------
+# Only the text after the equals sign is read, since LibreSSL and OpenSSL word
+# the prefix differently. Prints nothing for a missing or invalid file.
+# ------------------------------------------------------------------------------
+cert_fingerprint() {
+  openssl x509 -noout -fingerprint -sha256 -in "$1" 2>/dev/null </dev/null | sed 's/^[^=]*=//' | tr -d ':' | tr 'a-f' 'A-F'
 }
