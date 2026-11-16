@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 9
 current_phase_name: sbx-init replaces the start hooks
 status: executing
-stopped_at: Completed 09-08-PLAN.md
-last_updated: "2026-11-16T16:49:03.655Z"
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-11-16T16:52:20.197Z"
 last_activity: 2026-11-16
 last_activity_desc: Phase 9 execution started
-state_head: 0f71504c9def091344358bc945913e68bc8cef91
+state_head: deb54c3751f8e5fa5c60a977d0f6093159b0c9eb
 progress:
   total_phases: 10
   completed_phases: 3
   total_plans: 40
-  completed_plans: 29
+  completed_plans: 30
   percent: 30
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 9 (sbx-init replaces the start hooks) — EXECUTING
-Plan: 3 of 13
+Plan: 4 of 13
 Status: Ready to execute
 Last activity: 2026-11-16 — Phase 9 execution started
 
@@ -187,6 +187,7 @@ Last activity: 2026-11-16 — Phase 9 execution started
 | Phase 08 P13 | 10 min | 3 tasks | 5 files |
 | Phase 09 P01 | 25min | 3 tasks | 13 files |
 | Phase 09 P08 | 10min | 2 tasks | 5 files |
+| Phase 09 P02 | 15min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -369,6 +370,8 @@ Recent decisions affecting current work:
 - [Phase 09]: sbx-init merges shared and agent step files and sorts them by file name (shared first on a tie), so the ownership step runs after the agent GSD sync
 - [Phase 09]: AGENT_STEPS_DIR lives in paths.py so tests can point every init path into a temp folder through one module
 - [Phase 09]: Host scripts hold the sandbox name rule in bin/sbx-lib.sh; no host script reads base/
+- [Phase 09]: GSD sync step reports only the installer outcome; version comparison stays in the self-check twins
+- [Phase 09]: Whitespace-only cli-config.json counts as empty; an unreadable path or non-object JSON fails and is left untouched
 
 ### Pending Todos
 
@@ -441,8 +444,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-16T16:49:03.573Z
-Stopped at: Completed 09-08-PLAN.md
+Last session: 2026-11-16T16:52:20.116Z
+Stopped at: Completed 09-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
