@@ -507,3 +507,7 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 | A skill you pulled is missing in Claude | Restart, or run `/etc/sbx/start.d/10-best-practices`. |
 | A sandbox migrated from the old layout loads the same rules twice | Follow "After the checks" in [`MIGRATION.md`](MIGRATION.md). |
 | Host check H-10 showed Docker creating the missing folder | Report it. An `env_file` sentinel at the root of `SBX_DIR` would make Compose itself refuse a missing folder; it is not planned while H-10 passes, and the container refuses to start either way. |
+
+## License
+
+Licensed under the Mozilla Public License 2.0 (MPL-2.0). See [LICENSE](LICENSE).
