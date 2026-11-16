@@ -280,6 +280,7 @@ sbx-init: stopped at claude-best-practices-links
 - The build runs while the sandbox keeps running. A failed build leaves it as it was.
 - On success the sandbox is recreated without asking, after one line warning that its open shells and Claude sessions close. It ends running, even when it was stopped.
 - The login and history live in `state/` on the Mac, so they stay.
+- A recreate, by `sbx-upgrade` or by `sbx-start` on an older image, wipes the init marker. Run `sbx-init` in the sandbox shell before the agent.
 - Other sandboxes keep their old image until their next `sbx-start`, which recreates them; `sbx-list` marks them `running, older image`.
 - For a running sandbox, `sbx-start` prints the same warning first and goes on without an answer. Finish your sessions before you run it.
 - Each upgrade leaves the old images untagged. `./clean.sh` shows them and `./clean.sh --yes` frees them (see "Free disk space").
@@ -311,25 +312,28 @@ First run, once per sandbox:
 
 | Step | Command | What it does |
 |---|---|---|
-| 1 | `sbx-gh-login` | Logs gh in and lets git use that login over HTTPS. It also asks for the git name and email if none is set. |
-| 2 | `sbx-bundle-clone` | Clones the repo into `SBX_BUNDLE_DIR` and links it. It refuses an existing folder and prints how to update or relink it. |
-| 3 | `sbx-claude` or `sbx-cursor` | Starts the agent. It warns and waits 5 seconds when no clone is linked. |
+| 1 | `sbx-init` | Sets the sandbox up. With no clone yet, its best-practices step FAILs and says to clone first. |
+| 2 | `sbx-gh-login` | Logs gh in and lets git use that login over HTTPS. It also asks for the git name and email if none is set. |
+| 3 | `sbx-bundle-clone` | Clones the repo into `SBX_BUNDLE_DIR`, then runs `sbx-init` again, which links it. It refuses an existing folder and prints how to update or relink it. |
+| 4 | `sbx-claude` or `sbx-cursor` | Starts the agent. It refuses until `sbx-init` has passed in this container. |
 
-What a start does in `state/claude`:
+What `sbx-init` does in `state/claude`:
 
-| In `state/claude` | What a start does |
+| In `state/claude` | What `sbx-init` does |
 |---|---|
-| `rules` | A link to `../../best-practices/rules` |
-| One link per skill folder of the clone | Created, and listed in `.best-practices-skills` |
-| GSD's skills and your own | Never touched by the bundle links. GSD's skills are synced by GSD (see "GSD"). |
+| `rules` | Makes or replaces a link to `../../best-practices/rules`, only when `rules` is missing or already such a link. A real `rules` folder is left as it is and FAILs the step. |
+| One link per skill folder of the clone | Makes or replaces it, only when that name is missing or already a link into the clone. A folder of yours, a copy or a GSD skill with the same name is left as it is and FAILs the step. |
+| A link of its own whose skill the clone dropped | Removes it. |
+| GSD's skills and your own other skills | Never touched by the links. GSD's skills are synced by GSD (see "GSD"). |
 | `projects/` (memories), `CLAUDE.md`, `settings.json`, the login | Never touched. |
 
-- With no clone, the start goes on and prints `[sbx] no best-practices clone at ...; run sbx-bundle-clone`. A start never fetches or pulls, and needs no network.
-- An existing sandbox's first start after the rebuild replaces its old copies with links, or drops them until you run `sbx-bundle-clone`.
+- The clash rule: a name that is not a link into the clone is never replaced. The step links every other skill, then FAILs with `rename or move <path>, then run sbx-init again`. It never deletes anything of yours.
+- With no clone, the best-practices step FAILs: run `sbx-gh-login`, then `sbx-bundle-clone`. Until `sbx-init` has passed, `sbx-claude` and `sbx-cursor` refuse, so the clone must exist first. `sbx-init` never fetches or pulls, and needs no network.
+- Copies of clone skills from an older layout are not replaced; they clash (see [`MIGRATION.md`](MIGRATION.md)).
 - A rule with no frontmatter loads in every session; one with `paths:` frontmatter (globs in quotes) loads when Claude touches a matching file.
 - Update the practices with `git -C /home/sandbox/workspace/best-practices pull` in a sandbox shell, or ask Claude to pull them.
-- An edit or a pull is on disk at once. A running session sees a changed rule at its next session or after `/clear`. A pull that adds or removes a skill shows after a restart, or after `/etc/sbx/start.d/10-best-practices`.
-- A clone made on the Mac while the sandbox runs needs that hook once.
+- An edit or a pull is on disk at once. A running session sees a changed rule at its next session or after `/clear`. A pull that adds or removes a skill shows after `sbx-init` and a restart of the agent.
+- A clone made on the Mac while the sandbox runs needs one `sbx-init`.
 - Never run git on the clone from the Mac, and do not open it in an IDE with git integration. The agent can write the clone's `.git`, and git runs the hooks and config found there. Run git inside the sandbox and review changes in the PR on GitHub.
 
 Change a rule or a skill:
@@ -341,7 +345,7 @@ Change a rule or a skill:
 Edit protection:
 
 - Managed settings let Claude edit the clone from any project folder (`additionalDirectories`).
-- Claude's Edit tool is refused on `.best-practices-skills` and every path under `state/claude/skills/`, even with permissions bypassed. Edit a bundle skill in the clone, and your own skills from a shell or a host editor.
+- Claude's Edit tool is refused on every path under `state/claude/skills/`, even with permissions bypassed. Edit a bundle skill in the clone, and your own skills from a shell or a host editor.
 - It is not a security boundary: a script Claude runs can still write there. `state/claude/CLAUDE.md` stays editable.
 
 The trade:
@@ -352,9 +356,9 @@ The trade:
 
 In a Cursor sandbox:
 
-- The start links the bundle's skills into `state/cursor/skills` (`~/.cursor/skills`), the same way. The rules are not linked, because Cursor reads global rules only from `.mdc` files and every bundle rule is `.md`.
+- `sbx-init` links the best-practices skills into `state/cursor/skills` (`~/.cursor/skills`), the same way and with the same clash rule. The rules are not linked, because Cursor reads global rules only from `.mdc` files and every best-practices rule is `.md`.
 - Some skills and rules name Claude paths or slash commands, so they may not work in Cursor as they are.
-- Relinking is the same `/etc/sbx/start.d/10-best-practices`.
+- Relinking is `sbx-init`.
 
 Memories are not shipped; they belong to each project. A memory that proves general becomes a bundle rule by PR against the bundle repo.
 
@@ -362,18 +366,18 @@ To move an existing project into a sandbox, paste [`prompts/consolidate-memories
 
 ## GSD
 
-GSD comes baked into the base image at the version in `versions.env`, from `@opengsd/gsd-core` only. At every start, before the bundle links, the image's GSD is synced into `state/claude` or `state/cursor`, whichever the sandbox's agent uses. It needs no network.
+GSD comes baked into the base image at the version in `versions.env`, from `@opengsd/gsd-core` only. `sbx-init` syncs the image's GSD into `state/claude` or `state/cursor`, whichever the sandbox's agent uses, before it links the best-practices clone. It needs no network.
 
-| In `state/claude` | What a start does |
+| In `state/claude` | What `sbx-init` does |
 |---|---|
 | `gsd-core/`, `agents/`, `hooks/`, every `skills/gsd-*` folder | Replaced by the image's GSD. A hand edit is first saved to `gsd-local-patches/`. |
 | `settings.json` | GSD adds its hooks and permissions. Your own keys stay. |
 | Your own skills, `projects/` (sessions and memories), `CLAUDE.md`, the login | Never touched. |
 
-- GSD owns every skill whose name starts with `gsd-`. Give your own skills another name: a start removes a `gsd-*` skill that GSD does not ship.
-- GSD runs before the bundle, so a bundle skill wins a name clash.
+- GSD owns every skill whose name starts with `gsd-`. Give your own skills another name: the sync removes a `gsd-*` skill that GSD does not ship.
+- A best-practices skill with a `gsd-` name clashes with GSD's: it is left as it is, and the best-practices step FAILs with a rename or move fix.
 - GSD's own Cursor support has limits: some workflows still name Claude paths.
-- A failed sync stops the start with an `[sbx] ERROR` line and the installer output above it.
+- A failed sync is a `FAIL: ...-gsd-sync` line that names the installer's log file; read it, fix what it says, then run `sbx-init` again.
 - GSD's own update notice in a session does not apply here. To upgrade GSD, change `GSD_CORE_VERSION` in `versions.env` and rebuild (see "Bump a version or add a tool").
 - The GSD package brings a second Claude binary for its agent SDK under `/usr/local/lib`. It is not on `PATH` and never updates itself.
 
@@ -394,15 +398,15 @@ PASS: user-sandbox: uid 1000, gid 1000, name sandbox
 FAIL: git-identity: user.email is not set
       fix: run sbx-gh-login in this sandbox; it asks for the name and email
 ...
-sbx-selfcheck: 53 checks, 1 failed
+sbx-selfcheck: 55 checks, 1 failed
 ```
 
 - Each FAIL line has a `fix:` line under it. When the fix is on the Mac, it says so and gives the command, such as `sbx-upgrade NAME`.
 - Exit status 0 means every check passed.
 - It changes nothing, apart from a test file it makes and removes in `state/`.
-- The base image holds the runner and the shared checks (tools and pins, user and home, git, environment, state folder, image paths, extra root certificates), one file per concern in `/usr/local/lib/sbx-selfcheck/checks/`; the runner loads the files in name order. Adding a check is adding a file. The Claude and Cursor images add their own, one file per concern too, in `/etc/sbx/selfcheck.d/claude/` and `/etc/sbx/selfcheck.d/cursor/` (CLI version, login file, GSD sync, bundle links, wrappers). What the checks of one agent share (its config folder) sits in one library file per agent, `claude_shared.py` or `cursor_shared.py`, in `/usr/local/lib/sbx-selfcheck/agents/`; the launcher puts that folder on the import path, and the runner never loads it as a check. The checks that walk folders (the image ownership and protected-paths checks and the root-owned state scan) share one walker, `tree_walk.py`, and keep their rule in a hook. The image checks walk root folders (base: `/usr/local/lib/sbx`, `/usr/local/lib/sbx-selfcheck`, `/etc/sbx` and the `sbx-*` commands; Claude: `/etc/claude-code`; Cursor: `/usr/local/lib/cursor-agent`) and require root ownership, no group or other write, and an executable bit on folders, `sbx-*` commands, start hooks and the launcher, so a new file is covered with no list to update.
-- A fresh sandbox fails the login and git identity checks until you log in and run `sbx-gh-login`.
-- In a container started without `sbx-start`, the checks that need the sandbox's mounts fail and say to start it with `sbx-start`.
+- The base image holds the runner and the shared checks (tools and pins, the init marker, user and home, git, environment, state folder, image paths, extra root certificates), one file per concern in `/usr/local/lib/sbx-selfcheck/checks/`; the runner loads the files in name order. Adding a check is adding a file. The Claude and Cursor images add their own, one file per concern too, in `/etc/sbx/selfcheck.d/claude/` and `/etc/sbx/selfcheck.d/cursor/` (CLI version and that the agent is off the PATH, login file, GSD sync, bundle links, wrappers). What the checks of one agent share (its config folder) sits in one library file per agent, `claude_shared.py` or `cursor_shared.py`, in `/usr/local/lib/sbx-selfcheck/agents/`; the launcher puts that folder on the import path, and the runner never loads it as a check. The checks that walk folders (the image ownership and protected-paths checks and the root-owned state scan) share one walker, `tree_walk.py`, and keep their rule in a hook. The image checks walk root folders (base: `/usr/local/lib/sbx-init`, `/usr/local/lib/sbx-selfcheck`, `/etc/sbx`, `/opt/sbx/agents` and the `sbx-*` commands; Claude: `/etc/claude-code`; Cursor: `/usr/local/lib/cursor-agent`) and require root ownership, no group or other write, and an executable bit on folders, `sbx-*` commands and the two launchers (`sbx-selfcheck` and `sbx-init`), so a new file is covered with no list to update.
+- A fresh sandbox fails the init marker check until you run `sbx-init`, and the login and git identity checks until you log in and run `sbx-gh-login`.
+- In a container made by hand with `docker run`, the checks that need the sandbox's mounts fail and say to start it with `sbx-start`.
 
 ## Threat model
 
@@ -460,25 +464,18 @@ Rebuilds and host-test runs pile up images, build cache and run folders. From th
 
 ## Safety checks
 
-At start, the container refuses to run unless:
+The container checks nothing when it starts: it only keeps running, and `sbx-init` is the first thing that runs in it. The checks sit before it and after it:
 
-- `/home/sandbox/workspace` is a real, writable mount point of a folder on the Mac. Otherwise your work would land in the container's own layer and be lost on recreate.
-- The project folder (`$SBX_DIR/$SBX_NAME`) and `$SBX_DIR/state` exist, and `state` is writable. A mistyped `SBX_DIR` or `SBX_NAME` fails here, and nothing is created on your Mac.
-- `SBX_NAME` follows the sandbox name rule and is not `state` or `best-practices`. Otherwise the start stops before any folder is used, with `[sbx] ERROR: SBX_NAME "<value>" breaks the sandbox name rule: ...` or `[sbx] ERROR: SBX_NAME "..." is taken: ...`.
+- Before `up`, `sbx-start` and `sbx-upgrade` check the sandbox name and that the project folder and `state/` exist, and stop with the path. The registered path is absolute: Compose reads a relative one from the repo folder and does not expand `~`.
+- Compose refuses a missing mount folder (`create_host_path: false`), so your work cannot land in the container's own layer.
+- After `sbx-init`, `sbx-selfcheck` checks the mount, the folders, the owners and the tools (see "Check a sandbox").
+- A hand-typed `docker run` gives a throwaway container with no mount. Its `sbx-selfcheck` FAILs on the mount, and anything written there is lost on recreate.
 
-A name with an uppercase letter, `MyProject`, is refused earlier, by `docker compose up`, because the image name of the `name-check` service must be lowercase. Nothing is created or replaced.
+A name with an uppercase letter, `MyProject`, is refused by `docker compose up`, because the image name of the `name-check` service must be lowercase. Nothing is created or replaced.
 
 Compose turns the project name into lowercase, and only `up` checks the name. Use the exact lowercase name with `down`, `ps` and `logs`.
 
-After the checks, the start runs the image's start hooks (the GSD sync and the bundle links):
-
-- A failing hook stops the start, so a sandbox never runs with a half-synced GSD.
-- A hook file that is not executable gives `[sbx] ERROR: start hook <path> is not executable`. Anything that is not a regular file (a link that points nowhere, a fifo, a socket) gives `[sbx] ERROR: start hook <path> is not a regular file`.
-- A hook is never skipped silently; only folders and names that start with a dot are ignored.
-
-Before every start, `sbx-start` and `sbx-upgrade` check that the project folder and `state/` exist, and stop with the path. The registered path is absolute: Compose reads a relative one from the repo folder and does not expand `~`.
-
-With the raw Compose commands, some Compose versions ignore the "do not create a missing folder" setting (docker/compose issue 13602), so a mistyped `SBX_DIR` could get an empty folder on your Mac. The container still refuses to start.
+With the raw Compose commands, some Compose versions ignore the "do not create a missing folder" setting (docker/compose issue 13602), so a mistyped `SBX_DIR` could get an empty folder on your Mac. The self-check FAILs in such a container, because its project folder is missing.
 
 ## Raw Docker commands
 
@@ -497,15 +494,14 @@ docker rm sbx-demo
 - `down` is what `sbx-rm` runs, never with an option that removes volumes or images. `docker stop` and `docker rm` are what `sbx-rm --unregister` runs for a broken entry, by the exact container name and never with `-v` or `-f`.
 - `docker exec` is what `sbx-shell` runs. `-w` starts the shell in your project folder; without it a shell starts in `/home/sandbox/workspace`. `docker ps` is what `sbx-list` reads.
 - A raw `docker compose` starts the Claude image unless `SBX_AGENT=cursor` is set next to `SBX_NAME` and `SBX_DIR`. It uses the `:local` tag unless `SBX_IMAGE_TAG=test` is set too.
-- `up` returns before the start hooks finish, so a failing hook shows only as the container exiting afterwards. `sbx-start` waits for them.
-- The hooks are done when `docker exec sbx-demo pgrep -x sleep` succeeds. It fails when the container has exited (`docker logs sbx-demo` shows why).
+- `up` returns once the container runs. Open a shell with the `docker exec` line above, then run `sbx-init`.
 
 ### Image-only smoke tests
 
-A plain `docker run` of any image, without the compose mount, is refused by design (an `[sbx] ERROR` line, exit status 1). To check an image on its own, bypass the entrypoint:
+To check an image on its own, run its agent by full path; the agents are off the PATH:
 
 ```bash
-docker run --rm --entrypoint claude sbx-claude:local --version
+docker run --rm sbx-claude:local /opt/sbx/agents/bin/claude --version
 ```
 
 ## Troubleshooting and known limits
@@ -517,7 +513,8 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 | `command not found: claude` or `cursor-agent` | The agents are off the PATH. Start them with `sbx-claude` or `sbx-cursor`. |
 | `FAIL: lock: another sbx-init is running` | Wait for that run to finish, then run `sbx-init` again. |
 | `FAIL: claude-best-practices-links: ... is not a link into the best-practices clone` (or `cursor-...`) | A folder or file of yours has the name of a clone skill, or `rules` is a real folder. It was left as it is. Rename or move that path, then run `sbx-init` again. |
-| `FAIL: claude-gsd-sync:` (or `cursor-gsd-sync:`) | Read the log file the line names, fix what it says, then run `sbx-init` again. |
+| `FAIL: claude-gsd-sync:` (or `cursor-gsd-sync:`) | Read the log file the line names, fix what it says, then run `sbx-init` again. A hand edit of a GSD file is kept in `state/claude/gsd-local-patches/`. |
+| `FAIL: claude-best-practices-links: no best-practices clone at ...` (or `cursor-...`) | Run `sbx-gh-login`, then `sbx-bundle-clone`; it clones the repo and runs `sbx-init` again. |
 | `FAIL: state-owner:` | Run the Mac command of its `fix:` line, then run `sbx-init` again. |
 | Claude hangs at start after an unclean stop | Check no claude is running (`docker exec sbx-demo pgrep -a claude` prints nothing), then delete `$SBX_DIR/state/claude/.claude.json.lock`. Everything else in `state/claude` is safe on the Mac. |
 | Console keyless sign-in is lost on recreate | It is stored outside `CLAUDE_CONFIG_DIR`. Log in with a claude.ai account instead. |
@@ -536,26 +533,18 @@ docker run --rm --entrypoint claude sbx-claude:local --version
 | `build.sh: SBX_CA_CERT ...` | The rest of the line says what is wrong with the variable or the file. It must be an absolute path to a readable PEM file. Nothing was built. |
 | `UNABLE_TO_VERIFY_LEAF_SIGNATURE` from a Node program run with `docker exec` | Run it from `sbx-shell`, or pass `-e NODE_EXTRA_CA_CERTS=/etc/sbx/extra-ca.pem` to `docker exec`. |
 | `ccusage` cannot fetch its price table behind a company proxy | Add `--offline`. |
-| `the start hooks of sbx-NAME did not finish within 120 s` or `sbx-NAME stopped during its start` | Run `docker logs sbx-NAME`. |
 | `overlaps the registry folder`, `overlaps the repo folder` or `overlaps the folder of sandbox` | Pick a folder of its own for the sandbox. |
 | `required variable SBX_DIR is missing a value` | Only the raw Compose commands read `SBX_NAME` and `SBX_DIR` from your terminal; export both, or use the `sbx-*` scripts. |
 | Maven fails with `java.io.IOException: Input/output error` and `Failed to delete tracking file` | Maven 3.9.12 and later cannot keep their local repository on the Docker Desktop for Mac mount. Keep `MAVEN_VERSION` at 3.9.11. Before raising it, run a Maven build in a sandbox on the Mac by hand; no automatic check covers this. |
 | `up` fails with `... must be lowercase` and names `sbx-<name>-name-check` | `SBX_NAME` has an uppercase letter. Use the lowercase name; see the name rule in Requirements. |
-| `[sbx] ERROR: SBX_NAME "..." breaks the sandbox name rule` | Pick a name that follows the rule and rename the project folder to match. A sandbox named with `_` or `.` before this rule needs the same rename. |
-| `[sbx] ERROR: ... (the project folder) is missing` | Create it: `mkdir -p "$SBX_DIR/$SBX_NAME"`. Or `SBX_DIR` / `SBX_NAME` is mistyped. |
 | `claude --resume` shows nothing | Sessions are keyed by directory; start it from the same directory as before. |
-| A plain `docker run` is refused | Intended. Bypass the entrypoint, as in "Image-only smoke tests". |
-| The container stops right after `up` | Run `docker logs sbx-<name>`. The `[sbx] ERROR: start hook ... failed` line and the hook's own error above it say what broke. If the line says `is not executable`, the image lost the hook's execute bit; rebuild the image. If it says `is not a regular file`, a hook link in the image points nowhere (or something that is not a file sits in the hook folder); rebuild the image. |
-| `[sbx] ERROR: the GSD sync into ... failed` | The installer output above the line says why. Rebuild the image. A hand edit of a GSD file is kept in `state/claude/gsd-local-patches/`. |
-| A skill of yours named `gsd-...` is gone after a start | GSD owns that prefix. Rename the skill. |
+| A skill of yours named `gsd-...` is gone after `sbx-init` | GSD owns that prefix. Rename the skill. |
 | Claude refuses to edit a bundle skill under `~/.claude/skills` | Intended. Edit it in the clone by its real path (see "Best-practices bundle"). |
-| The start prints `no best-practices clone` | Run `sbx-gh-login`, then `sbx-bundle-clone`. |
-| `sbx-claude` or `sbx-cursor` prints the WARNING | Same. If the clone folder exists, relink it with `/etc/sbx/start.d/10-best-practices`. |
-| `sbx-bundle-clone` says the folder already exists | Pull it (`git -C /home/sandbox/workspace/best-practices pull`), or relink it with `/etc/sbx/start.d/10-best-practices`. Move the folder away to clone fresh. |
+| `sbx-bundle-clone` says the folder already exists | Pull it (`git -C /home/sandbox/workspace/best-practices pull`), or relink it with `sbx-init`. Move the folder away to clone fresh. |
 | `sbx-bundle-clone` says it cannot clone | Run `sbx-gh-login` first; the repo is private. |
-| A skill you pulled is missing in Claude | Restart, or run `/etc/sbx/start.d/10-best-practices`. |
+| A skill you pulled is missing in Claude | Run `sbx-init`, then restart Claude. |
 | A sandbox migrated from the old layout loads the same rules twice | Follow "After the checks" in [`MIGRATION.md`](MIGRATION.md). |
-| Host check H-10 showed Docker creating the missing folder | Report it. An `env_file` sentinel at the root of `SBX_DIR` would make Compose itself refuse a missing folder; it is not planned while H-10 passes, and the container refuses to start either way. |
+| Host check H-10 showed Docker creating the missing folder | Report it. An `env_file` sentinel at the root of `SBX_DIR` would make Compose itself refuse a missing folder; it is not planned while H-10 passes. |
 
 ## License
 
