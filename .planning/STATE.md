@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 9
 current_phase_name: sbx-init replaces the start hooks
 status: executing
-stopped_at: Completed 09-11-PLAN.md
-last_updated: "2026-11-16T17:13:51.603Z"
+stopped_at: Completed 09-12-PLAN.md
+last_updated: "2026-11-16T17:18:51.106Z"
 last_activity: 2026-11-16
 last_activity_desc: Phase 9 execution started
-state_head: da9297eebb3ec9aefcc80b01ca74e1be9e355160
+state_head: 88db1f41228aa8ded907cf55ec8eac4aef74bc7e
 progress:
   total_phases: 10
   completed_phases: 3
   total_plans: 40
-  completed_plans: 38
+  completed_plans: 39
   percent: 30
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 9 (sbx-init replaces the start hooks) — EXECUTING
-Plan: 12 of 13
+Plan: 13 of 13
 Status: Ready to execute
 Last activity: 2026-11-16 — Phase 9 execution started
 
@@ -196,6 +196,7 @@ Last activity: 2026-11-16 — Phase 9 execution started
 | Phase 09 P09 | 15min | 2 tasks | 22 files |
 | Phase 9 P10 | 10min | 3 tasks | 11 files |
 | Phase 09 P11 | 12min | 3 tasks | 5 files |
+| Phase 09 P12 | 25min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -389,6 +390,7 @@ Recent decisions affecting current work:
 - [Phase 09]: Tests that assert the absence of deleted start-path names stay in place; they prove the new shape
 - [Phase 9]: Host checklist rows for deleted H-12, H-17, H-20 are left to plan 09-12
 - [Phase 09]: H-16 clash assertion matches the FAIL line on state/claude/rules and skills/sbx-fixture-one (full paths init prints)
+- [Phase 09]: Docs (09-12): new text says best-practices; existing bundle wording stays in sections not rewritten
 
 ### Pending Todos
 
@@ -461,8 +463,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-16T17:13:51.524Z
-Stopped at: Completed 09-11-PLAN.md
+Last session: 2026-11-16T17:18:51.027Z
+Stopped at: Completed 09-12-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
