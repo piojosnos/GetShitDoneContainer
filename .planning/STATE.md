@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 9
 current_phase_name: sbx-init replaces the start hooks
 status: executing
-stopped_at: Phase 9 context gathered
-last_updated: "2026-11-16T07:36:43.635Z"
-last_activity: 2026-11-15
-last_activity_desc: Phase 08 complete, transitioned to Phase 9
-state_head: 47ac48cd2b4247ab48d476d292e5aa88514f93dd
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-11-16T16:47:43.060Z"
+last_activity: 2026-11-16
+last_activity_desc: Phase 9 execution started
+state_head: 6ad9267bdcc0909e2d8f5ad03f625bc774856c10
 progress:
   total_phases: 10
   completed_phases: 3
   total_plans: 40
-  completed_plans: 27
+  completed_plans: 28
   percent: 30
 ---
 
@@ -25,14 +25,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 08 — In-image self-check
+**Current focus:** Phase 9 — sbx-init replaces the start hooks
 
 ## Current Position
 
-Phase: 9 (sbx-init replaces the start hooks) — READY TO EXECUTE
-Plan: Not started
+Phase: 9 (sbx-init replaces the start hooks) — EXECUTING
+Plan: 2 of 13
 Status: Ready to execute
-Last activity: 2026-11-15 — Phase 08 complete, transitioned to Phase 9
+Last activity: 2026-11-16 — Phase 9 execution started
 
 ## Performance Metrics
 
@@ -185,6 +185,7 @@ Last activity: 2026-11-15 — Phase 08 complete, transitioned to Phase 9
 | Phase 08 P11 | 1h | 3 tasks | 3 files |
 | Phase 08 P12 | 20 min | 3 tasks | 6 files |
 | Phase 08 P13 | 10 min | 3 tasks | 5 files |
+| Phase 09 P01 | 25min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -364,6 +365,8 @@ Recent decisions affecting current work:
 - [Phase 08]: 08-12: CHECK_LIST must be a list of Check; any other shape is that file's load failure and none of its checks run
 - [Phase 08]: run_check validates the returned value with isinstance; a non-CheckResult is that check's own FAIL with the rebuild fix
 - [Phase 08]: scan_owned_state names a folder unreadable only on PermissionError at an entry stat; any other entry error surfaces as the runner's raised FAIL
+- [Phase 09]: sbx-init merges shared and agent step files and sorts them by file name (shared first on a tie), so the ownership step runs after the agent GSD sync
+- [Phase 09]: AGENT_STEPS_DIR lives in paths.py so tests can point every init path into a temp folder through one module
 
 ### Pending Todos
 
@@ -436,9 +439,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-16T05:23:29.883Z
-Stopped at: Phase 9 context gathered
-Resume file: .planning/phases/09-sbx-init-replaces-the-start-hooks/09-CONTEXT.md
+Last session: 2026-11-16T16:47:42.980Z
+Stopped at: Completed 09-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
