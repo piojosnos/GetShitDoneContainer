@@ -11,11 +11,11 @@ last_activity: 2026-11-15
 last_activity_desc: Phase 08 complete, transitioned to Phase 9
 state_head: c249ec7848b05160c6460681b3bfe9bdd7b63d30
 progress:
-  total_phases: 7
+  total_phases: 9
   completed_phases: 3
   total_plans: 27
   completed_plans: 27
-  percent: 43
+  percent: 33
 ---
 
 # Project State
@@ -408,6 +408,8 @@ None yet.
 - Phase 05.3 repurposed to Separate test images from prod images (host-test replaces the :local images the sandboxes run, found while discussing the cert tests); the cert tests move to the new Phase 05.4, one automatic host check that runs after 5.3
 - Phase 999.2 removed from the backlog: Retire the fake docker; fully covered by DIET-05 (Phase 6) and HOST-05 (Phase 10)
 - Phase 06.1 inserted after Phase 6: Cursor agent image: separate image, the sandbox picks claude or cursor
+- Phase 10.1 inserted after Phase 10: Full skills and best-practices support in Cursor
+- Phase 10.2 inserted after Phase 10.1: OpenCode agent image with full skills and best-practices support; may split into more phases
 
 ## Deferred Items
 
