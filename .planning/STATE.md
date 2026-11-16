@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 9
 current_phase_name: sbx-init replaces the start hooks
 status: executing
-stopped_at: Completed 09-07-PLAN.md
-last_updated: "2026-11-16T17:06:00.793Z"
+stopped_at: Completed 09-09-PLAN.md
+last_updated: "2026-11-16T17:08:22.366Z"
 last_activity: 2026-11-16
 last_activity_desc: Phase 9 execution started
-state_head: 69fe1ca05aa0e904f628dab69f8283cf9298a6e7
+state_head: 27a9fd30ed9dcd88a2ebac4703ce28c66e04f295
 progress:
   total_phases: 10
   completed_phases: 3
   total_plans: 40
-  completed_plans: 35
+  completed_plans: 36
   percent: 30
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 9 (sbx-init replaces the start hooks) — EXECUTING
-Plan: 9 of 13
+Plan: 10 of 13
 Status: Ready to execute
 Last activity: 2026-11-16 — Phase 9 execution started
 
@@ -193,6 +193,7 @@ Last activity: 2026-11-16 — Phase 9 execution started
 | Phase 09 P05 | 10min | 3 tasks | 10 files |
 | Phase 09 P06 | 15min | 3 tasks | 7 files |
 | Phase 09 P07 | 20min | 3 tasks | 9 files |
+| Phase 09 P09 | 15min | 2 tasks | 22 files |
 
 ## Accumulated Context
 
@@ -383,6 +384,7 @@ Recent decisions affecting current work:
 - [Phase 09]: Plan 06: the two agent wrappers are one script apart from agent names; marker test is -f so a folder counts as missing
 - [Phase 09]: Claude Code stays installed with npm install -g into /usr/local; only its link moves to /opt/sbx/agents/bin so the npmrc cafile still applies
 - [Phase 09]: The base image makes /opt/sbx/agents/bin and lists /opt/sbx/agents in its roots; agent images only add their link
+- [Phase 09]: Tests that assert the absence of deleted start-path names stay in place; they prove the new shape
 
 ### Pending Todos
 
@@ -455,8 +457,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-16T17:06:00.687Z
-Stopped at: Completed 09-07-PLAN.md
+Last session: 2026-11-16T17:08:22.283Z
+Stopped at: Completed 09-09-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
