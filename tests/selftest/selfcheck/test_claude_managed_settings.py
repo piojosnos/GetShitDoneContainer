@@ -26,14 +26,14 @@ def write_managed_settings(settings_file: Path, directory_list: list[str], deny_
 
 
 def deny_entry_list(config_dir: Path) -> list[str]:
-    return [f"Edit(/{config_dir}/.best-practices-skills)", f"Edit(/{config_dir}/skills/**)"]
+    return [f"Edit(/{config_dir}/skills/**)"]
 
 
 # ------------------------------------------------------------------------------
 # Managed settings
 # ------------------------------------------------------------------------------
 
-def test_managed_settings_result_passes_for_the_clone_and_the_two_deny_entries(tmp_path):
+def test_managed_settings_result_passes_for_the_clone_and_the_one_deny_entry(tmp_path):
     config1 = tmp_path / "state1" / "agent1"
     settings1 = write_managed_settings(tmp_path / "settings1.json", [str(tmp_path / "clone1")], deny_entry_list(config1))
 
@@ -46,7 +46,7 @@ def test_managed_settings_result_fails_for_an_extra_or_missing_deny_entry(tmp_pa
     config1 = tmp_path / "state1" / "agent1"
     clone1 = tmp_path / "clone1"
     extra1 = write_managed_settings(tmp_path / "extra1.json", [str(clone1)], deny_entry_list(config1) + ["Edit(//x)"])
-    short1 = write_managed_settings(tmp_path / "short1.json", [str(clone1)], deny_entry_list(config1)[:1])
+    short1 = write_managed_settings(tmp_path / "short1.json", [str(clone1)], [])
 
     assert not managed_settings.managed_settings_result(extra1, clone1, config1).passed
     assert not managed_settings.managed_settings_result(short1, clone1, config1).passed

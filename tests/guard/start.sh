@@ -40,6 +40,33 @@ container_runs_no_entrypoint() {
 }
 
 # ------------------------------------------------------------------------------
+# agents_stay_off_the_path: only the wrappers start an agent
+# ------------------------------------------------------------------------------
+# The agents live in /opt/sbx/agents/bin so only their wrappers start them; a
+# link back into /usr/local/bin would let a plain shell run an uninitialised agent.
+# ------------------------------------------------------------------------------
+agents_stay_off_the_path() {
+  local ok=0
+
+  if ! grep -Fq '/opt/sbx/agents/bin/claude --version' $CLAUDE || ! grep -Fq '! command -v claude' $CLAUDE; then
+    echo "    $CLAUDE has no smoke test that runs claude from /opt/sbx/agents/bin and fails when it is on the PATH"
+    ok=1
+  fi
+
+  if ! grep -Fq '/opt/sbx/agents/bin/cursor-agent --version' $CURSOR || ! grep -Fq '! command -v cursor-agent' $CURSOR; then
+    echo "    $CURSOR has no smoke test that runs cursor-agent from /opt/sbx/agents/bin and fails when it is on the PATH"
+    ok=1
+  fi
+
+  if ! nowhere_matches 'ln -s [^ ]+ /usr/local/bin/(claude|cursor-agent)' $CLAUDE $CURSOR; then
+    echo "    an agent Dockerfile links its agent into /usr/local/bin"
+    ok=1
+  fi
+
+  return "$ok"
+}
+
+# ------------------------------------------------------------------------------
 # compose_image_follows_agent_and_tag: the agent and the tag pick the image
 # ------------------------------------------------------------------------------
 # compose.yml falls back to claude and local when a variable is unset, so a lost
@@ -94,4 +121,5 @@ require_no_arguments "$@" || exit 2
 enter_repo_root || exit 1
 run_rules \
   container_runs_no_entrypoint \
+  agents_stay_off_the_path \
   compose_image_follows_agent_and_tag || exit 1

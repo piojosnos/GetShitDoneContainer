@@ -53,7 +53,7 @@ def managed_settings_result(
         permissions_map = settings_map["permissions"]
 
     expected_directory_list = [str(bundle_dir)]
-    expected_deny_list = sorted([f"Edit(/{config_dir}/.best-practices-skills)", f"Edit(/{config_dir}/skills/**)"])
+    expected_deny_list = [f"Edit(/{config_dir}/skills/**)"]
     problem_list = []
 
     if _sorted_text_list(permissions_map.get("additionalDirectories")) != expected_directory_list:
@@ -67,7 +67,7 @@ def managed_settings_result(
     return problem_list_result(
         problem_list,
         rebuild_hint(),
-        f"{settings_file} names {bundle_dir} and denies edits of the skill list and the skills",
+        f"{settings_file} names {bundle_dir} and denies edits of the skills",
     )
 
 

@@ -4,7 +4,6 @@
       "/home/sandbox/workspace/best-practices"
     ],
     "deny": [
-      "Edit(//home/sandbox/workspace/state/claude/.best-practices-skills)",
       "Edit(//home/sandbox/workspace/state/claude/skills/**)"
     ]
   }

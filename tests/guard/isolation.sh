@@ -50,20 +50,17 @@ host_scripts_keep_sandbox_data() {
 # ------------------------------------------------------------------------------
 # managed_settings_deny_skill_edits: the managed settings deny Edit on the synced skills
 # ------------------------------------------------------------------------------
-# sbx-selfcheck reads the same two entries in the image (host check H-34).
+# sbx-selfcheck reads the same entry in the image (host check H-34).
 # ------------------------------------------------------------------------------
 managed_settings_deny_skill_edits() {
-  local ok=0
-  local denyEntry
+  local denyEntry='Edit(//home/sandbox/workspace/state/claude/skills/**)'
 
-  for denyEntry in 'Edit(//home/sandbox/workspace/state/claude/.best-practices-skills)' 'Edit(//home/sandbox/workspace/state/claude/skills/**)'; do
-    if ! grep -Fq "\"$denyEntry\"" claude/managed-settings.json; then
-      echo "    claude/managed-settings.json has no deny entry $denyEntry"
-      ok=1
-    fi
-  done
+  if ! grep -Fq "\"$denyEntry\"" claude/managed-settings.json; then
+    echo "    claude/managed-settings.json has no deny entry $denyEntry"
+    return 1
+  fi
 
-  return "$ok"
+  return 0
 }
 
 # ------------------------------------------------------------------------------
