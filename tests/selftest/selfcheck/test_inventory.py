@@ -21,7 +21,7 @@ from helpers import SHARED_CHECKS_DIR, agent_checks_dir
 
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 NAME_FILE_PATTERN = re.compile(r"^[0-9]{3}_[a-z0-9_]+\.py$")
-SHARED_CHECK_COUNT = 41
+SHARED_CHECK_COUNT = 42
 CLAUDE_CHECK_COUNT = 12
 CURSOR_CHECK_COUNT = 10
 
@@ -100,6 +100,7 @@ def test_the_shared_list_holds_the_checks_in_file_name_order(shared_check_list, 
         "project-folder",
         "state-folders",
         "state-writable",
+        "init-marker",
         "no-root-owned-state",
         "user-sandbox",
         "home-layout",
