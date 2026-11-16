@@ -92,6 +92,7 @@ check_stop_before_start() {
 check_start() {
   local mountSource
   local projectLabel
+  local entrypointJson
 
   printf '%s\n' "$sentinelText" >"$sbxDir/hosttest/h28-sentinel.txt"
   printf '%s\n' "$sentinelText" >"$sbxDir/state/h28-sentinel.txt"
@@ -122,8 +123,10 @@ check_start() {
     add_problem "the Compose project is '$projectLabel', not sbx-hosttest; the exported COMPOSE_PROJECT_NAME was not ignored"
   fi
 
-  if ! docker exec "$CONTAINER" pgrep -x sleep >/dev/null 2>&1 </dev/null; then
-    add_problem "the start hooks of $CONTAINER are not done after sbx-start returned"
+  entrypointJson=$(sandbox_field '{{json .Config.Entrypoint}}')
+
+  if [ "$entrypointJson" != "null" ] && [ "$entrypointJson" != "[]" ]; then
+    add_problem "$CONTAINER has the entrypoint '$entrypointJson'; the image must have none"
   fi
 
   if [ "$(in_container cat /home/sandbox/workspace/hosttest/h28-sentinel.txt)" != "$sentinelText" ]; then
