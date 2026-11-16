@@ -9,18 +9,16 @@ import json
 from pathlib import Path
 
 from check_result import Check, CheckResult, failed, passed
-from cursor_shared import CONFIG_DIR
-from hints import restart_hint
-
-_CLI_CONFIG_FILE = CONFIG_DIR / "cli-config.json"
+from cursor_shared import CLI_CONFIG_FILE
+from hints import init_hint
 
 
 # ------------------------------------------------------------------------------
 # Self-update
 # ------------------------------------------------------------------------------
 
-def self_update_result(config_file: Path = _CLI_CONFIG_FILE) -> CheckResult:
-    hint = restart_hint() + "; the start sets the static channel"
+def self_update_result(config_file: Path = CLI_CONFIG_FILE) -> CheckResult:
+    hint = init_hint()
 
     try:
         config_map = json.loads(config_file.read_text())
