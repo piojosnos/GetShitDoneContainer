@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Docker-based sandbox for running AI coding agents (Claude Code today, OpenCode next, others later) plus GSD on a macOS laptop without installing those agents on the host. Each project gets its own container that can only see one bind-mounted host folder, so the agent can't touch the rest of the laptop. The code stays a regular folder on the Mac, so any host IDE can open it directly. Small shell scripts (`cc-up`, `cc-bash`, `cc-down`, …) drive the container lifecycle.
+A Docker-based sandbox for running AI coding agents (Claude Code and Cursor today, others later) plus GSD on a macOS laptop without installing those agents on the host. Each project gets its own container that can only see one bind-mounted host folder, so the agent can't touch the rest of the laptop. The code stays a regular folder on the Mac, so any host IDE can open it directly. Small `sbx-*` commands (`sbx-add`, `sbx-start`, `sbx-shell`, `sbx-stop`, `sbx-upgrade`, ...) drive the sandbox lifecycle, and `sbx-selfcheck` inside the image says whether a sandbox is set up right.
 
 ## Core Value
 
