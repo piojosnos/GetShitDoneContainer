@@ -165,7 +165,7 @@ RUN git config --system safe.directory '*'
 # ------------------------------------------------------------------------------
 # Per-shell settings as image ENV
 # ------------------------------------------------------------------------------
-# docker exec shells never run the entrypoint, so they get these from ENV.
+# Every shell, docker exec ones included, gets these from ENV.
 # GIT_CONFIG_GLOBAL points into a folder: git replaces the file by rename.
 # ------------------------------------------------------------------------------
 ENV HISTFILE=/home/sandbox/workspace/state/shell/bash_history \
@@ -180,30 +180,11 @@ ENV HISTFILE=/home/sandbox/workspace/state/shell/bash_history \
     LANG=C.UTF-8
 
 # ------------------------------------------------------------------------------
-# The entrypoint and its library
-# ------------------------------------------------------------------------------
-# Copied as root: the script is mode 755, the library it sources is 644. The
-# library sits in /usr/local/lib/sbx, so /usr/local/bin holds only commands.
-# ------------------------------------------------------------------------------
-COPY base/sbx-entrypoint /usr/local/bin/sbx-entrypoint
-COPY base/sbx-start-lib.sh /usr/local/lib/sbx/sbx-start-lib.sh
-RUN chmod 755 /usr/local/bin/sbx-entrypoint /usr/local/lib/sbx \
-    && chmod 644 /usr/local/lib/sbx/sbx-start-lib.sh
-
-# ------------------------------------------------------------------------------
-# The start hooks folder
-# ------------------------------------------------------------------------------
-# The entrypoint runs these in name order at start; a bad entry stops the start.
-# Agent images add theirs.
-# ------------------------------------------------------------------------------
-RUN mkdir -p /etc/sbx/start.d
-
-# ------------------------------------------------------------------------------
 # GSD from @opengsd/gsd-core at the exact pin
 # ------------------------------------------------------------------------------
-# Every agent image syncs it into its config folder at each start (its 05-gsd
-# hook), so the image's GSD wins. Late in this file, so a GSD bump rebuilds
-# only the layers below it.
+# sbx-init syncs it into the agent's config folder (its GSD step), so the
+# image's GSD wins. Late in this file, so a GSD bump rebuilds only the layers
+# below it.
 # ------------------------------------------------------------------------------
 ARG GSD_CORE_VERSION
 RUN : "${GSD_CORE_VERSION:?GSD_CORE_VERSION is not set; build with ./build.sh}" \
@@ -214,8 +195,8 @@ RUN : "${GSD_CORE_VERSION:?GSD_CORE_VERSION is not set; build with ./build.sh}" 
 # ------------------------------------------------------------------------------
 # Best-practices clone settings
 # ------------------------------------------------------------------------------
-# SBX_BUNDLE_DIR is where a sandbox keeps its clone of BUNDLE_REPO_URL; every
-# agent links it at start.
+# SBX_BUNDLE_DIR is where a sandbox keeps its clone of BUNDLE_REPO_URL;
+# sbx-init links the clone.
 # ------------------------------------------------------------------------------
 ARG BUNDLE_REPO_URL
 RUN : "${BUNDLE_REPO_URL:?BUNDLE_REPO_URL is not set; build with ./build.sh}"
@@ -223,7 +204,7 @@ ENV SBX_BUNDLE_DIR=/home/sandbox/workspace/best-practices \
     BUNDLE_REPO_URL=${BUNDLE_REPO_URL}
 
 # ------------------------------------------------------------------------------
-# Shared helpers: sbx-gh-login, sbx-bundle-clone and the bundle linker
+# Shared helpers: sbx-gh-login and sbx-bundle-clone
 # ------------------------------------------------------------------------------
 # Copied as root into /usr/local/bin, mode 755, so the sandbox user cannot
 # change them. Same paths for every agent.
@@ -262,6 +243,20 @@ RUN ln -s /usr/local/lib/sbx-selfcheck/sbx-selfcheck /usr/local/bin/sbx-selfchec
     && rm -rf /tmp/sbx-pycache
 
 # ------------------------------------------------------------------------------
+# sbx-init: the runner, its libraries and the shared steps
+# ------------------------------------------------------------------------------
+# Root-owned and read-only to the sandbox user. Each agent image adds its steps
+# folder to /etc/sbx/init.d. A syntax error in any file stops the build here.
+# ------------------------------------------------------------------------------
+RUN mkdir -p /usr/local/lib/sbx-init/steps /etc/sbx/init.d /opt/sbx/agents/bin
+COPY --chmod=755 base/init/sbx-init /usr/local/lib/sbx-init/sbx-init
+COPY --chmod=644 base/init/*.py /usr/local/lib/sbx-init/
+COPY --chmod=644 base/init/steps/*.py /usr/local/lib/sbx-init/steps/
+RUN ln -s /usr/local/lib/sbx-init/sbx-init /usr/local/bin/sbx-init \
+    && PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /usr/local/lib/sbx-init/sbx-init /usr/local/lib/sbx-init/*.py /usr/local/lib/sbx-init/steps/*.py \
+    && rm -rf /tmp/sbx-pycache
+
+# ------------------------------------------------------------------------------
 # Home folders: the empty mount target and ~/.local/state
 # ------------------------------------------------------------------------------
 # Build time, so no mount exists yet. ~/.m2 links into state/m2: Maven has no
@@ -288,5 +283,4 @@ RUN test "$(node -v)" = "v${NODE_VERSION}" \
     && { test -z "$(ls -A /home/sandbox/workspace)" || { echo "Files under the mount point:"; find /home/sandbox/workspace; exit 1; }; }
 
 WORKDIR /home/sandbox/workspace
-ENTRYPOINT ["/usr/local/bin/sbx-entrypoint"]
 CMD ["bash"]
