@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 9
 current_phase_name: sbx-init replaces the start hooks
 status: executing
-stopped_at: Completed 09-05-PLAN.md
-last_updated: "2026-11-16T17:00:50.074Z"
+stopped_at: Completed 09-06-PLAN.md
+last_updated: "2026-11-16T17:02:53.631Z"
 last_activity: 2026-11-16
 last_activity_desc: Phase 9 execution started
-state_head: b031d384e7fdba40949c033c34bb77cde52b192a
+state_head: cb5a0513d1bb36728500a4bf24a38a1a21fef2c4
 progress:
   total_phases: 10
   completed_phases: 3
   total_plans: 40
-  completed_plans: 33
+  completed_plans: 34
   percent: 30
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 9 (sbx-init replaces the start hooks) — EXECUTING
-Plan: 7 of 13
+Plan: 8 of 13
 Status: Ready to execute
 Last activity: 2026-11-16 — Phase 9 execution started
 
@@ -191,6 +191,7 @@ Last activity: 2026-11-16 — Phase 9 execution started
 | Phase 09 P03 | 25min | 2 tasks | 8 files |
 | Phase 09 P04 | 20min | 3 tasks | 6 files |
 | Phase 09 P05 | 10min | 3 tasks | 10 files |
+| Phase 09 P06 | 15min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -378,6 +379,7 @@ Recent decisions affecting current work:
 - [Phase 09]: Plan 03: state-owner step scans and gives back in up to three rounds, with a final scan reporting any path still owned; the scan, skip set and Mac fix live in root_owned_scan.py shared with the self-check
 - [Phase 09]: Best-practices links: init's own links are recognised only by where they point; a clash is left, named and fails the step after every other skill is linked
 - [Phase 09]: off_path_result removes the agents folder from PATH before searching, so the check is right when run inside an agent session
+- [Phase 09]: Plan 06: the two agent wrappers are one script apart from agent names; marker test is -f so a folder counts as missing
 
 ### Pending Todos
 
@@ -450,8 +452,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-16T17:00:49.991Z
-Stopped at: Completed 09-05-PLAN.md
+Last session: 2026-11-16T17:02:53.546Z
+Stopped at: Completed 09-06-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
