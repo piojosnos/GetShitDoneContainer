@@ -4,18 +4,18 @@ milestone: v2.0
 milestone_name: Simple tooling
 current_phase: 9
 current_phase_name: sbx-init replaces the start hooks
-status: planning
+status: executing
 stopped_at: Phase 9 context gathered
-last_updated: "2026-11-16T05:23:29.957Z"
+last_updated: "2026-11-16T07:36:43.635Z"
 last_activity: 2026-11-15
 last_activity_desc: Phase 08 complete, transitioned to Phase 9
-state_head: c249ec7848b05160c6460681b3bfe9bdd7b63d30
+state_head: 47ac48cd2b4247ab48d476d292e5aa88514f93dd
 progress:
-  total_phases: 9
+  total_phases: 10
   completed_phases: 3
-  total_plans: 27
+  total_plans: 40
   completed_plans: 27
-  percent: 33
+  percent: 30
 ---
 
 # Project State
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 
 ## Current Position
 
-Phase: 9 — sbx-init replaces the start hooks
+Phase: 9 (sbx-init replaces the start hooks) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
+Status: Ready to execute
 Last activity: 2026-11-15 — Phase 08 complete, transitioned to Phase 9
 
 ## Performance Metrics
@@ -410,6 +410,7 @@ None yet.
 - Phase 06.1 inserted after Phase 6: Cursor agent image: separate image, the sandbox picks claude or cursor
 - Phase 10.1 inserted after Phase 10: Full skills and best-practices support in Cursor
 - Phase 10.2 inserted after Phase 10.1: OpenCode agent image with full skills and best-practices support; may split into more phases
+- Phase 9.1 inserted after Phase 9: Align vocabulary: one set of terms (best-practices, not bundle) across code, tests and docs
 
 ## Deferred Items
 

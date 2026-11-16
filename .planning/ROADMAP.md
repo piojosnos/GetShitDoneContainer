@@ -39,6 +39,7 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
 - [x] **Phase 7: Separate test images**: a test run builds and checks its own image tags and never replaces the images the sandboxes run (completed 2026-11-14)
 - [x] **Phase 8: In-image self-check**: `sbx-selfcheck` in the image checks the sandbox, replaces most host probes and doubles as the doctor (completed 2026-11-15)
 - [ ] **Phase 9: sbx-init replaces the start hooks**: the user runs `sbx-init` to sync GSD and link the bundle; a container start runs no hooks
+- [ ] **Phase 09.1: Align vocabulary** (INSERTED): code, tests and docs use one set of terms; best-practices, never bundle
 - [ ] **Phase 10: Host side to Python**: the Mac commands and host tests are Python run through `uv`, with one JSON registry file per sandbox
 - [ ] **Phase 10.1: Full skills and best-practices support in Cursor** (INSERTED): the bundle's rules and skills work in Cursor as they do in Claude
 - [ ] **Phase 10.2: OpenCode agent image** (INSERTED): a third agent image with full skills and best-practices support; may split into more phases
@@ -191,6 +192,42 @@ Gap closure, from the phase verification (the `no-root-owned-state` fix line can
   3. `sbx-claude` and `sbx-cursor` in a container where init has not run fail at once with a message to run `sbx-init`; they neither wait nor run init. `claude` and `cursor-agent` are not on a plain shell's PATH.
   4. A user skill with the same name as a bundle skill is still there after `sbx-init`, which reports the clash as a FAIL; init removes only its own links into the bundle.
   5. After `sbx-init` on the Mac, every file in `state/claude` is owned by `sandbox`, not root, and `./host-test.sh` passes.
+
+**Plans**: 13 plans
+
+Plans:
+**Wave 1**
+- [ ] 09-01-PLAN.md: `sbx-init` launcher and runner (tracer), run lock, init marker and the state folders step (wave 1)
+- [ ] 09-08-PLAN.md: the host lib owns the sandbox name rule; the readiness poll goes (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 09-02-PLAN.md: the GSD sync step for both agents and Cursor's static channel step (wave 2)
+- [ ] 09-03-PLAN.md: the state-owner step and one shared root-owned scan; the self-check stops tolerating root-owned GSD files (wave 2)
+- [ ] 09-04-PLAN.md: the best-practices links step that never touches a user skill, and the check without the list file (wave 2)
+- [ ] 09-05-PLAN.md: self-check `init-marker`, `claude-off-path` and `cursor-off-path`; counts 55 and 53 (wave 2)
+- [ ] 09-06-PLAN.md: `sbx-claude` and `sbx-cursor` refuse until init passed; `sbx-bundle-clone` runs `sbx-init`; `sbx-gh-login` precondition (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 09-07-PLAN.md: images without an entrypoint, `sbx-init` installed, agents in `/opt/sbx/agents/bin`, image roots, step inventory (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 09-09-PLAN.md: the entrypoint, start library, start hooks, bash linker and entrypoint self-test deleted; two new guard rules (wave 4)
+- [ ] 09-10-PLAN.md: `compose_up` and H-34 run `sbx-init`; H-12, H-17 and H-20 go; hook waits removed from H-28, H-29 and H-31 (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 09-11-PLAN.md: H-27 and H-16 rewritten for the first run and the clash rule; new H-35 for ownership and the lock (wave 5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 09-12-PLAN.md: README, MIGRATION, ZSCALER, the memory prompt and the test docs follow the new start (wave 6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 09-13-PLAN.md: dev-sandbox phase gate, then the Mac run of `./host-test.sh` (wave 7, checkpoint)
+
+### Phase 09.1: Align vocabulary across code and docs (INSERTED)
+
+**Goal**: Code, tests and docs use one set of terms. The user's rules and skills repo is called best-practices everywhere, never bundle, and any other inconsistent names the sweep finds are fixed.
+**Requirements**: TBD
+**Depends on**: Phase 9
 
 **Plans**: TBD
 
