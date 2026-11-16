@@ -6,6 +6,7 @@
 # ------------------------------------------------------------------------------
 
 import os
+import re
 import subprocess
 import time
 from pathlib import Path
@@ -17,8 +18,9 @@ from init_helpers import REPO_DIR, write_stand_in
 
 WRAPPER_CASE_LIST = [
     ("claude", "claude/bin/sbx-claude", "sbx-claude"),
+    ("cursor-agent", "cursor/bin/sbx-cursor", "sbx-cursor"),
 ]
-WRAPPER_IDS = ["claude"]
+WRAPPER_IDS = ["claude", "cursor"]
 STAND_IN_BODY = """{
   echo "args=$*"
   echo "command=$(command -v AGENT)"
@@ -87,6 +89,18 @@ def test_without_the_marker_the_wrapper_refuses_at_once_and_never_starts_the_age
     assert time.monotonic() - started < 2
 
 
+@pytest.mark.parametrize("agent_name,script_path,wrapper_name", WRAPPER_CASE_LIST, ids=WRAPPER_IDS)
+def test_a_marker_that_is_a_folder_counts_as_missing(tmp_path, agent_name, script_path, wrapper_name):
+    sandbox = make_sandbox(tmp_path, agent_name)
+    sandbox["marker_file"].mkdir()
+
+    result = run_wrapper(script_path, sandbox, [])
+
+    assert result.returncode == 1
+    assert "has not passed" in result.stderr
+    assert not sandbox["record_file"].exists()
+
+
 # ------------------------------------------------------------------------------
 # With the marker: exec the agent from the agents folder
 # ------------------------------------------------------------------------------
@@ -107,3 +121,39 @@ def test_with_the_marker_the_agent_runs_from_the_agents_folder_with_every_argume
     assert record_line_list[0] == "args=--version a1"
     assert record_line_list[1] == f"command={agent_bin_text}/{agent_name}"
     assert record_line_list[2].startswith(f"path={agent_bin_text}{os.pathsep}")
+
+
+# ------------------------------------------------------------------------------
+# Neither wrapper warns, pauses or tests for a clone
+# ------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("agent_name,script_path,wrapper_name", WRAPPER_CASE_LIST, ids=WRAPPER_IDS)
+def test_the_wrapper_holds_no_sleep_warning_or_clone_test(agent_name, script_path, wrapper_name):
+    script_text = (REPO_DIR / script_path).read_text()
+
+    for forbidden_text in ["sleep", "WARNING", "SBX_BUNDLE_DIR", "best-practices-skills"]:
+        assert forbidden_text not in script_text
+
+
+# ------------------------------------------------------------------------------
+# The shell literals equal the Python paths
+# ------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("agent_name,script_path,wrapper_name", WRAPPER_CASE_LIST, ids=WRAPPER_IDS)
+def test_the_default_marker_and_agents_folder_equal_the_python_paths(agent_name, script_path, wrapper_name):
+    assert default_text(script_path, "initMarker") == str(paths.INIT_MARKER_FILE)
+    assert default_text(script_path, "agentBinDir") == str(paths.AGENT_BIN_DIR)
+
+
+# ------------------------------------------------------------------------------
+# Symmetry
+# ------------------------------------------------------------------------------
+
+def test_the_two_wrappers_are_the_same_script_apart_from_the_agent_names():
+    claude_text = (REPO_DIR / "claude/bin/sbx-claude").read_text()
+    cursor_text = (REPO_DIR / "cursor/bin/sbx-cursor").read_text()
+
+    claude_text = claude_text.replace("cursor-agent", "AGENT").replace("claude", "AGENT").replace("Claude", "AGENT")
+    cursor_text = cursor_text.replace("cursor-agent", "AGENT").replace("cursor", "AGENT").replace("Cursor", "AGENT")
+
+    assert claude_text == cursor_text
