@@ -1,14 +1,14 @@
 # ------------------------------------------------------------------------------
 # What an agent keeps in its config folder
 # ------------------------------------------------------------------------------
-# The login file and the GSD copy the start syncs. The image puts this file in
+# The login file and the GSD copy sbx-init syncs. The image puts this file in
 # /usr/local/lib/sbx-selfcheck/.
 # ------------------------------------------------------------------------------
 
 from pathlib import Path
 
 from check_result import CheckResult, failed, passed
-from hints import restart_hint
+from hints import init_hint
 from paths import VERSIONS_FILE
 from pins import pin_map_or_missing
 
@@ -36,7 +36,7 @@ def gsd_synced_result(config_dir: Path, versions_file: Path = VERSIONS_FILE) -> 
 
     pinned_version = pin_map["GSD_CORE_VERSION"]
     version_file = config_dir / "gsd-core" / "VERSION"
-    hint = restart_hint() + "; the start syncs GSD"
+    hint = init_hint()
 
     if not version_file.is_file():
         return failed(f"{version_file} is missing; the image has '{pinned_version}'", hint)
