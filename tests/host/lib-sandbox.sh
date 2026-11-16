@@ -138,46 +138,10 @@ run_timeout() {
 }
 
 # ------------------------------------------------------------------------------
-# wait_for_start_hooks: returns 0 once every start hook has finished, else 1
+# compose_up: starts the test sandbox and runs sbx-init in it
 # ------------------------------------------------------------------------------
-# The entrypoint execs sleep after the last hook, so a running sleep means done.
-# SBXTEST_START_SECONDS (optional, default 120) sets how long this waits.
-# ------------------------------------------------------------------------------
-wait_for_start_hooks() {
-  local limitSeconds=${SBXTEST_START_SECONDS:-120}
-  local waitedSeconds=0
-  local running
-
-  case "$limitSeconds" in
-    ''|*[!0-9]*) limitSeconds=120 ;;
-  esac
-
-  while [ "$waitedSeconds" -lt "$limitSeconds" ]; do
-    if docker exec "$CONTAINER" pgrep -x sleep >/dev/null 2>&1 </dev/null; then
-      return 0
-    fi
-
-    running=$(docker container inspect --format '{{.State.Running}}' "$CONTAINER" 2>/dev/null </dev/null)
-
-    if [ "$running" != "true" ]; then
-      printf 'The test sandbox stopped during its start; docker logs %s shows why.\n' "$CONTAINER"
-
-      return 1
-    fi
-
-    sleep 1
-    waitedSeconds=$((waitedSeconds + 1))
-  done
-
-  printf 'The start hooks of the test sandbox did not finish within %s s.\n' "$limitSeconds"
-
-  return 1
-}
-
-# ------------------------------------------------------------------------------
-# compose_up: starts the test sandbox and waits for its start hooks
-# ------------------------------------------------------------------------------
-# Log: RUN/logs/compose-up.log. Returns the exit code of the failing step.
+# Log: RUN/logs/compose-up.log. Returns the exit code of a failed compose up, 1
+# when sbx-init fails.
 # ------------------------------------------------------------------------------
 compose_up() {
   local logFile exitCode
@@ -194,8 +158,11 @@ compose_up() {
     return "$exitCode"
   fi
 
-  if ! wait_for_start_hooks >>"$logFile" 2>&1; then
-    printf 'the start hooks did not finish; last lines of %s:\n' "$logFile"
+  run_timeout 600 docker exec "$CONTAINER" sbx-init </dev/null >>"$logFile" 2>&1
+  exitCode=$?
+
+  if [ "$exitCode" -ne 0 ]; then
+    printf 'sbx-init failed in the test sandbox (exit %s); last lines of %s:\n' "$exitCode" "$logFile"
     print_log_tail "$logFile"
 
     return 1
@@ -255,7 +222,7 @@ sandbox_mount_source() {
 # assert_test_sandbox: for cleanup; true only for the labelled test sandbox
 # ------------------------------------------------------------------------------
 # Needs label sbx.name=hosttest; the mount or its parent is sbx-hosttest-*.
-# Loose: also accepts an earlier run's sandbox and what H-10 and H-20 leave.
+# Loose: also accepts an earlier run's sandbox and what H-10 leaves.
 # ------------------------------------------------------------------------------
 assert_test_sandbox() {
   local label mountSource
