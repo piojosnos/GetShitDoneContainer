@@ -1,307 +1,170 @@
 ---
-last_mapped_commit: 304f80d1a0705d9ab668ef2ed4acd9fcf65060ac
-last_mapped_at: 2026-09-30
+last_mapped_commit: 031448ea8249fe34f6bd172818ba1c2807eaed35
+last_mapped_at: 2026-11-16
 ---
 # Codebase Concerns
 
-**Analysis Date:** 2026-09-30
+**Analysis Date:** 2026-11-16
 
 ## Tech Debt
 
-### Floating Docker Image Tags
+**Bundle hook atomicity and verification:**
+- Issue: The best-practices bundle linking process in `claude/start.d/10-best-practices` is not atomic. Files are processed sequentially; if an error occurs midway (via `set -e`), the start stops with partial state: some skill links created, others missing, and the skill list incomplete.
+- Files: `base/bin/sbx-link-bundle:50-111`, `tests/selftest/entrypoint/bundle-hook.sh`
+- Impact: A dangling skill link remains in `state/claude/skills` permanently; the next start does not remove unlisted links because the old links were never listed.
+- Fix approach: Build the skill list in a temporary file written at the end, and verify the clone directory before making any changes. Create new links first, then remove only the old names no longer in the clone. Reference: `.planning/todos/pending/2026-10-24-bundle-hook-atomic-and-verified.md`
+- Resolves: Phase 9 (`sbx-init replaces the start hooks`)
 
-**Issue:** Both `ClaudeCode/Dockerfile` and `OpenCode/Dockerfile` use `FROM ubuntu:latest` without version pinning.
+**Silent deletion of user skills in bundle linking:**
+- Issue: When a bundle skill and a user's own skill share the same name, the hook silently deletes the user's skill with no warning or backup.
+- Files: `base/bin/sbx-link-bundle:109-110`, `claude/start.d/10-best-practices`
+- Impact: A user's customized or personal skill folder is removed at every start; `SANDBOX.md` promises user skills are never touched.
+- Fix approach: Check whether each target is a symlink before removing it. If a real folder exists with that name, refuse the relink with an error message pointing the user to move it or rename the bundle skill.
+- Resolves: Phase 9 (`sbx-init replaces the start hooks`)
 
-**Files:** 
-- `ClaudeCode/Dockerfile:1`
-- `OpenCode/Dockerfile:1`
-
-**Impact:** 
-- Builds created at different times will have different base OS versions
-- No reproducible builds across team members or CI/CD environments
-- Security patches or breaking changes in Ubuntu could silently affect production containers
-
-**Fix approach:** Pin to a specific Ubuntu version (e.g., `ubuntu:22.04` or `ubuntu:24.04`) with clear documentation of why that version was chosen and a schedule for upgrades.
-
-### Unversioned Package Installation
-
-**Issue:** Both Dockerfiles install packages without version pinning:
-- `ClaudeCode/Dockerfile:9` - `apt-get install -y curl ca-certificates git wget gpg`
-- `OpenCode/Dockerfile:9` - `apt-get install -y curl nodejs npm`
-
-**Files:**
-- `ClaudeCode/Dockerfile:9`
-- `OpenCode/Dockerfile:9`
-
-**Impact:**
-- APT upgrades could introduce breaking changes or security vulnerabilities
-- Inconsistent behavior across different build times
-- Difficult to debug version-specific issues
-
-**Fix approach:** Pin critical packages to specific versions using `apt-get install -y package=version` syntax. At minimum, pin Node.js version in OpenCode.
-
-### Internet-Sourced Install Scripts Without Checksums
-
-**Issue:** Both Dockerfiles download and execute shell scripts directly from the internet without signature verification:
-- `ClaudeCode/Dockerfile:38` - `curl -fsSL https://claude.ai/install.sh | bash`
-- `ClaudeCode/Dockerfile:11` - `curl -fsSL https://deb.nodesource.com/setup_20.x | bash`
-- `OpenCode/docker-entrypoint.sh:14` - `curl -fsSL https://opencode.ai/install | bash`
-
-**Files:**
-- `ClaudeCode/Dockerfile:38, 11`
-- `OpenCode/docker-entrypoint.sh:14`
-
-**Impact:**
-- Vulnerable to man-in-the-middle attacks if HTTPS is compromised
-- No way to verify the script hasn't been tampered with or changed unexpectedly
-- Could execute arbitrary code from untrusted sources
-
-**Fix approach:** 
-- Download scripts and verify checksums before execution
-- Store verified installation scripts in the repository
-- Use signed releases from package managers where available
-- Consider using package managers instead of shell script installs
+**GSD sync leaves root-owned files in state/claude:**
+- Issue: After each container start, 313 of 820 files under `state/claude` (in `gsd-core/`, `hooks/`, `scripts/`) are owned by root with mode 644 or 755. The npm installer uses `fs.copyFileSync`, which copies then attempts to give the copy the source's owner. The source is root-owned in the image; on Docker Desktop the chown succeeds via `user.containers.override_stat` attributes.
+- Files: `claude/Dockerfile` (GSD installed as root), `state/claude/` (sync destination)
+- Impact: No breakage observed; the files are readable, folders stay owned by sandbox, and resyncs replace them. However, sandbox cannot edit files in place.
+- Fix approach: Either the sandbox doctor reports these files as expected (Phase 9), or the sync gives them back to the running user after copying (10 lines and a self-test case). Do not change the image's GSD ownership to sandbox; that would let the agent edit GSD, and resync would propagate edits into state.
+- Decision made: Handle in Phase 9 (`sbx-init replaces the start hooks`)
+- Reference: `.planning/todos/pending/2026-11-08-gsd-sync-leaves-root-owned-files.md`
 
 ## Known Bugs
 
-### Hardcoded User Path in OpenCode
+**sbx-claude sleeps 5 seconds even in non-interactive use:**
+- Symptoms: Running `sbx-claude -p "..."` or `sbx-claude --version` in a script or pipeline gets a no-clone banner on stderr and a mandatory 5 second delay.
+- Files: `claude/bin/sbx-claude:23`
+- Trigger: Any use of sbx-claude when the bundle is not linked, including scripted or piped calls.
+- Fix approach: Sleep only when stdin and stderr are terminals (both must be a terminal). Check with `[ -t 0 ] && [ -t 2 ]`. H-27 runs with stdin from `/dev/null` so it still sees the warning.
+- Resolves: Phase 9 (`sbx-init replaces the start hooks`)
+- Reference: `.planning/todos/pending/2026-10-24-sbx-claude-no-wait-when-non-interactive.md`
 
-**Issue:** `OpenCode/docker-compose.yml:10` contains a hardcoded absolute path to a specific user's project.
+**sbx-bundle-clone misleading error and unguarded arguments:**
+- Symptoms: Any `git clone` failure (no network, dangling symlink, read-only mount, bad URL) prints "A private repo needs sbx-gh-login first," regardless of the real cause. The git error message above it is the actual clue but the hint points at the wrong fix.
+- Files: `base/bin/sbx-bundle-clone:22-24`
+- Trigger: Running clone when the network is down, the bundle directory has an issue, or any other git error occurs.
+- Workaround: Look at the actual git error above the misleading hint; run `git clone -- $URL $DIR` by hand to see the real problem.
+- Fix approach: Use `git clone -- "$BUNDLE_REPO_URL" "$SBX_BUNDLE_DIR"` to guard against URLs starting with `-`. Test directory existence with `[ -e "$SBX_BUNDLE_DIR" ] || [ -L "$SBX_BUNDLE_DIR" ]`. Rephrase the error as "cannot clone $URL; if the repo is private, run sbx-gh-login first."
+- Resolves: Phase 9 (`sbx-init replaces the start hooks`)
+- Reference: `.planning/todos/pending/2026-10-24-bundle-clone-error-hint-and-option-guard.md`
 
-**Files:** `OpenCode/docker-compose.yml:10`
-
-**Trigger:** The service definition reads:
-
-```yaml
-volumes:
-  - /Users/demian/GSD_StaticSiteGenerator:/home/sandbox
-
-```
-
-**Symptoms:**
-- Container will fail to start on any machine that doesn't have this exact path
-- Binds to a specific user's directory without parameterization
-- Cannot be reused by other team members
-
-**Workaround:** Manually edit `docker-compose.yml` to the correct path, or use the parameterized approach from `ClaudeCode/docker-compose.yml`.
-
-### Missing cc-upgrade.sh Script
-
-**Issue:** `README.md` (lines 53, 72-103) documents a `cc-upgrade.sh` script that does not exist in the repository.
-
-**Files:** 
-- `README.md:53` (documented in usage table)
-- `README.md:72-103` (upgrade section)
-- Missing from `/ClaudeCode/`
-
-**Symptoms:**
-- Users following README instructions will get "command not found" error
-- Documented workflow cannot be completed as written
-
-**Workaround:** Users must manually execute the steps documented in the README (stop container, delete `.initialized`, restart container).
-
-### Inconsistent GSD Package Distribution
-
-**Issue:** `ClaudeCode/docker-entrypoint.sh:17` uses `@opengsd/gsd-core@latest` while `OpenCode/docker-entrypoint.sh:17` uses `get-shit-done-cc`.
-
-**Files:**
-- `ClaudeCode/docker-entrypoint.sh:17` (correct)
-- `OpenCode/docker-entrypoint.sh:17` (potentially incorrect)
-
-**Symptoms:** According to security notes in `README.md:41-44`, `get-shit-done-cc` (from `github.com/gsd-build`) is the **old compromised package** and should not be used.
-
-**Fix approach:** Update `OpenCode/docker-entrypoint.sh:17` to use `@opengsd/gsd-core@latest` like ClaudeCode, and document why this change was made.
+**sbx-gh-login runs device login again when already logged in:**
+- Symptoms: A second run of `sbx-gh-login` in the same sandbox starts a fresh device login (generates a new one-time code) instead of noticing the existing session.
+- Files: `claude/bin/sbx-gh-login:51`
+- Trigger: Run `sbx-gh-login` a second time in a sandbox where you previously logged in.
+- Workaround: Press Ctrl-C to stop the second login attempt.
+- Fix approach: Check if already logged in with `gh auth status --hostname github.com` before running `gh auth login`. Always run `gh auth setup-git` and the identity questions.
+- Resolves: Phase 9 (`sbx-init replaces the start hooks`)
+- Reference: `.planning/todos/pending/2026-10-26-sbx-gh-login-skip-when-logged-in.md`
 
 ## Security Considerations
 
-### Compromised Package Risk in OpenCode Setup
-
-**Risk:** `OpenCode/docker-entrypoint.sh:17` installs the old compromised GSD package (`get-shit-done-cc`).
-
-**Files:** `OpenCode/docker-entrypoint.sh:17`
-
-**Current mitigation:** README explicitly warns against this (lines 41-44), but the code does it anyway.
-
-**Recommendations:**
-- Update to `@opengsd/gsd-core@latest`
-- Add a comment referencing the security issue
-- Consider adding a git hook or CI check to prevent reintroduction
-
-### Personal User Directory Exposure
-
-**Risk:** Hardcoded path `/Users/demian/GSD_StaticSiteGenerator` in `OpenCode/docker-compose.yml:10` exposes a specific user's file system.
-
-**Files:** `OpenCode/docker-compose.yml:10`
-
-**Current mitigation:** Only affects local development machines.
-
-**Recommendations:**
-- Parameterize like `ClaudeCode` version
-- Use environment variables with `.env` file (gitignored)
-- Document in `.env.example` (if added)
-
-### Unverified Script Downloads
-
-**Risk:** Installation scripts are downloaded over HTTPS but not cryptographically verified before execution.
-
-**Files:** 
-- `ClaudeCode/Dockerfile:11, 38`
-- `OpenCode/docker-entrypoint.sh:14`
-
-**Current mitigation:** HTTPS provides transport security but not content verification.
-
-**Recommendations:**
-- Publish checksums for install scripts
-- Verify before execution: `curl ... | sha256sum -c -`
-- Pin script versions in URLs if available
-- Consider vendoring critical scripts in the repository
-
-## Performance Bottlenecks
-
-### Large Base Image Size
-
-**Issue:** `ubuntu:latest` is a full OS image (~75MB+) when lightweight alternatives exist.
-
-**Files:** 
-- `ClaudeCode/Dockerfile:1`
-- `OpenCode/Dockerfile:1`
-
-**Problem:** Slower pulls, larger storage footprint, larger attack surface.
-
-**Improvement path:** Consider `ubuntu:24.04-minimal` or `debian:bookworm-slim` for reduced image size, or Alpine if Node.js requirements allow it.
-
-### NPX Download on Every First Run
-
-**Issue:** `ClaudeCode/docker-entrypoint.sh:17` and `OpenCode/docker-entrypoint.sh:17` use `npx -y` which downloads packages on first run.
-
-**Files:**
-- `ClaudeCode/docker-entrypoint.sh:17`
-- `OpenCode/docker-entrypoint.sh:17`
-
-**Cause:** `npx` fetches from npm registry every time (even with `-y`), adding network latency to container startup.
-
-**Improvement path:** 
-- Pre-download and cache npm packages in the image
-- Use `npm install -g` with pinned versions instead of `npx -y`
-- Document expected startup time for first-run setup
+**Token exposure when Claude runs with permissions bypassed:**
+- Risk: With `sbx-claude --dangerously-skip-permissions`, Claude can read and transmit every token in `state/`: the Claude login (`state/claude/.credentials.json`), the gh token (`state/gh/hosts.yml`, plain text), and `state/git/config`. Deny rules do not help; bash (as the sandbox user) can read any file the sandbox user can read. Claude must be able to read its own login, so that cannot be hidden.
+- Files: `state/claude/`, `state/gh/`, `state/git/`
+- Current mitigation: A leaked token reaches only the subscriptions and repositories the full gh token permits; it expires only when revoked.
+- Recommendations: Implement one of (in priority order):
+  - B (docs-only, low cost): Use fine-grained GitHub tokens per sandbox with scoped permissions (one repo, contents and pull requests only) and short expiry. Documented in README recipe; tokens created on github.com.
+  - A (larger change): Keep gh tokens out of sandboxes; push and open PRs from the Mac instead. Requires alternate approach to `sbx-bundle-clone` for cloning private repos.
+  - C (project-sized): Add outbound network allowlist (Anthropic, GitHub, npm). Stops sending tokens to arbitrary hosts but requires significant infrastructure.
+- Reference: `.planning/todos/pending/2026-11-08-limit-token-exposure-in-bypass-mode.md`
 
 ## Fragile Areas
 
-### Shell Script Argument Handling
+**Test hygiene and state isolation:**
+- Files: `tests/host/h34-selfcheck.sh`, `tests/host/run-all.sh`, `clean.sh`
+- Why fragile: H-34 plants a git identity and fake `.credentials.json` in the shared Claude test sandbox and leaves them; later test checks start from non-clean state. The root certificate folder is reused from `$TMPDIR` without ownership checks (harmless on per-user macOS `/tmp`, but risky on shared Linux `/tmp`). The certificate folder is removed only because its name matches a glob in `clean.sh`, not by explicit cleanup.
+- Safe modification: Remove planted state at the end of H-34, or document that later checks tolerate it. Test folder ownership before reuse. Give the certificate folder an explicit name and cleanup line in `clean.sh`.
+- Test coverage: H-34 grep for the `no-root-owned-state` FAIL checks only one failure case; another FAIL caused by chown or a changed count passes silently.
+- Resolves: Phase 10 (`Host side to Python`)
+- Reference: `.planning/todos/pending/2026-11-14-h34-host-check-hygiene.md` and `.planning/todos/pending/2026-11-14-selfcheck-review-follow-ups.md`
 
-**Component:** Helper scripts (`cc-up.sh`, `cc-bash.sh`, `cc-down.sh`)
+**Bundle and image configuration hardcoding:**
+- Files: `tests/host/h34-selfcheck.sh`, `base/selfcheck/checks/`
+- Why fragile: The self-check runner's error messages hardcode `sbx-base:local` and container names; when a sandbox uses `SBX_IMAGE_TAG=test`, the hints name the wrong images. The hints cannot be made correct without passing the tag into the container at runtime.
+- Safe modification: Pass the image tag through Compose as an environment variable and build the image name from it in the selfcheck code. Or add a comment naming the constants the hints assume.
+- Resolves: Phase 10 (`Host side to Python`)
+- Reference: `.planning/todos/pending/2026-11-14-selfcheck-review-follow-ups.md` (IN-02)
 
-**Files:** 
-- `ClaudeCode/cc-up.sh`
-- `ClaudeCode/cc-bash.sh`
-- `ClaudeCode/cc-down.sh`
-
-**Why fragile:** 
-- No validation of `PROJECT_NAME` or `PROJECT_PATH` arguments
-- Empty or special-character-containing values will cause unexpected behavior
-- Script will silently proceed with invalid arguments
-
-**Safe modification:** Add input validation at the start of each script:
-
-```bash
-if [ -z "$1" ]; then
-  echo "Error: PROJECT_NAME required"
-  exit 1
-fi
-```
-
-**Test coverage:** No tests exist for these scripts; they're only manually tested.
-
-### Docker Entrypoint Initialization Logic
-
-**Component:** First-run setup via `.initialized` marker file
-
-**Files:**
-- `ClaudeCode/docker-entrypoint.sh:14-21`
-- `OpenCode/docker-entrypoint.sh:5-22`
-
-**Why fragile:**
-- Deletion of `.initialized` during a long-running container will NOT re-run setup (only on new container start)
-- No atomic check-and-set operation; race condition possible if container is started twice simultaneously
-- Network failure during GSD install leaves `.initialized` missing but partial install state
-
-**Safe modification:**
-- Use a lockfile or temporary marker during setup
-- Verify installation success before marking `.initialized`
-- Add rollback logic if installation fails midway
-
-**Test coverage:** Untested; behavior only verified manually.
-
-### Inconsistent Package Sets Across Containers
-
-**Component:** APT package installation differences
-
-**Files:**
-- `ClaudeCode/Dockerfile:9` (includes git, wget, gpg, ca-certificates)
-- `OpenCode/Dockerfile:9` (only curl, nodejs, npm)
-
-**Why fragile:** 
-- Scripts or user workflows that assume git/wget/gpg availability will fail silently in OpenCode container
-- Difficult to debug when behavior differs between container types
-
-**Safe modification:** Align package sets or document why they differ explicitly.
-
-## Missing Critical Features
-
-### Missing Upgrade Script
-
-**Feature gap:** Documented `cc-upgrade.sh` script is missing.
-
-**Blocks:** Users cannot follow the documented "routine GSD upgrade" workflow from `README.md:72-103`.
-
-**Workaround exists:** Manual steps work, but the convenience script doesn't.
-
-**Priority:** Medium - documented feature that users expect.
+**Selfcheck file readability and error reporting:**
+- Files: `base/selfcheck/checks/040_root_owned_state.py`, `claude/selfcheck/`, `cursor/selfcheck/` (the settings and config checks)
+- Why fragile: The owner fix hint does not distinguish between unreadable folders owned by sandbox (user can chmod) and root-owned folders (requires Mac chown). Settings and credentials files report parse errors as "not valid JSON" when the real issue is the file cannot be read.
+- Safe modification: Keep unreadable sandbox-owned folders out of the report, or give that case its own hint. For file read errors, use the OSError to say the file cannot be read and why; preserve the JSONDecodeError wording for parse failures.
+- Resolves: Phase 10 (`Host side to Python`)
+- Reference: `.planning/todos/pending/2026-11-14-selfcheck-review-follow-ups.md` (IN-01, IN-03)
 
 ## Test Coverage Gaps
 
-### No Tests for Shell Scripts
+**Test redundancy with guard checks:**
+- Issue: Some host checks and selftest cases re-prove facts the guard already verifies, adding cost without catching new failures. Example: H-34 ran the owner fix round trip on every Mac run (about 100 lines and a throwaway root container) to prove a fixed recipe that pytest already pins; it was removed in review.
+- Files: `tests/host/`, `tests/selftest/`
+- Fix approach: At the end of each milestone, audit every host check and selftest case. For each, ask what failure it catches today that nothing cheaper (pytest, the guard) catches. Remove or shrink tests that only re-prove settled facts, test a library instead of our code, or duplicate another check.
+- Resolves: Ongoing; documented in `.planning/todos/pending/2026-11-15-recurring-test-audit.md`
 
-**Untested area:** All shell scripts (`cc-up.sh`, `cc-bash.sh`, `cc-down.sh`, docker entrypoints).
+**Unnamed temporary containers left running:**
+- Issue: `root_run` in `tests/host/h34-selfcheck.sh` starts an unnamed `docker run --rm` container; when the timeout kills the docker CLI the container keeps running because it has the test sandbox's volumes attached.
+- Files: `tests/host/h34-selfcheck.sh`
+- Impact: Orphaned test containers accumulate if a host check times out.
+- Fix approach: Name the container and call `docker rm -f` on that name in cleanup. Or document the leftover in the H-34 failure notes of `tests/host-checklist.md`.
+- Resolves: Phase 10 (`Host side to Python`)
+- Reference: `.planning/todos/pending/2026-11-14-selfcheck-review-follow-ups.md` (IN-05)
 
-**Files:**
-- `ClaudeCode/cc-*.sh`
-- `ClaudeCode/docker-entrypoint.sh`
-- `OpenCode/docker-entrypoint.sh`
+## Missing Critical Features
 
-**Risk:** 
-- Argument errors go undetected
-- Breaking changes to Docker commands aren't caught
-- Environment variable handling bugs silently fail
-- First-run initialization bugs only appear on fresh containers
+**Explicit bundle initialization user command:**
+- Problem: Containers run start hooks that initialize the bundle on first start. This couples container startup to GSD and bundle state; if either initialization fails or hangs, the container never becomes usable. The user has no signal that initialization is needed or complete.
+- Blocks: Clean separation of container lifecycle from tooling setup; atomic GSD and bundle sync; clear user feedback on initialization.
+- Fix approach: Phase 9 (`sbx-init replaces the start hooks`) removes all hooks from the entrypoint. The user runs `sbx-init` explicitly to sync GSD and link the bundle; each step prints OK or FAIL with no waits or polls. A second run when all is done is a quick no-op.
+- Status: Planned for Phase 9
 
-**Priority:** High - entrypoint failures block users from using containers entirely.
+**Python host side with JSON registry:**
+- Problem: Every Mac command and test is bash. Bash scripts are fragile across BSD and GNU tools; the host tests duplicate code; adding a new sandbox requires manual list maintenance.
+- Blocks: Scalable Mac tooling; shared test harness; correct behavior on macOS and Linux test runners.
+- Fix approach: Phase 10 (`Host side to Python`) rewrites every `sbx-*` command, `build.sh` and `./host-test.sh` in Python run through `uv`. A single JSON registry file per sandbox (`~/.config/sbx/sandboxes/NAME.json`) holds path and agent; all commands read from it. Test harness is written once; small diffs cover agent differences.
+- Status: Planned for Phase 10
 
-### No Tests for Dockerfile Builds
+**Mac run validation glue script:**
+- Problem: Every Mac checkpoint asks the user to paste boilerplate by hand: restore exec bits, show git status, record image IDs, run host tests, record IDs and containers again, grep logs.
+- Blocks: Fast and reliable Mac gate process.
+- Fix approach: A small glue script runs those steps in one line. It calls helpers (one exec-bit restorer that works in any git repo, `host-test.sh`, image/container snapshot tools). Default run does the common checks; `--grep` and `--` arguments customize it.
+- Status: Planned as separate quick task after Phase 8
+- Reference: `.planning/todos/pending/2026-11-14-mac-run-glue-script.md`
 
-**Untested area:** Docker image builds and layer caching behavior.
+## Scaling Limits
 
-**Files:**
-- `ClaudeCode/Dockerfile`
-- `OpenCode/Dockerfile`
+**Docker Desktop file ownership semantics:**
+- Current capacity: Containers run as non-root (uid 1000); host files mounted with bind mounts.
+- Limit: Docker Desktop on macOS maps file ownership through `user.containers.override_stat`. A file copied by root-owned code in the container can appear root-owned on the Mac, and `chown` from inside the container can change ownership on the Mac. This is not true on Linux or on containers run with proper namespace mappings.
+- Scaling path: When tests or sandboxes move to non-Docker Desktop environments, the GSD sync and file ownership model must account for uid mismatch and stricter ownership enforcement.
 
-**Risk:**
-- Package installation failures only discovered when building
-- Security vulnerabilities in dependencies go undetected until runtime
-- Build performance regressions (layer cache misses) not monitored
+## Dependencies at Risk
 
-**Priority:** High - broken builds block the entire workflow.
+**Fixed npm package versions without security scanning:**
+- Risk: `@opengsd/gsd-core` and other npm packages are pinned by digest in `versions.env` but not scanned for security vulnerabilities. If a digest remains pinned after a CVE is published, the fix is not picked up until a manual digest update.
+- Impact: Security fixes in dependencies are not automatically applied.
+- Migration plan: Phase 10 adds Python-based tooling; if npm scanning is needed, it can be added to the build and CI pipeline. For now, rely on GitHub's Dependabot scanning for this repo and periodic manual digest updates.
 
-### No Documentation of Expected Behavior
+## Performance Bottlenecks
 
-**Untested area:** Container startup behavior, GSD installation success criteria, expected failure modes.
+**Image layer count and cache invalidation:**
+- Problem: Every `RUN` command in the Dockerfile creates a layer. Build steps that are unlikely to change (system packages, static tools) sit below steps that change frequently (package versions, script updates). A single version change in `versions.env` invalidates the entire cache.
+- Files: `base/Dockerfile`, `claude/Dockerfile`, `cursor/Dockerfile`
+- Cause: Sequential chained RUN commands without layer grouping by change frequency.
+- Improvement path: Reorganize Dockerfile RUN statements to place stable, large caches early and volatile, small updates late. Use BuildKit cache mounts for package manager caches. Consider multi-stage builds to keep build tools out of the final image.
+- Priority: Low; builds run on developer's Mac and once per test run; the current 2-3 minute build time is acceptable.
 
-**Files:** All Docker/compose files and entrypoints
+## Documentation Gaps
 
-**Risk:** Users can't distinguish between "still initializing" and "failed"—containers silently hang with unclear error states.
-
-**Priority:** Medium - impacts user experience during first setup.
+**MIGRATION.md follow-ups from EmailIntel move:**
+- Issue: Two migration edge cases were handled by hand during Phase 5; they should be documented in MIGRATION.md for the next user.
+- Files: `MIGRATION.md`
+- Gaps:
+  - Projects with files outside the code folder that the code uses through relative paths (like EmailIntel's `docs/`, `emails/`, `storage/` beside `project/`). The whole old home must become the project folder with careful cleanup.
+  - Old homes without `.gitconfig` bring no git name or email; the new sandbox must set them.
+- Fix approach: Add a "project layout" case to MIGRATION.md with the full procedure. Add one line for the git config case.
+- Reference: `.planning/todos/pending/2026-11-08-migration-recipe-follow-ups.md`
 
 ---
 
-*Concerns audit: 2026-09-30*
+*Concerns audit: 2026-11-16*
