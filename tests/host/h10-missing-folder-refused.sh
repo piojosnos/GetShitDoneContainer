@@ -68,7 +68,7 @@ report_outcome() {
   fi
 
   if [ "$pathExists" -eq 1 ]; then
-    fail H-10 "Docker created $badDir (create_host_path ignored); the entrypoint still refused (rc=$upStatus). Compose $composeVersion.$restartNote" \
+    fail H-10 "Docker created $badDir (create_host_path ignored); the start failed with rc=$upStatus. Compose $composeVersion.$restartNote" \
       "last output: $lastLines" \
       "the printed cleanup removes the run folder, and the path with it"
     return 1
