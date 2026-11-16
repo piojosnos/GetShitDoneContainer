@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+import hints
 from helpers import load_shared_check
 
 state_folders = load_shared_check("030_state_folders")
@@ -45,7 +46,8 @@ def test_state_folders_fail_naming_the_missing_folder(tmp_path):
     assert not result.passed
     assert "m2" in result.detail
     assert "cache/npm" not in result.detail
-    assert "on the Mac run: sbx-stop" in result.hint
+    assert result.hint == hints.init_hint()
+    assert "sbx-init" in result.hint
 
 
 def test_state_writable_passes_and_leaves_the_folder_empty(tmp_path):

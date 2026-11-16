@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 
 from check_result import Check, CheckResult, failed, passed
+from hints import rebuild_hint
 from paths import BASE_STATE_DIR_LIST, STATE_DIR
 
 
@@ -25,8 +26,19 @@ def _folder_name_list(state_dirs_text: str) -> list[str]:
     return folder_list
 
 
+def _is_outside_state(name: str) -> bool:
+    return name.startswith("/") or ".." in Path(name).parts
+
+
 def make_state_folders_result(state_dir: Path, state_dirs_text: str) -> CheckResult:
     folder_list = _folder_name_list(state_dirs_text)
+
+    for name in folder_list:
+        if _is_outside_state(name):
+            return failed(
+                f"SBX_STATE_DIRS names '{name}', which is not a folder name under {state_dir}",
+                rebuild_hint(),
+            )
 
     for name in folder_list:
         try:

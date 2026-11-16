@@ -20,6 +20,8 @@ def test_hint_builders_name_the_sandbox_from_sbx_name():
     )
     assert hints.start_hint(environment1).endswith("on the Mac run: sbx-start sbx1, then sbx-shell sbx1")
     assert hints.shell_hint(environment1).endswith("on the Mac run: sbx-shell sbx1")
+    assert hints.init_hint(environment1).endswith("sbx-shell sbx1 opens it")
+    assert hints.init_hint(environment1).startswith("run sbx-init in the sandbox shell")
 
 
 def test_hint_builders_say_name_when_sbx_name_is_unset_or_empty():
@@ -28,6 +30,7 @@ def test_hint_builders_say_name_when_sbx_name_is_unset_or_empty():
     assert hints.start_hint({}).endswith("sbx-start NAME, then sbx-shell NAME")
     assert hints.shell_hint({}).endswith("sbx-shell NAME")
     assert hints.shell_hint({"SBX_NAME": ""}).endswith("sbx-shell NAME")
+    assert hints.init_hint({}).endswith("sbx-shell NAME opens it")
 
 
 def test_mac_hint_puts_the_action_before_the_command():

@@ -9,10 +9,9 @@ import tempfile
 from pathlib import Path
 
 from check_result import Check, CheckResult, failed, passed
-from hints import restart_hint
-from paths import STATE_DIR
+from hints import init_hint, restart_hint
+from paths import BASE_STATE_DIR_LIST, STATE_DIR
 
-_BASE_STATE_DIR_LIST = ["shell", "gh", "git"]
 _STATE_WRITE_PROBE_PREFIX = ".sbx-selfcheck-"
 
 
@@ -21,7 +20,7 @@ _STATE_WRITE_PROBE_PREFIX = ".sbx-selfcheck-"
 # ------------------------------------------------------------------------------
 
 def state_folders_result(state_dir: Path, state_dirs_text: str) -> CheckResult:
-    folder_list = _BASE_STATE_DIR_LIST + state_dirs_text.split()
+    folder_list = BASE_STATE_DIR_LIST + state_dirs_text.split()
     missing_list = []
 
     for folder in folder_list:
@@ -31,7 +30,7 @@ def state_folders_result(state_dir: Path, state_dirs_text: str) -> CheckResult:
     if missing_list:
         return failed(
             f"missing under {state_dir}: {', '.join(missing_list)}",
-            restart_hint() + "; the start makes the state folders",
+            init_hint(),
         )
 
     return passed(f"{', '.join(folder_list)} exist under {state_dir}")
