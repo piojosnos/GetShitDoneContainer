@@ -10,6 +10,6 @@ dependencies = []
 dev = ["pytest==9.2.0"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests/selftest/selfcheck"]
-pythonpath = ["base/selfcheck", "claude/selfcheck/lib", "cursor/selfcheck/lib"]
+testpaths = ["tests/selftest/selfcheck", "tests/selftest/init"]
+pythonpath = ["base/selfcheck", "base/init", "claude/selfcheck/lib", "cursor/selfcheck/lib"]
 addopts = "-p no:cacheprovider"
