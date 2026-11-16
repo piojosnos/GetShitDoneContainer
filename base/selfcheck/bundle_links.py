@@ -1,25 +1,45 @@
 # ------------------------------------------------------------------------------
 # Links from an agent's config folder into the best-practices clone
 # ------------------------------------------------------------------------------
-# The rules link and one link per skill, and the list of the skills the last sync
-# made. The image puts this file in /usr/local/lib/sbx-selfcheck/.
+# The rules link and one link per skill. Init and the check share the link texts,
+# the skill listing and the test for a link of init's own: a link whose target
+# lies under the clone's folder. The image puts this file in
+# /usr/local/lib/sbx-selfcheck/.
 # ------------------------------------------------------------------------------
 
+import os
 from pathlib import Path
 
 from check_result import CheckResult, failed, problem_list_result
-from paths import link_text
+from paths import is_under, link_text
 
-_RULES_LINK_TEXT = "../../best-practices/rules"
-_SKILL_LINK_TEXT_TEMPLATE = "../../../best-practices/skills/{name}"
+RULES_LINK_TEXT = "../../best-practices/rules"
+SKILL_LINK_TEXT_TEMPLATE = "../../../best-practices/skills/{name}"
 _BUNDLE_SKILL_LIST_NAME = ".best-practices-skills"
 
 
 # ------------------------------------------------------------------------------
-# Problems of the links
+# What init and the check share
+# ------------------------------------------------------------------------------
+# The own-link test is purely lexical: no path resolution and no existence test,
+# so a dangling link into the clone still counts as init's own.
 # ------------------------------------------------------------------------------
 
-def _bundle_skill_name_list(bundle_dir: Path) -> list[str]:
+def is_best_practices_link(link: Path, target_root: Path) -> bool:
+    if not link.is_symlink():
+        return False
+
+    actual_text = link_text(link)
+
+    if actual_text is None:
+        return False
+
+    target = os.path.normpath(os.path.join(link.parent, actual_text))
+
+    return is_under(target, str(target_root))
+
+
+def best_practices_skill_name_list(bundle_dir: Path) -> list[str]:
     skills_dir = bundle_dir / "skills"
     skill_name_list = []
 
@@ -40,8 +60,8 @@ def _rules_link_problem(config_dir: Path, bundle_dir: Path) -> str:
     if actual_text is None:
         return f"{rules_link} is not a link"
 
-    if actual_text != _RULES_LINK_TEXT:
-        return f"{rules_link} links to '{actual_text}', expected '{_RULES_LINK_TEXT}'"
+    if actual_text != RULES_LINK_TEXT:
+        return f"{rules_link} links to '{actual_text}', expected '{RULES_LINK_TEXT}'"
 
     try:
         same_folder = rules_link.samefile(bundle_dir / "rules")
@@ -59,7 +79,7 @@ def _skill_link_problem_list(config_dir: Path, skill_name_list: list[str]) -> li
 
     for skill_name in skill_name_list:
         skill_link = config_dir / "skills" / skill_name
-        expected_text = _SKILL_LINK_TEXT_TEMPLATE.format(name=skill_name)
+        expected_text = SKILL_LINK_TEXT_TEMPLATE.format(name=skill_name)
         actual_text = link_text(skill_link)
 
         if actual_text is None:
@@ -108,7 +128,7 @@ def bundle_links_result(config_dir: Path, bundle_dir: Path, links_rules: bool) -
     if not needed_dir.is_dir():
         return failed(f"no clone at {bundle_dir}", hint)
 
-    skill_name_list = _bundle_skill_name_list(bundle_dir)
+    skill_name_list = best_practices_skill_name_list(bundle_dir)
     problem_list = []
 
     if links_rules:

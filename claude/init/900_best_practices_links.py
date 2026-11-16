@@ -1,0 +1,22 @@
+# ------------------------------------------------------------------------------
+# Step: link the best-practices clone into the Claude config folder
+# ------------------------------------------------------------------------------
+# The image copies this file to /etc/sbx/init.d/claude/; it runs last, after the
+# ownership step.
+# ------------------------------------------------------------------------------
+
+from best_practices_link import link_best_practices
+from check_result import Check, CheckResult
+from claude_shared import CONFIG_DIR
+from paths import BUNDLE_DIR
+
+
+# ------------------------------------------------------------------------------
+# Step entries
+# ------------------------------------------------------------------------------
+
+def _step_claude_best_practices_links() -> CheckResult:
+    return link_best_practices(CONFIG_DIR, BUNDLE_DIR, True)
+
+
+STEP_LIST = [Check("claude-best-practices-links", _step_claude_best_practices_links)]
