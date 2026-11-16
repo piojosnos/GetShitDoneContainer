@@ -180,14 +180,14 @@ Gap closure, from the phase verification (the `no-root-owned-state` fix line can
 
 ### Phase 9: sbx-init replaces the start hooks
 
-**Goal**: A container start only keeps the container alive. The user runs `sbx-init` to sync GSD and link the bundle and sees each step's result, so no hook, poll or wait sits between `up` and a usable shell.
+**Goal**: A container start only keeps the container alive. The user runs `sbx-init` to sync GSD and link the bundle and sees each step's result, so no entrypoint, hook, poll or wait sits between `up` and a usable shell.
 **Depends on**: Phase 8
 **Requirements**: INIT-01, INIT-02, INIT-03, INIT-04, INIT-05, INIT-06
 **Success Criteria** (what must be TRUE):
-  1. In a fresh sandbox, `sbx-init` syncs GSD and links the bundle and prints each step with OK or FAIL; a second run when all is done is a quick no-op, and a run started while another holds the lock stops without touching anything.
-  2. A container start runs no hooks: the entrypoint only keeps the container alive, and the start-hook runner, `start.d/`, the readiness poll, their guard rules and most of the entrypoint self-test are gone.
-  3. `sbx-claude` in a sandbox where init has not run prints a warning and starts Claude at once; it neither waits nor runs init itself.
-  4. A user skill with the same name as a bundle skill is still there after `sbx-init`, and the bundle links are swapped in atomically, so an interrupted run leaves the old links or the new ones, never a mix.
+  1. In a fresh sandbox, `sbx-init` syncs GSD and links the bundle and prints each step with OK or FAIL; a second run gives the same result, and a run started while another holds the lock stops without touching anything.
+  2. A container start runs no hooks and no entrypoint: the container only sleeps, and the entrypoint, the start-hook runner, `start.d/`, the readiness poll, their guard rules and the entrypoint self-test are gone.
+  3. `sbx-claude` and `sbx-cursor` in a container where init has not run fail at once with a message to run `sbx-init`; they neither wait nor run init. `claude` and `cursor-agent` are not on a plain shell's PATH.
+  4. A user skill with the same name as a bundle skill is still there after `sbx-init`, which reports the clash as a FAIL; init removes only its own links into the bundle.
   5. After `sbx-init` on the Mac, every file in `state/claude` is owned by `sandbox`, not root, and `./host-test.sh` passes.
 
 **Plans**: TBD

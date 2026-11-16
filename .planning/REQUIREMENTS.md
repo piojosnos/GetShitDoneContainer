@@ -29,11 +29,11 @@ Milestone v2.0 Simple tooling. Decisions behind them: `.planning/research/v2-sim
 
 ### sbx-init
 
-- [ ] **INIT-01**: User runs `sbx-init` (Python, in the image); it syncs GSD and links the bundle, printing each step with OK or FAIL.
-- [ ] **INIT-02**: A rerun when done is a quick no-op; a lock file stops an overlapping second run.
-- [ ] **INIT-03**: A container start runs no hooks: the entrypoint only keeps the container alive; the start-hook runner, `start.d/`, the readiness poll, their guard rules and most of the entrypoint self-test are gone.
-- [ ] **INIT-04**: `sbx-claude` warns, without waiting or running anything, when init has not run.
-- [ ] **INIT-05**: Init never deletes a user skill that shares a bundle skill's name, and swaps the bundle links in atomically.
+- [ ] **INIT-01**: User runs `sbx-init` (Python, in the image); it creates the state folders, syncs GSD and links the bundle, printing each step with OK or FAIL; all checking is left to `sbx-selfcheck`.
+- [ ] **INIT-02**: A rerun redoes every step with the same result; a lock stops an overlapping second run.
+- [ ] **INIT-03**: A container start runs no hooks and no entrypoint: the container only sleeps; the entrypoint, the start-hook runner, `start.d/`, the readiness poll, their guard rules and the entrypoint self-test are gone.
+- [ ] **INIT-04**: `claude` and `cursor-agent` are not on the PATH; `sbx-claude` and `sbx-cursor` fail at once, without waiting or running anything, when init has not run in this container.
+- [ ] **INIT-05**: Init never deletes a user skill that shares a bundle skill's name; it touches only its own links into the bundle.
 - [ ] **INIT-06**: After init, the files in `state/claude` are owned by `sandbox`, not root.
 
 ### Host side in Python
