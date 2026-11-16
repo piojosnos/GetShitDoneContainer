@@ -56,3 +56,263 @@ def test_the_claude_step_file_holds_one_step_named_for_the_agent():
     step_module = load_step(REPO_DIR / "claude" / "init" / "900_best_practices_links.py")
 
     assert [check.name for check in step_module.STEP_LIST] == ["claude-best-practices-links"]
+
+
+# ------------------------------------------------------------------------------
+# Clashes with what the user keeps
+# ------------------------------------------------------------------------------
+
+def test_a_user_folder_with_a_clone_skill_name_is_left_named_and_the_rest_is_linked(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1", "skill2"])
+    (config1 / "skills" / "skill1").mkdir(parents=True)
+    (config1 / "skills" / "skill1" / "SKILL.md").write_bytes(b"mine\n")
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert not result.passed
+    assert str(config1 / "skills" / "skill1") in result.detail
+    assert "every other skill is linked" in result.detail
+    assert result.hint.startswith(f"rename or move {config1 / 'skills' / 'skill1'}")
+    assert result.hint.endswith("run sbx-init again")
+    assert (config1 / "skills" / "skill1" / "SKILL.md").read_bytes() == b"mine\n"
+    assert not (config1 / "skills" / "skill1").is_symlink()
+    assert os.readlink(config1 / "skills" / "skill2") == SKILL_LINK_TEXT_TEMPLATE.format(name="skill2")
+    assert os.readlink(config1 / "rules") == RULES_LINK_TEXT
+
+
+def test_a_real_rules_folder_is_left_named_and_the_skills_are_linked(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1"])
+    (config1 / "rules").mkdir()
+    (config1 / "rules" / "mine1.md").write_bytes(b"my rule\n")
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert not result.passed
+    assert str(config1 / "rules") in result.detail
+    assert (config1 / "rules" / "mine1.md").read_bytes() == b"my rule\n"
+    assert not (config1 / "rules").is_symlink()
+    assert os.readlink(config1 / "skills" / "skill1") == SKILL_LINK_TEXT_TEMPLATE.format(name="skill1")
+
+
+def test_a_foreign_rules_link_is_left_and_fails_the_step(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1"])
+    (tmp_path / "other1").mkdir()
+    os.symlink("../../other1", config1 / "rules")
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert not result.passed
+    assert str(config1 / "rules") in result.detail
+    assert os.readlink(config1 / "rules") == "../../other1"
+
+
+def test_a_link_outside_the_clone_is_left_and_named(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1"])
+    (tmp_path / "other1").mkdir()
+    (config1 / "skills").mkdir()
+    os.symlink(str(tmp_path / "other1"), config1 / "skills" / "skill1")
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert not result.passed
+    assert str(config1 / "skills" / "skill1") in result.detail
+    assert os.readlink(config1 / "skills" / "skill1") == str(tmp_path / "other1")
+
+
+def test_a_copy_of_a_clone_skill_is_left_and_named(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1"])
+    (config1 / "skills" / "skill1").mkdir(parents=True)
+    (config1 / "skills" / "skill1" / "SKILL.md").write_bytes(b"clone skill1\n")
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert not result.passed
+    assert str(config1 / "skills" / "skill1") in result.detail
+    assert not (config1 / "skills" / "skill1").is_symlink()
+
+
+def test_a_gsd_skill_folder_that_shares_a_clone_skill_name_is_left_and_named(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["gsd-skill1"])
+    (config1 / "skills" / "gsd-skill1").mkdir(parents=True)
+    (config1 / "skills" / "gsd-skill1" / "SKILL.md").write_bytes(b"gsd\n")
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert not result.passed
+    assert str(config1 / "skills" / "gsd-skill1") in result.detail
+    assert (config1 / "skills" / "gsd-skill1" / "SKILL.md").read_bytes() == b"gsd\n"
+
+
+def test_a_user_skill_the_clone_does_not_have_is_untouched(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1"])
+    (config1 / "skills" / "mine1").mkdir(parents=True)
+    (config1 / "skills" / "mine1" / "SKILL.md").write_bytes(b"mine\n")
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert result.passed
+    assert (config1 / "skills" / "mine1" / "SKILL.md").read_bytes() == b"mine\n"
+
+
+# ------------------------------------------------------------------------------
+# Init's own links
+# ------------------------------------------------------------------------------
+
+def test_an_own_link_with_an_old_absolute_text_is_replaced_by_the_relative_text(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1"])
+    (config1 / "skills").mkdir()
+    os.symlink(str(clone1 / "skills" / "skill1"), config1 / "skills" / "skill1")
+    os.symlink(str(clone1 / "rules"), config1 / "rules")
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert result.passed
+    assert os.readlink(config1 / "skills" / "skill1") == SKILL_LINK_TEXT_TEMPLATE.format(name="skill1")
+    assert os.readlink(config1 / "rules") == RULES_LINK_TEXT
+
+
+def test_a_rerun_gives_the_same_result_and_the_same_links(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1", "skill2"])
+
+    first_result = link_best_practices(config1, clone1, True)
+    first_text_list = [os.readlink(config1 / "rules"), os.readlink(config1 / "skills" / "skill1")]
+    second_result = link_best_practices(config1, clone1, True)
+
+    assert first_result == second_result
+    assert first_text_list == [os.readlink(config1 / "rules"), os.readlink(config1 / "skills" / "skill1")]
+    assert sorted(entry.name for entry in (config1 / "skills").iterdir()) == ["skill1", "skill2"]
+
+
+def test_a_dangling_own_link_for_a_dropped_skill_is_removed(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1"])
+    (config1 / "skills").mkdir()
+    os.symlink(SKILL_LINK_TEXT_TEMPLATE.format(name="dropped1"), config1 / "skills" / "dropped1")
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert result.passed
+    assert not (config1 / "skills" / "dropped1").is_symlink()
+    assert (config1 / "skills" / "skill1").is_symlink()
+
+
+def test_a_link_into_a_sibling_folder_of_the_clone_skills_is_kept(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1"])
+    (clone1 / "skills-old" / "old1").mkdir(parents=True)
+    (config1 / "skills").mkdir()
+    os.symlink("../../../best-practices/skills-old/old1", config1 / "skills" / "old1")
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert result.passed
+    assert os.readlink(config1 / "skills" / "old1") == "../../../best-practices/skills-old/old1"
+
+
+def test_a_list_file_from_an_older_image_is_left_byte_for_byte(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1"])
+    (config1 / ".best-practices-skills").write_bytes(b"skill1\nold1\n")
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert result.passed
+    assert (config1 / ".best-practices-skills").read_bytes() == b"skill1\nold1\n"
+
+
+# ------------------------------------------------------------------------------
+# The clone's shape
+# ------------------------------------------------------------------------------
+
+def test_no_rules_folder_in_the_clone_fails_the_claude_step_and_makes_no_link(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1"])
+    (clone1 / "rules").rmdir()
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert not result.passed
+    assert "no best-practices clone" in result.detail
+    assert "sbx-gh-login" in result.hint
+    assert "sbx-bundle-clone" in result.hint
+    assert list(config1.iterdir()) == []
+
+
+def test_no_skills_folder_in_the_clone_fails_the_cursor_step_and_makes_no_link(tmp_path):
+    config1, clone1 = make_trees(tmp_path, [])
+    (clone1 / "skills").rmdir()
+
+    result = link_best_practices(config1, clone1, False)
+
+    assert not result.passed
+    assert "sbx-gh-login" in result.hint
+    assert "sbx-bundle-clone" in result.hint
+    assert list(config1.iterdir()) == []
+
+
+def test_a_clone_with_rules_and_no_skills_folder_links_rules_and_zero_skills(tmp_path):
+    config1, clone1 = make_trees(tmp_path, [])
+    (clone1 / "skills").rmdir()
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert result.passed
+    assert "0 skills linked" in result.detail
+    assert os.readlink(config1 / "rules") == RULES_LINK_TEXT
+
+
+def test_a_missing_skills_folder_in_the_config_folder_is_made(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1"])
+
+    assert not (config1 / "skills").exists()
+
+    link_best_practices(config1, clone1, True)
+
+    assert (config1 / "skills").is_dir()
+
+
+def test_a_clone_folder_with_a_leading_dot_is_not_linked(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1", ".hidden1"])
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert result.passed
+    assert "1 skills linked" in result.detail
+    assert not (config1 / "skills" / ".hidden1").is_symlink()
+
+
+# ------------------------------------------------------------------------------
+# Cursor links skills only
+# ------------------------------------------------------------------------------
+
+def test_the_skills_only_step_leaves_a_real_rules_folder_and_a_foreign_rules_link_alone(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1"])
+    (config1 / "rules").mkdir()
+    (config1 / "rules" / "mine1.md").write_bytes(b"my rule\n")
+
+    folder_result = link_best_practices(config1, clone1, False)
+
+    assert folder_result.passed
+    assert "rules" not in folder_result.detail
+    assert (config1 / "rules" / "mine1.md").read_bytes() == b"my rule\n"
+
+    (config1 / "rules" / "mine1.md").unlink()
+    (config1 / "rules").rmdir()
+    os.symlink("../../other1", config1 / "rules")
+
+    link_result = link_best_practices(config1, clone1, False)
+
+    assert link_result.passed
+    assert os.readlink(config1 / "rules") == "../../other1"
+
+
+def test_the_skills_only_step_makes_no_rules_link(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1"])
+
+    result = link_best_practices(config1, clone1, False)
+
+    assert result.passed
+    assert not (config1 / "rules").is_symlink()
+    assert not (config1 / "rules").exists()
+
+
+def test_the_cursor_step_file_holds_one_step_named_for_the_agent():
+    step_module = load_step(REPO_DIR / "cursor" / "init" / "900_best_practices_links.py")
+
+    assert [check.name for check in step_module.STEP_LIST] == ["cursor-best-practices-links"]
