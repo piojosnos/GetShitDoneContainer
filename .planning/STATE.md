@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
-current_phase: 8
-current_phase_name: In-image self-check
+current_phase: 9
+current_phase_name: sbx-init replaces the start hooks
 status: planning
-stopped_at: Phase 07 complete, ready to plan Phase 8
-last_updated: "2026-11-14T07:03:04.521Z"
-last_activity: 2026-11-14
-last_activity_desc: Phase 07 complete, transitioned to Phase 8
-state_head: c2baa5a06ca8646127fe307387940221a5cd6c46
+stopped_at: Phase 08 complete, ready to plan Phase 9
+last_updated: "2026-11-15T00:07:59.996Z"
+last_activity: 2026-11-15
+last_activity_desc: Phase 08 complete, transitioned to Phase 9
+state_head: d51c5a5fe99cf88a30e871178951e9b82d5de28d
 progress:
   total_phases: 7
-  completed_phases: 2
-  total_plans: 14
-  completed_plans: 14
-  percent: 33
+  completed_phases: 3
+  total_plans: 27
+  completed_plans: 27
+  percent: 50
 ---
 
 # Project State
@@ -25,19 +25,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 07 — Separate test images
+**Current focus:** Phase 08 — In-image self-check
 
 ## Current Position
 
-Phase: 8 — In-image self-check
+Phase: 9 — sbx-init replaces the start hooks
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-11-14 - Completed quick task 261114-9ma: fix the two test-tag review warnings
+Last activity: 2026-11-15 — Phase 08 complete, transitioned to Phase 9
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 103
+- Total plans completed: 116
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -61,6 +61,7 @@ Last activity: 2026-11-14 - Completed quick task 261114-9ma: fix the two test-ta
 | 06 | 6 | - | - |
 | 06.1 | 5 | - | - |
 | 07 | 3 | - | - |
+| 08 | 13 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -171,6 +172,19 @@ Last activity: 2026-11-14 - Completed quick task 261114-9ma: fix the two test-ta
 | Phase 07 P01 | 25 min | 2 tasks | 6 files |
 | Phase 07 P02 | 4 min | 3 tasks | 14 files |
 | Phase 07 P03 | 25 min | 3 tasks | 5 files |
+| Phase 08 P01 | 3 min | 3 tasks | 14 files |
+| Phase 08 P02 | 4 min | 2 tasks | 3 files |
+| Phase 08 P03 | 12 min | 2 tasks | 3 files |
+| Phase 08 P04 | 20 min | 3 tasks | 23 files |
+| Phase 08 P05 | 20 min | 2 tasks | 6 files |
+| Phase 08 P06 | 15 min | 2 tasks | 6 files |
+| Phase 08 P07 | 40min | 2 tasks | 1 files |
+| Phase 08 P08 | 12 min | 3 tasks | 6 files |
+| Phase 08 P09 | 20 min | 2 tasks | 7 files |
+| Phase 08 P10 | 15 min | 3 tasks | 8 files |
+| Phase 08 P11 | 1h | 3 tasks | 3 files |
+| Phase 08 P12 | 20 min | 3 tasks | 6 files |
+| Phase 08 P13 | 10 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -332,6 +346,24 @@ Recent decisions affecting current work:
 - [Phase 07]: Plan 07-02: tag assigned as SBX_IMAGE_TAG="test" (quoted) in host-test.sh and host_init; shellcheck SC2209 flags the bare word — Keeps the assignment plain and unconditional while the guard shellcheck rule passes
 - [Phase 07]: Plan 07-02: BASE_IMAGE and CLAUDE_IMAGE are uppercase unexported globals set by host_init — shellcheck reports a lowercase library global as unassigned; build.sh must not see them
 - [Phase 07]: 07-03: clean.sh keeps its code; docker image prune -a -f already removes unused :test and :local images, so only its comment and the docs changed
+- [Phase 08]: Launcher runs /usr/bin/python3 -I and imports only its own resolved folder; Python sources live in */selfcheck/, never */bin/ (shellcheck would reject them)
+- [Phase 08]: H-34 pins the expected check counts (51 Claude, 49 Cursor) as constants and matches the test root by SHA-256 fingerprint, never by a certificate count
+- [Phase 08]: 08-03: one shared state walk returns reported paths and the tolerated count; GSD sync folders matched by second path part in any state subfolder
+- [Phase 08]: 08-04: H-06 and H-12 renamed to h06-git-on-mac-repo.sh and h12-plain-run-refused.sh; probe deletion and guard scan-list change land in one commit
+- [Phase 08]: 08-05: pinned tool lines are named functions taking the pins file; tool_result takes an optional home_root, so wrong-pin and under-/home paths are tested with real stand-ins
+- [Phase 08]: 08-05: versions-line-file accepts the base text alone or any ' | ' prefix plus the base text; agent images check their prefix with versions_line_result
+- [Phase 08]: 08-06: link texts and the bundle, login, GSD sync and home link helpers are generic in the base library; managed settings and no-home-copy stay in the Claude file
+- [Phase 08]: Assumption A3 did not trigger on the Mac: no-root-owned-state passed in both test sandboxes, so GSD_SYNC_FOLDER_SET is unchanged
+- [Phase 08]: 08-08: the owner fix is a throwaway root container on the Mac (docker run --rm --network none -u root --entrypoint chown --volumes-from sbx-NAME sbx-base:local -R 1000:1000 STATE); load-agent-checks is a runner level FAIL, not a CHECK_LIST entry, so the 51 and 49 counts hold
+- [Phase 08]: tool-bash and tool-keytool use tool_result with no version argument; counts are now 41 shared, 53 Claude, 51 Cursor
+- [Phase 08]: H-34 runs the owner fix round trip with its own copy of the chown command on the test base image and never asserts the image tag in the fix line
+- [Phase 08]: 08-10: environment mappings are environment_map in the self-check sources; tool_result keyword is environment_map=
+- [Phase 08]: 08-10: managed_settings_result reports a missing file as 'is missing' and unreadable or bad JSON as 'is not valid JSON', same as the Cursor config check
+- [Phase 08]: IN-08 deferred to Phase 10 where the bash host checks are rewritten in Python; CHECK-01 to CHECK-04 marked complete after the approved Mac run
+- [Phase 08]: 08-12: a folder that lists but cannot be searched is reported as the folder, once, with (unreadable) and the Mac owner fix
+- [Phase 08]: 08-12: CHECK_LIST must be a list of Check; any other shape is that file's load failure and none of its checks run
+- [Phase 08]: run_check validates the returned value with isinstance; a non-CheckResult is that check's own FAIL with the rebuild fix
+- [Phase 08]: scan_owned_state names a folder unreadable only on PermissionError at an entry stat; any other entry error surfaces as the runner's raised FAIL
 
 ### Pending Todos
 
@@ -401,8 +433,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T05:07:31.445Z
-Stopped at: Phase 07 complete, ready to plan Phase 8
+Last session: 2026-11-15T00:05:38.277Z
+Stopped at: Phase 08 complete, ready to plan Phase 9
 Resume file: None
 
 ## Operator Next Steps

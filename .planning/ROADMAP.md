@@ -37,7 +37,7 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
 - [x] **Phase 6: Test diet**: the tests check only our setup, nothing waits for a person, and the guard self-test and every stand-in docker are gone (completed 2026-11-13)
 - [x] **Phase 06.1: Cursor agent image** (INSERTED): a separate Cursor image; a sandbox picks Claude or Cursor when it is added (completed 2026-11-14)
 - [x] **Phase 7: Separate test images**: a test run builds and checks its own image tags and never replaces the images the sandboxes run (completed 2026-11-14)
-- [ ] **Phase 8: In-image self-check**: `sbx-selfcheck` in the image checks the sandbox, replaces most host probes and doubles as the doctor
+- [x] **Phase 8: In-image self-check**: `sbx-selfcheck` in the image checks the sandbox, replaces most host probes and doubles as the doctor (completed 2026-11-15)
 - [ ] **Phase 9: sbx-init replaces the start hooks**: the user runs `sbx-init` to sync GSD and link the bundle; a container start runs no hooks
 - [ ] **Phase 10: Host side to Python**: the Mac commands and host tests are Python run through `uv`, with one JSON registry file per sandbox
 - [ ] **Phase 11: CI widened**: GitHub runs the guard, builds the test images and runs the Linux-runnable checks on every PR push
@@ -133,12 +133,50 @@ Plans:
 **Depends on**: Phase 7
 **Requirements**: CHECK-01, CHECK-02, CHECK-03, CHECK-04
 **Success Criteria** (what must be TRUE):
-  1. `sbx-selfcheck` prints one PASS, FAIL or SKIP line per named check; in a plain container of the image with no sandbox mounts, the checks that need a live sandbox print SKIP, not FAIL.
-  2. In `./host-test.sh` on the Mac, one host check runs `sbx-selfcheck` with `docker exec` and fails on any FAIL line or on a check count other than the expected one; the probes it absorbs (H-01, H-04, H-05 owners, H-06, H-12 pin part, H-13 env, H-14, H-15 links, H-22, H-25 record, H-30) are deleted.
+  1. `sbx-selfcheck` prints one PASS or FAIL line per named check: the base image ships the runner and the shared checks, and each agent image adds its own checks file to a fixed folder the runner reads; there is no SKIP.
+  2. In `./host-test.sh` on the Mac, one host check runs `sbx-selfcheck` with `docker exec` in a Claude and in a Cursor test sandbox and fails on any FAIL line or on a check count other than that agent's expected one; H-01, H-04, H-05, H-13, H-14, H-15, H-22 and H-30 are deleted, and H-06, H-12 and H-25 keep only the parts that need the Mac.
   3. `./host-test.sh` makes a throwaway root certificate with `openssl`, builds it into the test base image, and the self-check finds it in the system bundle and in Java `cacerts`; no certificate is committed.
-  4. Each FAIL line carries a fix hint, with the Mac command when the fix is on the Mac, and a skill shipped in the image runs the self-check and explains the results in plain words.
+  4. Each FAIL line carries a fix hint, with the Mac command when the fix is on the Mac; no skill wraps the self-check.
 
-**Plans**: TBD
+**Plans**: 13/13 plans complete
+
+Plans:
+**Wave 1**
+- [x] 08-01-PLAN.md: the runner (tracer): `sbx-selfcheck`, its pytest harness pinned to 9.2.0, and the image wiring (wave 1)
+- [x] 08-02-PLAN.md: host check H-34 in a Claude and a Cursor test sandbox, with the reused throwaway root certificate (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 08-03-PLAN.md: shared checks for the sandbox, user, git, environment, state and image paths (wave 2)
+- [x] 08-04-PLAN.md: H-01, H-04, H-05, H-13, H-14, H-15, H-22 and H-30 deleted; H-06, H-12 and H-25 slimmed; docs (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 08-05-PLAN.md: shared checks for the toolchain (one line per tool), the versions records and the extra root certificates (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 08-06-PLAN.md: the Claude and Cursor checks files; check counts tied to H-34 (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 08-07-PLAN.md: dev-sandbox phase gate, then the Mac run of `./host-test.sh` (wave 5, checkpoint)
+
+Gap closure, from the phase verification (the `no-root-owned-state` fix line cannot work in the sandbox) and the code review:
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 08-08-PLAN.md: the owner fix hint becomes a Mac command (tracer), unreadable folders are named instead of crashing, and the runner fails when no agent check ran
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 08-09-PLAN.md: `tool-bash` and `tool-keytool` (counts 41, 53, 51), and H-34 runs the owner fix round trip on real Docker
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 08-10-PLAN.md: the review's info findings: settings message, shape suffixes, type hints, loops instead of comprehensions
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [x] 08-11-PLAN.md: dispositions recorded, the dev-sandbox gate, the Mac run (checkpoint), then CHECK-01 to CHECK-04 marked complete
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [x] 08-12-PLAN.md: the two review warnings fixed (an unsearchable state folder and a malformed CHECK_LIST), the info findings deferred to Phase 10
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [x] 08-13-PLAN.md: the last two review findings fixed (a check that returns no CheckResult, and one failing state entry no longer marks its whole folder)
 
 ### Phase 9: sbx-init replaces the start hooks
 
@@ -191,7 +229,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 |-------|-----------|----------------|--------|-----------|
 | 6. Test diet | v2.0 | 6/6 | Complete    | 2026-11-13 |
 | 7. Separate test images | v2.0 | 3/3 | Complete    | 2026-11-14 |
-| 8. In-image self-check | v2.0 | 0/TBD | Not started | - |
+| 8. In-image self-check | v2.0 | 13/13 | Complete    | 2026-11-15 |
 | 9. sbx-init replaces the start hooks | v2.0 | 0/TBD | Not started | - |
 | 10. Host side to Python | v2.0 | 0/TBD | Not started | - |
 | 11. CI widened | v2.0 | 0/TBD | Not started | - |
