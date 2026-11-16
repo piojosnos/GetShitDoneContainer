@@ -105,7 +105,7 @@ def test_an_argument_exits_two_with_the_usage_line_and_touches_no_file(layout1):
     assert not layout1["state"].exists()
 
 
-def test_one_run_makes_the_state_folders_runs_the_agent_step_and_writes_the_marker(layout1):
+def test_one_run_makes_the_state_folders_runs_the_agent_step_gives_state_back_and_writes_the_marker(layout1):
     completed = run_launcher(layout1, [], "cache/npm claude")
 
     state1 = layout1["state"]
@@ -113,7 +113,8 @@ def test_one_run_makes_the_state_folders_runs_the_agent_step_and_writes_the_mark
     assert completed.stdout.splitlines() == [
         f"OK: state-folders: shell, gh, git, cache/npm, claude exist under {state1}",
         "OK: step1: detail_step1",
-        "sbx-init: 2 steps passed; run sbx-selfcheck to check the sandbox",
+        "OK: state-owner: 0 paths given back to sandbox",
+        "sbx-init: 3 steps passed; run sbx-selfcheck to check the sandbox",
     ]
     assert completed.returncode == 0
     assert layout1["marker"].is_file()
