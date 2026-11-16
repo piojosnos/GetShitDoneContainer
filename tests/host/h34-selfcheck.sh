@@ -24,7 +24,7 @@ host_init
 # and in claude/selfcheck/ or cursor/selfcheck/; an inventory test in
 # tests/selftest/selfcheck keeps them equal.
 # ------------------------------------------------------------------------------
-expectedClaudeCount=54
+expectedClaudeCount=55
 expectedCursorCount=52
 
 cursorName=hosttest-cursor

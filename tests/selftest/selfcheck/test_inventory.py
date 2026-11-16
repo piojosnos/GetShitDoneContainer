@@ -22,7 +22,7 @@ from helpers import SHARED_CHECKS_DIR, agent_checks_dir
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 NAME_FILE_PATTERN = re.compile(r"^[0-9]{3}_[a-z0-9_]+\.py$")
 SHARED_CHECK_COUNT = 42
-CLAUDE_CHECK_COUNT = 12
+CLAUDE_CHECK_COUNT = 13
 CURSOR_CHECK_COUNT = 10
 
 
@@ -159,9 +159,10 @@ def test_every_shared_check_file_is_named_with_a_three_digit_prefix_and_ends_in_
         assert "\nCHECK_LIST" in check_file.read_text(), check_file.name
 
 
-def test_the_claude_check_names_are_the_twelve_in_order(agent_check_list_of, check_name_list_of):
+def test_the_claude_check_names_are_the_thirteen_in_order(agent_check_list_of, check_name_list_of):
     assert check_name_list_of(agent_check_list_of("claude")) == [
         "tool-claude",
+        "claude-off-path",
         "tool-ccusage",
         "claude-env",
         "claude-home-links",
