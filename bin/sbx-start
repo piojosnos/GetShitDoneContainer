@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Starts a registered sandbox by name and waits until its start hooks are done
+# Starts a registered sandbox by name
 # ------------------------------------------------------------------------------
 # Usage: sbx-start NAME
 # The folders are checked first, so a wrong entry never reaches Docker. A
@@ -22,3 +22,4 @@ read_registry_entry "$1"
 bring_up_sandbox "$1"
 echo "sbx-start: sbx-$1 is running"
 echo "sbx-start: open a shell with: sbx-shell $1"
+echo "sbx-start: in a new or recreated container, run sbx-init there before the agent"

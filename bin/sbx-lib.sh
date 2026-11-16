@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Shared by the sbx-* host scripts: registry, name rule, Compose, start wait
+# Shared by the sbx-* host scripts: registry, name rule, Compose
 # ------------------------------------------------------------------------------
 # A library: defines variables and functions, runs nothing, sets no options.
 # Stock bash 3.2 with BSD tools, because it runs in the Mac shell.
@@ -8,7 +8,6 @@
 
 knownAgentList="claude cursor"
 knownImageTagList="local test"
-startLimitSeconds=120
 
 # Compose lowercases a project name, so two names that differ only in case would
 # share one project.
@@ -291,40 +290,7 @@ warn_sessions_close() {
 }
 
 # ------------------------------------------------------------------------------
-# wait_until_ready NAME: returns 0 once the start hooks of sbx-NAME are done
-# ------------------------------------------------------------------------------
-# The entrypoint runs sleep after its last start hook, so a running sleep means
-# done. A compose healthcheck that waits for the hooks should replace this poll.
-# A container that is gone counts as stopped: the failed inspect must not end
-# the caller, which runs under set -e, before the error is printed.
-# ------------------------------------------------------------------------------
-wait_until_ready() {
-  local sandboxName=$1
-  local waitedSeconds=0
-  local running
-
-  while [ "$waitedSeconds" -lt "$startLimitSeconds" ]; do
-    if docker exec "sbx-$sandboxName" pgrep -x sleep >/dev/null 2>&1 </dev/null; then
-      return 0
-    fi
-
-    running=$(docker container inspect --format '{{.State.Running}}' "sbx-$sandboxName" 2>/dev/null </dev/null) || running=""
-
-    if [ "$running" != "true" ]; then
-      sbx_error "sbx-$sandboxName stopped during its start; docker logs sbx-$sandboxName shows why"
-      return 1
-    fi
-
-    sleep 1
-    waitedSeconds=$((waitedSeconds + 1))
-  done
-
-  sbx_error "the start hooks of sbx-$sandboxName did not finish within $startLimitSeconds s; docker logs sbx-$sandboxName shows them"
-  return 1
-}
-
-# ------------------------------------------------------------------------------
-# bring_up_sandbox NAME: folders, image, then up and the start-hook wait
+# bring_up_sandbox NAME: folders, image, then up
 # ------------------------------------------------------------------------------
 # The caller read the registry entry. A running sandbox on an older image is
 # recreated by up, after the sessions warning.
@@ -344,5 +310,5 @@ bring_up_sandbox() {
     return 1
   fi
 
-  wait_until_ready "$sandboxName"
+  return 0
 }
