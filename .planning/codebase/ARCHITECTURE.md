@@ -1,314 +1,327 @@
 ---
-last_mapped_commit: 304f80d1a0705d9ab668ef2ed4acd9fcf65060ac
-last_mapped_at: 2026-09-30
+last_mapped_commit: 031448ea8249fe34f6bd172818ba1c2807eaed35
+last_mapped_at: 2026-11-16
 ---
-<!-- refreshed: 2026-09-30 -->
+<!-- refreshed: 2026-11-16 -->
 
 # Architecture
 
-**Analysis Date:** 2026-09-30
+**Analysis Date:** 2026-11-16
 
 ## System Overview
 
+The sbx sandbox system isolates AI coding agents in Docker containers. One container runs per project; each container sees only one bind-mounted folder from the Mac. The container runs a init process that validates the mount, checks sandbox state, runs startup hooks, and enters the project folder. Compose templates and host-side shell scripts manage the container lifecycle and registry.
+
 ```text
-┌─────────────────────────────────────────────────────────────────────┐
-│                      Host Machine (Developer)                        │
-│  Project folder with source code + mounted home (/Users/you/path)   │
-└───────────────┬─────────────────────────────────────────────────────┘
-                │
-         docker-compose up
-         bind mount volumes
-                │
-        ┌───────▼────────────┐        ┌───────────────────────┐
-        │   ClaudeCode       │        │    OpenCode           │
-        │   Container        │        │    Container          │
-        │   (cc_gsd_*)       │        │    (oc_gsd_c)         │
-        └───────┬────────────┘        └───────────┬───────────┘
-                │                                 │
-                │                                 │
-        ┌───────▼──────────────────────┐  ┌──────▼─────────────┐
-        │   User Layer                  │  │ OpenCode CLI       │
-        │   sandbox user at            │  │ @/home/sandbox     │
-        │   /home/sandbox               │  │ .opencode/bin      │
-        │   (bind-mounted from host)    │  └────────────────────┘
-        └───────┬──────────────────────┘
-                │
-        ┌───────▼──────────────────────────────────────────────────┐
-        │   Initialization Layer (docker-entrypoint.sh)             │
-        │   - Check .initialized marker                             │
-        │   - First-run: Install GSD via npx                        │
-        │   - Create ~/.claude for GSD config                       │
-        └───────┬──────────────────────────────────────────────────┘
-                │
-        ┌───────▼──────────────────────────────────────────────────┐
-        │   Tool Layer                                              │
-        │   ┌──────────────────────┐  ┌──────────────────────────┐ │
-        │   │ Claude Code CLI      │  │ OpenCode-AI CLI          │ │
-        │   │ /usr/local/bin       │  │ ~/.local/bin             │ │
-        │   │ (baked in image)     │  │ (installed by entrypoint)│ │
-        │   └──────────────────────┘  └──────────────────────────┘ │
-        └───────┬──────────────────────────────────────────────────┘
-                │
-        ┌───────▼──────────────────────────────────────────────────┐
-        │   Runtime Layer                                           │
-        │   - Node.js 20 (ClaudeCode)                               │
-        │   - Git, wget, curl                                       │
-        │   - GitHub CLI (ClaudeCode only)                          │
-        │   - bash shell                                            │
-        └───────┬──────────────────────────────────────────────────┘
-                │
-        ┌───────▼──────────────────────────────────────────────────┐
-        │   Base Layer: Ubuntu latest                               │
-        └───────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      Host (macOS)                                        │
+│                                                                          │
+│  ~/.config/sbx/sandboxes/   SBX Tools Repo   $SBX_DIR/                  │
+│  (registry files)           (bin/, compose,  (project folders)          │
+│                             build.sh)                                   │
+│                                                                          │
+│  sbx-add, sbx-start,                                                    │
+│  sbx-upgrade (shell)     compose.yml,        <name>/                    │
+│                          build.sh,           state/                     │
+│                          Dockerfiles         best-practices/            │
+└─────────────────────────────────────────────────────────────────────────┘
+         │                       │
+         │ reads registry        │ uses compose and builds images
+         │                       │
+         ▼─────────────────────▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│             Docker Desktop                                               │
+│                                                                          │
+│  Images: sbx-base, sbx-claude, sbx-cursor (local or test tags)          │
+│                                                                          │
+│  Container: sbx-<name>                                                  │
+│  Mount: /home/sandbox/workspace = $SBX_DIR                              │
+│                                                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ Container Start (PID 1: tini)                                   │   │
+│  │                                                                 │   │
+│  │ sbx-entrypoint (bash script)                                   │   │
+│  │  ├─ check_workspace_mount()                                    │   │
+│  │  ├─ check_sandbox_name()                                       │   │
+│  │  ├─ check_project_and_state_folders()                          │   │
+│  │  ├─ create_state_dirs()                                        │   │
+│  │  ├─ run_start_hooks() -> /etc/sbx/start.d/*                    │   │
+│  │  │   ├─ 05-gsd (sync GSD into config)                          │   │
+│  │  │   ├─ 10-best-practices (link bundle skills)                 │   │
+│  │  │   └─ [agent-specific hooks: Cursor self-update off, etc]    │   │
+│  │  └─ exec "$@" (run command, usually bash)                      │   │
+│  │                                                                 │   │
+│  │ Environment: HOME=/home/sandbox, HISTFILE=state/shell/...,     │   │
+│  │ CLAUDE_CONFIG_DIR=state/claude, etc.                           │   │
+│  │                                                                 │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Component Responsibilities
 
 | Component | Responsibility | File |
 |-----------|----------------|------|
-| ClaudeCode Container | Run Claude Code CLI with GSD in isolated Linux environment | `ClaudeCode/` |
-| OpenCode Container | Run OpenCode CLI with GSD for web-based code editing | `OpenCode/` |
-| docker-entrypoint.sh (Claude) | First-run GSD installation, marker-gated initialization | `ClaudeCode/docker-entrypoint.sh` |
-| docker-entrypoint.sh (OpenCode) | First-run OpenCode CLI + GSD installation, PATH setup | `OpenCode/docker-entrypoint.sh` |
-| Helper Scripts | Lifecycle management (start, shell, stop containers) | `ClaudeCode/cc-*.sh` |
-| docker-compose.yml | Service definition, volume binding, port mapping | `ClaudeCode/docker-compose.yml`, `OpenCode/docker-compose.yml` |
+| Host Scripts | Register sandboxes, manage lifecycle (start, stop, upgrade); invoke Docker Compose | `bin/sbx-add`, `bin/sbx-start`, etc. |
+| Registry | Store sandbox metadata (host path, agent type) outside every mount | `~/.config/sbx/sandboxes/<name>` |
+| Compose Template | Define container service, mount point, image, entrypoint | `compose.yml` |
+| Base Image | OS packages, toolchains, GSD, shared commands, selfcheck framework | `base/Dockerfile` |
+| Agent Images | Agent-specific CLI, wrappers, start hooks, checks | `claude/Dockerfile`, `cursor/Dockerfile` |
+| Entrypoint | Validate mount and state folders, run hooks, enter project folder | `base/sbx-entrypoint` |
+| Start Hooks | Agent-specific setup (sync GSD, link skills, disable self-update) | `*/start.d/*` |
+| Selfcheck | Validate image state, tools, mounts, ownership before operation | `base/selfcheck/runner.py` and `checks/` |
 
 ## Pattern Overview
 
-**Overall:** Docker-based isolated development environment with language tool CLI installed and project bind-mounted from host.
+**Overall:** Immutable Docker images with mutable state folders. The host manages multiple isolated sandboxes; each container validates its environment at startup before the agent runs.
 
 **Key Characteristics:**
-- **Isolation**: Each service (Claude, OpenCode) runs in separate container with independent home and toolchain
-- **Host binding**: Project source and developer home bind-mounted from host, survives container restarts
-- **Lazy initialization**: GSD and OpenCode CLI installed on first run, not baked into image
-- **Marker-gated setup**: `.initialized` file prevents repeated installation after first container start
-- **Tool separation**: CLI binaries in image (`/usr/local/bin`), config in bind-mounted home (`~/.claude`, `~/.opencode`)
-- **Entrypoint pattern**: Bash script gates setup, then execs the command (keeps bash alive for interactive shells)
+
+- Isolation: one container, one project folder, no cross-sandbox access
+- Reproducibility: pinned toolchain versions in `versions.env`; smoke tests at build time verify all pins
+- Idempotency: start hooks are reentrant; existing state folders and configs are reused
+- Validation: entrypoint checks mount, folders and sandbox name before running hooks; selfcheck validates image state
+- Composition: base image includes GSD and shared helpers; agent images add their CLI and checks
 
 ## Layers
 
-**Base Layer (Ubuntu):**
-- Purpose: Operating system and system packages
-- Location: `ubuntu:latest` from Docker Hub
-- Contains: Base utilities (apt, bash, curl, wget)
-- Depends on: Docker
-- Used by: All layers above
+**Image Layer: Base (`base/Dockerfile`)**
 
-**Runtime Layer:**
-- Purpose: Language runtimes and essential tools
-- Location: Installed via `apt-get` in Dockerfile (ClaudeCode: Node.js 20, Git, GitHub CLI; OpenCode: Node.js)
-- Contains: Node.js/npm, git, curl, ca-certificates, GitHub CLI CLI
-- Depends on: Base layer
-- Used by: Tool layer for CLI installation
+- Purpose: Provides operating system, toolchains, GSD, and shared infrastructure
+- Location: `base/Dockerfile` builds `sbx-base:local`
+- Contains: Ubuntu 24.04, Node.js, Python, JDK 21, Maven, uv, git, gh, GSD, sbx-selfcheck framework
+- Depends on: Official Docker images (Ubuntu, Temurin, Node, Python)
+- Used by: `sbx-claude:local` and `sbx-cursor:local`
+- Key State: `/etc/sbx/versions.env` (pins), `/etc/sbx/tool-versions` (display line), `/etc/sbx/start.d/` (hook folder)
 
-**Tool Layer:**
-- Purpose: Developer-facing CLIs
-- Location: Claude binary in `/usr/local/bin` (baked); OpenCode in `~/.local/bin` (installed by entrypoint)
-- Contains: Claude Code CLI, OpenCode CLI
-- Depends on: Runtime layer (Node.js, curl)
-- Used by: User layer (sandbox user shell)
+**Image Layer: Agent (`claude/Dockerfile` or `cursor/Dockerfile`)**
 
-**Initialization Layer:**
-- Purpose: First-run setup of GSD and configuration
-- Location: `docker-entrypoint.sh` scripts
-- Contains: Shell logic for gated installation via `.initialized` marker
-- Depends on: Tool layer (npx from Node.js)
-- Used by: Container lifecycle (runs once on start)
+- Purpose: Adds agent-specific CLI and configuration
+- Location: Builds `sbx-claude:local` (Claude) or `sbx-cursor:local` (Cursor)
+- Contains: Claude Code or Cursor CLI, agent-specific start hooks, managed settings, agent checks
+- Depends on: `sbx-base:local`
+- Used by: Containers running the agent
+- Key State: Environment variables for agent config directory, start hooks in `/etc/sbx/start.d/`
 
-**User Layer:**
-- Purpose: Sandbox user with project-mounted home
-- Location: `/home/sandbox` (bind-mounted from host)
-- Contains: Project source, `.claude/` GSD config, `.initialized` marker, `.bashrc`, and developer files
-- Depends on: All layers below
-- Used by: Developer interacting with `claude` or `opencode` CLI
+**Container Layer: Runtime**
+
+- Purpose: Validates state and runs the agent
+- Location: Launched from `compose.yml` by host scripts
+- Contains: Mounted project folder, mounted state folders (caches, login, git identity)
+- Depends on: Agent image
+- Used by: Developer and GSD execution
+- Key Flow: entrypoint validation, hook execution, agent CLI
+
+**Host Layer: Registry and Management**
+
+- Purpose: Track sandbox registrations and provide CLI for sandbox operations
+- Location: Registry in `~/.config/sbx/sandboxes/`; scripts in `bin/`
+- Contains: Per-sandbox metadata (folder path, agent type)
+- Depends on: Installed Docker Desktop, `compose.yml`, agent images
+- Used by: Developer running `sbx-*` commands
 
 ## Data Flow
 
-### Claude Code + GSD Workflow
+### Sandbox Registration and First Start
 
-1. **Host Setup** (`cc-up.sh`): Developer runs `./cc-up.sh myproj /path/to/project`
-2. **Compose Start**: Docker-compose reads `ClaudeCode/docker-compose.yml`, passes `PROJECT_NAME` and `PROJECT_PATH` as env vars
-3. **Volume Mount**: Container home `/home/sandbox` is bind-mounted to host `${PROJECT_PATH}`
-4. **Entrypoint Runs** (`docker-entrypoint.sh`):
-   - Checks for `/home/sandbox/.initialized` file
-   - If missing (first run): Runs `npx -y @opengsd/gsd-core@latest --claude --global`
-   - GSD installs into live mounted home at `/home/sandbox/.claude`
-   - Creates `.initialized` marker to skip install on next start
-   - Execs the CMD (bash shell)
-5. **User Shell** (`cc-bash.sh`): Developer runs `./cc-bash.sh myproj` to open interactive shell
-6. **Claude Command**: Developer runs `claude` command (binary in `/usr/local/bin`)
-7. **GSD Available**: Claude loads GSD skills from `~/.claude`, developer can use `/gsd-*` commands
+1. Developer runs `sbx-add demo /Users/you/sbx-demo` (from `bin/sbx-add`)
+2. Script validates name (against sandboxNamePattern from `base/sbx-start-lib.sh`)
+3. Script creates `/Users/you/sbx-demo/demo` and `/Users/you/sbx-demo/state`
+4. Script writes registry entry: `~/.config/sbx/sandboxes/demo` (two lines: `SBX_DIR=`, `SBX_AGENT=`)
+5. Developer runs `sbx-upgrade demo` (from `bin/sbx-upgrade`)
+6. Script invokes `./build.sh` to build agent images (if not present)
+7. Script invokes `docker compose up` with `SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo`
+8. Compose starts container `sbx-demo` with mount `/Users/you/sbx-demo` at `/home/sandbox/workspace`
 
-### OpenCode Workflow
+### Container Startup
 
-1. **Host Setup**: Developer runs `docker-compose up` from `OpenCode/` directory
-2. **Volume Mount**: Container home bind-mounted (hardcoded in compose as example)
-3. **Entrypoint Runs**:
-   - Checks for `.initialized`
-   - First run: Installs `opencode-ai` CLI to `~/.local/bin`, installs GSD
-   - Adds `~/.local/bin` to `.bashrc` PATH
-   - Execs command: `bash -c "opencode web --hostname 0.0.0.0"`
-4. **OpenCode Server**: Web server starts on port 4096
-5. **Browser Access**: Developer opens `http://127.0.0.1:4096` to access OpenCode IDE
+1. PID 1 (tini) waits for the command (`sleep infinity`)
+2. Entrypoint script runs: `base/sbx-entrypoint`
+3. Entrypoint sources `base/sbx-start-lib.sh` for check functions
+4. Checks execute in order (mount, name, folders); each failing check stops the start
+5. `create_state_dirs` ensures `state/shell`, `state/gh`, `state/git`, `state/claude` (or `state/cursor`) exist
+6. `run_start_hooks` runs each executable in `/etc/sbx/start.d/` by name order
+   - `05-gsd`: Runs `gsd-core --claude --global` to sync GSD into `state/claude/gsd-core`
+   - `10-best-practices`: Links `state/best-practices` folder into `state/claude/rules` and `state/claude/skills`
+   - Agent-specific hooks (e.g., Cursor disables self-update)
+7. Each hook can fail; a failure stops the start with an error message
+8. After hooks succeed, entrypoint changes to project folder and execs the command
 
-### GSD Installation Flow
+### Agent Operation
 
-**First Container Start:**
+1. Developer runs `sbx-shell demo` (from `bin/sbx-shell`) to open a bash prompt
+2. Docker execs bash into the running container: `docker exec -it -w /home/sandbox/workspace/demo sbx-demo bash`
+3. Bash reads `/etc/bash.bashrc` (image-provided); this prints the tool versions line
+4. Developer runs `claude` or `cursor-agent` (depending on agent type)
+5. Agent reads config from `CLAUDE_CONFIG_DIR=/home/sandbox/workspace/state/claude` or `CURSOR_CONFIG_DIR=/home/sandbox/workspace/state/cursor`
+6. Agent runs; history, logins, and settings persist in `state/` across container recreates
 
-```
-docker-compose up -d
-  → Builds image if needed
-  → Creates container volume mount
-  → Runs entrypoint.sh as sandbox user
-  → Checks /home/sandbox/.initialized (missing)
-  → Runs: npx -y @opengsd/gsd-core@latest --claude --global
-    → npm registry fetch
-    → Downloads and runs installer script
-    → Installs into ~/.claude/
-    → Creates ~/.claude/get-shit-done/ skills/ agents/
-  → Touches .initialized file
-  → Execs /bin/bash (keeps shell alive)
-```
+### Container Validation (sbx-selfcheck)
 
-**Subsequent Starts:**
-
-```
-docker-compose up -d
-  → Uses existing image
-  → Mounts volumes
-  → Runs entrypoint.sh
-  → Checks .initialized (exists)
-  → Skips install
-  → Execs /bin/bash
-```
+1. Developer runs `sbx-selfcheck` in a sandbox shell
+2. Python runner loads checks from `/usr/local/lib/sbx-selfcheck/checks/` (base) and `/etc/sbx/selfcheck.d/<agent>/` (agent-specific)
+3. Each check runs and returns PASS or FAIL
+4. Failures include remediation hints (e.g., rebuild or mount issue)
+5. Exit code is 0 (all pass) or non-zero (failures); useful in scripts and CI
 
 ## Key Abstractions
 
-**Containerization:**
-- Purpose: Isolated Linux environment that runs CLI tools without affecting host system
-- Examples: `ClaudeCode/Dockerfile`, `OpenCode/Dockerfile`
-- Pattern: Multi-stage implicit (base OS + tools + entrypoint)
+**Sandbox**
 
-**Bind Mount Strategy:**
-- Purpose: Project source and developer config persist on host while CLI runs in container
-- Examples: `volumes: ${PROJECT_PATH}:/home/sandbox` in docker-compose.yml
-- Pattern: Full home directory bind-mount (everything in `/home/sandbox` comes from host)
+- Purpose: Isolates one project and one agent session
+- Examples: `~/.config/sbx/sandboxes/demo` (registry), `/Users/you/sbx-demo/` (host folder), `sbx-demo` (container)
+- Pattern: Registry entry + host folders + container instance; name rules prevent collisions
 
-**Entrypoint Marker Pattern:**
-- Purpose: Gate initialization to first run only, avoid repeated install overhead
-- Examples: `.initialized` file checked by entrypoint scripts
-- Pattern: File existence as idempotency guard
+**Mount Point**
 
-**Helper Script Abstraction:**
-- Purpose: Hide docker-compose complexity, provide simple UX (cc-up, cc-bash, cc-down)
-- Examples: `ClaudeCode/cc-up.sh`, `cc-bash.sh`, `cc-down.sh`
-- Pattern: Thin shell wrappers around docker-compose with environment injection
+- Purpose: Binds the host project folder into the container without hiding image contents
+- Examples: `$SBX_DIR` on Mac; `/home/sandbox/workspace` in container
+- Pattern: `compose.yml` uses `create_host_path: false` to fail fast if the folder is missing
+
+**State Folders**
+
+- Purpose: Preserve agent login, settings, caches, and history across container recreates
+- Examples: `state/claude`, `state/gh`, `state/shell`, `state/cache/npm`, `state/m2`
+- Pattern: Created at startup by `create_state_dirs`; persisted on the host under `state/`; environment variables direct tools to use them
+
+**Start Hooks**
+
+- Purpose: Run agent-specific setup tasks atomically at container start
+- Examples: `05-gsd` syncs GSD; `10-best-practices` links skills
+- Pattern: Executable shell scripts in `/etc/sbx/start.d/` run in name order; failure stops the start
+
+**Self-Check Framework**
+
+- Purpose: Validate image state and container setup before the agent operates
+- Examples: Check tool versions, mount point, ownership, environment variables
+- Pattern: Python modules in `base/selfcheck/checks/` and agent-specific `*/selfcheck/` define `CHECK_LIST`; runner collects and runs them
+
+**Registry**
+
+- Purpose: Persist sandbox metadata outside the project folder
+- Examples: `SBX_DIR=/Users/you/sbx-demo`, `SBX_AGENT=claude`
+- Pattern: One file per sandbox in `~/.config/sbx/sandboxes/<name>`; sourced by host scripts
 
 ## Entry Points
 
-**cc-up.sh** (ClaudeCode start):
-- Location: `ClaudeCode/cc-up.sh`
-- Triggers: Developer runs `./cc-up.sh <project_name> <host_path>`
-- Responsibilities: 
-  - Exports PROJECT_NAME and PROJECT_PATH as env vars
-  - Runs `docker-compose -p "cc_${PROJECT_NAME}" up -d`
-  - Builds image if needed, starts container with volumes
+**Host-side (macOS)**
 
-**cc-bash.sh** (Shell entry):
-- Location: `ClaudeCode/cc-bash.sh`
-- Triggers: Developer runs `./cc-bash.sh <project_name>`
-- Responsibilities: 
-  - Opens interactive bash shell in running container
-  - Runs `docker exec -it cc_gsd_${PROJECT_NAME} /bin/bash`
+- `sbx-add`: Registers a new sandbox; validates name and paths; creates folders; writes registry entry
+- `sbx-start`: Starts a sandbox (docker compose up) without rebuilding images
+- `sbx-upgrade`: Rebuilds images and starts the sandbox
+- `sbx-shell`: Execs a bash shell into the running container at the project folder
+- `sbx-list`: Lists all registered sandboxes
+- `sbx-stop`, `sbx-rm`: Stop and remove containers
 
-**cc-down.sh** (ClaudeCode stop):
-- Location: `ClaudeCode/cc-down.sh`
-- Triggers: Developer runs `./cc-down.sh <project_name>`
-- Responsibilities: 
-  - Stops container and removes volumes
-  - Runs `docker-compose -p "cc_${PROJECT_NAME}" down -v`
+**Container-side (Linux)**
 
-**docker-entrypoint.sh** (Container initialization):
-- Location: `ClaudeCode/docker-entrypoint.sh`, `OpenCode/docker-entrypoint.sh`
-- Triggers: Container starts (ENTRYPOINT directive in Dockerfile)
-- Responsibilities:
-  - Checks for `.initialized` marker in mounted home
-  - First run: Installs GSD (ClaudeCode) or OpenCode CLI + GSD (OpenCode)
-  - Execs the CMD command (bash or `opencode web`)
-
-**claude CLI** (User-facing command):
-- Location: `/usr/local/bin/claude` (baked in ClaudeCode image)
-- Triggers: Developer runs `claude` in shell (after `cc-bash.sh`)
-- Responsibilities:
-  - Loads GSD skills from `~/.claude`
-  - Provides `/gsd-*` commands for project automation
+- Entrypoint: `base/sbx-entrypoint` validates mount and state, runs start hooks, then execs the user command
+- Start hooks: Located in `/etc/sbx/start.d/`, run in name order (e.g., `05-gsd`, `10-best-practices`)
+- Agent CLI: `claude` or `cursor-agent` (not managed by sbx; the agent runs as a subprocess)
+- Selfcheck: `sbx-selfcheck` validates the image and container state
 
 ## Architectural Constraints
 
-- **Single home bind mount**: Entire `/home/sandbox` is mounted from host. No nested mounts or split directories.
-- **Marker-based idempotency**: Initialization relies on `.initialized` file existence. Deleting it forces reinstall.
-- **No root access**: Sandbox user intentionally unprivileged for security.
-- **Baked vs. dynamic installation**: Claude binary baked to survive mounts; GSD installed to live home so it's preserved on host.
-- **Environment variables**: PROJECT_NAME and PROJECT_PATH passed via docker-compose, not baked into image.
-- **Hardcoded home path**: Container always uses `/home/sandbox` as home, no configurability.
-- **Sequential initialization**: Entrypoint runs once, then execs CMD (no background tasks).
+- **One mount**: Entire `/home/sandbox/workspace` is mounted; no nested mounts or subtree separations
+- **Sandbox name rule**: Names start with a lowercase letter, then lowercase, digits or hyphens, 31 chars max (`^[a-z][a-z0-9-]{0,30}$`). Prevents Docker naming errors and sandbox folder collisions
+- **Reserved names**: `state` and `best-practices` are reserved; a sandbox cannot use them as its project name
+- **No root access**: The container runs the unprivileged `sandbox` user; image files are root-owned and immutable
+- **Immutable image paths**: Image-provided binaries in `/usr/local/bin` and libraries are read-only to the sandbox user
+- **Non-interactive entrypoint**: Start hooks must succeed or the container fails to start; no interactive recovery
+- **Pins are not defaults**: Every version in `versions.env` must be provided; `build.sh` stops without them
+- **Registry outside mounts**: Registry in `~/.config/sbx/` prevents a sandbox from rewriting its own entry
+- **No state pollution**: Start hooks are idempotent; rerunning them does not create duplicates or corrupt existing state
 
 ## Anti-Patterns
 
-### Baking GSD into Image
+### Baking Mutable State into the Image
 
-**What happens:** GSD installed in Dockerfile to `~/.claude`, then bind mount shadows it at runtime.
-**Why it's wrong:** Developer can never see or use the installed GSD because host mount covers image home directory.
-**Do this instead:** Install GSD in `docker-entrypoint.sh` so it populates the LIVE bind-mounted home (`ClaudeCode/docker-entrypoint.sh` lines 14-19).
+**What happens:** GSD, agent logins, or caches are installed into the image at build time.
 
-### Storing Secrets in Dockerfile
+**Why it is wrong:** On container recreate, the state is lost because the container layer is discarded. Developers lose their login and settings.
 
-**What happens:** API keys or credentials hardcoded in `RUN` commands are baked into image layers.
-**Why it's wrong:** Image becomes shareable artifact containing secrets; cleanup commands can still leave traces in layers.
-**Do this instead:** Use environment variables or mounted files; don't log secrets in `docker-compose.yml` either.
+**Do this instead:** Put state in mounted folders (`state/claude`, `state/cache/npm`). Sync or initialize the state folder at startup via start hooks. Environment variables redirect tools to use the state folder.
 
-### Forgetting to Clean apt cache
+### Storing Secrets in the Dockerfile or Environment
 
-**What happens:** `apt-get` package lists and archives accumulate in image.
-**Why it's wrong:** Bloats image size unnecessarily, slows builds.
-**Do this instead:** Remove cache after install: `apt-get install ... && rm -rf /var/lib/apt/lists/*` (both Dockerfiles already do this correctly).
+**What happens:** API keys, passwords or tokens appear in `ARG`, `ENV` or the Dockerfile itself.
+
+**Why it is wrong:** Docker layers are versioned and logged; the image retains the secret even after it is deleted. The registry sees every build command.
+
+**Do this instead:** Secrets come from the environment only. The host provides them at runtime; the container never stores them. Use `sbx-gh-login` for gh credentials; Claude Code stores its login in the state folder on the host.
+
+### Hard-Coding the Agent Type into the Base Image
+
+**What happens:** The base image includes Claude-specific tools (Claude Code, ccusage, managed settings).
+
+**Why it is wrong:** A second agent (Cursor) cannot use the same base. Each agent requires its own image build and its own Dockerfile.
+
+**Do this instead:** The base image includes only tools all agents use: GSD, git, gh, toolchains. Agent-specific tools go in agent images that inherit from the base. Agent-specific start hooks go in `/etc/sbx/start.d/` in the agent image; the base entrypoint runs them without knowing the agent type.
+
+### Mounting the Home Directory Directly
+
+**What happens:** `/home/sandbox` is mounted from the host instead of just `/home/sandbox/workspace`.
+
+**Why it is wrong:** The mount hides image-provided home folders, caches and config directories. dotfiles, shells and `.bashrc` from the host override the image. The agent loses its settings and history.
+
+**Do this instead:** Mount only the project and state folder together at one point: `/home/sandbox/workspace`. Keep home directories in the image. Use symlinks from home into state folders (e.g., `~/.m2 -> state/m2`).
 
 ## Error Handling
 
-**Strategy:** Entrypoint uses `set -e` to fail fast on errors.
+**Entrypoint Validation**
 
-**Patterns:**
-- Entrypoint exits if any command fails (curl, npx, chmod)
-- No explicit error handling; failures propagate to `docker-compose up`
-- Developer sees error in console and must fix (e.g., network, permissions)
-- Idempotency via `.initialized` marker: delete marker and retry to retry install
+- Mount point must be mounted; failing here means the developer used `docker run` directly instead of `docker compose up`
+- Sandbox name must follow the rule; failing here prevents name collisions and Docker compose errors
+- Project and state folders must exist; failing here indicates a missing or mistyped path or a broken registry entry
+- State directories are created; failures here stop the start (permission issue with the mount)
 
-**Logging:**
-- ClaudeCode: Entrypoint echoes status to stdout (visible in `docker logs`)
-- OpenCode: Entrypoint writes output to `log` file (not stdout), harder to debug
+**Start Hooks**
+
+- Hooks run in sequence; the first failure stops the start and is reported on stderr
+- A missing hook file is silently skipped; only regular executable files run
+- Each hook exit code is checked; a non-zero exit stops the start
+- Hook output is not captured; stdout and stderr go to the container log for debugging
+
+**Image Builds**
+
+- Smoke tests at build time verify every version pin (node version, GSD version, etc.)
+- Version mismatches cause build failure; the image is not produced
+- Missing versions are named in the error; `versions.env` must provide them
+- Syntax errors in Python files (selfcheck checks) cause build failure
+
+**Container Startup Errors**
+
+- Errors are printed to stderr with `[sbx] ERROR:` prefix
+- Exit code is 1; the container does not start
+- Developer sees the error in `docker compose up` output or `docker logs sbx-<name>`
+- Remediation hints are in the error message (e.g., "rebuild the images" or "check the mount")
 
 ## Cross-Cutting Concerns
 
-**Logging:** 
-- ClaudeCode uses explicit `echo` statements in entrypoint (lines 15, 20)
-- OpenCode redirects to `log` file (line 14), less visible
-- No structured logging; simple text output to console or file
+**Logging**
 
-**Volume Binding:**
-- ClaudeCode: Parameterized via env vars in docker-compose
-- OpenCode: Hardcoded example path in compose (line 10 shows example only)
-- Both expect developer to ensure host path exists
+- Container startup: Errors go to stderr via `echo ... >&2` in the entrypoint and start hooks
+- Selfcheck: Results are printed to stdout (PASS/FAIL per check); remediation hints follow failures
+- Image builds: Verbose output from curl, tar, compilation tools; layer cache hits are shown
+- History: Bash history is saved to `state/shell/bash_history` across sessions
 
-**Security (Sandbox User):**
-- Both Dockerfiles create unprivileged `sandbox` user (non-root)
-- Switch to sandbox user before ENTRYPOINT (USER sandbox directive)
-- Prevents container from modifying files as root
+**Environment Configuration**
 
-**Path Execution:**
-- Claude binary in `/usr/local/bin` (always in PATH)
-- OpenCode in `~/.local/bin` (added to PATH by entrypoint's `.bashrc` modification)
-- GSD lives in `~/.claude` (loaded by Claude CLI on startup)
+- `SBX_NAME`: Set by `compose.yml` from the `--name` Docker Compose project name
+- `SBX_DIR`: Set by host scripts; passed to `compose.yml`; binds the mount point
+- `SBX_AGENT`: Set by host scripts (defaults to `claude`); selects the image (`sbx-claude` or `sbx-cursor`)
+- `SBX_IMAGE_TAG`: Defaults to `local`; `test` is used for test images; any other value is refused
+- Tool-specific: `CLAUDE_CONFIG_DIR`, `CURSOR_CONFIG_DIR`, `GH_CONFIG_DIR`, etc.; all point into `state/`
+
+**Security**
+
+- No capabilities in the container; `cap_drop: ALL`
+- Non-root user; `sandbox` uid 1000
+- Image binaries are root-owned, immutable by the sandbox user
+- Mount is read-write; the sandbox user can read and write project files
+- Registry outside every mount; the sandbox user cannot modify its own registration
+- Repos behind a proxy trust the proxy's root certificate (if `SBX_CA_CERT` is set); this is configurable per build
 
 ---
 
-*Architecture analysis: 2026-09-30*
+*Architecture analysis: 2026-11-16*
