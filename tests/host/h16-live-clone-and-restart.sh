@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# H-16: the clone is live; a restart relinks it and spares your files
+# H-16: the clone is live; sbx-init relinks it and never touches your files
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; stops and restarts it
-# Moved files stay in the run folder for the printed cleanup.
+# Moved and planted files stay in the run folder for the printed cleanup.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -85,21 +85,17 @@ check_pull_is_live() {
 }
 
 # ------------------------------------------------------------------------------
-# Plants stale and user files and drops a skill from the clone
+# Plants user files and drops a skill from the clone
 # ------------------------------------------------------------------------------
-# The rules link and one fixture skill are moved aside, never deleted.
-# User files: a skill, memory, session, CLAUDE.md and a settings.json key.
+# One fixture skill is moved aside into the run folder, never deleted. User
+# files: a skill, memory, session, CLAUDE.md and a settings.json key.
 # ------------------------------------------------------------------------------
 plant_files() {
   local plantOutput
 
   mv "$cloneDir/skills/sbx-fixture-two" "$RUN/h16-dropped-skill-$$"
-  mv "$syncedDir/rules" "$RUN/h16-old-rules-link-$$"
-  mkdir -p "$syncedDir/rules" "$syncedDir/skills/h16-old-bundle-skill" "$syncedDir/skills/h16-user-skill" "$memoryDir"
+  mkdir -p "$syncedDir/skills/h16-user-skill" "$memoryDir"
 
-  printf '%s\n' "$sentinelText" >"$syncedDir/rules/h16-stale.md"
-  printf '%s\n' "$sentinelText" >"$syncedDir/skills/h16-old-bundle-skill/SKILL.md"
-  printf '%s\n' "h16-old-bundle-skill" >>"$syncedDir/.best-practices-skills"
   printf '%s\n' "$sentinelText" >"$syncedDir/skills/h16-user-skill/SKILL.md"
   printf '%s\n' "$sentinelText" >"$memoryDir/h16-memory.md"
   printf '# %s\n' "$sentinelText" >"$syncedDir/CLAUDE.md"
@@ -111,19 +107,11 @@ plant_files() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks the dropped skill has no file or link, and the stale copies are gone
+# Checks the dropped skill has no file or link after sbx-init
 # ------------------------------------------------------------------------------
-check_stale_files_gone() {
+check_dropped_skill_gone() {
   if [ -e "$syncedDir/skills/sbx-fixture-two" ] || [ -L "$syncedDir/skills/sbx-fixture-two" ]; then
-    add_problem "state/claude/skills/sbx-fixture-two is still there after the restart"
-  fi
-
-  if [ -e "$syncedDir/rules/h16-stale.md" ]; then
-    add_problem "state/claude/rules/h16-stale.md is still there after the restart"
-  fi
-
-  if [ -e "$syncedDir/skills/h16-old-bundle-skill" ] || [ -L "$syncedDir/skills/h16-old-bundle-skill" ]; then
-    add_problem "state/claude/skills/h16-old-bundle-skill is still there after the restart"
+    add_problem "state/claude/skills/sbx-fixture-two is still there after sbx-init"
   fi
 }
 
@@ -132,11 +120,11 @@ check_stale_files_gone() {
 # ------------------------------------------------------------------------------
 check_clone_kept() {
   if ! grep -Fq "$sentinelText edit" "$cloneDir/rules/sbx-fixture-always.md" 2>/dev/null; then
-    add_problem "the uncommitted edit in the clone's rule is gone after the restart"
+    add_problem "the uncommitted edit in the clone's rule is gone after sbx-init"
   fi
 
   if [ ! -f "$cloneDir/rules/h16-pulled.md" ]; then
-    add_problem "the pulled rule is gone from the clone after the restart"
+    add_problem "the pulled rule is gone from the clone after sbx-init"
   fi
 }
 
@@ -149,9 +137,73 @@ check_user_files_spared() {
   for userFile in "$syncedDir/skills/h16-user-skill/SKILL.md" "$memoryDir/h16-memory.md" "$sessionFile" \
     "$syncedDir/settings.json" "$syncedDir/CLAUDE.md"; do
     if ! grep -Fq "$sentinelText" "$userFile" 2>/dev/null; then
-      add_problem "${userFile#"$RUN"/} is missing or changed after the restart"
+      add_problem "${userFile#"$RUN"/} is missing or changed after sbx-init"
     fi
   done
+}
+
+# ------------------------------------------------------------------------------
+# Checks sbx-init keeps a user's skill folder and rules folder and reports both
+# ------------------------------------------------------------------------------
+# The two links are moved aside into the run folder, then a real skills/sbx-fixture-one
+# folder and a real rules folder take their place. sbx-init must fail at the
+# links step naming both, leave both files as they are and not write its marker.
+# ------------------------------------------------------------------------------
+check_clash_kept_and_reported() {
+  local clashFile=$RUN/logs/h16-clash.out
+  local clashStatus
+
+  mv "$syncedDir/skills/sbx-fixture-one" "$RUN/h16-clash-skill-link-$$"
+  mv "$syncedDir/rules" "$RUN/h16-clash-rules-link-$$"
+  mkdir -p "$syncedDir/skills/sbx-fixture-one" "$syncedDir/rules"
+  printf '%s\n' "$sentinelText" >"$syncedDir/skills/sbx-fixture-one/SKILL.md"
+  printf '%s\n' "$sentinelText" >"$syncedDir/rules/h16-own-rule.md"
+
+  run_timeout 600 docker exec "$CONTAINER" sbx-init >"$clashFile" 2>&1 </dev/null
+  clashStatus=$?
+
+  if [ "$clashStatus" -ne 1 ]; then
+    add_problem "sbx-init exited $clashStatus with a user skill folder and rules folder in the way; expected 1; output: $clashFile"
+  fi
+
+  if ! grep -E '^FAIL: claude-best-practices-links: ' "$clashFile" 2>/dev/null | grep -F 'skills/sbx-fixture-one' | grep -Fq 'state/claude/rules'; then
+    add_problem "sbx-init did not report both skills/sbx-fixture-one and rules in a FAIL line for claude-best-practices-links; output: $(first_lines "$(cat "$clashFile" 2>/dev/null)")"
+  fi
+
+  if ! grep -Fq "$sentinelText" "$syncedDir/skills/sbx-fixture-one/SKILL.md" 2>/dev/null; then
+    add_problem "the planted skills/sbx-fixture-one/SKILL.md is missing or changed after the clash"
+  fi
+
+  if ! grep -Fq "$sentinelText" "$syncedDir/rules/h16-own-rule.md" 2>/dev/null; then
+    add_problem "the planted rules/h16-own-rule.md is missing or changed after the clash"
+  fi
+
+  if docker exec "$CONTAINER" test -e /home/sandbox/.sbx-init-done </dev/null 2>&1; then
+    add_problem "sbx-init failed at the links step but the marker /home/sandbox/.sbx-init-done exists"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Moves the planted folders aside, reruns sbx-init and checks the links again
+# ------------------------------------------------------------------------------
+# Both folders go into the run folder, never deleted. The rerun must pass and
+# relink, so the chain continues on a passing sandbox.
+# ------------------------------------------------------------------------------
+restore_after_clash() {
+  local restoreFile=$RUN/logs/h16-restore.out
+  local restoreStatus
+
+  mv "$syncedDir/skills/sbx-fixture-one" "$RUN/h16-clash-skill-folder-$$"
+  mv "$syncedDir/rules" "$RUN/h16-clash-rules-folder-$$"
+
+  run_timeout 600 docker exec "$CONTAINER" sbx-init >"$restoreFile" 2>&1 </dev/null
+  restoreStatus=$?
+
+  if [ "$restoreStatus" -ne 0 ]; then
+    add_problem "sbx-init exited $restoreStatus after the planted folders were moved aside; expected 0; output: $restoreFile"
+  fi
+
+  check_bundle_links "$syncedDir" "$cloneDir"
 }
 
 # ------------------------------------------------------------------------------
@@ -165,8 +217,10 @@ check_pull_is_live
 plant_files
 restart_test_sandbox H-16 h16-down.log || exit 1
 check_bundle_links "$syncedDir" "$cloneDir"
-check_stale_files_gone
+check_dropped_skill_gone
 check_clone_kept
 check_user_files_spared
-report_check H-16 "the clone is not live or the restart did not relink it and spare your files" \
-  "an edit of the clone on the Mac and a pull inside the sandbox showed in the sandbox at once; a restart relinked the clone, dropped a removed skill and stale copies, kept the uncommitted edit and kept your skills, memories, sessions, settings key and CLAUDE.md"
+check_clash_kept_and_reported
+restore_after_clash
+report_check H-16 "the clone is not live, or sbx-init did not relink it, spare your files or report a clash" \
+  "an edit of the clone on the Mac and a pull inside the sandbox showed in the sandbox at once; sbx-init relinked the clone, dropped the link of a removed skill, kept the uncommitted edit and kept your skills, memories, sessions, settings key and CLAUDE.md; a skill folder and a rules folder of your own were kept and reported, and sbx-init relinked once they were moved aside"

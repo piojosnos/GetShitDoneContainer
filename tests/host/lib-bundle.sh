@@ -49,12 +49,14 @@ clone_skill_names() {
 # check_bundle_links CONFIG_DIR CLONE_DIR: state/claude links into the clone
 # ------------------------------------------------------------------------------
 # Reports by add_problem and prints nothing itself. The links are relative, so
-# they must also resolve on the Mac side of the bind mount.
+# they must also resolve on the Mac side of the bind mount. Only the links are
+# compared with the clone; a link into the clone for a skill the clone dropped
+# is a problem.
 # ------------------------------------------------------------------------------
 check_bundle_links() {
   local configDir=$1
   local cloneDir=$2
-  local linkText rulesDiff skillName expectedList actualList
+  local linkText rulesDiff skillName skillEntry entryName
 
   if [ ! -L "$configDir/rules" ]; then
     add_problem "state/claude/rules is not a link"
@@ -80,10 +82,12 @@ check_bundle_links() {
     fi
   done
 
-  expectedList=$(clone_skill_names "$cloneDir")
-  actualList=$(cat "$configDir/.best-practices-skills" 2>/dev/null)
+  for skillEntry in "$configDir"/skills/*; do
+    entryName=$(basename "$skillEntry")
+    linkText=$(readlink "$skillEntry" 2>/dev/null)
 
-  if [ "$actualList" != "$expectedList" ]; then
-    add_problem "state/claude/.best-practices-skills lists '$(printf '%s' "$actualList" | tr '\n' ' ')'; the clone has '$(printf '%s' "$expectedList" | tr '\n' ' ')'"
-  fi
+    if [[ "$linkText" == ../../../best-practices/skills/* ]] && [ ! -d "$cloneDir/skills/$entryName" ]; then
+      add_problem "state/claude/skills/$entryName links into the clone, but the clone has no skill $entryName"
+    fi
+  done
 }
