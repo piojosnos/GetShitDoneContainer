@@ -11,11 +11,11 @@ import os
 from pathlib import Path
 
 from check_result import CheckResult, failed, problem_list_result
+from hints import init_hint
 from paths import is_under, link_text
 
 RULES_LINK_TEXT = "../../best-practices/rules"
 SKILL_LINK_TEXT_TEMPLATE = "../../../best-practices/skills/{name}"
-_BUNDLE_SKILL_LIST_NAME = ".best-practices-skills"
 
 
 # ------------------------------------------------------------------------------
@@ -63,18 +63,13 @@ def _rules_link_problem(config_dir: Path, bundle_dir: Path) -> str:
     if actual_text != RULES_LINK_TEXT:
         return f"{rules_link} links to '{actual_text}', expected '{RULES_LINK_TEXT}'"
 
-    try:
-        same_folder = rules_link.samefile(bundle_dir / "rules")
-    except OSError:
-        same_folder = False
-
-    if not same_folder:
+    if not _reaches(rules_link, bundle_dir / "rules"):
         return f"{rules_link} does not reach {bundle_dir / 'rules'}"
 
     return ""
 
 
-def _skill_link_problem_list(config_dir: Path, skill_name_list: list[str]) -> list[str]:
+def _skill_link_problem_list(config_dir: Path, bundle_dir: Path, skill_name_list: list[str]) -> list[str]:
     problem_list = []
 
     for skill_name in skill_name_list:
@@ -86,30 +81,32 @@ def _skill_link_problem_list(config_dir: Path, skill_name_list: list[str]) -> li
             problem_list.append(f"{skill_link} is not a link")
         elif actual_text != expected_text:
             problem_list.append(f"{skill_link} links to '{actual_text}', expected '{expected_text}'")
+        elif not _reaches(skill_link, bundle_dir / "skills" / skill_name):
+            problem_list.append(f"{skill_link} does not reach {bundle_dir / 'skills' / skill_name}")
 
     return problem_list
 
 
-def _skill_list_problem_list(config_dir: Path, skill_name_list: list[str]) -> list[str]:
-    list_file = config_dir / _BUNDLE_SKILL_LIST_NAME
+def _reaches(link: Path, folder: Path) -> bool:
+    try:
+        return link.samefile(folder)
+    except OSError:
+        return False
 
-    if not list_file.is_file():
-        return [f"{list_file} is missing"]
 
-    listed_name_set = set()
-
-    for line in list_file.read_text().splitlines():
-        if line.strip():
-            listed_name_set.add(line.strip())
-
+def _stale_link_problem_list(config_dir: Path, bundle_dir: Path, skill_name_list: list[str]) -> list[str]:
+    skills_dir = config_dir / "skills"
     problem_list = []
 
-    for skill_name in skill_name_list:
-        if skill_name not in listed_name_set:
-            problem_list.append(f"{list_file} does not list {skill_name}")
+    if not skills_dir.is_dir():
+        return problem_list
 
-    for listed_name in sorted(listed_name_set - set(skill_name_list)):
-        problem_list.append(f"{list_file} lists {listed_name}, which the clone does not have")
+    for entry in sorted(skills_dir.iterdir()):
+        if entry.name in skill_name_list:
+            continue
+
+        if is_best_practices_link(entry, bundle_dir / "skills"):
+            problem_list.append(f"{entry} links into the clone, which has no skill {entry.name}")
 
     return problem_list
 
@@ -119,14 +116,13 @@ def _skill_list_problem_list(config_dir: Path, skill_name_list: list[str]) -> li
 # ------------------------------------------------------------------------------
 
 def bundle_links_result(config_dir: Path, bundle_dir: Path, links_rules: bool) -> CheckResult:
-    hint = (
-        "link the clone in this sandbox: run sbx-gh-login and sbx-bundle-clone when there is no clone, "
-        "else /etc/sbx/start.d/10-best-practices"
-    )
     needed_dir = bundle_dir / "rules" if links_rules else bundle_dir / "skills"
 
     if not needed_dir.is_dir():
-        return failed(f"no clone at {bundle_dir}", hint)
+        return failed(
+            f"no clone at {bundle_dir}",
+            "clone it in the sandbox shell: sbx-gh-login, then sbx-bundle-clone",
+        )
 
     skill_name_list = best_practices_skill_name_list(bundle_dir)
     problem_list = []
@@ -137,12 +133,12 @@ def bundle_links_result(config_dir: Path, bundle_dir: Path, links_rules: bool) -
         if rules_problem:
             problem_list.append(rules_problem)
 
-    problem_list.extend(_skill_link_problem_list(config_dir, skill_name_list))
-    problem_list.extend(_skill_list_problem_list(config_dir, skill_name_list))
+    problem_list.extend(_skill_link_problem_list(config_dir, bundle_dir, skill_name_list))
+    problem_list.extend(_stale_link_problem_list(config_dir, bundle_dir, skill_name_list))
 
     detail = f"{len(skill_name_list)} skills linked from {bundle_dir}"
 
     if links_rules:
         detail += ", rules linked"
 
-    return problem_list_result(problem_list, hint, detail)
+    return problem_list_result(problem_list, init_hint(), detail)
