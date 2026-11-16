@@ -134,9 +134,23 @@ def test_the_base_dockerfile_installs_sbx_init_and_has_no_entrypoint():
     assert "sbx-entrypoint" not in text
 
 
-@pytest.mark.parametrize("agent_name", ["claude"])
+@pytest.mark.parametrize("agent_name", ["claude", "cursor"])
 def test_each_agent_dockerfile_copies_its_own_steps_and_names_no_start_hooks(agent_name):
     text = dockerfile_text(agent_name)
 
     assert f"COPY --chmod=644 {agent_name}/init/*.py /etc/sbx/init.d/{agent_name}/" in text
     assert "start.d" not in text
+
+
+def test_compose_keeps_the_container_running_with_tini_and_no_entrypoint():
+    text = (REPO_DIR / "compose.yml").read_text()
+    code_line_list = []
+
+    for line in text.splitlines():
+        code_line_list.append(line.split("#")[0].strip())
+
+    assert "init: true" in code_line_list
+    assert 'command: ["sleep", "infinity"]' in code_line_list
+
+    for code_line in code_line_list:
+        assert not code_line.startswith("entrypoint:")
