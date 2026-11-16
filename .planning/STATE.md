@@ -4,17 +4,17 @@ milestone: v2.0
 milestone_name: Simple tooling
 current_phase: 9
 current_phase_name: sbx-init replaces the start hooks
-status: executing
-stopped_at: Completed 09-12-PLAN.md
-last_updated: "2026-11-16T17:18:51.106Z"
+status: verifying
+stopped_at: Completed 09-13-PLAN.md
+last_updated: "2026-11-16T19:55:38.315Z"
 last_activity: 2026-11-16
 last_activity_desc: Phase 9 execution started
-state_head: 88db1f41228aa8ded907cf55ec8eac4aef74bc7e
+state_head: 458f5a82d91281d9b2e60c5847d15a570a62f070
 progress:
   total_phases: 10
   completed_phases: 3
   total_plans: 40
-  completed_plans: 39
+  completed_plans: 40
   percent: 30
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 
 Phase: 9 (sbx-init replaces the start hooks) — EXECUTING
 Plan: 13 of 13
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-11-16 — Phase 9 execution started
 
 ## Performance Metrics
@@ -197,6 +197,7 @@ Last activity: 2026-11-16 — Phase 9 execution started
 | Phase 9 P10 | 10min | 3 tasks | 11 files |
 | Phase 09 P11 | 12min | 3 tasks | 5 files |
 | Phase 09 P12 | 25min | 3 tasks | 6 files |
+| Phase 09 P13 | 40 min | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -391,6 +392,7 @@ Recent decisions affecting current work:
 - [Phase 9]: Host checklist rows for deleted H-12, H-17, H-20 are left to plan 09-12
 - [Phase 09]: H-16 clash assertion matches the FAIL line on state/claude/rules and skills/sbx-fixture-one (full paths init prints)
 - [Phase 09]: Docs (09-12): new text says best-practices; existing bundle wording stays in sections not rewritten
+- [Phase 09]: Phase 9 gate: A1 (sandbox user can give root-owned state back on Docker Desktop) and A2 to A4 confirmed by the Mac run; no gap-closure plan needed
 
 ### Pending Todos
 
@@ -463,8 +465,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-16T17:18:51.027Z
-Stopped at: Completed 09-12-PLAN.md
+Last session: 2026-11-16T19:55:38.222Z
+Stopped at: Completed 09-13-PLAN.md
 Resume file: None
 
 ## Operator Next Steps

@@ -193,7 +193,7 @@ Gap closure, from the phase verification (the `no-root-owned-state` fix line can
   4. A user skill with the same name as a bundle skill is still there after `sbx-init`, which reports the clash as a FAIL; init removes only its own links into the bundle.
   5. After `sbx-init` on the Mac, every file in `state/claude` is owned by `sandbox`, not root, and `./host-test.sh` passes.
 
-**Plans**: 12/13 plans executed
+**Plans**: 13/13 plans executed
 
 Plans:
 **Wave 1**
@@ -221,7 +221,7 @@ Plans:
 - [x] 09-12-PLAN.md: README, MIGRATION, ZSCALER, the memory prompt and the test docs follow the new start (wave 6)
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 09-13-PLAN.md: dev-sandbox phase gate, then the Mac run of `./host-test.sh` (wave 7, checkpoint)
+- [x] 09-13-PLAN.md: dev-sandbox phase gate, then the Mac run of `./host-test.sh` (wave 7, checkpoint)
 
 ### Phase 09.1: Align vocabulary across code and docs (INSERTED)
 
@@ -289,7 +289,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 6. Test diet | v2.0 | 6/6 | Complete    | 2026-11-13 |
 | 7. Separate test images | v2.0 | 3/3 | Complete    | 2026-11-14 |
 | 8. In-image self-check | v2.0 | 13/13 | Complete    | 2026-11-15 |
-| 9. sbx-init replaces the start hooks | v2.0 | 12/13 | In Progress|  |
+| 9. sbx-init replaces the start hooks | v2.0 | 13/13 | In Progress|  |
 | 10. Host side to Python | v2.0 | 0/TBD | Not started | - |
 | 10.1. Cursor skills and best practices | v2.0 | 0/TBD | Not started | - |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
