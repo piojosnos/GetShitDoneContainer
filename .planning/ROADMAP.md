@@ -40,6 +40,8 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
 - [x] **Phase 8: In-image self-check**: `sbx-selfcheck` in the image checks the sandbox, replaces most host probes and doubles as the doctor (completed 2026-11-15)
 - [ ] **Phase 9: sbx-init replaces the start hooks**: the user runs `sbx-init` to sync GSD and link the bundle; a container start runs no hooks
 - [ ] **Phase 10: Host side to Python**: the Mac commands and host tests are Python run through `uv`, with one JSON registry file per sandbox
+- [ ] **Phase 10.1: Full skills and best-practices support in Cursor** (INSERTED): the bundle's rules and skills work in Cursor as they do in Claude
+- [ ] **Phase 10.2: OpenCode agent image** (INSERTED): a third agent image with full skills and best-practices support; may split into more phases
 - [ ] **Phase 11: CI widened**: GitHub runs the guard, builds the test images and runs the Linux-runnable checks on every PR push
 
 ## Phase Details
@@ -207,6 +209,26 @@ Gap closure, from the phase verification (the `no-root-owned-state` fix line can
 
 **Plans**: TBD
 
+### Phase 10.1: Full skills and best-practices support in Cursor (INSERTED)
+
+**Goal:** Cursor sandboxes get the same skills and best-practices support as Claude sandboxes: the bundle's rules and skills reach Cursor in the form it reads, and the self-check proves they are there. Scope and split into one or more phases are decided at discuss time.
+**Requirements**: TBD
+**Depends on:** Phase 10
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-discuss-phase 10.1 to scope it)
+
+### Phase 10.2: OpenCode agent image with full skills and best-practices support (INSERTED)
+
+**Goal:** An OpenCode agent image next to Claude and Cursor, with the same skills and best-practices support from the start, and its own self-check files. This may become more than one phase; that is decided at discuss time.
+**Requirements**: TBD
+**Depends on:** Phase 10.1
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-discuss-phase 10.2 to scope it)
+
 ### Phase 11: CI widened
 
 **Goal**: GitHub runs every check that does not need the Mac on each PR push and shows the result on the PR. The Mac is left for what only Docker Desktop shows.
@@ -232,6 +254,8 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 8. In-image self-check | v2.0 | 13/13 | Complete    | 2026-11-15 |
 | 9. sbx-init replaces the start hooks | v2.0 | 0/TBD | Not started | - |
 | 10. Host side to Python | v2.0 | 0/TBD | Not started | - |
+| 10.1. Cursor skills and best practices | v2.0 | 0/TBD | Not started | - |
+| 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
 | 11. CI widened | v2.0 | 0/TBD | Not started | - |
 
 ## Backlog
