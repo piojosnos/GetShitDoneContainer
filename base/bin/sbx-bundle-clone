@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Clones the best-practices repo into the sandbox and links it for the agent
+# Clones the best-practices repo into the sandbox and runs sbx-init to link it
 # ------------------------------------------------------------------------------
 # Usage: sbx-bundle-clone (run sbx-gh-login first for a private repo)
 # It never overwrites: an existing folder is refused and left as it is.
@@ -15,7 +15,7 @@ set -eu
 # ------------------------------------------------------------------------------
 if [ -e "$SBX_BUNDLE_DIR" ]; then
   echo "[sbx] ERROR: $SBX_BUNDLE_DIR already exists; nothing was changed." >&2
-  echo "[sbx]        To update it: git -C $SBX_BUNDLE_DIR pull. To relink it: /etc/sbx/start.d/10-best-practices" >&2
+  echo "[sbx]        To update it: git -C $SBX_BUNDLE_DIR pull. To relink it: sbx-init" >&2
   exit 1
 fi
 
@@ -24,4 +24,4 @@ if ! GIT_TERMINAL_PROMPT=0 git clone "$BUNDLE_REPO_URL" "$SBX_BUNDLE_DIR"; then
   exit 1
 fi
 
-/etc/sbx/start.d/10-best-practices
+exec sbx-init
