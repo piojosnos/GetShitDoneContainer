@@ -25,7 +25,7 @@ host_init
 # tests/selftest/selfcheck keeps them equal.
 # ------------------------------------------------------------------------------
 expectedClaudeCount=55
-expectedCursorCount=52
+expectedCursorCount=53
 
 cursorName=hosttest-cursor
 cursorContainer=sbx-hosttest-cursor

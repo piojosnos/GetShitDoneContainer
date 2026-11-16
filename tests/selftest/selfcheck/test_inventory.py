@@ -23,7 +23,7 @@ NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 NAME_FILE_PATTERN = re.compile(r"^[0-9]{3}_[a-z0-9_]+\.py$")
 SHARED_CHECK_COUNT = 42
 CLAUDE_CHECK_COUNT = 13
-CURSOR_CHECK_COUNT = 10
+CURSOR_CHECK_COUNT = 11
 
 
 def expected_count(repo_dir: Path, constant_name: str) -> int:
@@ -177,9 +177,10 @@ def test_the_claude_check_names_are_the_thirteen_in_order(agent_check_list_of, c
     ]
 
 
-def test_the_cursor_check_names_are_the_ten_in_order(agent_check_list_of, check_name_list_of):
+def test_the_cursor_check_names_are_the_eleven_in_order(agent_check_list_of, check_name_list_of):
     assert check_name_list_of(agent_check_list_of("cursor")) == [
         "tool-cursor-agent",
+        "cursor-off-path",
         "cursor-env",
         "cursor-home-links",
         "cursor-self-update-off",
