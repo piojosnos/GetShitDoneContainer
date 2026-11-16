@@ -33,7 +33,7 @@ Milestone v2.0 Simple tooling. Decisions behind them: `.planning/research/v2-sim
 - [x] **INIT-02**: A rerun redoes every step with the same result; a lock stops an overlapping second run.
 - [x] **INIT-03**: A container start runs no hooks and no entrypoint: the container only sleeps; the entrypoint, the start-hook runner, `start.d/`, the readiness poll, their guard rules and the entrypoint self-test are gone.
 - [ ] **INIT-04**: `claude` and `cursor-agent` are not on the PATH; `sbx-claude` and `sbx-cursor` fail at once, without waiting or running anything, when init has not run in this container.
-- [ ] **INIT-05**: Init never deletes a user skill that shares a bundle skill's name; it touches only its own links into the bundle.
+- [x] **INIT-05**: Init never deletes a user skill that shares a bundle skill's name; it touches only its own links into the bundle.
 - [x] **INIT-06**: After init, the files in `state/claude` are owned by `sandbox`, not root.
 
 ### Host side in Python
@@ -88,7 +88,7 @@ Tracked, not in this roadmap.
 | INIT-02 | Phase 9 | Complete |
 | INIT-03 | Phase 9 | Complete |
 | INIT-04 | Phase 9 | Pending |
-| INIT-05 | Phase 9 | Pending |
+| INIT-05 | Phase 9 | Complete |
 | INIT-06 | Phase 9 | Complete |
 | HOST-01 | Phase 10 | Pending |
 | HOST-02 | Phase 10 | Pending |
