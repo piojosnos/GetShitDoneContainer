@@ -12,6 +12,10 @@
 # every sbx- container. The test images are always built with a root certificate,
 # so no certificate check may print that none was requested; that would mean the
 # build lost the certificate and its fingerprint together.
+# In the Cursor test sandbox, H-34 also checks that the agents folder reaches a
+# login shell inside an sbx-cursor session and no plain login shell; H-27 does the
+# same for Claude in its fresh container. This is the only check that starts a
+# Cursor sandbox, hence the split.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -252,6 +256,7 @@ check_cursor_sandbox() {
   fi
 
   run_init "$cursorContainer" "$RUN/logs/h34-cursor-init.out" "$expectedCursorStepCount" "Cursor test sandbox init"
+  check_cursor_login_shells
   plant_identity "$cursorContainer"
   plant_fake_login "$sbxDir/state/cursor/auth.json"
   run_selfcheck "$cursorContainer" "$outputFile"
@@ -259,6 +264,40 @@ check_cursor_sandbox() {
   check_selfcheck_output "Cursor test sandbox" "$outputFile" "$expectedCursorCount"
   check_certificate_requested "Cursor test sandbox" "$outputFile"
   report_selfcheck_summary "Cursor test sandbox" "$outputFile"
+}
+
+# ------------------------------------------------------------------------------
+# check_cursor_login_shells: a login shell finds cursor-agent in a session, not otherwise
+# ------------------------------------------------------------------------------
+# The stand-in cursor-agent in /tmp replaces its own folder at the front of the PATH
+# with the agents folder, which is the PATH the wrapper hands the real agent, then
+# starts the login shell. The image's login files run for real.
+# ------------------------------------------------------------------------------
+check_cursor_login_shells() {
+  local scriptText sessionFile plainFile sessionStatus plainStatus
+
+  sessionFile=$RUN/logs/h34-cursor-session-login.out
+  plainFile=$RUN/logs/h34-cursor-plain-login.out
+  IFS= read -r -d '' scriptText <<'SCRIPT' || true
+mkdir -p /tmp/h34-agent-bin1
+printf '%s\n' '#!/bin/sh' 'PATH=/opt/sbx/agents/bin:${PATH#/tmp/h34-agent-bin1:}' 'export PATH' "exec bash -lc 'command -v cursor-agent'" >/tmp/h34-agent-bin1/cursor-agent
+chmod 755 /tmp/h34-agent-bin1/cursor-agent
+SBX_AGENT_BIN_DIR=/tmp/h34-agent-bin1 exec sbx-cursor
+SCRIPT
+
+  run_timeout 60 docker exec "$cursorContainer" bash -c "$scriptText" >"$sessionFile" 2>&1 </dev/null
+  sessionStatus=$?
+
+  if [ "$sessionStatus" -ne 0 ] || [ "$(cat "$sessionFile" 2>/dev/null)" != "/opt/sbx/agents/bin/cursor-agent" ]; then
+    add_problem "a login shell inside an sbx-cursor session did not find /opt/sbx/agents/bin/cursor-agent (exit $sessionStatus); a login shell may have reset the PATH the wrapper set; output: $sessionFile"
+  fi
+
+  run_timeout 60 docker exec "$cursorContainer" bash -lc 'command -v cursor-agent' >"$plainFile" 2>&1 </dev/null
+  plainStatus=$?
+
+  if [ "$plainStatus" -ne 1 ] || [ -s "$plainFile" ]; then
+    add_problem "a plain login shell in the Cursor test sandbox found cursor-agent (exit $plainStatus); the agent must live off the PATH; output: $plainFile"
+  fi
 }
 
 # ------------------------------------------------------------------------------
@@ -295,4 +334,4 @@ check_claude_sandbox
 check_cursor_sandbox
 remove_cursor_sandbox
 report_check H-34 "sbx-selfcheck failed, printed the wrong number of checks, or the Cursor test sandbox did not start or go away" \
-  "sbx-selfcheck printed $expectedClaudeCount PASS lines in the Claude test sandbox and $expectedCursorCount in a Cursor test sandbox, and the Cursor test sandbox is gone"
+  "sbx-selfcheck printed $expectedClaudeCount PASS lines in the Claude test sandbox and $expectedCursorCount in a Cursor test sandbox, a login shell inside an sbx-cursor session found cursor-agent in /opt/sbx/agents/bin and a plain login shell did not, and the Cursor test sandbox is gone"

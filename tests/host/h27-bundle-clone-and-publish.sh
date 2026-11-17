@@ -6,7 +6,9 @@
 # One offline docker run --rm container on a fresh folder of the run folder. It
 # walks the first run in order: sbx-claude refuses before sbx-init, sbx-init
 # stops at the missing clone, sbx-bundle-clone clones and runs sbx-init, Claude
-# then starts, and a push reaches the origin.
+# then starts, and a push reaches the origin. The run also checks that a login
+# shell started inside an sbx-claude session finds claude in the agents folder,
+# and that a plain login shell does not.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -90,6 +92,15 @@ step push $?
 sbx-claude --version >"$ws/after.out" 2>"$ws/after.err"
 step after $?
 
+mkdir -p /tmp/h27-agent-bin1
+printf '%s\n' '#!/bin/sh' 'PATH=/opt/sbx/agents/bin:${PATH#/tmp/h27-agent-bin1:}' 'export PATH' "exec bash -lc 'command -v claude'" >/tmp/h27-agent-bin1/claude
+chmod 755 /tmp/h27-agent-bin1/claude
+SBX_AGENT_BIN_DIR=/tmp/h27-agent-bin1 sbx-claude >"$ws/sessionlogin.out" 2>&1
+step sessionlogin $?
+
+bash -lc 'command -v claude' >"$ws/plainlogin.out" 2>&1
+step plainlogin $?
+
 SBX_BUNDLE_DIR="$ws/h27-missing" BUNDLE_REPO_URL="$ws/no-such-origin.git" sbx-bundle-clone >"$ws/missing.out" 2>&1
 step missing $?
 SCRIPT
@@ -168,6 +179,38 @@ check_plain_path() {
 
   if [ -n "$plainOut" ]; then
     add_problem "command -v claude found '$plainOut' on the plain PATH; the agent must live off the PATH"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Checks a login shell inside an sbx-claude session finds claude in the agents folder
+# ------------------------------------------------------------------------------
+# The stand-in claude in /tmp replaces its own folder at the front of the PATH with
+# the agents folder, which is the PATH the wrapper hands the real agent, then starts
+# the login shell. The image's login files run for real.
+# ------------------------------------------------------------------------------
+check_session_login_shell() {
+  local sessionOut
+
+  check_step sessionlogin 0
+  sessionOut=$(cat "$h27Dir/sessionlogin.out" 2>/dev/null)
+
+  if [ "$sessionOut" != "/opt/sbx/agents/bin/claude" ]; then
+    add_problem "a login shell inside an sbx-claude session did not find /opt/sbx/agents/bin/claude; a login shell may have reset the PATH the wrapper set; got: $(file_head sessionlogin.out)"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Checks a plain login shell finds no claude
+# ------------------------------------------------------------------------------
+check_plain_login_shell() {
+  local plainOut
+
+  check_step plainlogin 1
+  plainOut=$(cat "$h27Dir/plainlogin.out" 2>/dev/null)
+
+  if [ -n "$plainOut" ]; then
+    add_problem "a plain login shell found '$plainOut'; the agent must live off the PATH"
   fi
 }
 
@@ -360,7 +403,9 @@ check_second_clone_refused
 check_remote
 check_push
 check_after
+check_session_login_shell
+check_plain_login_shell
 check_missing_origin
 check_gsd_synced
 report_check H-27 "the first run is wrong in a fresh sandbox folder: the refusal, sbx-init, the clone, the GSD sync or the push" \
-  "offline: sbx-claude refused before sbx-init and claude is off the plain PATH; sbx-init without a clone stopped at the links step naming sbx-bundle-clone; sbx-bundle-clone cloned and its sbx-init passed with 4 steps; a second clone was refused; a branch was pushed to the origin; Claude started after init; GSD synced offline at the pinned version; a failed clone left no folder"
+  "offline: sbx-claude refused before sbx-init and claude is off the plain PATH; sbx-init without a clone stopped at the links step naming sbx-bundle-clone; sbx-bundle-clone cloned and its sbx-init passed with 4 steps; a second clone was refused; a branch was pushed to the origin; Claude started after init; a login shell inside an sbx-claude session found claude in /opt/sbx/agents/bin and a plain login shell did not; GSD synced offline at the pinned version; a failed clone left no folder"

@@ -244,6 +244,7 @@ sbx-init: stopped at claude-best-practices-links
 - Run it once per new or recreated container. It removes the marker `/home/sandbox/.sbx-init-done` first and writes it, in the container's own layer, only when every step passed, so the wrappers refuse after a failed run. A recreate or `sbx-upgrade` wipes the marker, so run `sbx-init` again; `sbx-stop` and `sbx-start` keep the container and its marker.
 - A rerun redoes every step. It is also how to relink after a `git pull` of the clone that adds or removes a skill.
 - A second run while one runs prints `FAIL: lock: another sbx-init is running` and changes nothing.
+- Ctrl-C, a closed terminal or a stop ends the run with `sbx-init: interrupted; run sbx-init again` and exit status 130. The GSD installer is stopped with it and its log is removed, and no marker is written, so run `sbx-init` again.
 - It checks nothing. `sbx-selfcheck` is the check (see "Check a sandbox"); its `init-marker` line says whether `sbx-init` passed in this container.
 - The marker lives in the container, never in your folder, so a folder moved to another sandbox does not carry it.
 
@@ -515,6 +516,7 @@ docker run --rm sbx-claude:local /opt/sbx/agents/bin/claude --version
 | `FAIL: claude-best-practices-links: ... is not a link into the best-practices clone` (or `cursor-...`) | A folder or file of yours has the name of a clone skill, or `rules` is a real folder. It was left as it is. Rename or move that path, then run `sbx-init` again. |
 | `FAIL: claude-gsd-sync:` (or `cursor-gsd-sync:`) | Read the log file the line names, fix what it says, then run `sbx-init` again. A hand edit of a GSD file is kept in `state/claude/gsd-local-patches/`. |
 | `FAIL: claude-best-practices-links: no best-practices clone at ...` (or `cursor-...`) | Run `sbx-gh-login`, then `sbx-bundle-clone`; it clones the repo and runs `sbx-init` again. |
+| `FAIL: claude-best-practices-links: ... exists but has no rules/ folder` (or `skills/`, or `cursor-...`) | The folder is there but is not a complete clone. If it is a clone, run `git -C` on it with `pull`, then `sbx-init`. If not, move it aside, then run `sbx-gh-login` and `sbx-bundle-clone`. |
 | `FAIL: state-owner:` | Run the Mac command of its `fix:` line, then run `sbx-init` again. |
 | Claude hangs at start after an unclean stop | Check no claude is running (`docker exec sbx-demo pgrep -a claude` prints nothing), then delete `$SBX_DIR/state/claude/.claude.json.lock`. Everything else in `state/claude` is safe on the Mac. |
 | Console keyless sign-in is lost on recreate | It is stored outside `CLAUDE_CONFIG_DIR`. Log in with a claude.ai account instead. |

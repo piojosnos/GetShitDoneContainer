@@ -57,7 +57,7 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 | | |
 |---|---|
-| Runs | H-03 to H-35 against real Docker (the IDs keep their gaps): builds, mounts, isolation (H-26), persistence, the first run and the clone links (H-27 and H-16: the wrappers, `sbx-init`, a push, relinking), the GSD sync, the `sbx-*` scripts (H-28, H-29 and H-31 to H-33), `sbx-init` and `sbx-selfcheck` in a Claude and a Cursor test sandbox (H-34, which also fails when a certificate check says no root was requested) and the ownership fix and the run lock of `sbx-init` (H-35) |
+| Runs | H-03 to H-35 against real Docker (the IDs keep their gaps): builds, mounts, isolation (H-26), persistence, the first run and the clone links (H-27 and H-16: the wrappers, `sbx-init`, a push, relinking), the agents folder in a login shell inside an agent session (H-27 for Claude, H-34 for Cursor), the GSD sync, the `sbx-*` scripts (H-28, H-29 and H-31 to H-33), `sbx-init` and `sbx-selfcheck` in a Claude and a Cursor test sandbox (H-34, which also fails when a certificate check says no root was requested) and the ownership fix and the run lock of `sbx-init` (H-35) |
 | Where | The Mac. `run-all.sh` and `./host-test.sh` are unattended |
 | Catches | Anything that only shows on the real images and mounts |
 | Does not catch | Claude's or Cursor's own behaviour and a real login: no check runs an agent, and H-09 and H-29 prove that planted login files survive. The checks run a Claude sandbox, H-34 also starts a Cursor one for the self-check, and a Cursor login and prompt are checked by hand |
