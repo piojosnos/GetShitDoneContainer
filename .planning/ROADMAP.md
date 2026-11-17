@@ -196,7 +196,6 @@ Gap closure, from the phase verification (the `no-root-owned-state` fix line can
 **Plans**: 14/14 plans executed
 
 Plans:
-- [x] 09-14-PLAN.md
 
 **Wave 1**
 - [x] 09-01-PLAN.md: `sbx-init` launcher and runner (tracer), run lock, init marker and the state folders step (wave 1)
@@ -224,6 +223,9 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 - [x] 09-13-PLAN.md: dev-sandbox phase gate, then the Mac run of `./host-test.sh` (wave 7, checkpoint)
+
+**Gap closure**
+- [x] 09-14-PLAN.md: review warning fixes: an interrupted `sbx-init` stops the GSD installer, an incomplete clone folder gets its own fix, and H-27 and H-34 check login shells (checkpoint)
 
 ### Phase 09.1: Align vocabulary across code and docs (INSERTED)
 
