@@ -4,6 +4,34 @@ verified: 2026-11-17T06:00:00Z
 status: passed
 score: 5/5 must-haves verified
 covered_files:
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-01-PLAN.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-01-SUMMARY.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-02-PLAN.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-02-SUMMARY.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-03-PLAN.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-03-SUMMARY.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-04-PLAN.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-04-SUMMARY.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-05-PLAN.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-05-SUMMARY.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-06-PLAN.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-06-SUMMARY.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-07-PLAN.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-07-SUMMARY.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-08-PLAN.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-08-SUMMARY.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-09-PLAN.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-09-SUMMARY.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-10-PLAN.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-10-SUMMARY.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-11-PLAN.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-11-SUMMARY.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-12-PLAN.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-12-SUMMARY.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-13-PLAN.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-13-SUMMARY.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-14-PLAN.md
+  - .planning/phases/09-sbx-init-replaces-the-start-hooks/09-14-SUMMARY.md
   - base/Dockerfile
   - base/init/best_practices_link.py
   - base/init/gsd_sync.py
@@ -18,7 +46,7 @@ covered_files:
   - tests/guard/start.sh
   - tests/host/h27-bundle-clone-and-publish.sh
   - tests/host/h34-selfcheck.sh
-covered_digest: "v2:sha256:b608dacfa123e1c046c05f49815b4581fe74e258acb0698eae6b411e4f68d788"
+covered_digest: "v2:sha256:e3588ca1eb5045962e7108ce5ff9320f743b9940d29abca2fec6cb18c167524f"
 behavior_unverified: 0
 overrides_applied: 0
 re_verification:
