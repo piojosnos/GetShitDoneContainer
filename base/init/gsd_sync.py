@@ -70,8 +70,9 @@ def _make_config_folder(config_dir: Path) -> CheckResult | None:
 # ------------------------------------------------------------------------------
 # Running the installer
 # ------------------------------------------------------------------------------
-# The installer gets its own session, so a stuck one is stopped together with
-# everything it started. Its output goes to a file that is kept only on failure.
+# The installer runs in its own session, so a time limit or an interruption of
+# sbx-init kills everything it started before the lock is released. Its output
+# file is kept only on failure.
 # ------------------------------------------------------------------------------
 
 def _run_installer(
@@ -98,7 +99,15 @@ def _run_installer(
 
             return failed(f"{argument_list[0]} is not on PATH", rebuild_hint())
 
-        timed_out = _wait_or_stop(process, time_limit_seconds)
+        try:
+            timed_out = _wait_or_stop(process, time_limit_seconds)
+        except BaseException:
+            try:
+                _kill_group(process)
+            finally:
+                log_file.unlink(missing_ok=True)
+
+            raise
 
     return _outcome_result(process.returncode, timed_out, config_dir, time_limit_seconds, log_file)
 

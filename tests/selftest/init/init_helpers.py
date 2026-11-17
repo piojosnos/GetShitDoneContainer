@@ -7,6 +7,7 @@
 
 import io
 import os
+import subprocess
 from pathlib import Path
 
 import init_runner
@@ -66,6 +67,15 @@ def write_stand_in(folder: Path, name: str, script_body: str) -> Path:
 
 def environment_with(folder: Path) -> dict[str, str]:
     return {"PATH": f"{folder}{os.pathsep}{os.environ['PATH']}"}
+
+
+def process_is_gone(process_id: int) -> bool:
+    completed = subprocess.run(
+        ["ps", "-o", "stat=", "-p", str(process_id)], capture_output=True, text=True, check=False
+    )
+    state = completed.stdout.strip()
+
+    return state == "" or state.startswith("Z")
 
 
 def load_step(path: Path):

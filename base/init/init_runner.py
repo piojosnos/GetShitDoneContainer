@@ -7,6 +7,7 @@
 
 import fcntl
 import importlib.util
+import signal
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -30,6 +31,9 @@ _MARKER_STEP_NAME = "marker"
 _AGENT_STEPS_STEP_NAME = "load-agent-steps"
 _SHARED_GROUP = 0
 _AGENT_GROUP = 1
+_INTERRUPTED_EXIT_CODE = 130
+_INTERRUPTED_TEXT = "sbx-init: interrupted; run sbx-init again"
+_STOP_SIGNAL_LIST = [signal.SIGHUP, signal.SIGTERM]
 
 
 # ------------------------------------------------------------------------------
@@ -266,10 +270,41 @@ def run_init(shared_steps_dir: Path, agent_steps_dir: Path, marker_file: Path, l
         lock_handle.close()
 
 
+# ------------------------------------------------------------------------------
+# Interruptions
+# ------------------------------------------------------------------------------
+# A closed terminal (SIGHUP) or a stop (SIGTERM) would end Python without running
+# any finally block, so both raise KeyboardInterrupt like Ctrl-C; the GSD step
+# then stops its installer, and the lock closes last.
+# ------------------------------------------------------------------------------
+
+def _raise_on_stop_signals() -> None:
+    for signal_number in _STOP_SIGNAL_LIST:
+        signal.signal(signal_number, signal.default_int_handler)
+
+
+def _report_interrupted() -> None:
+    try:
+        print(_INTERRUPTED_TEXT, file=sys.stderr)
+    except OSError:
+        pass
+
+
+# ------------------------------------------------------------------------------
+# The launcher's entry
+# ------------------------------------------------------------------------------
+
 def main(argument_list: list[str]) -> int:
     if argument_list:
         print(_USAGE_TEXT, file=sys.stderr)
 
         return 2
 
-    return run_init(SHARED_STEPS_DIR, paths.AGENT_STEPS_DIR, paths.INIT_MARKER_FILE, paths.INIT_LOCK_FILE, sys.stdout)
+    _raise_on_stop_signals()
+
+    try:
+        return run_init(SHARED_STEPS_DIR, paths.AGENT_STEPS_DIR, paths.INIT_MARKER_FILE, paths.INIT_LOCK_FILE, sys.stdout)
+    except KeyboardInterrupt:
+        _report_interrupted()
+
+        return _INTERRUPTED_EXIT_CODE

@@ -7,7 +7,6 @@
 
 import os
 import shutil
-import subprocess
 import time
 from pathlib import Path
 
@@ -15,7 +14,7 @@ import pytest
 
 import hints
 from gsd_sync import gsd_sync_result
-from init_helpers import REPO_DIR, environment_with, load_step, write_stand_in
+from init_helpers import REPO_DIR, environment_with, load_step, process_is_gone, write_stand_in
 
 STAND_IN_NAME = "gsd-core-stand-in"
 RECORDING_BODY = """printf '%s\\n' "$@" > "$STAND_IN_ARGS_FILE"
@@ -53,15 +52,6 @@ def stand_in_environment(tmp_path: Path, body: str, exit_code: int = 0) -> dict[
 
 def log_file_list(log_dir: Path) -> list[Path]:
     return sorted(log_dir.glob("sbx-init-gsd-*.log"))
-
-
-def process_is_gone(process_id: int) -> bool:
-    completed = subprocess.run(
-        ["ps", "-o", "stat=", "-p", str(process_id)], capture_output=True, text=True, check=False
-    )
-    state = completed.stdout.strip()
-
-    return state == "" or state.startswith("Z")
 
 
 def pinned_gsd_version() -> str:
