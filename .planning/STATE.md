@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 9
 current_phase_name: sbx-init replaces the start hooks
 status: verifying
-stopped_at: Completed 09-13-PLAN.md
-last_updated: "2026-11-16T19:55:38.315Z"
+stopped_at: Completed 09-14-PLAN.md
+last_updated: "2026-11-17T23:29:11.995Z"
 last_activity: 2026-11-16
 last_activity_desc: Phase 9 execution started
-state_head: 458f5a82d91281d9b2e60c5847d15a570a62f070
+state_head: 8b74b76020a061942798eaf7622e2aa447b440dd
 progress:
   total_phases: 10
   completed_phases: 3
-  total_plans: 40
-  completed_plans: 40
+  total_plans: 41
+  completed_plans: 41
   percent: 30
 ---
 
@@ -198,6 +198,7 @@ Last activity: 2026-11-16 — Phase 9 execution started
 | Phase 09 P11 | 12min | 3 tasks | 5 files |
 | Phase 09 P12 | 25min | 3 tasks | 6 files |
 | Phase 09 P13 | 40 min | 2 tasks | 0 files |
+| Phase 09 P14 | n/a | 4 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -393,6 +394,8 @@ Recent decisions affecting current work:
 - [Phase 09]: H-16 clash assertion matches the FAIL line on state/claude/rules and skills/sbx-fixture-one (full paths init prints)
 - [Phase 09]: Docs (09-12): new text says best-practices; existing bundle wording stays in sections not rewritten
 - [Phase 09]: Phase 9 gate: A1 (sandbox user can give root-owned state back on Docker Desktop) and A2 to A4 confirmed by the Mac run; no gap-closure plan needed
+- [Phase 09]: WR-02 needed no code change: the Mac run proves login shells inside agent sessions keep /opt/sbx/agents/bin and plain login shells do not
+- [Phase 09]: An incomplete best-practices clone folder gets its own FAIL: pull it or move it aside, never delete
 
 ### Pending Todos
 
@@ -465,8 +468,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-16T19:55:38.222Z
-Stopped at: Completed 09-13-PLAN.md
+Last session: 2026-11-17T23:29:11.909Z
+Stopped at: Completed 09-14-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
