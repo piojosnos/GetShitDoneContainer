@@ -15,9 +15,11 @@ from bundle_links import (
     RULES_LINK_TEXT,
     SKILL_LINK_TEXT_TEMPLATE,
     best_practices_skill_name_list,
+    incomplete_clone_result,
     is_best_practices_link,
 )
 from check_result import CheckResult, capped_problem_detail, failed, passed
+from paths import path_is_present
 
 
 # ------------------------------------------------------------------------------
@@ -27,11 +29,14 @@ from check_result import CheckResult, capped_problem_detail, failed, passed
 def link_best_practices(config_dir: Path, bundle_dir: Path, links_rules: bool) -> CheckResult:
     needed_dir = bundle_dir / "rules" if links_rules else bundle_dir / "skills"
 
-    if not needed_dir.is_dir():
+    if not path_is_present(bundle_dir):
         return failed(
             f"no best-practices clone at {bundle_dir}",
             "run sbx-gh-login, then sbx-bundle-clone; it clones the repo and runs sbx-init again",
         )
+
+    if not needed_dir.is_dir():
+        return incomplete_clone_result(bundle_dir, needed_dir)
 
     skills_dir = config_dir / "skills"
     clash_list: list[Path] = []

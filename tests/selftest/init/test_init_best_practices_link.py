@@ -8,6 +8,9 @@
 import os
 from pathlib import Path
 
+import pytest
+
+import bundle_links
 from best_practices_link import link_best_practices
 from init_helpers import REPO_DIR, load_step
 
@@ -221,29 +224,88 @@ def test_a_list_file_from_an_older_image_is_left_byte_for_byte(tmp_path):
 # The clone's shape
 # ------------------------------------------------------------------------------
 
-def test_no_rules_folder_in_the_clone_fails_the_claude_step_and_makes_no_link(tmp_path):
+def incomplete_detail(clone_dir: Path, folder_name: str) -> str:
+    return f"{clone_dir} exists but has no {folder_name}/ folder"
+
+
+def assert_incomplete_fix(hint: str, clone_dir: Path) -> None:
+    assert f"git -C {clone_dir} pull" in hint
+    assert "sbx-init" in hint
+    assert "move it aside" in hint
+    assert "sbx-bundle-clone" in hint
+
+
+def test_a_clone_folder_without_rules_fails_the_claude_step_as_incomplete_and_makes_no_link(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"])
     (clone1 / "rules").rmdir()
 
     result = link_best_practices(config1, clone1, True)
 
     assert not result.passed
-    assert "no best-practices clone" in result.detail
-    assert "sbx-gh-login" in result.hint
-    assert "sbx-bundle-clone" in result.hint
+    assert result.detail == incomplete_detail(clone1, "rules")
+    assert_incomplete_fix(result.hint, clone1)
     assert list(config1.iterdir()) == []
 
 
-def test_no_skills_folder_in_the_clone_fails_the_cursor_step_and_makes_no_link(tmp_path):
+def test_a_clone_folder_without_skills_fails_the_cursor_step_as_incomplete_and_makes_no_link(tmp_path):
     config1, clone1 = make_trees(tmp_path, [])
     (clone1 / "skills").rmdir()
 
     result = link_best_practices(config1, clone1, False)
 
     assert not result.passed
+    assert result.detail == incomplete_detail(clone1, "skills")
+    assert_incomplete_fix(result.hint, clone1)
+    assert list(config1.iterdir()) == []
+
+
+@pytest.mark.parametrize("links_rules", [True, False])
+def test_no_clone_folder_fails_both_steps_with_the_clone_fix(tmp_path, links_rules):
+    config1 = tmp_path / "state1" / "agent1"
+    config1.mkdir(parents=True)
+    clone1 = tmp_path / "best-practices"
+
+    result = link_best_practices(config1, clone1, links_rules)
+
+    assert not result.passed
+    assert result.detail == f"no best-practices clone at {clone1}"
     assert "sbx-gh-login" in result.hint
     assert "sbx-bundle-clone" in result.hint
+    assert "move it aside" not in result.hint
     assert list(config1.iterdir()) == []
+
+
+@pytest.mark.parametrize("kind", ["folder", "file", "link"])
+def test_an_empty_folder_a_file_or_a_dangling_link_at_the_clone_path_is_incomplete_not_missing(tmp_path, kind):
+    config1 = tmp_path / "state1" / "agent1"
+    config1.mkdir(parents=True)
+    clone1 = tmp_path / "best-practices"
+
+    if kind == "folder":
+        clone1.mkdir()
+    elif kind == "file":
+        clone1.write_text("not a clone\n")
+    else:
+        os.symlink("nowhere1", clone1)
+
+    result = link_best_practices(config1, clone1, True)
+
+    assert not result.passed
+    assert result.detail == incomplete_detail(clone1, "rules")
+    assert_incomplete_fix(result.hint, clone1)
+    assert list(config1.iterdir()) == []
+
+
+def test_init_and_the_self_check_give_the_same_text_for_an_incomplete_clone(tmp_path):
+    config1, clone1 = make_trees(tmp_path, ["skill1"])
+    (clone1 / "rules").rmdir()
+
+    init_result = link_best_practices(config1, clone1, True)
+    check_result = bundle_links.bundle_links_result(config1, clone1, True)
+
+    assert not init_result.passed
+    assert init_result.detail == check_result.detail
+    assert init_result.hint == check_result.hint
 
 
 def test_a_clone_with_rules_and_no_skills_folder_links_rules_and_zero_skills(tmp_path):

@@ -108,22 +108,44 @@ def test_bundle_links_result_fails_for_rules_that_is_not_a_link(tmp_path):
     assert "rules" in result.detail
 
 
-def test_bundle_links_result_says_there_is_no_clone_when_the_folder_the_mode_needs_is_absent(tmp_path):
+def test_the_links_result_says_there_is_no_clone_when_the_clone_folder_is_absent(tmp_path):
+    config1 = tmp_path / "state1" / "agent1"
+    config1.mkdir(parents=True)
+    clone1 = tmp_path / "missing1"
+
+    for links_rules in [True, False]:
+        result = bundle_links.bundle_links_result(config1, clone1, links_rules)
+
+        assert not result.passed
+        assert result.detail == f"no clone at {clone1}"
+        assert "sbx-gh-login" in result.hint
+        assert "sbx-bundle-clone" in result.hint
+        assert "move it aside" not in result.hint
+
+
+def test_the_links_result_names_the_folder_a_clone_folder_lacks(tmp_path):
     config1 = tmp_path / "state1" / "agent1"
     config1.mkdir(parents=True)
     clone1 = tmp_path / "best-practices"
     (clone1 / "rules").mkdir(parents=True)
 
     skills_result = bundle_links.bundle_links_result(config1, clone1, False)
-    rules_result = bundle_links.bundle_links_result(config1, tmp_path / "missing1", True)
+
+    (clone1 / "rules").rmdir()
+    (clone1 / "skills").mkdir()
+
+    rules_result = bundle_links.bundle_links_result(config1, clone1, True)
 
     assert not skills_result.passed
-    assert "no clone" in skills_result.detail
-    assert "sbx-gh-login" in skills_result.hint
-    assert "sbx-bundle-clone" in skills_result.hint
+    assert skills_result.detail == f"{clone1} exists but has no skills/ folder"
     assert not rules_result.passed
-    assert "no clone" in rules_result.detail
-    assert "sbx-bundle-clone" in rules_result.hint
+    assert rules_result.detail == f"{clone1} exists but has no rules/ folder"
+
+    for result in [skills_result, rules_result]:
+        assert f"git -C {clone1} pull" in result.hint
+        assert "sbx-init" in result.hint
+        assert "move it aside" in result.hint
+        assert "sbx-bundle-clone" in result.hint
 
 
 def test_bundle_links_result_without_rules_mode_passes_on_a_tree_with_no_rules_link(tmp_path):
