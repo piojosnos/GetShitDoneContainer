@@ -16,6 +16,7 @@ updated: 2026-11-17T04:56:15Z
 expected: In a live sbx-claude session, both `command -v claude` and `bash -lc 'command -v claude'` print /opt/sbx/agents/bin/claude; the same holds for cursor-agent in sbx-cursor.
 result: skipped
 reason: "Deferred follow-up: user skipped the manual Mac check to keep moving; no automated test covers it yet"
+follow_up: "H-27 (Claude) and H-34 (Cursor) now automate this check and passed on the Mac (host-test.log, commit 8b74b76): a login shell inside an agent session finds the agent in /opt/sbx/agents/bin and a plain login shell does not"
 
 ## Summary
 

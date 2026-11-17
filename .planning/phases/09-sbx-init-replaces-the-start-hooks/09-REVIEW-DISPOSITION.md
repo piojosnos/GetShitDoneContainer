@@ -5,15 +5,15 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Ctrl-C or a closed terminal leaves the GSD installer running after the lock is released"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "The agents folder on PATH probably does not reach the agent's own Bash tool (unverified)"
   - id: WR-03
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "The \"no clone\" fix is a dead end when the clone folder exists but is incomplete"
   - id: IN-01
     severity: info
@@ -35,7 +35,7 @@ findings:
     severity: info
     disposition: open
     title: "`_place_link` returns a bool no caller reads"
-open: 8
+open: 5
 total: 8
 recorded: 2026-11-16T20:01:16.448933Z
 ---
@@ -44,9 +44,9 @@ recorded: 2026-11-16T20:01:16.448933Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
-| WR-03 | warning | open | - |
+| WR-01 | warning | fixed | 68ccaad (H-27/H-34 pass on Mac) |
+| WR-02 | warning | fixed | 8b74b76 (H-27/H-34 pass on Mac; settled by test, no code change) |
+| WR-03 | warning | fixed | fc0f69b (H-27/H-34 pass on Mac) |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
 | IN-03 | info | open | - |
