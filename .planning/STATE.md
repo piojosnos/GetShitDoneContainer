@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
-current_phase: 9
-current_phase_name: sbx-init replaces the start hooks
-status: verifying
-stopped_at: Completed 09-14-PLAN.md
-last_updated: "2026-11-17T23:29:11.995Z"
-last_activity: 2026-11-16
-last_activity_desc: Phase 9 execution started
-state_head: 8b74b76020a061942798eaf7622e2aa447b440dd
+current_phase: "09.1"
+current_phase_name: Align vocabulary across code and docs
+status: planning
+stopped_at: Phase 9 complete, ready to plan Phase 09.1
+last_updated: "2026-11-17T23:31:47.387Z"
+last_activity: 2026-11-17
+last_activity_desc: Phase 9 complete, transitioned to Phase 09.1
+state_head: 8c902ac4389a959260c46656a359ef8af2a2cec7
 progress:
   total_phases: 10
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 41
   completed_plans: 41
-  percent: 30
+  percent: 50
 ---
 
 # Project State
@@ -29,15 +29,15 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 
 ## Current Position
 
-Phase: 9 (sbx-init replaces the start hooks) — EXECUTING
-Plan: 13 of 13
-Status: Phase complete — ready for verification
-Last activity: 2026-11-16 — Phase 9 execution started
+Phase: 09.1 — Align vocabulary across code and docs
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-17 — Phase 9 complete, transitioned to Phase 09.1
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 116
+- Total plans completed: 130
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -62,6 +62,7 @@ Last activity: 2026-11-16 — Phase 9 execution started
 | 06.1 | 5 | - | - |
 | 07 | 3 | - | - |
 | 08 | 13 | - | - |
+| 9 | 14 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -469,7 +470,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-11-17T23:29:11.909Z
-Stopped at: Completed 09-14-PLAN.md
+Stopped at: Phase 9 complete, ready to plan Phase 09.1
 Resume file: None
 
 ## Operator Next Steps
