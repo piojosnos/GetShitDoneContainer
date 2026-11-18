@@ -231,10 +231,51 @@ Plans:
 ### Phase 09.1: Align vocabulary across code and docs (INSERTED)
 
 **Goal**: Code, tests and docs use one set of terms. The user's rules and skills repo is called best-practices everywhere, never bundle, and any other inconsistent names the sweep finds are fixed.
-**Requirements**: TBD
+**Requirements**: TBD (decisions D-01 to D-19 in 09.1-CONTEXT.md are the contract)
 **Depends on**: Phase 9
 
-**Plans**: TBD
+**Plans**: 14 plans
+
+Plans:
+**Wave 1**
+- [ ] 09.1-01-PLAN.md: GLOSSARY.md drafted and linked from the README, then the blocking glossary checkpoint (wave 1, checkpoint)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 09.1-02-PLAN.md: the best-practices repo rule loses its sandbox details, on its own branch in that repo (wave 2)
+- [ ] 09.1-03-PLAN.md: the agreed glossary recorded; the clone command, its variable, the repo URL pin and the environment check renamed, with the MIGRATION note (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 09.1-04-PLAN.md: the best-practices links module, link and no-copy checks, host test library, H-27 and the fixture repo renamed; the guard's scan list follows (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 09.1-05-PLAN.md: "the host" in hints, scripts and tests; H-06 renamed (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 09.1-06-PLAN.md: directory, selfcheck side: `state-dirs` twin, `project-dir`, the selfcheck library and its tests (wave 5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 09.1-07-PLAN.md: directory, rest of the image: sbx-init, in-image commands, agent wrappers, agent files, Dockerfiles (wave 6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 09.1-08-PLAN.md: directory, host scripts and the sbx selftest (wave 7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 09.1-09-PLAN.md: directory, host tests and guard; H-10 renamed (wave 8)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 09.1-10-PLAN.md: remaining pairs: `sbx-selfcheck` bug hint, image-root-owned checks, agent wrapper wording, `AGENT_CONFIG_DIR`, selftest and spelling (wave 9)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 09.1-11-PLAN.md: README, MIGRATION, ZSCALER, the memory prompt and the test docs follow the glossary (wave 10)
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 09.1-12-PLAN.md: live planning docs (PROJECT, open requirements, future roadmap text, two todos) (wave 11)
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [ ] 09.1-13-PLAN.md: `.claude/CLAUDE.md` links the glossary and follows it (wave 12)
+
+**Wave 13** *(blocked on Wave 12 completion)*
+- [ ] 09.1-14-PLAN.md: dev-sandbox gate, local PR branches, then the host run (wave 13, checkpoint)
 
 ### Phase 10: Host side to Python
 

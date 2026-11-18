@@ -4,15 +4,15 @@ milestone: v2.0
 milestone_name: Simple tooling
 current_phase: "09.1"
 current_phase_name: Align vocabulary across code and docs
-status: planning
+status: executing
 stopped_at: Phase 09.1 context gathered
-last_updated: "2026-11-18T02:09:20.962Z"
+last_updated: "2026-11-18T03:07:10.656Z"
 last_activity: "2026-11-18, completed quick task 261118-0vx: PR 52 best-practices review fixes"
-state_head: 0f1cfd6048ada73364b93de66ac21f633efdfa55
+state_head: 7208be56784d26c08648ca32b16aa45ed2fb3276
 progress:
   total_phases: 11
   completed_phases: 4
-  total_plans: 41
+  total_plans: 55
   completed_plans: 41
   percent: 36
 last_activity_desc: Phase 9 complete, transitioned to Phase 09.1
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 
 ## Current Position
 
-Phase: 09.1 — Align vocabulary across code and docs
+Phase: 09.1 (Align vocabulary across code and docs) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
+Status: Ready to execute
 Last activity: 2026-11-18, completed quick task 261118-0vx: PR 52 best-practices review fixes
 
 ## Performance Metrics
