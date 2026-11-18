@@ -271,7 +271,7 @@ case_overlaps() {
 # Case: folders are compared as folders; a symlink or letter case cannot hide one
 # ------------------------------------------------------------------------------
 # Runs after case_overlaps, which registered demo (WORK/sbx one) and deep
-# (WORK/a/b/c). /tmp against /private/tmp on the Mac is a symlink case too.
+# (WORK/a/b/c). /tmp against /private/tmp on macOS is a symlink case too.
 # ------------------------------------------------------------------------------
 case_same_folder() {
   local sandboxText='overlaps the folder of sandbox'
@@ -304,7 +304,7 @@ case_same_folder() {
     run_sbx upper sbx-add upper "$WORK/SBX ONE"
     expect "sbx-add: the same folder in another letter case is refused" refused_cleanly upper "$sandboxText demo" upper ""
   else
-    echo "INFO: this disk tells letter cases apart; the same-folder-in-another-case check runs on the Mac only"
+    echo "INFO: this disk tells letter cases apart; the same-folder-in-another-case check runs on a macOS host only"
   fi
 }
 

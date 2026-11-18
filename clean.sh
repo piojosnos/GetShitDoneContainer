@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Frees Docker disk space on the Mac and removes leftover host-test runs
+# Frees Docker disk space on the host and removes leftover host-test runs
 # ------------------------------------------------------------------------------
 # Usage: ./clean.sh [--yes]
 # Without --yes it only shows what it would remove.

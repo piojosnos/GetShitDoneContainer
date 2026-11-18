@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Sets the mode of every tracked file to what git committed, on the Mac and in
+# Sets the mode of every tracked file to what git committed, on the host and in
 # the sandbox
 # ------------------------------------------------------------------------------
 # Usage: sbx-fix-modes NAME
 # Docker Desktop keeps the mode the sandbox sees in the extended attribute
-# user.containers.override_stat (uid:gid:mode) of the Mac file. A chmod in the
+# user.containers.override_stat (uid:gid:mode) of the host file. A chmod in the
 # sandbox changes only that attribute, so the two sides drift apart. This sets
-# the Mac mode and the attribute's mode to 644 or 755 from the git index, so the
-# Mac, the sandbox and git agree. A file without the attribute gets the Mac
+# the host mode and the attribute's mode to 644 or 755 from the git index, so the
+# host, the sandbox and git agree. A file without the attribute gets the host
 # mode only.
 # ------------------------------------------------------------------------------
 
@@ -19,16 +19,16 @@ set -eu
 . "$(dirname "$0")/sbx-lib.sh"
 
 overrideName=user.containers.override_stat
-macCount=0
+hostCount=0
 sandboxCount=0
 
 # ------------------------------------------------------------------------------
-# fix_mac_mode PATH GIT_MODE: sets the Mac mode of PATH to 644 or 755 from git
+# fix_host_mode PATH GIT_MODE: sets the host mode of PATH to 644 or 755 from git
 # ------------------------------------------------------------------------------
 # The mode is read from ls, the same on macOS and Linux; macOS appends @ or + to
 # it when the file has attributes, so only its first ten characters count.
 # ------------------------------------------------------------------------------
-fix_mac_mode() {
+fix_host_mode() {
   local wantedText=-rw-r--r--
   local listLine
 
@@ -40,14 +40,14 @@ fix_mac_mode() {
 
   if [ "${listLine:0:10}" != "$wantedText" ]; then
     chmod "${2#100}" "$1"
-    macCount=$((macCount + 1))
+    hostCount=$((hostCount + 1))
   fi
 }
 
 # ------------------------------------------------------------------------------
 # fix_sandbox_mode PATH GIT_MODE: sets the attribute's mode of PATH to GIT_MODE
 # ------------------------------------------------------------------------------
-# The uid and gid stay. It runs after fix_mac_mode, so the file is writable:
+# The uid and gid stay. It runs after fix_host_mode, so the file is writable:
 # macOS refuses to write an attribute on a read-only file.
 # ------------------------------------------------------------------------------
 fix_sandbox_mode() {
@@ -103,14 +103,14 @@ while IFS= read -r -d '' indexEntry; do
     continue
   fi
 
-  fix_mac_mode "$filePath" "$gitMode"
+  fix_host_mode "$filePath" "$gitMode"
 
   if [ "$hasXattr" = true ]; then
     fix_sandbox_mode "$filePath" "$gitMode"
   fi
 done < <(git -C "$codeDir" ls-files -s -z)
 
-echo "sbx-fix-modes: set $macCount Mac modes and $sandboxCount sandbox modes from git in $codeDir"
+echo "sbx-fix-modes: set $hostCount host modes and $sandboxCount sandbox modes from git in $codeDir"
 
 if [ "$hasXattr" = false ]; then
   echo "sbx-fix-modes: xattr is not installed, so the sandbox modes were not looked at"

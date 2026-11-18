@@ -43,7 +43,7 @@ tag_refused() {
 # run_build_without_docker LABEL: runs build.sh with no docker on the PATH
 # ------------------------------------------------------------------------------
 # The run stops at the first docker call and never reaches a daemon, whatever
-# the Mac's Docker or buildx set-up. It adds no stand-in. Only dirname and grep
+# the host's Docker or buildx set-up. It adds no stand-in. Only dirname and grep
 # are linked, the two tools build.sh needs before its first build. Paths come
 # from type -P, so a shell function named grep in the caller does not matter.
 # Output goes to WORK/LABEL.out and WORK/LABEL.err; BUILD_RC holds the status.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Registers a sandbox once: its name, its folder on the Mac and its agent
+# Registers a sandbox once: its name, its folder on the host and its agent
 # ------------------------------------------------------------------------------
 # Usage: sbx-add NAME HOST_PATH [claude|cursor]
 # The agent is claude unless the third argument names another.
@@ -116,8 +116,8 @@ folder_within() {
 # tails_overlap FIRST SECOND: true when one tail is the other or holds it
 # ------------------------------------------------------------------------------
 # Both tails are below the same existing folder. They are compared per segment
-# and without letter case, because the Mac's disk ignores case: /x/sbx and
-# /x/sbx-other do not overlap, and an empty tail holds every tail.
+# and without letter case, because the default macOS disk ignores case: /x/sbx
+# and /x/sbx-other do not overlap, and an empty tail holds every tail.
 # ------------------------------------------------------------------------------
 tails_overlap() {
   local LC_ALL=C
@@ -146,7 +146,7 @@ tails_overlap() {
 # paths_overlap A B: true when A and B are one folder or one holds the other
 # ------------------------------------------------------------------------------
 # Folders are compared as folders, not as text, so a symlink, /tmp against
-# /private/tmp and a different letter case on the Mac's disk all count as the
+# /private/tmp and a different letter case on a macOS disk all count as the
 # same folder. A part that does not exist yet is compared as text below the
 # deepest part that does. Whatever cannot be resolved counts as an overlap.
 # ------------------------------------------------------------------------------
@@ -194,7 +194,7 @@ refuse_registered() {
 # refuse_registry_overlap PATH: fails when PATH is, holds or is in the registry
 # ------------------------------------------------------------------------------
 # A sandbox that reaches the registry could rewrite its own entry. This also
-# refuses / and the Mac home, which hold it.
+# refuses / and the host home, which hold it.
 # ------------------------------------------------------------------------------
 refuse_registry_overlap() {
   if paths_overlap "$1" "$configDir"; then
@@ -206,13 +206,13 @@ refuse_registry_overlap() {
 # ------------------------------------------------------------------------------
 # refuse_repo_overlap PATH: fails when PATH is, holds or is in the repo folder
 # ------------------------------------------------------------------------------
-# The Mac runs the repo's scripts, compose.yml and build.sh. A sandbox that
-# reaches them could change what the Mac runs next. This also refuses the
+# The host runs the repo's scripts, compose.yml and build.sh. A sandbox that
+# reaches them could change what the host runs next. This also refuses the
 # folders that hold the repo, such as the folder it was cloned into.
 # ------------------------------------------------------------------------------
 refuse_repo_overlap() {
   if paths_overlap "$1" "$repoDir"; then
-    sbx_error "'$1' overlaps the repo folder $repoDir; a sandbox there could change the scripts the Mac runs. Pick another folder."
+    sbx_error "'$1' overlaps the repo folder $repoDir; a sandbox there could change the scripts the host runs. Pick another folder."
     return 1
   fi
 }

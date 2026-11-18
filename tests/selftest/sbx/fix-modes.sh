@@ -58,7 +58,7 @@ has_mode() {
 # ------------------------------------------------------------------------------
 # make_repo DIR: commits run.sh and ro.sh as 755, doc.md as 644, then drifts
 # ------------------------------------------------------------------------------
-# After the drift the Mac modes disagree with git on run.sh (600), doc.md (755)
+# After the drift the host modes disagree with git on run.sh (600), doc.md (755)
 # and ro.sh (read-only), and run.sh and ro.sh carry an attribute the sandbox
 # would read as 644. plain.sh has no attribute and matches git.
 # ------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ case_fix_modes_refusals() {
 }
 
 # ------------------------------------------------------------------------------
-# Case: the Mac modes and the attributes follow git; a second run changes nothing
+# Case: the host modes and the attributes follow git; a second run changes nothing
 # ------------------------------------------------------------------------------
 case_fix_modes_sets_both_sides() {
   local repoDir="$WORK/modes dir/fixed/fixed"
@@ -124,21 +124,21 @@ case_fix_modes_sets_both_sides() {
 
   PATH=$WORK/xattr-bin:$PATH run_sbx modes5 sbx-fix-modes fixed
   expect "sbx-fix-modes: it exits 0" equals "$SBX_RC" 0
-  expect "sbx-fix-modes: a file committed as 755 is 755 on the Mac" has_mode "$repoDir/run.sh" -rwxr-xr-x
-  expect "sbx-fix-modes: a file committed as 644 is 644 on the Mac" has_mode "$repoDir/doc.md" -rw-r--r--
-  expect "sbx-fix-modes: a read-only file gets the git mode on the Mac" has_mode "$repoDir/ro.sh" -rwxr-xr-x
+  expect "sbx-fix-modes: a file committed as 755 is 755 on the host" has_mode "$repoDir/run.sh" -rwxr-xr-x
+  expect "sbx-fix-modes: a file committed as 644 is 644 on the host" has_mode "$repoDir/doc.md" -rw-r--r--
+  expect "sbx-fix-modes: a read-only file gets the git mode on the host" has_mode "$repoDir/ro.sh" -rwxr-xr-x
   expect "sbx-fix-modes: a file that matches git keeps its mode" has_mode "$repoDir/plain.sh" -rwxr-xr-x
   expect "sbx-fix-modes: the attribute takes the git mode and keeps the owner" equals "$(attribute_of "$repoDir/run.sh")" 1001:1001:0100755
   expect "sbx-fix-modes: a read-only file gets the git mode in its attribute" equals "$(attribute_of "$repoDir/ro.sh")" 1001:1001:0100755
   expect "sbx-fix-modes: a file without an attribute does not get one" equals "$(attribute_of "$repoDir/plain.sh")" ""
-  expect "sbx-fix-modes: the counts are printed" has_text "$WORK/modes5.out" "set 3 Mac modes and 2 sandbox modes from git"
+  expect "sbx-fix-modes: the counts are printed" has_text "$WORK/modes5.out" "set 3 host modes and 2 sandbox modes from git"
 
   PATH=$WORK/xattr-bin:$PATH run_sbx modes6 sbx-fix-modes fixed
-  expect "sbx-fix-modes: a second run changes nothing" has_text "$WORK/modes6.out" "set 0 Mac modes and 0 sandbox modes from git"
+  expect "sbx-fix-modes: a second run changes nothing" has_text "$WORK/modes6.out" "set 0 host modes and 0 sandbox modes from git"
 }
 
 # ------------------------------------------------------------------------------
-# Case: without xattr the Mac modes are still set, and the skip is said
+# Case: without xattr the host modes are still set, and the skip is said
 # ------------------------------------------------------------------------------
 case_fix_modes_without_xattr() {
   local repoDir="$WORK/modes dir/bare/bare"
@@ -158,7 +158,7 @@ case_fix_modes_without_xattr() {
 
   run_sbx modes7 sbx-fix-modes bare
   expect "sbx-fix-modes: without xattr it exits 0" equals "$SBX_RC" 0
-  expect "sbx-fix-modes: without xattr the Mac modes still follow git" has_mode "$repoDir/run.sh" -rwxr-xr-x
+  expect "sbx-fix-modes: without xattr the host modes still follow git" has_mode "$repoDir/run.sh" -rwxr-xr-x
   expect "sbx-fix-modes: without xattr the skip is said" has_text "$WORK/modes7.out" "xattr is not installed"
 }
 

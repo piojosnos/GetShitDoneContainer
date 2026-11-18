@@ -3,7 +3,7 @@
 # Shared by the sbx-* host scripts: registry, name rule, Compose
 # ------------------------------------------------------------------------------
 # A library: defines variables and functions, runs nothing, sets no options.
-# Stock bash 3.2 with BSD tools, because it runs in the Mac shell.
+# It runs in the host shell (on a macOS host, stock bash 3.2 with BSD tools).
 # ------------------------------------------------------------------------------
 
 knownAgentList="claude cursor"

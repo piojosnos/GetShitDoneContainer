@@ -78,7 +78,7 @@ print_row() {
 # print_table: the header and one row for each registry entry
 # ------------------------------------------------------------------------------
 # LC_ALL=C puts the glob in byte order, so the rows never depend on the locale
-# of the Mac. A broken entry is a row; sbx-start NAME prints the reason.
+# of the host. A broken entry is a row; sbx-start NAME prints the reason.
 # ------------------------------------------------------------------------------
 print_table() {
   local LC_ALL=C

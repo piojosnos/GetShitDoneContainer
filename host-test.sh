@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Mac test run: every Docker check in one go, all output kept in host-test.log
+# Host test run: every Docker check in one go, all output kept in host-test.log
 # ------------------------------------------------------------------------------
 # Usage: ./host-test.sh [--keep]   (exit 0 = every step passed; sh works too)
 # --keep leaves the test sandbox up to look around after a failure.
@@ -141,12 +141,12 @@ make_linter_standin() {
 }
 
 # ------------------------------------------------------------------------------
-# mac_guard: the guard in the Mac shell (stock bash 3.2 and BSD tools)
+# host_guard: the guard in the host shell (on macOS, stock bash 3.2, BSD tools)
 # ------------------------------------------------------------------------------
-# The Mac has no shellcheck or hadolint. Two stand-ins on PATH run them from
+# A macOS host has no shellcheck or hadolint. Two stand-ins on PATH run them from
 # the test base image, so every rule must pass here and any FAIL fails the step.
 # ------------------------------------------------------------------------------
-mac_guard() {
+host_guard() {
   local output standinDir status
 
   standinDir=$(mktemp -d "${TMPDIR:-/tmp}/sbx-linters.XXXXXX") || return 1
@@ -163,12 +163,12 @@ mac_guard() {
 }
 
 # ------------------------------------------------------------------------------
-# mac_sbx_selftest: the sbx-* self-test in the Mac shell, under /bin/bash
+# host_sbx_unit_tests: the sbx-* unit tests in the host shell, under /bin/bash
 # ------------------------------------------------------------------------------
 # A bash link first on PATH makes the suite and every script it runs use
 # /bin/bash, the stock 3.2.
 # ------------------------------------------------------------------------------
-mac_sbx_selftest() {
+host_sbx_unit_tests() {
   local standinDir status
 
   standinDir=$(mktemp -d "${TMPDIR:-/tmp}/sbx-bash.XXXXXX") || return 1
@@ -219,7 +219,7 @@ main() {
   require_compose_v2 || exit 1
 
   run_step "context" show_context
-  run_step "sbx self-test in the Mac shell" mac_sbx_selftest
+  run_step "sbx unit tests in the host shell" host_sbx_unit_tests
   run_step "host checks" host_checks
   run_step "run folder" find_run_dir
 
@@ -227,7 +227,7 @@ main() {
     run_step "linter versions" linter_versions
     run_step "pin digests" pin_digests
     run_step "guard in sbx-hosttest" sandbox_suites
-    run_step "guard in the Mac shell" mac_guard
+    run_step "guard in the host shell" host_guard
     run_step "build warnings" build_warnings
 
     if [ "$keepSandbox" = true ]; then
