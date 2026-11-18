@@ -103,7 +103,7 @@ def test_the_exit_status_is_the_one_of_sbx_init(tmp_path):
 
 
 # ------------------------------------------------------------------------------
-# An existing folder is refused
+# An existing directory is refused
 # ------------------------------------------------------------------------------
 
 def test_a_second_run_is_refused_names_sbx_init_and_does_not_run_it_again(tmp_path):
@@ -123,7 +123,7 @@ def test_a_second_run_is_refused_names_sbx_init_and_does_not_run_it_again(tmp_pa
 # A missing origin
 # ------------------------------------------------------------------------------
 
-def test_a_missing_origin_fails_names_sbx_gh_login_and_leaves_no_folder(tmp_path):
+def test_a_missing_origin_fails_names_sbx_gh_login_and_leaves_no_dir(tmp_path):
     sandbox = make_sandbox(tmp_path)
 
     result = run_clone(sandbox, str(tmp_path / "missing1.git"))

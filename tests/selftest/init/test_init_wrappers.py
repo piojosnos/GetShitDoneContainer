@@ -3,7 +3,7 @@
 # script they share
 # ------------------------------------------------------------------------------
 # The real scripts run under bash. SBX_INIT_MARKER and SBX_AGENT_BIN_DIR point
-# into tmp_path, and a stand-in agent in the agents folder records how it ran.
+# into tmp_path, and a stand-in agent in the agents directory records how it ran.
 # The repo's base/bin goes first on the PATH, so the wrappers find the repo copy
 # of sbx-run-agent ahead of any installed one.
 # ------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ def test_without_the_marker_the_wrapper_refuses_at_once_and_never_starts_the_age
 
 
 @pytest.mark.parametrize("agent_name,script_path,wrapper_name", WRAPPER_CASE_LIST, ids=WRAPPER_IDS)
-def test_a_marker_that_is_a_folder_counts_as_missing(tmp_path, agent_name, script_path, wrapper_name):
+def test_a_marker_that_is_a_dir_counts_as_missing(tmp_path, agent_name, script_path, wrapper_name):
     sandbox = make_sandbox(tmp_path, agent_name)
     sandbox["marker_file"].mkdir()
 
@@ -118,11 +118,11 @@ def test_a_marker_that_is_a_folder_counts_as_missing(tmp_path, agent_name, scrip
 
 
 # ------------------------------------------------------------------------------
-# With the marker: exec the agent from the agents folder
+# With the marker: exec the agent from the agents directory
 # ------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("agent_name,script_path,wrapper_name", WRAPPER_CASE_LIST, ids=WRAPPER_IDS)
-def test_with_the_marker_the_agent_runs_from_the_agents_folder_with_every_argument(
+def test_with_the_marker_the_agent_runs_from_the_agents_dir_with_every_argument(
     tmp_path, agent_name, script_path, wrapper_name
 ):
     sandbox = make_sandbox(tmp_path, agent_name)
@@ -208,15 +208,15 @@ def test_sbx_run_agent_names_no_agent():
 
 
 # ------------------------------------------------------------------------------
-# The image puts the wrappers and sbx-run-agent in one folder on the PATH
+# The image puts the wrappers and sbx-run-agent in one directory on the PATH
 # ------------------------------------------------------------------------------
 
-def test_the_dockerfiles_copy_the_bin_folders_into_usr_local_bin():
+def test_the_dockerfiles_copy_the_bin_dirs_into_usr_local_bin():
     base_text = (REPO_DIR / "base/Dockerfile").read_text()
 
     assert "COPY --chmod=755 base/bin/ /usr/local/bin/" in base_text
 
-    for agent_folder in ["claude", "cursor"]:
-        agent_text = (REPO_DIR / agent_folder / "Dockerfile").read_text()
+    for agent_dir in ["claude", "cursor"]:
+        agent_text = (REPO_DIR / agent_dir / "Dockerfile").read_text()
 
-        assert f"COPY --chmod=755 {agent_folder}/bin/ /usr/local/bin/" in agent_text
+        assert f"COPY --chmod=755 {agent_dir}/bin/ /usr/local/bin/" in agent_text

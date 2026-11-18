@@ -3,7 +3,7 @@
 # Runs Claude once sbx-init has passed in this container
 # ------------------------------------------------------------------------------
 # Usage: sbx-claude [claude arguments]
-# sbx-run-agent checks the init marker and puts the agents folder first on the
+# sbx-run-agent checks the init marker and puts the agents directory first on the
 # PATH it hands to Claude; the calling shell's PATH stays as it is.
 # ------------------------------------------------------------------------------
 set -eu
