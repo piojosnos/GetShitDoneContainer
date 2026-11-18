@@ -5,7 +5,7 @@
 # Needs: images built; the run folder (not the running sandbox)
 # One offline docker run --rm container on a fresh folder of the run folder. It
 # walks the first run in order: sbx-claude refuses before sbx-init, sbx-init
-# stops at the missing clone, sbx-bundle-clone clones and runs sbx-init, Claude
+# stops at the missing clone, sbx-best-practices-clone clones and runs sbx-init, Claude
 # then starts, and a push reaches the origin. The run also checks that a login
 # shell started inside an sbx-claude session finds claude in the agents folder,
 # and that a plain login shell does not.
@@ -63,7 +63,7 @@ step plainpath $?
 sbx-init >"$ws/noclone.out" 2>&1
 step noclone $?
 
-sbx-bundle-clone >"$ws/clone.out" 2>&1
+sbx-best-practices-clone >"$ws/clone.out" 2>&1
 step clone $?
 
 echo "RULES $(readlink "$ws/state/claude/rules")"
@@ -75,7 +75,7 @@ done
 cat "$ws/state/claude/rules/sbx-fixture-always.md" >"$ws/through-link.out" 2>&1
 step read $?
 
-sbx-bundle-clone >"$ws/again.out" 2>&1
+sbx-best-practices-clone >"$ws/again.out" 2>&1
 step again $?
 
 echo "REMOTE $(git -C "$ws/best-practices" remote get-url origin)"
@@ -101,7 +101,7 @@ step sessionlogin $?
 bash -lc 'command -v claude' >"$ws/plainlogin.out" 2>&1
 step plainlogin $?
 
-SBX_BUNDLE_DIR="$ws/h27-missing" BUNDLE_REPO_URL="$ws/no-such-origin.git" sbx-bundle-clone >"$ws/missing.out" 2>&1
+SBX_BUNDLE_DIR="$ws/h27-missing" BUNDLE_REPO_URL="$ws/no-such-origin.git" sbx-best-practices-clone >"$ws/missing.out" 2>&1
 step missing $?
 SCRIPT
 
@@ -216,7 +216,7 @@ check_plain_login_shell() {
 
 # ------------------------------------------------------------------------------
 # Checks sbx-init without a clone did the mechanical steps, then stopped at the
-# links step and named sbx-bundle-clone
+# links step and named sbx-best-practices-clone
 # ------------------------------------------------------------------------------
 check_init_without_clone() {
   local noCloneFile=$h27Dir/noclone.out
@@ -234,8 +234,8 @@ check_init_without_clone() {
     add_problem "sbx-init without a clone did not fail at claude-best-practices-links; output: $(file_head noclone.out)"
   fi
 
-  if ! grep -Eq '^ +fix: .*sbx-bundle-clone' "$noCloneFile" 2>/dev/null; then
-    add_problem "sbx-init without a clone printed no fix line naming sbx-bundle-clone; output: $(file_head noclone.out)"
+  if ! grep -Eq '^ +fix: .*sbx-best-practices-clone' "$noCloneFile" 2>/dev/null; then
+    add_problem "sbx-init without a clone printed no fix line naming sbx-best-practices-clone; output: $(file_head noclone.out)"
   fi
 
   if [ "$(tail -n 1 "$noCloneFile" 2>/dev/null)" != "sbx-init: stopped at claude-best-practices-links" ]; then
@@ -244,7 +244,7 @@ check_init_without_clone() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks the first sbx-bundle-clone cloned, ran sbx-init to a pass and linked
+# Checks the first sbx-best-practices-clone cloned, ran sbx-init to a pass and linked
 # ------------------------------------------------------------------------------
 check_clone_and_links() {
   local cloneFile=$h27Dir/clone.out
@@ -253,7 +253,7 @@ check_clone_and_links() {
   check_step clone 0
 
   if [ "$(tail -n 1 "$cloneFile" 2>/dev/null)" != "sbx-init: 4 steps passed; run sbx-selfcheck to check the sandbox" ]; then
-    add_problem "the last line of sbx-bundle-clone is not 'sbx-init: 4 steps passed; run sbx-selfcheck to check the sandbox'; got: $(file_head clone.out)"
+    add_problem "the last line of sbx-best-practices-clone is not 'sbx-init: 4 steps passed; run sbx-selfcheck to check the sandbox'; got: $(file_head clone.out)"
   fi
 
   if ! grep -Fxq "RULES ../../best-practices/rules" "$h27Dir/run.log"; then
@@ -281,7 +281,7 @@ check_read_through_link() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks a second sbx-bundle-clone changed nothing and said so
+# Checks a second sbx-best-practices-clone changed nothing and said so
 # ------------------------------------------------------------------------------
 check_second_clone_refused() {
   local againOut
@@ -290,11 +290,11 @@ check_second_clone_refused() {
   againOut=$(cat "$h27Dir/again.out" 2>/dev/null)
 
   if [[ "$againOut" != *"already exists; nothing was changed"* ]]; then
-    add_problem "the second sbx-bundle-clone did not say it changed nothing; got: $(file_head again.out)"
+    add_problem "the second sbx-best-practices-clone did not say it changed nothing; got: $(file_head again.out)"
   fi
 
   if [[ "$againOut" != *"sbx-init"* ]]; then
-    add_problem "the second sbx-bundle-clone did not name sbx-init as the way to relink; got: $(file_head again.out)"
+    add_problem "the second sbx-best-practices-clone did not name sbx-init as the way to relink; got: $(file_head again.out)"
   fi
 }
 
@@ -408,4 +408,4 @@ check_plain_login_shell
 check_missing_origin
 check_gsd_synced
 report_check H-27 "the first run is wrong in a fresh sandbox folder: the refusal, sbx-init, the clone, the GSD sync or the push" \
-  "offline: sbx-claude refused before sbx-init and claude is off the plain PATH; sbx-init without a clone stopped at the links step naming sbx-bundle-clone; sbx-bundle-clone cloned and its sbx-init passed with 4 steps; a second clone was refused; a branch was pushed to the origin; Claude started after init; a login shell inside an sbx-claude session found claude in /opt/sbx/agents/bin and a plain login shell did not; GSD synced offline at the pinned version; a failed clone left no folder"
+  "offline: sbx-claude refused before sbx-init and claude is off the plain PATH; sbx-init without a clone stopped at the links step naming sbx-best-practices-clone; sbx-best-practices-clone cloned and its sbx-init passed with 4 steps; a second clone was refused; a branch was pushed to the origin; Claude started after init; a login shell inside an sbx-claude session found claude in /opt/sbx/agents/bin and a plain login shell did not; GSD synced offline at the pinned version; a failed clone left no folder"

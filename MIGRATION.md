@@ -140,7 +140,7 @@ sbx-shell "$NAME"
 - `sbx-fix-modes` then sets every file git tracks to 644 or 755, as git committed, on both sides.
 - For a sandbox already moved without these lines, set `NEW` and run the six lines between `sbx-add` and `sbx-shell` once.
 - If `sbx-shell` says `sbx-claude:local` is not built, run `sbx-upgrade "$NAME"` once.
-- In the first shell, run `sbx-init`. It syncs GSD into `state/claude` and links the best-practices clone. With no clone it says so; run `sbx-gh-login`, then `sbx-bundle-clone`, which runs `sbx-init` again.
+- In the first shell, run `sbx-init`. It syncs GSD into `state/claude` and links the best-practices clone. With no clone it says so; run `sbx-gh-login`, then `sbx-best-practices-clone`, which runs `sbx-init` again.
 - Copies of clone skills (or a real `rules` folder) from the old layout are never replaced. They make the first `sbx-init` FAIL until you move them; the FAIL line names the path.
 - A `state/claude/.best-practices-skills` file from an older image is no longer read. It stays where it is and can be deleted by hand.
 - The shell opens in `/home/sandbox/workspace/$NAME`, the folder the renamed history belongs to.
@@ -169,7 +169,7 @@ sbx-selfcheck
 
 ## After the checks
 
-- For the best-practices bundle, run `sbx-bundle-clone` in the sandbox (the gh login came along).
+- For the best-practices bundle, run `sbx-best-practices-clone` in the sandbox (the gh login came along).
 - If `state/claude/CLAUDE.md` exists and holds `@AGENTS.md` or `@code-conventions.md` lines, remove them, or the same rules load twice. The old sandbox loaded its rules that way; the clone now does it.
 - Old memories and `CLAUDE.md` may repeat bundle rules. Paste [`prompts/consolidate-memories.md`](prompts/consolidate-memories.md) into Claude once.
 - After a week of use, set `PROJECT` again, run `docker rm "cc_gsd_$PROJECT"` and delete `OLD` by hand.
@@ -201,3 +201,11 @@ docker exec -it "cc_gsd_$PROJECT" /bin/bash
 - Run every command from a Mac terminal with the tools clone on the PATH, never with a `bin/` from inside a sandbox folder.
 - Stopping its container ends the Claude session inside it. Commit or note your work first.
 - Afterwards the copy at `$NEW/$NAME` is the agent's working copy, and the tools clone stays the only copy whose `bin/` the Mac runs.
+
+## Renamed commands and variables
+
+A rebuild renames these, and the old names stop working (there is no alias). A running container keeps the old names until it is recreated, so run `sbx-upgrade NAME` for each sandbox.
+
+| Old | New | Where you meet it |
+|---|---|---|
+| `sbx-bundle-clone` | `sbx-best-practices-clone` | the sandbox shell |

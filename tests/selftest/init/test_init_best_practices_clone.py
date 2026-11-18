@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Tests of sbx-bundle-clone: clone the best-practices repo, then run sbx-init
+# Tests of sbx-best-practices-clone: clone the best-practices repo, then run sbx-init
 # ------------------------------------------------------------------------------
 # The real script runs under bash with real git against a local bare origin in
 # tmp_path. A stand-in sbx-init on a temp PATH records that it ran.
@@ -11,7 +11,7 @@ from pathlib import Path
 
 from init_helpers import REPO_DIR, environment_with, write_stand_in
 
-SCRIPT_PATH = REPO_DIR / "base/bin/sbx-bundle-clone"
+SCRIPT_PATH = REPO_DIR / "base/bin/sbx-best-practices-clone"
 GIT_IDENTITY_ARGUMENT_LIST = ["-c", "user.name=test1", "-c", "user.email=test1@example.invalid"]
 
 

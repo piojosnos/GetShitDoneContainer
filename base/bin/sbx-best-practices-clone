@@ -2,7 +2,7 @@
 # ------------------------------------------------------------------------------
 # Clones the best-practices repo into the sandbox and runs sbx-init to link it
 # ------------------------------------------------------------------------------
-# Usage: sbx-bundle-clone (run sbx-gh-login first for a private repo)
+# Usage: sbx-best-practices-clone (run sbx-gh-login first for a private repo)
 # It never overwrites: an existing folder is refused and left as it is.
 # ------------------------------------------------------------------------------
 set -eu

@@ -232,7 +232,7 @@ def assert_incomplete_fix(hint: str, clone_dir: Path) -> None:
     assert f"git -C {clone_dir} pull" in hint
     assert "sbx-init" in hint
     assert "move it aside" in hint
-    assert "sbx-bundle-clone" in hint
+    assert "sbx-best-practices-clone" in hint
 
 
 def test_a_clone_folder_without_rules_fails_the_claude_step_as_incomplete_and_makes_no_link(tmp_path):
@@ -270,7 +270,7 @@ def test_no_clone_folder_fails_both_steps_with_the_clone_fix(tmp_path, links_rul
     assert not result.passed
     assert result.detail == f"no best-practices clone at {clone1}"
     assert "sbx-gh-login" in result.hint
-    assert "sbx-bundle-clone" in result.hint
+    assert "sbx-best-practices-clone" in result.hint
     assert "move it aside" not in result.hint
     assert list(config1.iterdir()) == []
 

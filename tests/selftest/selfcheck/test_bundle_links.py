@@ -119,7 +119,7 @@ def test_the_links_result_says_there_is_no_clone_when_the_clone_folder_is_absent
         assert not result.passed
         assert result.detail == f"no best-practices clone at {clone1}"
         assert "sbx-gh-login" in result.hint
-        assert "sbx-bundle-clone" in result.hint
+        assert "sbx-best-practices-clone" in result.hint
         assert "move it aside" not in result.hint
 
 
@@ -145,7 +145,7 @@ def test_the_links_result_names_the_folder_a_clone_folder_lacks(tmp_path):
         assert f"git -C {clone1} pull" in result.hint
         assert "sbx-init" in result.hint
         assert "move it aside" in result.hint
-        assert "sbx-bundle-clone" in result.hint
+        assert "sbx-best-practices-clone" in result.hint
 
 
 def test_bundle_links_result_without_rules_mode_passes_on_a_tree_with_no_rules_link(tmp_path):

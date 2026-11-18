@@ -63,7 +63,7 @@ def linked_detail(bundle_dir: Path, links_rules: bool, skill_count: int) -> str:
 def _missing_clone_result(bundle_dir: Path) -> CheckResult:
     return failed(
         f"no best-practices clone at {bundle_dir}",
-        "run sbx-gh-login, then sbx-bundle-clone; it clones the repo and runs sbx-init again",
+        "run sbx-gh-login, then sbx-best-practices-clone; it clones the repo and runs sbx-init again",
     )
 
 
@@ -71,7 +71,7 @@ def _incomplete_clone_result(bundle_dir: Path, needed_dir: Path) -> CheckResult:
     return failed(
         f"{bundle_dir} exists but has no {needed_dir.name}/ folder",
         f"check that {bundle_dir} is a clone of the best-practices repo: if it is, run git -C {bundle_dir} pull, "
-        "then sbx-init; if not, move it aside, then run sbx-gh-login and sbx-bundle-clone",
+        "then sbx-init; if not, move it aside, then run sbx-gh-login and sbx-best-practices-clone",
     )
 
 
