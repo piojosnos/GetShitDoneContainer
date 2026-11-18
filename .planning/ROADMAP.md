@@ -39,7 +39,7 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
 - [x] **Phase 7: Separate test images**: a test run builds and checks its own image tags and never replaces the images the sandboxes run (completed 2026-11-14)
 - [x] **Phase 8: In-image self-check**: `sbx-selfcheck` in the image checks the sandbox, replaces most host probes and doubles as the doctor (completed 2026-11-15)
 - [x] **Phase 9: sbx-init replaces the start hooks**: the user runs `sbx-init` to sync GSD and link the bundle; a container start runs no hooks (completed 2026-11-17)
-- [ ] **Phase 09.1: Align vocabulary** (INSERTED): code, tests and docs use one set of terms; best-practices, never bundle
+- [x] **Phase 09.1: Align vocabulary** (INSERTED): code, tests and docs use one set of terms; best-practices, never bundle (completed 2026-11-18)
 - [ ] **Phase 10: Host side to Python**: the host commands and host tests are Python run through `uv`, with one JSON registry file per sandbox
 - [ ] **Phase 10.1: Full skills and best-practices support in Cursor** (INSERTED): the best-practices repo's rules and skills work in Cursor as they do in Claude
 - [ ] **Phase 10.1.1: Shared agent checks** (INSERTED): the Claude and Cursor selfcheck twins become one shared list of agent checks before the third agent arrives
@@ -234,7 +234,7 @@ Plans:
 **Requirements**: TBD (decisions D-01 to D-19 in 09.1-CONTEXT.md are the contract)
 **Depends on**: Phase 9
 
-**Plans**: 14/14 plans executed
+**Plans**: 14/14 plans complete
 
 Plans:
 **Wave 1**
