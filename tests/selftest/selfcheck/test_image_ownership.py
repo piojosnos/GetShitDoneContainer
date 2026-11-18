@@ -67,7 +67,7 @@ def test_a_file_the_test_user_made_fails_when_the_expected_owner_is_root(tmp_pat
 
     assert not result.passed
     assert f"{tmp_path / 'root1' / 'sub1' / 'file1'} is owned by {os.getuid()}:{os.getgid()}, expected 0:0" in result.detail
-    assert "on the Mac run: sbx-upgrade" in result.hint
+    assert "on the host run: sbx-upgrade" in result.hint
 
 
 @pytest.mark.parametrize("mode", [0o664, 0o646, 0o777])

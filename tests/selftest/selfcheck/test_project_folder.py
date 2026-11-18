@@ -25,7 +25,7 @@ def test_project_folder_fails_naming_the_missing_path(tmp_path):
 
     assert not result.passed
     assert str(tmp_path / "name1") in result.detail
-    assert "on the Mac run: sbx-start" in result.hint
+    assert "on the host run: sbx-start" in result.hint
 
 
 def test_project_folder_fails_for_an_empty_name(tmp_path):

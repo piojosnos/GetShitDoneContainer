@@ -28,4 +28,4 @@ def test_home_layout_fails_naming_the_missing_one(tmp_path):
     assert not result.passed
     assert ".local" in result.detail
     assert ".bashrc" not in result.detail
-    assert "on the Mac run: sbx-upgrade" in result.hint
+    assert "on the host run: sbx-upgrade" in result.hint

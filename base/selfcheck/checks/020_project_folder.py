@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 
 from check_result import Check, CheckResult, failed, passed
-from hints import mac_hint, sandbox_name
+from hints import host_hint, sandbox_name
 from paths import WORKSPACE_DIR
 
 
@@ -17,7 +17,7 @@ from paths import WORKSPACE_DIR
 # ------------------------------------------------------------------------------
 
 def project_folder_result(workspace_dir: Path, project_name: str) -> CheckResult:
-    start_text = mac_hint("start the sandbox with sbx-start, which checks the project folder", f"sbx-start {sandbox_name()}")
+    start_text = host_hint("start the sandbox with sbx-start, which checks the project folder", f"sbx-start {sandbox_name()}")
 
     if not project_name:
         return failed("SBX_NAME is not set", start_text)

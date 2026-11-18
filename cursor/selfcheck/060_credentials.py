@@ -9,7 +9,7 @@ from agent_config import login_file_result
 from check_result import Check, CheckResult
 from cursor_shared import CONFIG_DIR
 
-_LOGIN_HINT = "log in once: run cursor-agent login in this sandbox and open the link on the Mac"
+_LOGIN_HINT = "log in once: run cursor-agent login in this sandbox and open the link on the host"
 
 
 # ------------------------------------------------------------------------------

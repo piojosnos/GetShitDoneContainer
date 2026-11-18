@@ -27,4 +27,4 @@ def test_environment_values_result_names_each_wrong_or_missing_variable():
 
     assert not result.passed
     assert result.detail == "VAR1 is 'other1', expected 'value1'; VAR2 is not set"
-    assert result.hint.endswith("on the Mac run: sbx-upgrade sbx1")
+    assert result.hint.endswith("on the host run: sbx-upgrade sbx1")

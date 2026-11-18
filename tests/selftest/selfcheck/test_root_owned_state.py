@@ -84,13 +84,13 @@ def test_root_owned_state_fails_with_the_total_and_at_most_ten_paths(tmp_path):
     assert result.detail.count("sub1") == 10
     assert result.hint == (
         "give the paths back to the sandbox user from a throwaway root container, "
-        "since the sandbox cannot change owners: on the Mac run: "
+        "since the sandbox cannot change owners: on the host run: "
         "docker run --rm --network none -u root --entrypoint chown "
         f"--volumes-from sbx-name1 sbx-base:local -R 1000:1000 {state1}"
     )
 
 
-def test_root_owned_state_prints_the_mac_owner_fix_under_its_fail_line(tmp_path, agents1):
+def test_root_owned_state_prints_the_host_owner_fix_under_its_fail_line(tmp_path, agents1):
     state1 = tmp_path / "state1"
     make_fourteen_path_tree(state1)
 
@@ -102,14 +102,14 @@ def test_root_owned_state_prints_the_mac_owner_fix_under_its_fail_line(tmp_path,
     assert line_list[0].startswith("FAIL: no-root-owned-state: 14 paths under state/")
     assert line_list[1] == (
         "      fix: give the paths back to the sandbox user from a throwaway root container, "
-        "since the sandbox cannot change owners: on the Mac run: "
+        "since the sandbox cannot change owners: on the host run: "
         "docker run --rm --network none -u root --entrypoint chown "
         f"--volumes-from sbx-name1 sbx-base:local -R 1000:1000 {state1}"
     )
 
 
 @pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 folder")
-def test_root_owned_state_names_an_unreadable_folder_with_the_mac_fix(tmp_path, restorable_mode):
+def test_root_owned_state_names_an_unreadable_folder_with_the_host_fix(tmp_path, restorable_mode):
     state1 = tmp_path / "state1"
     write_file(state1 / "sub1" / "private1" / "file1")
     restorable_mode(state1 / "sub1" / "private1", 0o000)

@@ -29,7 +29,7 @@ def test_safe_directory_fails_when_the_system_file_trusts_one_folder(tmp_path):
     result = git_safe_directory.safe_directory_result(git_environment(system1, tmp_path / "global1"))
 
     assert not result.passed
-    assert "on the Mac run: sbx-upgrade" in result.hint
+    assert "on the host run: sbx-upgrade" in result.hint
 
 
 def test_safe_directory_fails_when_the_system_file_is_empty(tmp_path):

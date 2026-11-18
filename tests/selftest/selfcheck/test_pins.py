@@ -39,7 +39,7 @@ def test_pin_map_or_missing_names_the_first_missing_name_or_file(tmp_path):
     assert missing_file_result.detail.startswith("NAME1 is not in ")
 
 
-def test_missing_pin_result_fails_with_the_mac_rebuild_command():
+def test_missing_pin_result_fails_with_the_host_rebuild_command():
     result = pins.missing_pin_result("NAME1")
 
     assert not result.passed

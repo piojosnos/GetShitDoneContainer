@@ -28,7 +28,7 @@ def workspace_mount_result(
     if not os.access(workspace_dir, os.W_OK):
         return failed(
             f"{workspace_dir} is not writable by {user_name_of(os.getuid())}",
-            "make the project folder writable by your Mac user, then " + restart_hint(),
+            "make the project folder writable by your host user, then " + restart_hint(),
         )
 
     return passed(f"{workspace_dir} is a writable mount point")

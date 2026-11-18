@@ -134,7 +134,7 @@ def test_scan_owned_state_marks_an_unreadable_sync_folder_like_any_other(tmp_pat
 
 
 # ------------------------------------------------------------------------------
-# The Mac fix
+# The host fix
 # ------------------------------------------------------------------------------
 
 def test_owner_fix_hint_names_the_container_and_the_state_folder(tmp_path):
@@ -142,7 +142,7 @@ def test_owner_fix_hint_names_the_container_and_the_state_folder(tmp_path):
 
     assert root_owned_scan.owner_fix_hint(state1, {"SBX_NAME": "name1"}) == (
         "give the paths back to the sandbox user from a throwaway root container, "
-        "since the sandbox cannot change owners: on the Mac run: "
+        "since the sandbox cannot change owners: on the host run: "
         "docker run --rm --network none -u root --entrypoint chown "
         f"--volumes-from sbx-name1 sbx-base:local -R 1000:1000 {state1}"
     )

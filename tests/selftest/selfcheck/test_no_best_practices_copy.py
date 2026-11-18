@@ -21,7 +21,7 @@ def test_no_best_practices_copy_passes_when_the_path_is_absent_and_fails_when_pr
 
     assert not result.passed
     assert str(copy1) in result.detail
-    assert "on the Mac run: sbx-upgrade" in result.hint
+    assert "on the host run: sbx-upgrade" in result.hint
 
 
 def test_no_best_practices_copy_fails_for_a_dangling_link(tmp_path):

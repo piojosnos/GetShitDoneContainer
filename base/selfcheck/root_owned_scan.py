@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 from typing import Mapping
 
-from hints import mac_hint, sandbox_name
+from hints import host_hint, sandbox_name
 from tree_walk import ProblemKind, walk_tree
 from users import SANDBOX_GID, SANDBOX_UID
 
@@ -51,11 +51,11 @@ def scan_owned_state(state_dir: Path, owner_uid: int, skipped_relative_set: set[
 
 
 # ------------------------------------------------------------------------------
-# The Mac fix
+# The host fix
 # ------------------------------------------------------------------------------
 
 def owner_fix_hint(state_dir: Path, environment_map: Mapping[str, str] = os.environ) -> str:
-    return mac_hint(
+    return host_hint(
         "give the paths back to the sandbox user from a throwaway root container, "
         "since the sandbox cannot change owners",
         "docker run --rm --network none -u root --entrypoint chown "

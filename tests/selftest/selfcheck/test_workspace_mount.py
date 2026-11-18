@@ -55,4 +55,4 @@ def test_workspace_mount_fails_when_the_folder_is_not_writable(tmp_path, restora
 
     assert not result.passed
     assert "not writable" in result.detail
-    assert "on the Mac run:" in result.hint
+    assert "on the host run:" in result.hint

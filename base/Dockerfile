@@ -158,7 +158,7 @@ RUN (userdel -r ubuntu || true) \
 # ------------------------------------------------------------------------------
 # git safe.directory for every folder
 # ------------------------------------------------------------------------------
-# In /etc/gitconfig (image, not mount): Mac repos never hit "dubious ownership".
+# In /etc/gitconfig (image, not mount): repos made on the host never hit "dubious ownership".
 # ------------------------------------------------------------------------------
 RUN git config --system safe.directory '*'
 
