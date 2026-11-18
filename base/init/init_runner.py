@@ -6,7 +6,6 @@
 # ------------------------------------------------------------------------------
 
 import fcntl
-import importlib.util
 import signal
 import sys
 from pathlib import Path
@@ -14,8 +13,9 @@ from types import ModuleType
 from typing import TextIO
 
 import paths
-from check_result import Check, CheckResult, failed, one_line
+from check_result import Check, CheckResult, failed
 from hints import rebuild_hint
+from step_files import StepFileKind, load_failure_check, load_list, load_module, run_one, write_outcome
 
 
 # ------------------------------------------------------------------------------
@@ -23,8 +23,13 @@ from hints import rebuild_hint
 # ------------------------------------------------------------------------------
 
 SHARED_STEPS_DIR = Path(__file__).resolve().parent / "steps"
-_STEP_MODULE_PREFIX = "sbx_init_step_"
-_FIX_LINE_INDENT = "      "
+_FILE_KIND = StepFileKind(
+    list_name="STEP_LIST",
+    item_word="steps",
+    module_prefix="sbx_init_step_",
+    owner_text="sbx-init",
+    pass_word="OK",
+)
 _USAGE_TEXT = "Usage: sbx-init (no arguments)"
 _LOCK_STEP_NAME = "lock"
 _MARKER_STEP_NAME = "marker"
@@ -41,53 +46,7 @@ _STOP_SIGNAL_LIST = [signal.SIGHUP, signal.SIGTERM]
 # ------------------------------------------------------------------------------
 
 def load_step_module(module_path: Path) -> ModuleType:
-    module_name = _STEP_MODULE_PREFIX + module_path.parent.name + "_" + module_path.stem
-    spec = importlib.util.spec_from_file_location(module_name, module_path)
-
-    if spec is None or spec.loader is None:
-        raise ImportError(f"cannot load {module_path}")
-
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-
-    return module
-
-
-def _load_failure_step(name: str, detail: str) -> Check:
-    def report_load_failure() -> CheckResult:
-        return failed(detail, rebuild_hint())
-
-    return Check(name, report_load_failure)
-
-
-def _is_step_list(value: object) -> bool:
-    if not isinstance(value, list):
-        return False
-
-    for item in value:
-        if not isinstance(item, Check):
-            return False
-
-    return True
-
-
-def _module_step_list(module_path: Path) -> list[Check]:
-    name = "load-" + module_path.parent.name + "-" + module_path.stem.replace("_", "-")
-
-    try:
-        module = load_step_module(module_path)
-    except Exception as e:
-        return [_load_failure_step(name, f"{module_path} did not load: {type(e).__name__}: {e}")]
-
-    if not hasattr(module, "STEP_LIST"):
-        return [_load_failure_step(name, f"{module_path} defines no STEP_LIST")]
-
-    step_list = module.STEP_LIST
-
-    if not _is_step_list(step_list):
-        return [_load_failure_step(name, f"{module_path} defines a STEP_LIST that is not a list of steps")]
-
-    return list(step_list)
+    return load_module(module_path, _FILE_KIND.module_prefix)
 
 
 def _step_file_list(shared_steps_dir: Path, agent_steps_dir: Path) -> list[tuple[str, int, Path]]:
@@ -120,7 +79,7 @@ def collect_steps(shared_steps_dir: Path, agent_steps_dir: Path) -> list[Check]:
 
     if not _has_agent_file(step_file_list):
         return [
-            _load_failure_step(
+            load_failure_check(
                 _AGENT_STEPS_STEP_NAME,
                 f"found no agent steps in {agent_steps_dir}, so the image's own steps did not run",
             )
@@ -130,7 +89,7 @@ def collect_steps(shared_steps_dir: Path, agent_steps_dir: Path) -> list[Check]:
     step_list = []
 
     for _, _, module_path in step_file_list:
-        step_list.extend(_module_step_list(module_path))
+        step_list.extend(load_list(module_path, _FILE_KIND))
 
     return step_list
 
@@ -139,47 +98,13 @@ def collect_steps(shared_steps_dir: Path, agent_steps_dir: Path) -> list[Check]:
 # Running and printing
 # ------------------------------------------------------------------------------
 
-def _run_step(step: Check) -> CheckResult:
-    try:
-        result = step.function()
-    except Exception as e:
-        return failed(
-            f"raised {type(e).__name__}: {e}",
-            "this is a bug in sbx-init or a broken image; " + rebuild_hint(),
-        )
-
-    if not isinstance(result, CheckResult):
-        return failed(
-            f"returned {type(result).__name__} instead of a CheckResult",
-            "this is a bug in sbx-init or a broken image; " + rebuild_hint(),
-        )
-
-    return result
-
-
-def _outcome_lines(name: str, result: CheckResult) -> list[str]:
-    detail = one_line(result.detail)
-
-    if result.passed:
-        return [f"OK: {name}: {detail}"]
-
-    return [f"FAIL: {name}: {detail}", f"{_FIX_LINE_INDENT}fix: {one_line(result.hint)}"]
-
-
 def _write_line(output: TextIO, line: str) -> None:
     output.write(line + "\n")
     output.flush()
 
 
-def _write_outcome(output: TextIO, name: str, result: CheckResult) -> None:
-    for line in _outcome_lines(name, result):
-        output.write(line + "\n")
-
-    output.flush()
-
-
 def _stop_at(output: TextIO, name: str, result: CheckResult) -> int:
-    _write_outcome(output, name, result)
+    write_outcome(output, name, result, _FILE_KIND)
     _write_line(output, f"sbx-init: stopped at {name}")
 
     return 1
@@ -189,8 +114,8 @@ def _run_steps(step_list: list[Check], output: TextIO) -> tuple[int, str]:
     passed_count = 0
 
     for step in step_list:
-        result = _run_step(step)
-        _write_outcome(output, step.name, result)
+        result = run_one(step, _FILE_KIND)
+        write_outcome(output, step.name, result, _FILE_KIND)
 
         if not result.passed:
             return passed_count, step.name

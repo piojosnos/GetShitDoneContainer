@@ -134,6 +134,17 @@ def test_the_base_dockerfile_installs_sbx_init_and_has_no_entrypoint():
     assert "sbx-entrypoint" not in text
 
 
+def test_the_shared_step_file_module_reaches_the_image_and_sbx_init_can_import_it():
+    base_text = dockerfile_text("base")
+    launcher_text = (REPO_DIR / "base" / "init" / "sbx-init").read_text()
+
+    assert (REPO_DIR / "base" / "selfcheck" / "step_files.py").is_file()
+    assert "COPY --chmod=644 base/selfcheck/*.py /usr/local/lib/sbx-selfcheck/" in base_text
+    assert "python3 -m py_compile" in base_text
+    assert "/usr/local/lib/sbx-selfcheck/*.py" in base_text
+    assert "sbx-selfcheck" in launcher_text
+
+
 @pytest.mark.parametrize("agent_name", ["claude", "cursor"])
 def test_each_agent_dockerfile_copies_its_own_steps_and_names_no_start_hooks(agent_name):
     text = dockerfile_text(agent_name)
