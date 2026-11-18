@@ -1,10 +1,14 @@
+## Vocabulary
+
+Code, tests and docs use the terms in [`GLOSSARY.md`](../GLOSSARY.md) at the repo root; follow it when you name or describe anything.
+
 <!-- GSD:project-start source:PROJECT.md -->
 
 ## Project
 
 **GSD Agent Sandbox Containers**
 
-A Docker-based sandbox for running AI coding agents (Claude Code and Cursor today, others later) plus GSD on a macOS laptop without installing those agents on the host. Each project gets its own container that can only see one bind-mounted host folder, so the agent can't touch the rest of the laptop. The code stays a regular folder on the Mac, so any host IDE can open it directly. Small `sbx-*` commands (`sbx-add`, `sbx-start`, `sbx-shell`, `sbx-stop`, `sbx-upgrade`, ...) drive the sandbox lifecycle, and `sbx-selfcheck` inside the image says whether a sandbox is set up right.
+A Docker-based sandbox for running AI coding agents (Claude Code and Cursor today, others later) plus GSD on a macOS laptop without installing those agents on the host. Each project gets its own container that can only see one bind-mounted host directory, so the agent can't touch the rest of the laptop. The code stays a regular directory on the host, so any host IDE can open it directly. Small `sbx-*` commands (`sbx-add`, `sbx-start`, `sbx-shell`, `sbx-stop`, `sbx-upgrade`, ...) drive the sandbox lifecycle, and `sbx-selfcheck` inside the image says whether a sandbox is set up right.
 
 **Core Value:** **Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.**
 
@@ -16,7 +20,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - **Simplicity**: Anything with logic is Python (through `uv` on the host, the image's `python3` inside); shell stays only for thin `exec` wrappers and Dockerfile `RUN` lines. Why: the v1 bash tooling grew about 10.9k lines of test shell around about 2.1k lines of product shell.
 - **Toolchains**: JDK 21 LTS, Maven, Node.js, and Python in the shared base. Why: these are the stacks the user develops in.
 - **Verification**: Docker isn't available inside the dev sandbox, so plans must include host-side manual verification steps.
-- **Coexistence** (retired in Phase 5): the old layout ran side by side with the new one until every old sandbox moved; it is now deleted, and old `cc_` containers left on the Mac are plain stopped containers.
+- **Coexistence** (retired in Phase 5): the old layout ran side by side with the new one until every old sandbox moved; it is now deleted, and old `cc_` containers left on the host are plain stopped containers.
 
 <!-- GSD:project-end -->
 
@@ -26,7 +30,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 
 ## Languages
 
-- Bash 3.2+ (POSIX compatible): Shell scripts for container entrypoints, build orchestration, host CLI wrappers, test harnesses; runs on macOS and Linux
+- Bash 3.2+ (POSIX compatible): Shell scripts for the agent wrappers, build orchestration, host commands, test harnesses; runs on macOS and Linux
 - Python 3.12+: Selfcheck framework for validating container setup; tests via pytest
 - YAML: Docker Compose service definitions and Dockerfile linting configuration
 - Dockerfile: Multi-stage container image definitions for base, Claude agent, and Cursor agent images
@@ -85,12 +89,12 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - `.shellcheckrc`: Shellcheck configuration for bash linting
 - `build.sh`: Main build orchestration; reads `versions.env`, collects pins, optionally injects extra CA certificates, builds three images in sequence
 - `Dockerfile` (base): Shared base layer; installs system packages, downloads and verifies all tools, sets up `sandbox` user (UID 1000), creates mount point
-- `Dockerfile` (claude): Claude-specific layers; installs Claude Code and ccusage; links home directories to persistent state folders
-- `Dockerfile` (cursor): Cursor-specific layers; installs cursor-agent CLI; links home directories to persistent state folders
-- `docker-compose.yml`: Service definition; accepts `SBX_NAME`, `SBX_DIR`, `SBX_AGENT`, `SBX_IMAGE_TAG` environment variables; binds single host folder to `/home/sandbox/workspace`
-- `sbx-entrypoint` (shell script): Root-owned init script; sources `sbx-start-lib.sh`; runs start hooks in `/etc/sbx/start.d/` in name order; execs CMD
-- Start hooks in `/etc/sbx/start.d/`:
-- `.initialized` marker file: Idempotency guard; prevents repeated setup of mounted home directory
+- `Dockerfile` (claude): Claude-specific layers; installs Claude Code and ccusage; links home directories to persistent state directories
+- `Dockerfile` (cursor): Cursor-specific layers; installs cursor-agent CLI; links home directories to persistent state directories
+- `docker-compose.yml`: Service definition; accepts `SBX_NAME`, `SBX_DIR`, `SBX_AGENT`, `SBX_IMAGE_TAG` environment variables; binds the sandbox directory to `/home/sandbox/workspace`; the container's command is `sleep infinity` and the image has no entrypoint
+- `sbx-init` (Python launcher): Run by the user in the sandbox shell; runs the shared steps in `/usr/local/lib/sbx-init/steps/` and the agent steps in `/etc/sbx/init.d/<agent>/` in file-name order; prints one OK or FAIL line per step and stops at the first FAIL
+- Init steps: `state-dirs`, the agent GSD sync (`claude-gsd-sync` or `cursor-gsd-sync`), `cursor-self-update-off` (Cursor only), `state-owner`, and the best-practices links (`claude-best-practices-links` or `cursor-best-practices-links`)
+- `/home/sandbox/.sbx-init-done` marker file: Written in the container layer when every step passed; `sbx-claude` and `sbx-cursor` refuse until it exists, and a recreated container starts without it
 
 ## Platform Requirements
 
@@ -119,19 +123,19 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 ## Naming Patterns
 
 - Shell programs: lowercase with hyphens (`build.sh`, `sbx-add`, `host-test.sh`)
-- Shell libraries: lowercase with hyphens ending in `-lib.sh` (`sbx-lib.sh`, `sbx-start-lib.sh`)
+- Shell libraries: lowercase with hyphens ending in `-lib.sh` (`sbx-lib.sh`)
 - Python modules: lowercase with underscores (`check_result.py`, `image_roots.py`)
 - Dockerfiles: named `Dockerfile` (agent-specific files in agent directories: `claude/Dockerfile`, `cursor/Dockerfile`)
 - Configuration: lowercase with underscores or hyphens (`.shellcheckrc`, `.hadolint.yaml`, `versions.env`)
-- Start hooks: two-digit prefix with dash (`05-gsd`, `10-best-practices`, `02-no-self-update`)
-- Lowercase with underscores: `check_workspace_mount`, `run_start_hooks`, `is_mount`
+- Init steps: three-digit prefix with underscore, `NNN_name.py` (`010_state_dirs.py`, `050_gsd_sync.py`, `900_best_practices_links.py`)
+- Lowercase with underscores: `check_workspace_mount`, `run_init`, `is_mount`
 - Helper functions with leading underscore when private to a module: `_elf_machine`, `_version_problem`
 - Main entry point is signaled by `Main / Entry Point` banner comment, not a function name
-- Lowercase with underscores: `make_state_folders`, `cert_fingerprint`, `tool_result`
+- Lowercase with underscores: `make_state_dir`, `cert_fingerprint`, `tool_result`
 - Private functions with leading underscore: `_elf_machine`, `_version_matches`, `_native_machine_problem`
 - Public functions get type hints on parameters and return
 - Environment variables and exports: UPPERCASE with underscores (`SBX_NAME`, `SBX_CONFIG_DIR`, `DOCKER_HOST`)
-- Local variables: lowercase with underscores (`workspace`, `hook`, `configDir`, `groupOutput`)
+- Local variables: lowercase with underscores (`workspace`, `step`, `configDir`, `groupOutput`)
 - Global state marked explicitly: `FAILS=0`, `BUILD_RC`, `SBX_RC` (uppercase; results of last operation)
 - Indexed: `knownAgentList`, `knownImageTagList` (bare list of space-separated values)
 - Module-level constants: UPPERCASE with underscores (`ELF_MACHINE_BY_UNAME_MAP`, `_HOME_ROOT`, `_ELF_MAGIC`)
@@ -155,7 +159,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - RUN commands chain with `&&` to reduce layers
 - Cleanup commands (`rm -rf /var/lib/apt/lists/*`) at end of RUN chain
 - USER directive near end, after tools installed
-- ENTRYPOINT specifies the script; CMD can be overridden
+- No ENTRYPOINT; CMD can be overridden (compose.yml overrides it with `sleep infinity`)
 
 ## Import Organization
 
@@ -248,7 +252,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - Program exit is explicit: `exit 0` on success or `exit 1` / `exit 2` on failure
 - Library exit is implicit: functions return non-zero on failure
 - Globals exported only when needed for subprocesses: `export SBX_CONFIG_DIR`
-- Modules contain business logic; entrypoint stays thin and calls into modules
+- Modules contain business logic; launcher stays thin and calls into modules
 - Shared setup (fixtures, helpers) in conftest.py; test files hold assertions
 - Check functions injected with dependencies (environment maps, paths) for testability
 - One module, one topic; split large modules by responsibility
@@ -285,7 +289,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - Fixtures in conftest.py for shared setup; test functions use them
 - Test names follow `test_<what>` pattern
 - Assertions use `assert` keyword; pytest introspects and reports failures
-- Temporary folders via `tmp_path` fixture; tests clean up automatically
+- Temporary directories via `tmp_path` fixture; tests clean up automatically
 - No monkey-patching; use dependency injection (pass injectable parameters) or config overrides
 
 ## Portability
@@ -318,19 +322,19 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 |-----------|----------------|------|
 | Host Scripts | Register sandboxes, manage lifecycle (start, stop, upgrade); invoke Docker Compose | `bin/sbx-add`, `bin/sbx-start`, etc. |
 | Registry | Store sandbox metadata (host path, agent type) outside every mount | `~/.config/sbx/sandboxes/<name>` |
-| Compose Template | Define container service, mount point, image, entrypoint | `compose.yml` |
+| Compose Template | Define container service, mount point, image, command (`sleep infinity`) | `compose.yml` |
 | Base Image | OS packages, toolchains, GSD, shared commands, selfcheck framework | `base/Dockerfile` |
-| Agent Images | Agent-specific CLI, wrappers, start hooks, checks | `claude/Dockerfile`, `cursor/Dockerfile` |
-| Entrypoint | Validate mount and state folders, run hooks, enter project folder | `base/sbx-entrypoint` |
-| Start Hooks | Agent-specific setup (sync GSD, link skills, disable self-update) | `*/start.d/*` |
+| Agent Images | Agent-specific CLI, agent wrappers, init steps, checks | `claude/Dockerfile`, `cursor/Dockerfile` |
+| Init Launcher | Run the shared and agent init steps in file-name order; write the init marker | `base/init/sbx-init` |
+| Init Steps | Sandbox setup (make state directories, sync GSD, link skills, disable Cursor self-update, give files back to `sandbox`) | `base/init/steps/*`, `claude/init/*`, `cursor/init/*` |
 | Selfcheck | Validate image state, tools, mounts, ownership before operation | `base/selfcheck/runner.py` and `checks/` |
 
 ## Pattern Overview
 
-- Isolation: one container, one project folder, no cross-sandbox access
+- Isolation: one container, one project directory, no cross-sandbox access
 - Reproducibility: pinned toolchain versions in `versions.env`; smoke tests at build time verify all pins
-- Idempotency: start hooks are reentrant; existing state folders and configs are reused
-- Validation: entrypoint checks mount, folders and sandbox name before running hooks; selfcheck validates image state
+- Idempotency: a rerun of `sbx-init` redoes every step; existing state directories and configs are reused
+- Validation: `sbx-init` stops at the first failing step and `sbx-claude` and `sbx-cursor` refuse until it has passed; selfcheck validates image state
 - Composition: base image includes GSD and shared helpers; agent images add their CLI and checks
 
 ## Layers
@@ -340,30 +344,30 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - Contains: Ubuntu 24.04, Node.js, Python, JDK 21, Maven, uv, git, gh, GSD, sbx-selfcheck framework
 - Depends on: Official Docker images (Ubuntu, Temurin, Node, Python)
 - Used by: `sbx-claude:local` and `sbx-cursor:local`
-- Key State: `/etc/sbx/versions.env` (pins), `/etc/sbx/tool-versions` (display line), `/etc/sbx/start.d/` (hook folder)
+- Key State: `/etc/sbx/versions.env` (pins), `/etc/sbx/tool-versions` (display line), `/usr/local/lib/sbx-init/steps/` (shared init steps), `/etc/sbx/init.d/` (agent init steps), `/etc/sbx/selfcheck.d/` (agent checks)
 - Purpose: Adds agent-specific CLI and configuration
 - Location: Builds `sbx-claude:local` (Claude) or `sbx-cursor:local` (Cursor)
-- Contains: Claude Code or Cursor CLI, agent-specific start hooks, managed settings, agent checks
+- Contains: Claude Code or Cursor CLI, agent-specific init steps, managed settings, agent checks
 - Depends on: `sbx-base:local`
 - Used by: Containers running the agent
-- Key State: Environment variables for agent config directory, start hooks in `/etc/sbx/start.d/`
+- Key State: Environment variables for agent config directory, init steps in `/etc/sbx/init.d/<agent>/`
 - Purpose: Validates state and runs the agent
 - Location: Launched from `compose.yml` by host scripts
-- Contains: Mounted project folder, mounted state folders (caches, login, git identity)
+- Contains: Mounted project directory, mounted state directories (caches, login, git identity)
 - Depends on: Agent image
 - Used by: Developer and GSD execution
-- Key Flow: entrypoint validation, hook execution, agent CLI
-- Purpose: Track sandbox registrations and provide CLI for sandbox operations
+- Key Flow: `sleep infinity`, `sbx-init` in the sandbox shell, agent wrapper, agent CLI
+- Purpose: Track registered sandboxes and provide CLI for sandbox operations
 - Location: Registry in `~/.config/sbx/sandboxes/`; scripts in `bin/`
-- Contains: Per-sandbox metadata (folder path, agent type)
+- Contains: Per-sandbox metadata (directory path, agent type)
 - Depends on: Installed Docker Desktop, `compose.yml`, agent images
 - Used by: Developer running `sbx-*` commands
 
 ## Data Flow
 
-### Sandbox Registration and First Start
+### Sandbox Registry and First Start
 
-### Container Startup
+### Container Start and sbx-init
 
 ### Agent Operation
 
@@ -372,48 +376,48 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 ## Key Abstractions
 
 - Purpose: Isolates one project and one agent session
-- Examples: `~/.config/sbx/sandboxes/demo` (registry), `/Users/you/sbx-demo/` (host folder), `sbx-demo` (container)
-- Pattern: Registry entry + host folders + container instance; name rules prevent collisions
-- Purpose: Binds the host project folder into the container without hiding image contents
-- Examples: `$SBX_DIR` on Mac; `/home/sandbox/workspace` in container
-- Pattern: `compose.yml` uses `create_host_path: false` to fail fast if the folder is missing
+- Examples: `~/.config/sbx/sandboxes/demo` (registry), `/Users/you/sbx-demo/` (sandbox directory), `sbx-demo` (container)
+- Pattern: Registry entry + sandbox directory + container instance; name rules prevent collisions
+- Purpose: Binds the sandbox directory into the container without hiding image contents
+- Examples: `$SBX_DIR` on a macOS host; `/home/sandbox/workspace` in container
+- Pattern: `compose.yml` uses `create_host_path: false` to fail fast if the directory is missing
 - Purpose: Preserve agent login, settings, caches, and history across container recreates
 - Examples: `state/claude`, `state/gh`, `state/shell`, `state/cache/npm`, `state/m2`
-- Pattern: Created at startup by `create_state_dirs`; persisted on the host under `state/`; environment variables direct tools to use them
-- Purpose: Run agent-specific setup tasks atomically at container start
-- Examples: `05-gsd` syncs GSD; `10-best-practices` links skills
-- Pattern: Executable shell scripts in `/etc/sbx/start.d/` run in name order; failure stops the start
+- Pattern: Created by the `state-dirs` init step; persisted on the host under `state/`; environment variables direct tools to use them
+- Purpose: Set the sandbox up when the user runs `sbx-init`
+- Examples: `state-dirs` makes the state directories; `claude-gsd-sync` syncs GSD; `claude-best-practices-links` links skills
+- Pattern: Python step files in `/usr/local/lib/sbx-init/steps/` (shared) and `/etc/sbx/init.d/<agent>/` run in file-name order; the first FAIL stops init
 - Purpose: Validate image state and container setup before the agent operates
 - Examples: Check tool versions, mount point, ownership, environment variables
 - Pattern: Python modules in `base/selfcheck/checks/` and agent-specific `*/selfcheck/` define `CHECK_LIST`; runner collects and runs them
-- Purpose: Persist sandbox metadata outside the project folder
+- Purpose: Persist sandbox metadata outside the project directory
 - Examples: `SBX_DIR=/Users/you/sbx-demo`, `SBX_AGENT=claude`
 - Pattern: One file per sandbox in `~/.config/sbx/sandboxes/<name>`; sourced by host scripts
 
 ## Entry Points
 
-- `sbx-add`: Registers a new sandbox; validates name and paths; creates folders; writes registry entry
+- `sbx-add`: Registers a new sandbox; validates name and paths; creates directories; writes registry entry
 - `sbx-start`: Starts a sandbox (docker compose up) without rebuilding images
 - `sbx-upgrade`: Rebuilds images and starts the sandbox
-- `sbx-shell`: Execs a bash shell into the running container at the project folder
+- `sbx-shell`: Execs a bash shell into the running container at the project directory
 - `sbx-list`: Lists all registered sandboxes
 - `sbx-stop`, `sbx-rm`: Stop and remove containers
-- Entrypoint: `base/sbx-entrypoint` validates mount and state, runs start hooks, then execs the user command
-- Start hooks: Located in `/etc/sbx/start.d/`, run in name order (e.g., `05-gsd`, `10-best-practices`)
+- Container start: the command is `sleep infinity`; there is no entrypoint, so nothing is set up until the user runs `sbx-init`
+- `sbx-init`: `base/init/sbx-init` runs the init steps in file-name order, then writes the marker `/home/sandbox/.sbx-init-done`
 - Agent CLI: `claude` or `cursor-agent` (not managed by sbx; the agent runs as a subprocess)
 - Selfcheck: `sbx-selfcheck` validates the image and container state
 
 ## Architectural Constraints
 
 - **One mount**: Entire `/home/sandbox/workspace` is mounted; no nested mounts or subtree separations
-- **Sandbox name rule**: Names start with a lowercase letter, then lowercase, digits or hyphens, 31 chars max (`^[a-z][a-z0-9-]{0,30}$`). Prevents Docker naming errors and sandbox folder collisions
+- **Sandbox name rule**: Names start with a lowercase letter, then lowercase, digits or hyphens, 31 chars max (`^[a-z][a-z0-9-]{0,30}$`). Prevents Docker naming errors and sandbox directory collisions
 - **Reserved names**: `state` and `best-practices` are reserved; a sandbox cannot use them as its project name
 - **No root access**: The container runs the unprivileged `sandbox` user; image files are root-owned and immutable
 - **Immutable image paths**: Image-provided binaries in `/usr/local/bin` and libraries are read-only to the sandbox user
-- **Non-interactive entrypoint**: Start hooks must succeed or the container fails to start; no interactive recovery
+- **Init before the agent**: `sbx-claude` and `sbx-cursor` refuse until `sbx-init` has passed; a FAIL stops init at that step and prints a `fix:` line
 - **Pins are not defaults**: Every version in `versions.env` must be provided; `build.sh` stops without them
 - **Registry outside mounts**: Registry in `~/.config/sbx/` prevents a sandbox from rewriting its own entry
-- **No state pollution**: Start hooks are idempotent; rerunning them does not create duplicates or corrupt existing state
+- **No state pollution**: Init steps are idempotent; rerunning `sbx-init` does not create duplicates or corrupt existing state
 
 ## Anti-Patterns
 
@@ -429,24 +433,24 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 
 - Mount point must be mounted; failing here means the developer used `docker run` directly instead of `docker compose up`
 - Sandbox name must follow the rule; failing here prevents name collisions and Docker compose errors
-- Project and state folders must exist; failing here indicates a missing or mistyped path or a broken registry entry
-- State directories are created; failures here stop the start (permission issue with the mount)
-- Hooks run in sequence; the first failure stops the start and is reported on stderr
-- A missing hook file is silently skipped; only regular executable files run
-- Each hook exit code is checked; a non-zero exit stops the start
-- Hook output is not captured; stdout and stderr go to the container log for debugging
+- Project and state directories must exist; failing here indicates a missing or mistyped path or a broken registry entry
+- State directories are made by the `state-dirs` step; a failure here stops init (permission issue with the mount)
+- Init steps run in file-name order; the first FAIL stops init and prints a `fix:` line under it
+- Only `.py` files in the step directories run
+- Each step returns a result; a failed result prints FAIL and stops init
+- Step output goes to the terminal of the sandbox shell that ran `sbx-init`
 - Smoke tests at build time verify every version pin (node version, GSD version, etc.)
 - Version mismatches cause build failure; the image is not produced
 - Missing versions are named in the error; `versions.env` must provide them
 - Syntax errors in Python files (selfcheck checks) cause build failure
-- Errors are printed to stderr with `[sbx] ERROR:` prefix
-- Exit code is 1; the container does not start
-- Developer sees the error in `docker compose up` output or `docker logs sbx-<name>`
+- A failing init step prints `FAIL: NAME: problem`, then `sbx-init: stopped at NAME`
+- Exit code is 1; the marker is not written
+- Developer sees the error in the sandbox shell
 - Remediation hints are in the error message (e.g., "rebuild the images" or "check the mount")
 
 ## Cross-Cutting Concerns
 
-- Container startup: Errors go to stderr via `echo ... >&2` in the entrypoint and start hooks
+- Init: each step prints one OK or FAIL line, with a `fix:` line under each FAIL
 - Selfcheck: Results are printed to stdout (PASS/FAIL per check); remediation hints follow failures
 - Image builds: Verbose output from curl, tar, compilation tools; layer cache hits are shown
 - History: Bash history is saved to `state/shell/bash_history` across sessions
@@ -459,7 +463,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - Non-root user; `sandbox` uid 1000
 - Image binaries are root-owned, immutable by the sandbox user
 - Mount is read-write; the sandbox user can read and write project files
-- Registry outside every mount; the sandbox user cannot modify its own registration
+- Registry outside every mount; the sandbox user cannot modify its own registry entry
 - Repos behind a proxy trust the proxy's root certificate (if `SBX_CA_CERT` is set); this is configurable per build
 
 <!-- GSD:architecture-end -->
