@@ -5,7 +5,7 @@
 # ownership step.
 # ------------------------------------------------------------------------------
 
-from best_practices_link import link_best_practices
+from best_practices_linker import link_best_practices
 from check_result import Check, CheckResult
 from claude_shared import AGENT_CONFIG_DIR
 from paths import BEST_PRACTICES_DIR

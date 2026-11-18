@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 import best_practices_links
-from best_practices_link import link_best_practices
+from best_practices_linker import link_best_practices
 from init_helpers import REPO_DIR, load_step
 
 RULES_LINK_TEXT = "../../best-practices/rules"
