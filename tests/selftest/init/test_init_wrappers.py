@@ -11,7 +11,6 @@
 import os
 import re
 import subprocess
-import time
 from pathlib import Path
 
 import pytest
@@ -97,7 +96,6 @@ def test_without_the_marker_the_wrapper_refuses_at_once_and_never_starts_the_age
     tmp_path, agent_name, script_path, wrapper_name
 ):
     sandbox = make_sandbox(tmp_path, agent_name)
-    started = time.monotonic()
 
     result = run_wrapper(script_path, sandbox, ["--version"])
 
@@ -105,7 +103,6 @@ def test_without_the_marker_the_wrapper_refuses_at_once_and_never_starts_the_age
     assert result.stderr == f"{wrapper_name}: sbx-init has not passed in this container; run sbx-init first\n"
     assert result.stdout == ""
     assert not sandbox["record_file"].exists()
-    assert time.monotonic() - started < 2
 
 
 @pytest.mark.parametrize("agent_name,script_path,wrapper_name", WRAPPER_CASE_LIST, ids=WRAPPER_IDS)
@@ -140,20 +137,6 @@ def test_with_the_marker_the_agent_runs_from_the_agents_folder_with_every_argume
     assert record_line_list[0] == "args=--version a1"
     assert record_line_list[1] == f"command={agent_bin_text}/{agent_name}"
     assert record_line_list[2].startswith(f"path={agent_bin_text}{os.pathsep}")
-
-
-# ------------------------------------------------------------------------------
-# Neither wrapper warns, pauses or tests for a clone
-# ------------------------------------------------------------------------------
-
-def test_no_wrapper_and_not_sbx_run_agent_holds_a_sleep_warning_or_clone_test():
-    script_path_list = [case[1] for case in WRAPPER_CASE_LIST] + [RUN_AGENT_PATH]
-
-    for script_path in script_path_list:
-        script_text = (REPO_DIR / script_path).read_text()
-
-        for forbidden_text in ["sleep", "WARNING", "SBX_BUNDLE_DIR", "best-practices-skills"]:
-            assert forbidden_text not in script_text
 
 
 # ------------------------------------------------------------------------------

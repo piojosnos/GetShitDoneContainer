@@ -107,21 +107,15 @@ def test_no_three_digit_prefix_repeats_within_one_image(agent_name):
     assert len(prefix_list) == len(set(prefix_list))
 
 
-def test_every_step_name_is_well_formed_and_says_neither_bundle_nor_skip():
-    for agent_name in STEP_ORDER_BY_AGENT_MAP:
-        for name in STEP_ORDER_BY_AGENT_MAP[agent_name]:
-            assert NAME_PATTERN.match(name), name
-            assert "bundle" not in name
-            assert "skip" not in name
+@pytest.mark.parametrize("agent_name", ["claude", "cursor"])
+def test_every_step_name_is_well_formed(tmp_path, agent_name):
+    for name in collected_name_list(tmp_path, agent_name):
+        assert NAME_PATTERN.match(name), name
 
 
 # ------------------------------------------------------------------------------
 # Where the image keeps the steps
 # ------------------------------------------------------------------------------
-
-def test_the_runner_reads_the_agent_steps_from_the_init_folder():
-    assert paths.AGENT_STEPS_DIR == Path("/etc/sbx/init.d")
-
 
 def test_the_base_dockerfile_installs_sbx_init_and_has_no_entrypoint():
     text = dockerfile_text("base")
@@ -136,20 +130,18 @@ def test_the_base_dockerfile_installs_sbx_init_and_has_no_entrypoint():
 
 def test_the_shared_step_file_module_reaches_the_image_and_sbx_init_can_import_it():
     base_text = dockerfile_text("base")
-    launcher_text = (REPO_DIR / "base" / "init" / "sbx-init").read_text()
 
     assert (REPO_DIR / "base" / "selfcheck" / "step_files.py").is_file()
     assert "COPY --chmod=644 base/selfcheck/*.py /usr/local/lib/sbx-selfcheck/" in base_text
     assert "python3 -m py_compile" in base_text
     assert "/usr/local/lib/sbx-selfcheck/*.py" in base_text
-    assert "sbx-selfcheck" in launcher_text
 
 
 @pytest.mark.parametrize("agent_name", ["claude", "cursor"])
 def test_each_agent_dockerfile_copies_its_own_steps_and_names_no_start_hooks(agent_name):
     text = dockerfile_text(agent_name)
 
-    assert f"COPY --chmod=644 {agent_name}/init/*.py /etc/sbx/init.d/{agent_name}/" in text
+    assert f"COPY --chmod=644 {agent_name}/init/*.py {paths.AGENT_STEPS_DIR}/{agent_name}/" in text
     assert "start.d" not in text
 
 

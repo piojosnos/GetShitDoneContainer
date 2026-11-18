@@ -9,7 +9,7 @@
 set -eu
 
 # ------------------------------------------------------------------------------
-# check_state_folders: stops when sbx-init has not made the state folders yet
+# Stops when sbx-init has not made the state folders yet
 # ------------------------------------------------------------------------------
 # gh and git write their login into these folders; without them gh fails late.
 # ------------------------------------------------------------------------------
@@ -22,7 +22,8 @@ check_state_folders() {
   fi
 
   echo "[sbx] ERROR: the state folders do not exist yet; run sbx-init first." >&2
-  exit 1
+
+  return 1
 }
 
 # ------------------------------------------------------------------------------
@@ -65,7 +66,7 @@ ask_git_setting() {
 # ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
-check_state_folders
+check_state_folders || exit 1
 
 gh auth login --hostname github.com --git-protocol https "$@"
 gh auth setup-git

@@ -206,7 +206,7 @@ def test_an_installer_that_is_not_on_path_fails_with_the_rebuild_hint(tmp_path):
     ("agent_name", "step_name", "option"),
     [("claude", "claude-gsd-sync", "--claude"), ("cursor", "cursor-gsd-sync", "--cursor")],
 )
-def test_an_agent_step_file_holds_one_step_that_syncs_its_own_agent(tmp_path, monkeypatch, agent_name, step_name, option):
+def test_an_agent_step_file_holds_one_step_that_syncs_its_own_agent(tmp_path, agent_name, step_name, option):
     step_module = load_step(REPO_DIR / agent_name / "init" / "050_gsd_sync.py")
     call_list = []
 
@@ -215,10 +215,8 @@ def test_an_agent_step_file_holds_one_step_that_syncs_its_own_agent(tmp_path, mo
 
         return "recorded"
 
-    monkeypatch.setattr(step_module, "gsd_sync_result", record_call)
-
     assert [step.name for step in step_module.STEP_LIST] == [step_name]
-    assert step_module.STEP_LIST[0].function() == "recorded"
+    assert step_module.STEP_LIST[0].function(record_call) == "recorded"
     assert call_list == [(step_module.CONFIG_DIR, option)]
     assert step_module.CONFIG_DIR.name == agent_name
 
