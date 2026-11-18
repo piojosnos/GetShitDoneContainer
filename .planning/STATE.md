@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: "09.1"
 current_phase_name: Align vocabulary across code and docs
 status: executing
-stopped_at: Completed 09.1-07-PLAN.md
-last_updated: "2026-11-18T06:31:10.260Z"
+stopped_at: Completed 09.1-08-PLAN.md
+last_updated: "2026-11-18T06:34:50.777Z"
 last_activity: 2026-11-18
 last_activity_desc: Phase 09.1 execution started
-state_head: c2657309bdc3ff81b19511b84a9675bbeeeeca94
+state_head: f6b4dc874df164238a746872dff4602f11e001fb
 progress:
   total_phases: 11
   completed_phases: 4
   total_plans: 55
-  completed_plans: 48
+  completed_plans: 49
   percent: 36
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 09.1 (Align vocabulary across code and docs) — EXECUTING
-Plan: 8 of 14
+Plan: 9 of 14
 Status: Ready to execute
 Last activity: 2026-11-18 — Phase 09.1 execution started
 
@@ -207,6 +207,7 @@ Last activity: 2026-11-18 — Phase 09.1 execution started
 | Phase 09.1 P05 | 20m | 3 tasks | 38 files |
 | Phase 09.1 P06 | 25m | 3 tasks | 52 files |
 | Phase 09.1 P07 | 10m | 3 tasks | 55 files |
+| Phase 09.1 P08 | 10m | 3 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -410,6 +411,7 @@ Recent decisions affecting current work:
 - [Phase 09.1]: Renames are outright with no alias; MIGRATION.md tells users to run sbx-upgrade NAME
 - [Phase 09.1]: Selfcheck module is best_practices_links (plural) so it cannot shadow the init module best_practices_link
 - [Phase 09.1]: Host shell step is named 'sbx unit tests in the host shell' (host_sbx_unit_tests), following GLOSSARY.md over the plan text
+- [Phase 09.1]: Plan 08: sbx-add registers newSandboxDir while the library reads sandboxDir, so re-reading other registry entries cannot overwrite the directory create_dirs uses
 
 ### Pending Todos
 
@@ -484,8 +486,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-18T06:31:10.148Z
-Stopped at: Completed 09.1-07-PLAN.md
+Last session: 2026-11-18T06:34:50.662Z
+Stopped at: Completed 09.1-08-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
