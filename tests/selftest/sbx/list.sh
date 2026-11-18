@@ -3,7 +3,7 @@
 # Self-test of sbx-list: the usage line and a Docker failure
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/sbx/list.sh (exit 0 = all pass)
-# Run by run-all.sh; its one work folder under TMPDIR is removed at exit.
+# Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # Docker points at a missing socket, so no case reaches a daemon.
 # ------------------------------------------------------------------------------
 set -u

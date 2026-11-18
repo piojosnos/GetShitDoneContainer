@@ -3,7 +3,7 @@
 # Self-test of sbx-start with Docker not answering, and the shared warning text
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/sbx/start.sh (exit 0 = all pass)
-# Run by run-all.sh; its one work folder under TMPDIR is removed at exit.
+# Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # Docker points at a missing socket, so no case reaches a daemon.
 # ------------------------------------------------------------------------------
 set -u

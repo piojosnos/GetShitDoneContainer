@@ -12,7 +12,7 @@
 # mode only.
 # ------------------------------------------------------------------------------
 
-# The library sets entryDir.
+# The library sets sandboxDir.
 # shellcheck disable=SC2154
 set -eu
 
@@ -71,10 +71,10 @@ sbx_init
 check_name "$1"
 read_registry_entry "$1"
 
-codeDir=$entryDir/$1
+projectDir=$sandboxDir/$1
 
-if [ "$(git -C "$codeDir" rev-parse --show-prefix 2>/dev/null || echo none)" != "" ]; then
-  sbx_error "$codeDir is not the top folder of a git repository"
+if [ "$(git -C "$projectDir" rev-parse --show-prefix 2>/dev/null || echo none)" != "" ]; then
+  sbx_error "$projectDir is not the top directory of a git repository"
   exit 1
 fi
 
@@ -86,14 +86,14 @@ fi
 
 # The loop reads git through process substitution, which hides its exit
 # status, so one plain run checks first that git can list the index.
-if ! git -C "$codeDir" ls-files -s >/dev/null; then
-  sbx_error "git ls-files failed in $codeDir"
+if ! git -C "$projectDir" ls-files -s >/dev/null; then
+  sbx_error "git ls-files failed in $projectDir"
   exit 1
 fi
 
 while IFS= read -r -d '' indexEntry; do
   gitMode=${indexEntry%% *}
-  filePath=$codeDir/${indexEntry#*$'\t'}
+  filePath=$projectDir/${indexEntry#*$'\t'}
 
   if [ "$gitMode" != 100755 ] && [ "$gitMode" != 100644 ]; then
     continue
@@ -108,9 +108,9 @@ while IFS= read -r -d '' indexEntry; do
   if [ "$hasXattr" = true ]; then
     fix_sandbox_mode "$filePath" "$gitMode"
   fi
-done < <(git -C "$codeDir" ls-files -s -z)
+done < <(git -C "$projectDir" ls-files -s -z)
 
-echo "sbx-fix-modes: set $hostCount host modes and $sandboxCount sandbox modes from git in $codeDir"
+echo "sbx-fix-modes: set $hostCount host modes and $sandboxCount sandbox modes from git in $projectDir"
 
 if [ "$hasXattr" = false ]; then
   echo "sbx-fix-modes: xattr is not installed, so the sandbox modes were not looked at"

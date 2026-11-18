@@ -3,7 +3,7 @@
 # Self-test of sbx-rm: usage, refusals and broken entries
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/sbx/rm.sh (exit 0 = all pass)
-# Run by run-all.sh; its one work folder under TMPDIR is removed at exit.
+# Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # Docker points at a missing socket, so no case reaches a daemon.
 # ------------------------------------------------------------------------------
 set -u
@@ -93,7 +93,7 @@ case_rm_broken_entry() {
 
   echo '--- sbx-rm broken entry'
 
-  plant_entry broken "SBX_DIR=relative/folder" "SBX_AGENT=claude"
+  plant_entry broken "SBX_DIR=relative/dir" "SBX_AGENT=claude"
   cp "$SBX_CONFIG_DIR/sandboxes/broken" "$entryCopy"
 
   run_sbx brokenplain sbx-rm broken --yes

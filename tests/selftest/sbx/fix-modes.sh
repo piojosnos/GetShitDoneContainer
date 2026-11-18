@@ -3,7 +3,7 @@
 # Self-test of sbx-fix-modes against a git repo and a stand-in xattr
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/sbx/fix-modes.sh (exit 0 = all pass)
-# Run by run-all.sh; its one work folder under TMPDIR is removed at exit.
+# Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # The stand-in keeps each attribute in a file, and like macOS it refuses to
 # write one on a read-only file.
 # ------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ case_fix_modes_refusals() {
 
   run_sbx nogit sbx-add nogit "$WORK/modes dir/nogit"
   run_sbx modes4 sbx-fix-modes nogit
-  expect "sbx-fix-modes: a project folder that is not a git repo is refused" refused_cleanly modes4 "is not the top folder of a git repository" "" ""
+  expect "sbx-fix-modes: a project directory that is not a git repo is refused" refused_cleanly modes4 "is not the top directory of a git repository" "" ""
 }
 
 # ------------------------------------------------------------------------------

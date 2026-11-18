@@ -3,7 +3,7 @@
 # Starts a registered sandbox by name
 # ------------------------------------------------------------------------------
 # Usage: sbx-start NAME
-# The folders are checked first, so a wrong entry never reaches Docker. A
+# The directories are checked first, so a wrong entry never reaches Docker. A
 # running sandbox on an older image is recreated on the current one, after a
 # warning.
 # ------------------------------------------------------------------------------

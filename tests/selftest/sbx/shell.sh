@@ -3,7 +3,7 @@
 # Self-test of sbx-shell: refusals before Docker, and Docker not answering
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/sbx/shell.sh (exit 0 = all pass)
-# Run by run-all.sh; its one work folder under TMPDIR is removed at exit.
+# Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # Docker points at a missing socket, so no case reaches a daemon.
 # ------------------------------------------------------------------------------
 set -u
@@ -37,27 +37,27 @@ case_shell_refusals() {
 }
 
 # ------------------------------------------------------------------------------
-# Case: a wrong folder or Docker not answering is refused before compose
+# Case: a wrong directory or Docker not answering is refused before compose
 # ------------------------------------------------------------------------------
 case_shell_checks_before_compose() {
-  local folderRoot="$WORK/shell dir/checks"
+  local dirRoot="$WORK/shell dir/checks"
 
   SBX_CONFIG_DIR=$WORK/cfg-shell-checks
   export SBX_CONFIG_DIR
 
   echo '--- sbx-shell checks before compose'
 
-  run_sbx nofolder sbx-add nofolder "$folderRoot/one"
-  mv "$folderRoot/one/nofolder" "$folderRoot/one/nofolder-aside"
-  run_sbx nofolderrun sbx-shell nofolder
-  expect "sbx-shell: a missing project folder is refused before compose and the shell" refused_cleanly nofolderrun "missing $folderRoot/one/nofolder" "" ""
+  run_sbx nodir sbx-add nodir "$dirRoot/one"
+  mv "$dirRoot/one/nodir" "$dirRoot/one/nodir-aside"
+  run_sbx nodirrun sbx-shell nodir
+  expect "sbx-shell: a missing project directory is refused before compose and the shell" refused_cleanly nodirrun "missing $dirRoot/one/nodir" "" ""
 
-  run_sbx nostate sbx-add nostate "$folderRoot/two"
-  mv "$folderRoot/two/state" "$folderRoot/two/state-aside"
+  run_sbx nostate sbx-add nostate "$dirRoot/two"
+  mv "$dirRoot/two/state" "$dirRoot/two/state-aside"
   run_sbx nostaterun sbx-shell nostate
-  expect "sbx-shell: a missing state folder is refused before compose and the shell" refused_cleanly nostaterun "missing $folderRoot/two/state" "" ""
+  expect "sbx-shell: a missing state directory is refused before compose and the shell" refused_cleanly nostaterun "missing $dirRoot/two/state" "" ""
 
-  run_sbx noimage sbx-add noimage "$folderRoot/three"
+  run_sbx noimage sbx-add noimage "$dirRoot/three"
   run_sbx dockerdownrun sbx-shell noimage
   expect "sbx-shell: Docker not answering is refused before compose and the shell" refused_cleanly dockerdownrun "cannot reach Docker; is Docker running?" "" ""
   expect "sbx-shell: Docker not answering does not advise sbx-upgrade" lacks_text "$WORK/dockerdownrun.err" "sbx-upgrade"

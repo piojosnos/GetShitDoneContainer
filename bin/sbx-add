@@ -7,7 +7,7 @@
 # The entry is two lines in ~/.config/sbx/sandboxes/NAME, outside every mount.
 # ------------------------------------------------------------------------------
 
-# The library sets registryDir, configDir, repoDir and entryDir.
+# The library sets registryDir, configDir, repoDir and sandboxDir.
 # shellcheck disable=SC2154
 set -eu
 
@@ -235,8 +235,8 @@ refuse_sandbox_overlap() {
     otherName=${entryPath##*/}
     read_registry_entry "$otherName" || return 1
 
-    if paths_overlap "$1" "$entryDir"; then
-      sbx_error "'$1' overlaps the directory of sandbox $otherName ($entryDir); each sandbox needs its own directory."
+    if paths_overlap "$1" "$sandboxDir"; then
+      sbx_error "'$1' overlaps the directory of sandbox $otherName ($sandboxDir); each sandbox needs its own directory."
       return 1
     fi
   done

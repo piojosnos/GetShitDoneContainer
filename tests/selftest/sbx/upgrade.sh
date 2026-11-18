@@ -3,7 +3,7 @@
 # Self-test of the refusals of sbx-upgrade: all of them come before the build
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/sbx/upgrade.sh (exit 0 = all pass)
-# Run by run-all.sh; its one work folder under TMPDIR is removed at exit.
+# Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # The build is the long step, so every cheap check has to stop the run first.
 # ------------------------------------------------------------------------------
 set -u
@@ -23,7 +23,7 @@ refused_before_build() {
 # ------------------------------------------------------------------------------
 case_upgrade_refusals() {
   local ruleText='breaks the sandbox name rule'
-  local folderRoot="$WORK/upgrade dir"
+  local dirRoot="$WORK/upgrade dir"
 
   SBX_CONFIG_DIR=$WORK/cfg-upgrade
   export SBX_CONFIG_DIR
@@ -39,15 +39,15 @@ case_upgrade_refusals() {
   run_sbx up3 sbx-upgrade ../x
   expect "sbx-upgrade: a path as a name is refused before the build" refused_before_build up3 "$ruleText"
 
-  run_sbx nofolder sbx-add nofolder "$folderRoot/one"
-  mv "$folderRoot/one/nofolder" "$folderRoot/one/nofolder-aside"
-  run_sbx up4 sbx-upgrade nofolder --no-cache
-  expect "sbx-upgrade: a missing project folder is refused before the build" refused_before_build up4 "missing $folderRoot/one/nofolder; create it"
+  run_sbx nodir sbx-add nodir "$dirRoot/one"
+  mv "$dirRoot/one/nodir" "$dirRoot/one/nodir-aside"
+  run_sbx up4 sbx-upgrade nodir --no-cache
+  expect "sbx-upgrade: a missing project directory is refused before the build" refused_before_build up4 "missing $dirRoot/one/nodir; create it"
 
-  run_sbx nostate sbx-add nostate "$folderRoot/two"
-  mv "$folderRoot/two/state" "$folderRoot/two/state-aside"
+  run_sbx nostate sbx-add nostate "$dirRoot/two"
+  mv "$dirRoot/two/state" "$dirRoot/two/state-aside"
   run_sbx up5 sbx-upgrade nostate
-  expect "sbx-upgrade: a missing state folder is refused before the build" refused_before_build up5 "missing $folderRoot/two/state; create it"
+  expect "sbx-upgrade: a missing state directory is refused before the build" refused_before_build up5 "missing $dirRoot/two/state; create it"
 }
 
 # ------------------------------------------------------------------------------

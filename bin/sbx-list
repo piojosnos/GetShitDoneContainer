@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Lists the registered sandboxes with their status and folder
+# Lists the registered sandboxes with their status and directory
 # ------------------------------------------------------------------------------
 # Usage: sbx-list
 # One docker ps call gives every status, so the list matches docker ps -a. It
-# only reads: no container, registry entry or folder is changed.
+# only reads: no container, registry entry or directory is changed.
 # ------------------------------------------------------------------------------
 
-# The library sets registryDir and entryDir.
+# The library sets registryDir and sandboxDir.
 # shellcheck disable=SC2154
 set -eu
 
@@ -112,7 +112,7 @@ print_table() {
       olderImageFound=yes
     fi
 
-    print_row "$entryName" "$statusText" "$entryDir"
+    print_row "$entryName" "$statusText" "$sandboxDir"
   done
 
   if [ "$rowCount" -eq 0 ]; then

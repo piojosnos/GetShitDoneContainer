@@ -3,7 +3,7 @@
 # Self-test of the registry reader and the refusals of sbx-start and sbx-stop
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/sbx/entry.sh (exit 0 = all pass)
-# Run by run-all.sh; its one work folder under TMPDIR is removed at exit.
+# Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -37,7 +37,7 @@ case_read_as_data() {
 # Case: line order, a missing final newline and spaces do not change the result
 # ------------------------------------------------------------------------------
 case_line_forms() {
-  local readText='read_registry_entry NAME; printf "%s|%s\n" "$entryDir" "$entryAgent"'
+  local readText='read_registry_entry NAME; printf "%s|%s\n" "$sandboxDir" "$entryAgent"'
   local readOut
 
   SBX_CONFIG_DIR=$WORK/cfg-forms
@@ -131,7 +131,7 @@ case_start_stop_refusals() {
   run_sbx moved sbx-add moved "$WORK/moved dir"
   mv "$WORK/moved dir/moved" "$WORK/moved dir/moved-aside"
   run_sbx start4 sbx-start moved
-  expect "sbx-start: a missing project folder is refused before Docker" refused_cleanly start4 "missing" "" ""
+  expect "sbx-start: a missing project directory is refused before Docker" refused_cleanly start4 "missing" "" ""
 
   run_sbx start5 sbx-start
   expect "sbx-start: no argument prints the usage and exits 2" usage_printed start5 "Usage: sbx-start NAME"
