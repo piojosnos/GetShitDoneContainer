@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Check: the state variables point into the state folder
+# Check: the state variables point into the state directory
 # ------------------------------------------------------------------------------
 # The image puts this file in /usr/local/lib/sbx-selfcheck/checks/.
 # ------------------------------------------------------------------------------

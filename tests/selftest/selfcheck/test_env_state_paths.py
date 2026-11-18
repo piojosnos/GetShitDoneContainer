@@ -13,7 +13,7 @@ env_state_paths = load_shared_check("110_env_state_paths")
 # State variables
 # ------------------------------------------------------------------------------
 
-def test_every_state_variable_points_under_the_state_folder():
+def test_every_state_variable_points_under_the_state_dir():
     for name, value in env_state_paths._STATE_PATH_BY_NAME_MAP.items():
         assert value.startswith(str(paths.STATE_DIR) + "/"), name
 

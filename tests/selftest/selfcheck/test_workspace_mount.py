@@ -43,8 +43,8 @@ def test_workspace_mount_fails_with_the_start_hint_when_not_listed(tmp_path):
     assert result.hint == hints.start_hint()
 
 
-@pytest.mark.skipif(os.getuid() == 0, reason="root can write to a read-only folder")
-def test_workspace_mount_fails_when_the_folder_is_not_writable(tmp_path, restorable_mode):
+@pytest.mark.skipif(os.getuid() == 0, reason="root can write to a read-only directory")
+def test_workspace_mount_fails_when_the_dir_is_not_writable(tmp_path, restorable_mode):
     workspace1 = tmp_path / "workspace1"
     workspace1.mkdir()
     mountinfo1 = tmp_path / "mountinfo1"

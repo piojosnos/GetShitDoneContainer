@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Check: git trusts every folder
+# Check: git trusts every directory
 # ------------------------------------------------------------------------------
 # The image puts this file in /usr/local/lib/sbx-selfcheck/checks/.
 # ------------------------------------------------------------------------------
@@ -21,7 +21,7 @@ def safe_directory_result(environment_map: Mapping[str, str] = os.environ) -> Ch
 
     for line in completed.stdout.splitlines():
         if line.strip() == "*":
-            return passed("git trusts every folder (safe.directory is *)")
+            return passed("git trusts every directory (safe.directory is *)")
 
     return failed("the system git config does not set safe.directory to *", rebuild_hint())
 

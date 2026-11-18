@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Check: the image's scripts and folders are root-owned
+# Check: the image's scripts and directories are root-owned
 # ------------------------------------------------------------------------------
 # The image puts this file in /usr/local/lib/sbx-selfcheck/checks/.
 # ------------------------------------------------------------------------------

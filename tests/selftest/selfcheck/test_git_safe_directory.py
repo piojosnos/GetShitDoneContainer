@@ -13,7 +13,7 @@ git_safe_directory = load_shared_check("090_git_safe_directory")
 # Git safe directory
 # ------------------------------------------------------------------------------
 
-def test_safe_directory_passes_when_the_system_file_trusts_every_folder(tmp_path):
+def test_safe_directory_passes_when_the_system_file_trusts_every_dir(tmp_path):
     system1 = tmp_path / "system1"
     system1.write_text("[safe]\n\tdirectory = *\n")
 
@@ -22,9 +22,9 @@ def test_safe_directory_passes_when_the_system_file_trusts_every_folder(tmp_path
     assert result.passed
 
 
-def test_safe_directory_fails_when_the_system_file_trusts_one_folder(tmp_path):
+def test_safe_directory_fails_when_the_system_file_trusts_one_dir(tmp_path):
     system1 = tmp_path / "system1"
-    system1.write_text("[safe]\n\tdirectory = /folder1\n")
+    system1.write_text("[safe]\n\tdirectory = /dir1\n")
 
     result = git_safe_directory.safe_directory_result(git_environment(system1, tmp_path / "global1"))
 

@@ -97,7 +97,7 @@ def test_the_shared_list_holds_the_checks_in_file_name_order(shared_check_list, 
 
     assert name_list == [
         "workspace-mount",
-        "project-folder",
+        "project-dir",
         "state-dirs",
         "state-writable",
         "init-marker",

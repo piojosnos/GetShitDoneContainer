@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Check: the home folders belong to the sandbox user
+# Check: the home directories belong to the sandbox user
 # ------------------------------------------------------------------------------
 # The image puts this file in /usr/local/lib/sbx-selfcheck/checks/.
 # ------------------------------------------------------------------------------
