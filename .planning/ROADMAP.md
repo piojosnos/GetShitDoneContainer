@@ -234,7 +234,7 @@ Plans:
 **Requirements**: TBD (decisions D-01 to D-19 in 09.1-CONTEXT.md are the contract)
 **Depends on**: Phase 9
 
-**Plans**: 4/14 plans executed
+**Plans**: 5/14 plans executed
 
 Plans:
 **Wave 1**
@@ -248,7 +248,7 @@ Plans:
 - [x] 09.1-04-PLAN.md: the best-practices links module, link and no-copy checks, host test library, H-27 and the fixture repo renamed; the guard's scan list follows (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 09.1-05-PLAN.md: "the host" in hints, scripts and tests; H-06 renamed (wave 4)
+- [x] 09.1-05-PLAN.md: "the host" in hints, scripts and tests; H-06 renamed (wave 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 09.1-06-PLAN.md: directory, selfcheck side: `state-dirs` twin, `project-dir`, the selfcheck library and its tests (wave 5)

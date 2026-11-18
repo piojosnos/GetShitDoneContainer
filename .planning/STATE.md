@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: "09.1"
 current_phase_name: Align vocabulary across code and docs
 status: executing
-stopped_at: Completed 09.1-04-PLAN.md
-last_updated: "2026-11-18T06:21:49.122Z"
+stopped_at: Completed 09.1-05-PLAN.md
+last_updated: "2026-11-18T06:24:39.142Z"
 last_activity: 2026-11-18
 last_activity_desc: Phase 09.1 execution started
-state_head: 933224aaf509fa3dd1b8bf30242333b2c2b9cf20
+state_head: 606fd73baa1590ea729b045f2e340e2d37bbcbfd
 progress:
   total_phases: 11
   completed_phases: 4
   total_plans: 55
-  completed_plans: 45
+  completed_plans: 46
   percent: 36
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 09.1 (Align vocabulary across code and docs) — EXECUTING
-Plan: 5 of 14
+Plan: 6 of 14
 Status: Ready to execute
 Last activity: 2026-11-18 — Phase 09.1 execution started
 
@@ -204,6 +204,7 @@ Last activity: 2026-11-18 — Phase 09.1 execution started
 | Phase 09.1 P02 | 3m | 2 tasks | 1 files |
 | Phase 09.1 P03 | 20m | 2 tasks | 25 files |
 | Phase 09.1 P04 | 25m | 3 tasks | 36 files |
+| Phase 09.1 P05 | 20m | 3 tasks | 38 files |
 
 ## Accumulated Context
 
@@ -406,6 +407,7 @@ Recent decisions affecting current work:
 - [Phase 09.1]: The best-practices repo rule rules/best-practices.md names no sandbox command, path or hook and says 'best-practices repo' instead of 'bundle repo'; the clone is found by following a link
 - [Phase 09.1]: Renames are outright with no alias; MIGRATION.md tells users to run sbx-upgrade NAME
 - [Phase 09.1]: Selfcheck module is best_practices_links (plural) so it cannot shadow the init module best_practices_link
+- [Phase 09.1]: Host shell step is named 'sbx unit tests in the host shell' (host_sbx_unit_tests), following GLOSSARY.md over the plan text
 
 ### Pending Todos
 
@@ -480,8 +482,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-18T06:21:49.026Z
-Stopped at: Completed 09.1-04-PLAN.md
+Last session: 2026-11-18T06:24:39.047Z
+Stopped at: Completed 09.1-05-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
