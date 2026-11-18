@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: "09.1"
 current_phase_name: Align vocabulary across code and docs
 status: planning
-stopped_at: Phase 9 complete, ready to plan Phase 09.1
-last_updated: "2026-11-18T00:55:45.566Z"
-last_activity: "2026-11-18, completed quick task 261118-02m: PR 52 review fixes (shared agent wrapper and shared step-file runner code)"
-state_head: 8bcede8f1bf8deee6393ac1ee52f23175cd7e55b
+stopped_at: Phase 09.1 context gathered
+last_updated: "2026-11-18T02:09:20.962Z"
+last_activity: "2026-11-18, completed quick task 261118-0vx: PR 52 best-practices review fixes"
+state_head: 0f1cfd6048ada73364b93de66ac21f633efdfa55
 progress:
-  total_phases: 10
+  total_phases: 11
   completed_phases: 4
   total_plans: 41
   completed_plans: 41
-  percent: 50
+  percent: 36
 last_activity_desc: Phase 9 complete, transitioned to Phase 09.1
 ---
 
@@ -471,9 +471,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-17T23:29:11.909Z
-Stopped at: Phase 9 complete, ready to plan Phase 09.1
-Resume file: None
+Last session: 2026-11-18T02:09:20.864Z
+Stopped at: Phase 09.1 context gathered
+Resume file: .planning/phases/09.1-align-vocabulary-across-code-and-docs/09.1-CONTEXT.md
 
 ## Operator Next Steps
 
