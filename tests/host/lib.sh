@@ -2,7 +2,7 @@
 # ------------------------------------------------------------------------------
 # Shared setup for the host tests: run directory, clean environment, libraries
 # ------------------------------------------------------------------------------
-# Sourced by the checks, runner, guard and self-tests; never run directly.
+# Sourced by the checks, runner, guard and unit tests; never run directly.
 # Host code is stock bash 3.2 with BSD tools (macOS); GNU only in docker exec.
 # ------------------------------------------------------------------------------
 

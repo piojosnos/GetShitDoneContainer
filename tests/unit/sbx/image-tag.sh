@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Self-test of SBX_IMAGE_TAG: it picks the image names; only local, test pass
+# Unit tests of SBX_IMAGE_TAG: it picks the image names; only local, test pass
 # A tag other than local is named on stderr; local, unset and empty are quiet.
 # ------------------------------------------------------------------------------
-# Usage: bash tests/selftest/sbx/image-tag.sh (exit 0 = all pass)
+# Usage: bash tests/unit/sbx/image-tag.sh (exit 0 = all pass)
 # Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # No case reaches a Docker daemon: build.sh runs without docker on its PATH.
 # ------------------------------------------------------------------------------

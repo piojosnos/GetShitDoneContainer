@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Shared by the sbx self-test groups: work directory, no Docker socket, runners
+# Shared by the sbx unit test groups: work directory, no Docker socket, runners
 # ------------------------------------------------------------------------------
 # Sourced by the groups, never run directly (functions only).
 # ------------------------------------------------------------------------------

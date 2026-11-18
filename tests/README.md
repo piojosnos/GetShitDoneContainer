@@ -7,13 +7,13 @@ A new check needs a real failure it would have caught, not a hypothetical one.
 | Suite | Command | Where it runs |
 |---|---|---|
 | `tests/guard/` | `bash tests/guard/run-all.sh` | any sandbox or Mac shell |
-| `tests/selftest/sbx/` | `bash tests/selftest/sbx/run-all.sh` | any Linux sandbox or Mac shell, no Docker |
-| `tests/selftest/init/` | `uv run pytest tests/selftest/init` | the dev sandbox (Linux, with uv); `./host-test.sh` does not run it |
-| `tests/selftest/selfcheck/` | `uv run pytest tests/selftest/selfcheck` | the dev sandbox (Linux, with uv); `./host-test.sh` does not run it |
+| `tests/unit/sbx/` | `bash tests/unit/sbx/run-all.sh` | any Linux sandbox or Mac shell, no Docker |
+| `tests/unit/init/` | `uv run pytest tests/unit/init` | the dev sandbox (Linux, with uv); `./host-test.sh` does not run it |
+| `tests/unit/selfcheck/` | `uv run pytest tests/unit/selfcheck` | the dev sandbox (Linux, with uv); `./host-test.sh` does not run it |
 | `tests/host/` | `bash tests/host/run-all.sh` | the Mac, with Docker |
 | `tests/host-checklist.md` | read it | the Mac, by hand |
 
-On the Mac, `./host-test.sh` first checks that Docker Compose v2 is there and stops when it is not. It sets `SBX_IMAGE_TAG=test` for the whole run, so it builds and checks `sbx-base:test`, `sbx-claude:test` and `sbx-cursor:test` and never touches the `:local` images your sandboxes run; the log names the test images. The host checks build a throwaway root certificate into the test images; it is made once, kept in `$TMPDIR/sbx-hosttest-root-ca/` with its key deleted, and reused. Then it runs everything that needs Docker in one go: the host checks, the pin digests against the registry, the guard inside `sbx-hosttest`, the guard and the sbx self-test in the Mac shell (the guard with shellcheck and hadolint run from `sbx-base:test`, the self-test under `/bin/bash`). It writes all output to `host-test.log` in the repo root and ends with one OK or FAIL line per step. Pass `--keep` to leave the test sandbox up to look around after a failure.
+On the Mac, `./host-test.sh` first checks that Docker Compose v2 is there and stops when it is not. It sets `SBX_IMAGE_TAG=test` for the whole run, so it builds and checks `sbx-base:test`, `sbx-claude:test` and `sbx-cursor:test` and never touches the `:local` images your sandboxes run; the log names the test images. The host checks build a throwaway root certificate into the test images; it is made once, kept in `$TMPDIR/sbx-hosttest-root-ca/` with its key deleted, and reused. Then it runs everything that needs Docker in one go: the host checks, the pin digests against the registry, the guard inside `sbx-hosttest`, the guard and the sbx unit tests in the Mac shell (the guard with shellcheck and hadolint run from `sbx-base:test`, the unit tests under `/bin/bash`). It writes all output to `host-test.log` in the repo root and ends with one OK or FAIL line per step. Pass `--keep` to leave the test sandbox up to look around after a failure.
 
 There is no CI yet. Docs and shell portability have no automated check; PR review covers them.
 
@@ -26,7 +26,7 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 | Catches | An unpinned or floating version, a pipe-to-shell install, the compromised GSD package, a mounted Docker socket or privileged mode, a second FROM in an agent image, a lost skill deny entry in the managed settings, a self-check fix that names another container than `compose.yml`, a host script other than `sbx-rm` that deletes a file or takes a sandbox down, an entrypoint in an image or in compose, an agent linked into `/usr/local/bin` or without its smoke test by full path, a compose image line or `SBX_AGENT` hand-off that no longer follows the agent, a lost `SBX_IMAGE_TAG` hand-off or an agent build on another tag's base, a host test file that names a `:local` image, a shell or Dockerfile lint error |
 | Does not catch | Whether an image builds or behaves (`tests/host/` does), or what `sbx-rm` removes (H-33 covers it) |
 
-## tests/selftest/init/
+## tests/unit/init/
 
 | | |
 |---|---|
@@ -35,7 +35,9 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 | Catches | A step out of order, a lock or marker mistake, a user skill touched, an installer hang, a wrapper that starts an agent without init |
 | Does not catch | Whether the steps work in a real image, which H-27, H-34 and H-35 cover |
 
-## tests/selftest/sbx/
+## tests/unit/sbx/
+
+`tests/unit/sbx/` runs whole `bin/sbx-*` scripts as processes against the stand-in docker, component-style.
 
 | | |
 |---|---|
@@ -44,7 +46,7 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 | Catches | A name, path or registry entry the scripts should refuse, a registry value that would run, a refusal that comes too late, Docker not answering reported as such, an image tag other than `local` or `test`, the image names each tag picks, and a `test` tag used without a line on stderr naming it |
 | Does not catch | Anything that needs Docker to answer: starting, entering, listing and removing a sandbox. H-28 to H-33 cover it |
 
-## tests/selftest/selfcheck/
+## tests/unit/selfcheck/
 
 | | |
 |---|---|

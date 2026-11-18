@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Self-test of sbx-fix-modes against a git repo and a stand-in xattr
+# Unit tests of sbx-fix-modes against a git repo and a stand-in xattr
 # ------------------------------------------------------------------------------
-# Usage: bash tests/selftest/sbx/fix-modes.sh (exit 0 = all pass)
+# Usage: bash tests/unit/sbx/fix-modes.sh (exit 0 = all pass)
 # Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # The stand-in keeps each attribute in a file, and like macOS it refuses to
 # write one on a read-only file.

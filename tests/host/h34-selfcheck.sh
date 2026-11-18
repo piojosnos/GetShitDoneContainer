@@ -28,7 +28,7 @@ host_init
 # ------------------------------------------------------------------------------
 # Count the check entries in the CHECK_LIST of each file in base/selfcheck/checks/
 # and in claude/selfcheck/ or cursor/selfcheck/; an inventory test in
-# tests/selftest/selfcheck keeps them equal.
+# tests/unit/selfcheck keeps them equal.
 # ------------------------------------------------------------------------------
 expectedClaudeCount=55
 expectedCursorCount=53

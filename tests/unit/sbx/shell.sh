@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Self-test of sbx-shell: refusals before Docker, and Docker not answering
+# Unit tests of sbx-shell: refusals before Docker, and Docker not answering
 # ------------------------------------------------------------------------------
-# Usage: bash tests/selftest/sbx/shell.sh (exit 0 = all pass)
+# Usage: bash tests/unit/sbx/shell.sh (exit 0 = all pass)
 # Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # Docker points at a missing socket, so no case reaches a daemon.
 # ------------------------------------------------------------------------------

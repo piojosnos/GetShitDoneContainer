@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Self-test of sbx-list: the usage line and a Docker failure
+# Unit tests of sbx-list: the usage line and a Docker failure
 # ------------------------------------------------------------------------------
-# Usage: bash tests/selftest/sbx/list.sh (exit 0 = all pass)
+# Usage: bash tests/unit/sbx/list.sh (exit 0 = all pass)
 # Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # Docker points at a missing socket, so no case reaches a daemon.
 # ------------------------------------------------------------------------------

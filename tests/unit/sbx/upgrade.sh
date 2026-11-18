@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Self-test of the refusals of sbx-upgrade: all of them come before the build
+# Unit tests of the refusals of sbx-upgrade: all of them come before the build
 # ------------------------------------------------------------------------------
-# Usage: bash tests/selftest/sbx/upgrade.sh (exit 0 = all pass)
+# Usage: bash tests/unit/sbx/upgrade.sh (exit 0 = all pass)
 # Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # The build is the long step, so every cheap check has to stop the run first.
 # ------------------------------------------------------------------------------

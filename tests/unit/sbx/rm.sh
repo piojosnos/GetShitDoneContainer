@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Self-test of sbx-rm: usage, refusals and broken entries
+# Unit tests of sbx-rm: usage, refusals and broken entries
 # ------------------------------------------------------------------------------
-# Usage: bash tests/selftest/sbx/rm.sh (exit 0 = all pass)
+# Usage: bash tests/unit/sbx/rm.sh (exit 0 = all pass)
 # Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # Docker points at a missing socket, so no case reaches a daemon.
 # ------------------------------------------------------------------------------

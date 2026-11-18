@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Self-test of sbx-add: the entry, the directories, every refusal, the overlaps
+# Unit tests of sbx-add: the entry, the directories, every refusal, the overlaps
 # ------------------------------------------------------------------------------
-# Usage: bash tests/selftest/sbx/add.sh (exit 0 = all pass)
+# Usage: bash tests/unit/sbx/add.sh (exit 0 = all pass)
 # Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # ------------------------------------------------------------------------------
 set -u

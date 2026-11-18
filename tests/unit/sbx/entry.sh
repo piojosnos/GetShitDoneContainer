@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Self-test of the registry reader and the refusals of sbx-start and sbx-stop
+# Unit tests of the registry reader and the refusals of sbx-start and sbx-stop
 # ------------------------------------------------------------------------------
-# Usage: bash tests/selftest/sbx/entry.sh (exit 0 = all pass)
+# Usage: bash tests/unit/sbx/entry.sh (exit 0 = all pass)
 # Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # ------------------------------------------------------------------------------
 set -u

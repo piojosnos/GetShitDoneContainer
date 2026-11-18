@@ -175,7 +175,7 @@ host_sbx_unit_tests() {
   ln -s /bin/bash "$standinDir/bash"
   printf '/bin/bash is %s\n' "$(/bin/bash -c 'printf %s "$BASH_VERSION"')"
 
-  PATH="$standinDir:$PATH" /bin/bash tests/selftest/sbx/run-all.sh
+  PATH="$standinDir:$PATH" /bin/bash tests/unit/sbx/run-all.sh
   status=$?
   rm -rf "$standinDir"
 

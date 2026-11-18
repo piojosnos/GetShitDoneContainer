@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Shared by the self-test suites: case checks, work directory, group runner
+# Shared by the unit test suites: case checks, work directory, group runner
 # ------------------------------------------------------------------------------
 # Usage: sourced by each suite's lib.sh and run-all.sh, never run directly.
 # Loads tests/host/lib.sh for require_no_arguments and the pin readers.
