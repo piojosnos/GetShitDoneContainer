@@ -234,7 +234,7 @@ Plans:
 **Requirements**: TBD (decisions D-01 to D-19 in 09.1-CONTEXT.md are the contract)
 **Depends on**: Phase 9
 
-**Plans**: 13/14 plans executed
+**Plans**: 14/14 plans executed
 
 Plans:
 **Wave 1**
@@ -275,7 +275,7 @@ Plans:
 - [x] 09.1-13-PLAN.md: `.claude/CLAUDE.md` links the glossary and follows it (wave 12)
 
 **Wave 13** *(blocked on Wave 12 completion)*
-- [ ] 09.1-14-PLAN.md: dev-sandbox gate, local PR branches, then the host run (wave 13, checkpoint)
+- [x] 09.1-14-PLAN.md: dev-sandbox gate, local PR branches, then the host run (wave 13, checkpoint)
 
 ### Phase 10: Host side to Python
 

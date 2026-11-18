@@ -4,17 +4,17 @@ milestone: v2.0
 milestone_name: Simple tooling
 current_phase: "09.1"
 current_phase_name: Align vocabulary across code and docs
-status: executing
-stopped_at: Completed 09.1-13-PLAN.md
-last_updated: "2026-11-18T06:49:42.997Z"
+status: verifying
+stopped_at: Completed 09.1-14-PLAN.md
+last_updated: "2026-11-18T07:11:35.440Z"
 last_activity: 2026-11-18
 last_activity_desc: Phase 09.1 execution started
-state_head: f341267a9dee05387e6452cdc53889ab3d608a29
+state_head: fc3e9751d66fee81f5d08992f1a333094f13f413
 progress:
   total_phases: 11
   completed_phases: 4
   total_plans: 55
-  completed_plans: 54
+  completed_plans: 55
   percent: 36
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 
 Phase: 09.1 (Align vocabulary across code and docs) — EXECUTING
 Plan: 14 of 14
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-11-18 — Phase 09.1 execution started
 
 ## Performance Metrics
@@ -213,6 +213,7 @@ Last activity: 2026-11-18 — Phase 09.1 execution started
 | Phase 09.1 P11 | 15m | 3 tasks | 6 files |
 | Phase 09.1 P12 | 10min | 2 tasks | 6 files |
 | Phase 09.1 P13 | 10min | 2 tasks | 1 files |
+| Phase 09.1 P14 | n/a (spans a host run) | 3 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -421,6 +422,7 @@ Recent decisions affecting current work:
 - [Phase 09.1]: tests/selftest becomes tests/unit; the suite is called unit tests, never selftest
 - [Phase 09.1]: Python agent config directory is AGENT_CONFIG_DIR; ownership checks are image-root-owned, claude-image-root-owned, cursor-image-root-owned
 - [Phase 09.1]: Plan 11: macOS is named only for facts that hold only there (Keychain, bash 3.2, override_stat, BSD script); the docs say the host everywhere else
+- [Phase 09.1]: Plan 14: the phase's changes sit on three local one-kind branches (chore/vocabulary-code, chore/claude-md-vocabulary, chore/planning-phase-09.1) cut from origin/main by cherry-picking; none pushed, waiting for the user's go
 
 ### Pending Todos
 
@@ -495,8 +497,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-18T06:49:42.896Z
-Stopped at: Completed 09.1-13-PLAN.md
+Last session: 2026-11-18T07:11:35.339Z
+Stopped at: Completed 09.1-14-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
