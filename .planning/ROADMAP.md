@@ -42,6 +42,7 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
 - [ ] **Phase 09.1: Align vocabulary** (INSERTED): code, tests and docs use one set of terms; best-practices, never bundle
 - [ ] **Phase 10: Host side to Python**: the Mac commands and host tests are Python run through `uv`, with one JSON registry file per sandbox
 - [ ] **Phase 10.1: Full skills and best-practices support in Cursor** (INSERTED): the bundle's rules and skills work in Cursor as they do in Claude
+- [ ] **Phase 10.1.1: Shared agent checks** (INSERTED): the Claude and Cursor self-check twins become one shared list of agent checks before the third agent arrives
 - [ ] **Phase 10.2: OpenCode agent image** (INSERTED): a third agent image with full skills and best-practices support; may split into more phases
 - [ ] **Phase 11: CI widened**: GitHub runs the guard, builds the test images and runs the Linux-runnable checks on every PR push
 
@@ -260,11 +261,21 @@ Plans:
 Plans:
 - [ ] TBD (run /gsd-discuss-phase 10.1 to scope it)
 
+### Phase 10.1.1: Shared agent checks before the third agent (INSERTED)
+
+**Goal:** The self-check files that Claude and Cursor repeat with only a different config folder, root list or flag become one shared list of agent checks, built from a small per-agent description. Each agent keeps only its truly specific checks, so the OpenCode image starts from the shared list instead of a third copy. Output stays the same; the check counts in H-34 do not change.
+**Requirements**: TBD
+**Depends on:** Phase 10.1
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 10.1.1 to break down)
+
 ### Phase 10.2: OpenCode agent image with full skills and best-practices support (INSERTED)
 
 **Goal:** An OpenCode agent image next to Claude and Cursor, with the same skills and best-practices support from the start, and its own self-check files. This may become more than one phase; that is decided at discuss time.
 **Requirements**: TBD
-**Depends on:** Phase 10.1
+**Depends on:** Phase 10.1.1
 **Plans:** 0 plans
 
 Plans:
@@ -296,6 +307,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 9. sbx-init replaces the start hooks | v2.0 | 14/14 | Complete    | 2026-11-17 |
 | 10. Host side to Python | v2.0 | 0/TBD | Not started | - |
 | 10.1. Cursor skills and best practices | v2.0 | 0/TBD | Not started | - |
+| 10.1.1. Shared agent checks | v2.0 | 0/TBD | Not started | - |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
 | 11. CI widened | v2.0 | 0/TBD | Not started | - |
 
