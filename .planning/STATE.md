@@ -6,16 +6,16 @@ current_phase: "09.1"
 current_phase_name: Align vocabulary across code and docs
 status: planning
 stopped_at: Phase 9 complete, ready to plan Phase 09.1
-last_updated: "2026-11-18T00:15:40.866Z"
-last_activity: 2026-11-17
-last_activity_desc: Phase 9 complete, transitioned to Phase 09.1
-state_head: f9b8f1db665b2676327a051185888218500de17b
+last_updated: "2026-11-18T00:55:45.566Z"
+last_activity: "2026-11-18, completed quick task 261118-02m: PR 52 review fixes (shared agent wrapper and shared step-file runner code)"
+state_head: 8bcede8f1bf8deee6393ac1ee52f23175cd7e55b
 progress:
   total_phases: 10
   completed_phases: 4
   total_plans: 41
   completed_plans: 41
   percent: 50
+last_activity_desc: Phase 9 complete, transitioned to Phase 09.1
 ---
 
 # Project State
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 Phase: 09.1 — Align vocabulary across code and docs
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-11-18, completed quick task 261118-02m: PR 52 review fixes (shared agent wrapper and shared step-file runner code)
+Last activity: 2026-11-18, completed quick task 261118-0vx: PR 52 best-practices review fixes
 
 ## Performance Metrics
 
@@ -426,6 +426,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 261114-9ma | Fix the two test-tag review warnings: H-25 rebuild hint and a notice for a non-local SBX_IMAGE_TAG | 2026-11-14 | aa45f08 | [261114-9ma-fix-the-two-test-tag-review-warnings-h-2](./quick/261114-9ma-fix-the-two-test-tag-review-warnings-h-2/) |
 | 261118-02m | PR 52 review fixes: shared agent wrapper and shared step-file runner code | 2026-11-18 | 749c151 | [261118-02m-pr-52-review-fixes-shared-agent-wrapper-](./quick/261118-02m-pr-52-review-fixes-shared-agent-wrapper-/) |
+| 261118-0vx | PR 52 best-practices review fixes: shared hints and helpers, init and self-check symmetry, parameter order | 2026-11-18 | f75a7f5 | [261118-0vx-pr-52-best-practices-review-fixes](./quick/261118-0vx-pr-52-best-practices-review-fixes/) |
 
 ### Roadmap Evolution
 
