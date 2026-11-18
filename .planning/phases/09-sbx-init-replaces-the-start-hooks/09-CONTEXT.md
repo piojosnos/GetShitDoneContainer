@@ -51,6 +51,15 @@ A container start only keeps the container alive: no entrypoint, no hooks, no po
 ### Requirement and criteria amendments
 - **D-22:** REQUIREMENTS.md INIT-02 to INIT-05 and ROADMAP.md Phase 9 success criteria 1 to 4 are amended to match D-02, D-08, D-16, D-19 and D-20.
 
+### Decisions taken at planning
+- **D-23:** A real folder (or any entry that is not init's own link) where Claude's `rules` link belongs is left in place and the step FAILs with the fix, the same rule as a skill clash (D-15). Init never deletes it.
+- **D-24:** A missing best-practices clone FAILs the best-practices step, with a fix naming `sbx-gh-login` then `sbx-bundle-clone`. No marker is written, so the agent wrappers refuse until the clone exists and init passes.
+- **D-25:** Step order: state folders, GSD sync, Cursor channel, ownership, best-practices links last, so a clash or a missing clone cannot skip the mechanical steps.
+- **D-26:** After taking the lock, every run removes the marker first; it is written again only when every step passes.
+- **D-27:** `sbx-gh-login` gets a one-line precondition that points at `sbx-init` when the state folders do not exist yet.
+- **D-28:** The stale `.best-practices-skills` file in existing sandboxes is left alone (it is inert) and noted in `MIGRATION.md`.
+- **D-29:** Every name this phase adds (files, functions, step names, messages, tests) says best-practices, never bundle. Existing names this phase does not otherwise touch (`SBX_BUNDLE_DIR`, `sbx-bundle-clone`, guard rules) stay; Phase 09.1 sweeps them.
+
 ### Claude's Discretion
 - Folder names for the init steps and the agents folder; the marker path.
 - How the step result type is shared with the self-check (shared module or a sibling).

@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
-current_phase: 9
-current_phase_name: sbx-init replaces the start hooks
+current_phase: "09.1"
+current_phase_name: Align vocabulary across code and docs
 status: planning
-stopped_at: Phase 9 context gathered
-last_updated: "2026-11-16T05:23:29.957Z"
-last_activity: 2026-11-15
-last_activity_desc: Phase 08 complete, transitioned to Phase 9
-state_head: c249ec7848b05160c6460681b3bfe9bdd7b63d30
+stopped_at: Phase 9 complete, ready to plan Phase 09.1
+last_updated: "2026-11-18T00:55:45.566Z"
+last_activity: "2026-11-18, completed quick task 261118-02m: PR 52 review fixes (shared agent wrapper and shared step-file runner code)"
+state_head: 8bcede8f1bf8deee6393ac1ee52f23175cd7e55b
 progress:
-  total_phases: 9
-  completed_phases: 3
-  total_plans: 27
-  completed_plans: 27
-  percent: 33
+  total_phases: 10
+  completed_phases: 4
+  total_plans: 41
+  completed_plans: 41
+  percent: 50
+last_activity_desc: Phase 9 complete, transitioned to Phase 09.1
 ---
 
 # Project State
@@ -25,19 +25,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 08 — In-image self-check
+**Current focus:** Phase 9 — sbx-init replaces the start hooks
 
 ## Current Position
 
-Phase: 9 — sbx-init replaces the start hooks
+Phase: 09.1 — Align vocabulary across code and docs
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-11-15 — Phase 08 complete, transitioned to Phase 9
+Last activity: 2026-11-18, completed quick task 261118-0vx: PR 52 best-practices review fixes
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 116
+- Total plans completed: 130
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -62,6 +62,7 @@ Last activity: 2026-11-15 — Phase 08 complete, transitioned to Phase 9
 | 06.1 | 5 | - | - |
 | 07 | 3 | - | - |
 | 08 | 13 | - | - |
+| 9 | 14 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -185,6 +186,20 @@ Last activity: 2026-11-15 — Phase 08 complete, transitioned to Phase 9
 | Phase 08 P11 | 1h | 3 tasks | 3 files |
 | Phase 08 P12 | 20 min | 3 tasks | 6 files |
 | Phase 08 P13 | 10 min | 3 tasks | 5 files |
+| Phase 09 P01 | 25min | 3 tasks | 13 files |
+| Phase 09 P08 | 10min | 2 tasks | 5 files |
+| Phase 09 P02 | 15min | 2 tasks | 11 files |
+| Phase 09 P03 | 25min | 2 tasks | 8 files |
+| Phase 09 P04 | 20min | 3 tasks | 6 files |
+| Phase 09 P05 | 10min | 3 tasks | 10 files |
+| Phase 09 P06 | 15min | 3 tasks | 7 files |
+| Phase 09 P07 | 20min | 3 tasks | 9 files |
+| Phase 09 P09 | 15min | 2 tasks | 22 files |
+| Phase 9 P10 | 10min | 3 tasks | 11 files |
+| Phase 09 P11 | 12min | 3 tasks | 5 files |
+| Phase 09 P12 | 25min | 3 tasks | 6 files |
+| Phase 09 P13 | 40 min | 2 tasks | 0 files |
+| Phase 09 P14 | n/a | 4 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -364,6 +379,24 @@ Recent decisions affecting current work:
 - [Phase 08]: 08-12: CHECK_LIST must be a list of Check; any other shape is that file's load failure and none of its checks run
 - [Phase 08]: run_check validates the returned value with isinstance; a non-CheckResult is that check's own FAIL with the rebuild fix
 - [Phase 08]: scan_owned_state names a folder unreadable only on PermissionError at an entry stat; any other entry error surfaces as the runner's raised FAIL
+- [Phase 09]: sbx-init merges shared and agent step files and sorts them by file name (shared first on a tie), so the ownership step runs after the agent GSD sync
+- [Phase 09]: AGENT_STEPS_DIR lives in paths.py so tests can point every init path into a temp folder through one module
+- [Phase 09]: Host scripts hold the sandbox name rule in bin/sbx-lib.sh; no host script reads base/
+- [Phase 09]: GSD sync step reports only the installer outcome; version comparison stays in the self-check twins
+- [Phase 09]: Whitespace-only cli-config.json counts as empty; an unreadable path or non-object JSON fails and is left untouched
+- [Phase 09]: Plan 03: state-owner step scans and gives back in up to three rounds, with a final scan reporting any path still owned; the scan, skip set and Mac fix live in root_owned_scan.py shared with the self-check
+- [Phase 09]: Best-practices links: init's own links are recognised only by where they point; a clash is left, named and fails the step after every other skill is linked
+- [Phase 09]: off_path_result removes the agents folder from PATH before searching, so the check is right when run inside an agent session
+- [Phase 09]: Plan 06: the two agent wrappers are one script apart from agent names; marker test is -f so a folder counts as missing
+- [Phase 09]: Claude Code stays installed with npm install -g into /usr/local; only its link moves to /opt/sbx/agents/bin so the npmrc cafile still applies
+- [Phase 09]: The base image makes /opt/sbx/agents/bin and lists /opt/sbx/agents in its roots; agent images only add their link
+- [Phase 09]: Tests that assert the absence of deleted start-path names stay in place; they prove the new shape
+- [Phase 9]: Host checklist rows for deleted H-12, H-17, H-20 are left to plan 09-12
+- [Phase 09]: H-16 clash assertion matches the FAIL line on state/claude/rules and skills/sbx-fixture-one (full paths init prints)
+- [Phase 09]: Docs (09-12): new text says best-practices; existing bundle wording stays in sections not rewritten
+- [Phase 09]: Phase 9 gate: A1 (sandbox user can give root-owned state back on Docker Desktop) and A2 to A4 confirmed by the Mac run; no gap-closure plan needed
+- [Phase 09]: WR-02 needed no code change: the Mac run proves login shells inside agent sessions keep /opt/sbx/agents/bin and plain login shells do not
+- [Phase 09]: An incomplete best-practices clone folder gets its own FAIL: pull it or move it aside, never delete
 
 ### Pending Todos
 
@@ -392,6 +425,8 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 261114-9ma | Fix the two test-tag review warnings: H-25 rebuild hint and a notice for a non-local SBX_IMAGE_TAG | 2026-11-14 | aa45f08 | [261114-9ma-fix-the-two-test-tag-review-warnings-h-2](./quick/261114-9ma-fix-the-two-test-tag-review-warnings-h-2/) |
+| 261118-02m | PR 52 review fixes: shared agent wrapper and shared step-file runner code | 2026-11-18 | 749c151 | [261118-02m-pr-52-review-fixes-shared-agent-wrapper-](./quick/261118-02m-pr-52-review-fixes-shared-agent-wrapper-/) |
+| 261118-0vx | PR 52 best-practices review fixes: shared hints and helpers, init and self-check symmetry, parameter order | 2026-11-18 | f75a7f5 | [261118-0vx-pr-52-best-practices-review-fixes](./quick/261118-0vx-pr-52-best-practices-review-fixes/) |
 
 ### Roadmap Evolution
 
@@ -410,6 +445,7 @@ None yet.
 - Phase 06.1 inserted after Phase 6: Cursor agent image: separate image, the sandbox picks claude or cursor
 - Phase 10.1 inserted after Phase 10: Full skills and best-practices support in Cursor
 - Phase 10.2 inserted after Phase 10.1: OpenCode agent image with full skills and best-practices support; may split into more phases
+- Phase 9.1 inserted after Phase 9: Align vocabulary: one set of terms (best-practices, not bundle) across code, tests and docs
 
 ## Deferred Items
 
@@ -435,9 +471,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-16T05:23:29.883Z
-Stopped at: Phase 9 context gathered
-Resume file: .planning/phases/09-sbx-init-replaces-the-start-hooks/09-CONTEXT.md
+Last session: 2026-11-17T23:29:11.909Z
+Stopped at: Phase 9 complete, ready to plan Phase 09.1
+Resume file: None
 
 ## Operator Next Steps
 
