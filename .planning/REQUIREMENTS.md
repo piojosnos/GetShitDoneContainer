@@ -38,16 +38,16 @@ Milestone v2.0 Simple tooling. Decisions behind them: `.planning/research/v2-sim
 
 ### Host side in Python
 
-- [ ] **HOST-01**: `bin/sbx-*`, `build.sh` and `host-test.sh` are Python run through `uv` (`brew install uv` is the only Mac prerequisite); command names stay.
+- [ ] **HOST-01**: `bin/sbx-*`, `build.sh` and `host-test.sh` are Python run through `uv` (`brew install uv` is the only prerequisite on a macOS host); command names stay.
 - [ ] **HOST-02**: The registry is one JSON file per sandbox, `~/.config/sbx/sandboxes/NAME.json`, with `path` and `agent`.
-- [ ] **HOST-03**: The folder-overlap check resolves both paths and compares them.
+- [ ] **HOST-03**: The directory-overlap check resolves both paths and compares them.
 - [ ] **HOST-04**: A pytest suite runs one persistence group (planted files survive one `sbx-upgrade`), one refusal group, and smoke tests for add, start, stop, shell, list and rm; a group stops at its first failure and names the step.
 - [ ] **HOST-05**: The bash host scripts, the bash host tests and the last of the fake docker are gone.
 
 ### CI
 
 - [ ] **CI-01**: Every push to a PR runs the guard on GitHub and shows it as a check on the PR.
-- [ ] **CI-02**: GitHub builds the test images and runs the self-check and the Linux-runnable host checks; nothing runs on the Mac or in a sandbox.
+- [ ] **CI-02**: GitHub builds the test images and runs the selfcheck and the Linux-runnable host checks; nothing runs on the host or in a sandbox.
 
 ## Future Requirements
 
@@ -55,7 +55,7 @@ Tracked, not in this roadmap.
 
 - OpenCode image on the shared base, with `@opengsd/gsd-core`.
 - More tools in the image (backlog 999.3, for example `ffmpeg` and Piper).
-- `sbx-bundle-clone` error hint and option guard; `sbx-gh-login` skips when already logged in (pending todos).
+- `sbx-best-practices-clone` error hint and option guard; `sbx-gh-login` skips when already logged in (pending todos).
 - Limit what a leaked token costs in bypass mode (pending todo).
 
 ## Out of Scope
@@ -63,9 +63,9 @@ Tracked, not in this roadmap.
 | Feature | Reason |
 |---------|--------|
 | The eight open Phase 5.2 review findings (WR-01 to IN-05) | Left as they are for v2.0 |
-| Spike on a fixed skills path outside the Claude config folder | Revisit only if `sbx-init` proves painful |
-| Baking the Claude config folder into the image | A new Claude version could write state we do not keep |
-| Docker labels as the registry | A new Mac or another engine starts with no containers; the file registry copies over |
+| Spike on a fixed skills path outside the Claude config directory | Revisit only if `sbx-init` proves painful |
+| Baking the Claude config directory into the image | A new Claude version could write state we do not keep |
+| Docker labels as the registry | A new host or another engine starts with no containers; the file registry copies over |
 | Tests that run `claude -p` | Needs a stored credential, costs tokens, and checks Claude, not us |
 | Migrating v1 registries and configs | Configs can be recreated |
 

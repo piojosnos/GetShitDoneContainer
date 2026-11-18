@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Docker-based sandbox for running AI coding agents (Claude Code and Cursor today, others later) plus GSD on a macOS laptop without installing those agents on the host. Each project gets its own container that can only see one bind-mounted host folder, so the agent can't touch the rest of the laptop. The code stays a regular folder on the Mac, so any host IDE can open it directly. Small `sbx-*` commands (`sbx-add`, `sbx-start`, `sbx-shell`, `sbx-stop`, `sbx-upgrade`, ...) drive the sandbox lifecycle, and `sbx-selfcheck` inside the image says whether a sandbox is set up right.
+A Docker-based sandbox for running AI coding agents (Claude Code and Cursor today, others later) plus GSD on a macOS laptop without installing those agents on the host. Each project gets its own container that can only see one bind-mounted host directory, so the agent can't touch the rest of the laptop. The code stays a regular directory on the host, so any host IDE can open it directly. Small `sbx-*` commands (`sbx-add`, `sbx-start`, `sbx-shell`, `sbx-stop`, `sbx-upgrade`, ...) drive the sandbox lifecycle, and `sbx-selfcheck` inside the image says whether a sandbox is set up right.
 
 ## Core Value
 
@@ -44,11 +44,11 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 ### Active
 
 v2.0 Simple tooling (requirements come from `/gsd-new-milestone`; decisions in `.planning/research/v2-simple-tooling-decisions.md`):
-- [ ] Tests check our setup, not Claude, GSD or Docker behaviour; nothing interactive; no fake docker.
-- [ ] One self-check inside the image (also the sandbox doctor) replaces most host probes.
+- [ ] Tests check our setup, not Claude, GSD or Docker behavior; nothing interactive; no fake docker.
+- [ ] One selfcheck inside the image (also the sandbox doctor) replaces most host probes.
 - [ ] `sbx-init`, run by the user, replaces the start hooks and the readiness poll.
 - [ ] The host side (`bin/sbx-*`, `build.sh`, `host-test.sh`, host tests) is Python run through `uv`, with a JSON registry.
-- [ ] CI on GitHub builds the test images and runs the checks that do not need the Mac (carries v1 requirement CI-01).
+- [ ] CI on GitHub builds the test images and runs the checks that do not need the host (carries v1 requirement CI-01).
 
 ### Out of Scope
 
@@ -61,7 +61,7 @@ v2.0 Simple tooling (requirements come from `/gsd-new-milestone`; decisions in `
 
 ## Context
 
-- Host: macOS with Docker Desktop, using host paths like `/Users/demian/<Sandbox>/`. The sandbox folder is passed to `cc-up.sh`.
+- Host: macOS with Docker Desktop, using host paths like `/Users/demian/<Sandbox>/`. The sandbox directory is passed to `cc-up.sh`.
 - Current design: `docker-compose.yml` mounts `${PROJECT_PATH}:/home/sandbox`, so the whole home comes from the host. That hides everything the image puts in the home directory, which is why GSD is currently installed by `docker-entrypoint.sh` on first run and gated by `.initialized`.
 - The Claude binary is copied to `/usr/local/bin` so the mount doesn't hide it.
 - An earlier ccusage attempt (commented out in `ClaudeCode/Dockerfile`) failed. It used `npm install` into `$HOME` plus an arm64 binary symlink, and the mount hid it. ccusage reads Claude's session JSONL files under `~/.claude/projects` (or `$CLAUDE_CONFIG_DIR`), so it has to see the persisted agent state.
@@ -78,7 +78,7 @@ v1.0 shipped 2026-11-12 (tag `v1.0`): two-mount Claude sandboxes with a pinned t
 **Goal:** Make the tests, and the tooling they test, simple: tests check our setup with real Docker and simple proxies, not other people's software.
 
 **Target features:**
-- Test diet: delete the manual helpers, the tests of Claude, GSD and Maven Central behaviour, the guard self-test and most of the fake docker
+- Test diet: delete the manual helpers, the tests of Claude, GSD and Maven Central behavior, the guard self-test and most of the fake docker
 - Test runs build and use their own image tags
 - `sbx-selfcheck` in the image (Python), also the sandbox doctor
 - `sbx-init`, run by the user, replaces the start hooks and the readiness poll
@@ -93,7 +93,7 @@ v1.0 shipped 2026-11-12 (tag `v1.0`): two-mount Claude sandboxes with a pinned t
 - **Simplicity**: Anything with logic is Python (through `uv` on the host, the image's `python3` inside); shell stays only for thin `exec` wrappers and Dockerfile `RUN` lines. Why: the v1 bash tooling grew about 10.9k lines of test shell around about 2.1k lines of product shell.
 - **Toolchains**: JDK 21 LTS, Maven, Node.js, and Python in the shared base. Why: these are the stacks the user develops in.
 - **Verification**: Docker isn't available inside the dev sandbox, so plans must include host-side manual verification steps.
-- **Coexistence** (retired in Phase 5): the old layout ran side by side with the new one until every old sandbox moved; it is now deleted, and old `cc_` containers left on the Mac are plain stopped containers.
+- **Coexistence** (retired in Phase 5): the old layout ran side by side with the new one until every old sandbox moved; it is now deleted, and old `cc_` containers left on the host are plain stopped containers.
 
 ## Key Decisions
 
