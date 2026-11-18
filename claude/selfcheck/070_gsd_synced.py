@@ -7,7 +7,7 @@
 
 from agent_config import gsd_synced_result
 from check_result import Check, CheckResult
-from claude_shared import CONFIG_DIR
+from claude_shared import AGENT_CONFIG_DIR
 
 
 # ------------------------------------------------------------------------------
@@ -15,7 +15,7 @@ from claude_shared import CONFIG_DIR
 # ------------------------------------------------------------------------------
 
 def _check_claude_gsd_synced() -> CheckResult:
-    return gsd_synced_result(CONFIG_DIR)
+    return gsd_synced_result(AGENT_CONFIG_DIR)
 
 
 CHECK_LIST = [Check("claude-gsd-synced", _check_claude_gsd_synced)]

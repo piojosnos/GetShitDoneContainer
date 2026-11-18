@@ -14,4 +14,4 @@ agent_env = load_agent_check("claude", "030_env")
 # ------------------------------------------------------------------------------
 
 def test_the_config_dir_is_the_agent_dir_under_the_state_dir():
-    assert agent_env.CONFIG_DIR == paths.STATE_DIR / "claude"
+    assert agent_env.AGENT_CONFIG_DIR == paths.STATE_DIR / "claude"

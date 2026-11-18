@@ -217,8 +217,8 @@ def test_an_agent_step_file_holds_one_step_that_syncs_its_own_agent(tmp_path, ag
 
     assert [step.name for step in step_module.STEP_LIST] == [step_name]
     assert step_module.STEP_LIST[0].function(record_call) == "recorded"
-    assert call_list == [(step_module.CONFIG_DIR, option)]
-    assert step_module.CONFIG_DIR.name == agent_name
+    assert call_list == [(step_module.AGENT_CONFIG_DIR, option)]
+    assert step_module.AGENT_CONFIG_DIR.name == agent_name
 
 
 # ------------------------------------------------------------------------------

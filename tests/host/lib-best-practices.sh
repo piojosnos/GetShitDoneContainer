@@ -46,7 +46,7 @@ clone_skill_names() {
 }
 
 # ------------------------------------------------------------------------------
-# check_best_practices_links CONFIG_DIR CLONE_DIR: state/claude links into the clone
+# check_best_practices_links AGENT_CONFIG_DIR CLONE_DIR: state/claude links into the clone
 # ------------------------------------------------------------------------------
 # Reports by add_problem and prints nothing itself. The links are relative, so
 # they must also resolve on the host side of the bind mount. Only the links are

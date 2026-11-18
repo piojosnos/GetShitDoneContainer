@@ -6,7 +6,7 @@
 # ------------------------------------------------------------------------------
 
 from check_result import Check, CheckResult
-from cursor_shared import CONFIG_DIR
+from cursor_shared import AGENT_CONFIG_DIR
 from environment_values import environment_values_result
 
 
@@ -15,7 +15,7 @@ from environment_values import environment_values_result
 # ------------------------------------------------------------------------------
 
 def _check_cursor_env() -> CheckResult:
-    return environment_values_result({"CURSOR_CONFIG_DIR": str(CONFIG_DIR)})
+    return environment_values_result({"CURSOR_CONFIG_DIR": str(AGENT_CONFIG_DIR)})
 
 
 CHECK_LIST = [Check("cursor-env", _check_cursor_env)]

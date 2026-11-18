@@ -147,7 +147,7 @@ def test_the_step_file_holds_one_step_and_reads_the_constant_the_check_reads():
     assert [step.name for step in self_update_step.STEP_LIST] == ["cursor-self-update-off"]
     assert self_update_step.CLI_CONFIG_FILE is cursor_shared.CLI_CONFIG_FILE
     assert self_update_check.CLI_CONFIG_FILE is cursor_shared.CLI_CONFIG_FILE
-    assert cursor_shared.CLI_CONFIG_FILE == cursor_shared.CONFIG_DIR / "cli-config.json"
+    assert cursor_shared.CLI_CONFIG_FILE == cursor_shared.AGENT_CONFIG_DIR / "cli-config.json"
 
 
 def test_the_cursor_gsd_step_file_holds_one_step_named_for_cursor():

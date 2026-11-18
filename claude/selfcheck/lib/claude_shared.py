@@ -9,7 +9,7 @@ from pathlib import Path
 
 from paths import STATE_DIR
 
-CONFIG_DIR = STATE_DIR / "claude"
+AGENT_CONFIG_DIR = STATE_DIR / "claude"
 
 # The directory the image installs the agent in; the ownership check and the protected
 # paths check of this image walk it. The sbx commands sit under the base roots.

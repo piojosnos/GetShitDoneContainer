@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 from check_result import Check, CheckResult, failed, problem_list_result
-from claude_shared import CONFIG_DIR
+from claude_shared import AGENT_CONFIG_DIR
 from hints import rebuild_hint
 from paths import BEST_PRACTICES_DIR
 
@@ -37,7 +37,7 @@ def _sorted_text_list(value: object) -> list[str] | None:
 
 def managed_settings_result(
     settings_file: Path = _MANAGED_SETTINGS_FILE,
-    config_dir: Path = CONFIG_DIR,
+    config_dir: Path = AGENT_CONFIG_DIR,
     best_practices_dir: Path = BEST_PRACTICES_DIR,
 ) -> CheckResult:
     try:

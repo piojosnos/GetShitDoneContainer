@@ -9,8 +9,8 @@ from pathlib import Path
 
 from paths import STATE_DIR
 
-CONFIG_DIR = STATE_DIR / "cursor"
-CLI_CONFIG_FILE = CONFIG_DIR / "cli-config.json"
+AGENT_CONFIG_DIR = STATE_DIR / "cursor"
+CLI_CONFIG_FILE = AGENT_CONFIG_DIR / "cli-config.json"
 
 # The directory the image installs the agent in; the ownership check and the
 # protected paths check of this image walk it. The sbx commands sit under the

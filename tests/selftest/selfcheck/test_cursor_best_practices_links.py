@@ -14,4 +14,4 @@ best_practices_links_check = load_agent_check("cursor", "080_best_practices_link
 # ------------------------------------------------------------------------------
 
 def test_the_check_reads_the_agent_dir_under_the_state_dir():
-    assert best_practices_links_check.CONFIG_DIR == paths.STATE_DIR / "cursor"
+    assert best_practices_links_check.AGENT_CONFIG_DIR == paths.STATE_DIR / "cursor"

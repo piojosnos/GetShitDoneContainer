@@ -14,4 +14,4 @@ import paths
 # ------------------------------------------------------------------------------
 
 def test_the_config_dir_is_the_agent_dir_under_the_state_dir():
-    assert cursor_shared.CONFIG_DIR == paths.STATE_DIR / "cursor"
+    assert cursor_shared.AGENT_CONFIG_DIR == paths.STATE_DIR / "cursor"
