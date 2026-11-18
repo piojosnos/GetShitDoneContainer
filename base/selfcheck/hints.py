@@ -50,3 +50,7 @@ def shell_hint(environment_map: Mapping[str, str] = os.environ) -> str:
 
 def init_hint(environment_map: Mapping[str, str] = os.environ) -> str:
     return f"run sbx-init in the sandbox shell; on the Mac, sbx-shell {sandbox_name(environment_map)} opens it"
+
+
+def state_writable_hint() -> str:
+    return "make the state folder of the sandbox writable by your Mac user, then run sbx-init again"

@@ -35,3 +35,9 @@ def test_hint_builders_say_name_when_sbx_name_is_unset_or_empty():
 
 def test_mac_hint_puts_the_action_before_the_command():
     assert hints.mac_hint("do action1", "command1") == "do action1: on the Mac run: command1"
+
+
+def test_state_writable_hint_names_the_fix_and_no_sandbox():
+    assert hints.state_writable_hint() == (
+        "make the state folder of the sandbox writable by your Mac user, then run sbx-init again"
+    )

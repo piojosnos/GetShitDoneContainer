@@ -9,11 +9,9 @@ import os
 from pathlib import Path
 from typing import Mapping
 
-from check_result import Check, CheckResult, failed, passed
+from check_result import Check, CheckResult, capped_list_text, failed, passed
 from paths import STATE_DIR
 from root_owned_scan import SKIPPED_STATE_DIR_SET, owner_fix_hint, scan_owned_state
-
-_REPORTED_PATH_LIMIT = 10
 
 
 # ------------------------------------------------------------------------------
@@ -32,7 +30,7 @@ def root_owned_state_result(
 
     return failed(
         f"{len(reported_list)} paths under state/ are owned by uid {owner_uid} or unreadable: "
-        + ", ".join(reported_list[:_REPORTED_PATH_LIMIT]),
+        + capped_list_text(reported_list, ", "),
         owner_fix_hint(state_dir, environment_map),
     )
 

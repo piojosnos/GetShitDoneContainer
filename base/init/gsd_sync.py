@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 from typing import Mapping
 
-from check_result import CheckResult, failed, passed
+from check_result import CheckResult, failed, make_state_folder, passed
 from hints import rebuild_hint
 
 
@@ -29,6 +29,9 @@ _LOG_PREFIX = "sbx-init-gsd-"
 # ------------------------------------------------------------------------------
 # The sync
 # ------------------------------------------------------------------------------
+# The installer waits forever on a folder it cannot create, so the folder is made
+# first and a folder that cannot be made fails here at once.
+# ------------------------------------------------------------------------------
 
 def gsd_sync_result(
     config_dir: Path,
@@ -38,7 +41,7 @@ def gsd_sync_result(
     environment_map: Mapping[str, str] = os.environ,
     log_dir: Path | None = None,
 ) -> CheckResult:
-    folder_failure = _make_config_folder(config_dir)
+    folder_failure = make_state_folder(config_dir)
 
     if folder_failure is not None:
         return folder_failure
@@ -46,25 +49,6 @@ def gsd_sync_result(
     argument_list = [installer_command, agent_option, "--global", "--config-dir", str(config_dir)]
 
     return _run_installer(argument_list, config_dir, time_limit_seconds, environment_map, log_dir)
-
-
-# ------------------------------------------------------------------------------
-# Making the folder
-# ------------------------------------------------------------------------------
-# The installer waits forever on a folder it cannot create, so the folder is made
-# first and a folder that cannot be made fails here at once.
-# ------------------------------------------------------------------------------
-
-def _make_config_folder(config_dir: Path) -> CheckResult | None:
-    try:
-        config_dir.mkdir(parents=True, exist_ok=True)
-    except OSError as e:
-        return failed(
-            f"cannot make {config_dir}: {e.strerror}",
-            "make the state folder of the sandbox writable by your Mac user, then run sbx-init again",
-        )
-
-    return None
 
 
 # ------------------------------------------------------------------------------

@@ -6,10 +6,12 @@
 # ------------------------------------------------------------------------------
 
 import json
+import os
 
 import pytest
 
 import cursor_shared
+import hints
 from init_helpers import REPO_DIR, load_step
 
 self_update_step = load_step(REPO_DIR / "cursor" / "init" / "060_self_update_off.py")
@@ -117,8 +119,24 @@ def test_a_config_folder_that_cannot_be_made_fails_naming_it(tmp_path):
 
     assert not result.passed
     assert str(blocker1) in result.detail
-    assert "writable" in result.hint
+    assert result.hint == hints.state_writable_hint()
     assert blocker1.read_text() == "a file where a folder is needed"
+
+
+@pytest.mark.skipif(os.getuid() == 0, reason="root can write to a read-only folder")
+def test_a_config_folder_that_cannot_be_written_fails_with_the_writable_fix(tmp_path):
+    config_dir1 = tmp_path / "config1"
+    config_dir1.mkdir()
+    config_dir1.chmod(0o555)
+
+    try:
+        result = self_update_step.static_channel_result(config_dir1 / "cli-config.json")
+    finally:
+        config_dir1.chmod(0o755)
+
+    assert not result.passed
+    assert str(config_dir1 / "cli-config.json") in result.detail
+    assert result.hint == hints.state_writable_hint()
 
 
 # ------------------------------------------------------------------------------

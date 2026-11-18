@@ -6,7 +6,12 @@
 # ------------------------------------------------------------------------------
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable
+
+from hints import state_writable_hint
+
+_LIST_LIMIT = 10
 
 
 # ------------------------------------------------------------------------------
@@ -48,9 +53,26 @@ def problem_list_result(problem_list: list[str], hint: str, passed_detail: str) 
     return passed(passed_detail)
 
 
-def capped_problem_detail(problem_list: list[str], limit: int = 10) -> str:
-    return f"{len(problem_list)} problems: " + "; ".join(problem_list[:limit])
+def capped_list_text(item_list: list[str], separator: str, limit: int = _LIST_LIMIT) -> str:
+    return separator.join(item_list[:limit])
+
+
+def capped_problem_detail(problem_list: list[str], limit: int = _LIST_LIMIT) -> str:
+    return f"{len(problem_list)} problems: " + capped_list_text(problem_list, "; ", limit)
 
 
 def one_line(text: str) -> str:
     return text.replace("\r", " ").replace("\n", " ")
+
+
+# ------------------------------------------------------------------------------
+# Making a state folder
+# ------------------------------------------------------------------------------
+
+def make_state_folder(folder: Path) -> CheckResult | None:
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        return failed(f"cannot make {folder}: {e.strerror}", state_writable_hint())
+
+    return None

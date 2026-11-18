@@ -116,7 +116,7 @@ def test_a_read_only_state_folder_fails_with_the_writable_fix(tmp_path):
         state1.chmod(0o755)
 
     assert not result.passed
-    assert "writable by your Mac user" in result.hint
+    assert result.hint == hints.state_writable_hint()
 
 
 def test_the_check_fix_line_points_at_sbx_init(tmp_path):

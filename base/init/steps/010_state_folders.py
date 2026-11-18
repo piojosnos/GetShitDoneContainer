@@ -7,31 +7,21 @@
 import os
 from pathlib import Path
 
-from check_result import Check, CheckResult, failed, passed
+from check_result import Check, CheckResult, failed, make_state_folder, passed
 from hints import rebuild_hint
-from paths import BASE_STATE_DIR_LIST, STATE_DIR
+from paths import STATE_DIR, state_folder_name_list
 
 
 # ------------------------------------------------------------------------------
 # State folders
 # ------------------------------------------------------------------------------
 
-def _folder_name_list(state_dirs_text: str) -> list[str]:
-    folder_list = []
-
-    for name in BASE_STATE_DIR_LIST + state_dirs_text.split():
-        if name not in folder_list:
-            folder_list.append(name)
-
-    return folder_list
-
-
 def _is_outside_state(name: str) -> bool:
     return name.startswith("/") or ".." in Path(name).parts
 
 
 def make_state_folders_result(state_dir: Path, state_dirs_text: str) -> CheckResult:
-    folder_list = _folder_name_list(state_dirs_text)
+    folder_list = state_folder_name_list(state_dirs_text)
 
     for name in folder_list:
         if _is_outside_state(name):
@@ -41,13 +31,10 @@ def make_state_folders_result(state_dir: Path, state_dirs_text: str) -> CheckRes
             )
 
     for name in folder_list:
-        try:
-            (state_dir / name).mkdir(parents=True, exist_ok=True)
-        except OSError as e:
-            return failed(
-                f"cannot make {state_dir / name}: {e.strerror}",
-                "make the state folder of the sandbox writable by your Mac user, then run sbx-init again",
-            )
+        folder_failure = make_state_folder(state_dir / name)
+
+        if folder_failure is not None:
+            return folder_failure
 
     return passed(f"{', '.join(folder_list)} exist under {state_dir}")
 

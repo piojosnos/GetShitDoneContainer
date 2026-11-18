@@ -36,3 +36,13 @@ def link_text(link: Path) -> str | None:
         return str(link.readlink())
     except OSError:
         return None
+
+
+def state_folder_name_list(state_dirs_text: str) -> list[str]:
+    name_list = []
+
+    for name in BASE_STATE_DIR_LIST + state_dirs_text.split():
+        if name not in name_list:
+            name_list.append(name)
+
+    return name_list

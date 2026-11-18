@@ -2,9 +2,9 @@
 # Links from an agent's config folder into the best-practices clone
 # ------------------------------------------------------------------------------
 # The rules link and one link per skill. Init and the check share the link texts,
-# the skill listing, the test for a link of init's own (a link whose target lies
-# under the clone's folder) and the result for a clone folder that lacks what the
-# agent needs. The image puts this file in /usr/local/lib/sbx-selfcheck/.
+# the skill listing, the own-link test (a link whose target lies under the clone's
+# folder), the clone failures and the passed detail. The image puts this file in
+# /usr/local/lib/sbx-selfcheck/.
 # ------------------------------------------------------------------------------
 
 import os
@@ -39,10 +39,38 @@ def is_best_practices_link(link: Path, target_root: Path) -> bool:
     return is_under(target, str(target_root))
 
 
-def incomplete_clone_result(clone_dir: Path, needed_dir: Path) -> CheckResult:
+def clone_failure(bundle_dir: Path, links_rules: bool) -> CheckResult | None:
+    needed_dir = bundle_dir / "rules" if links_rules else bundle_dir / "skills"
+
+    if not path_is_present(bundle_dir):
+        return _missing_clone_result(bundle_dir)
+
+    if not needed_dir.is_dir():
+        return _incomplete_clone_result(bundle_dir, needed_dir)
+
+    return None
+
+
+def linked_detail(bundle_dir: Path, links_rules: bool, skill_count: int) -> str:
+    detail = f"{skill_count} skills linked from {bundle_dir}"
+
+    if links_rules:
+        detail += ", rules linked"
+
+    return detail
+
+
+def _missing_clone_result(bundle_dir: Path) -> CheckResult:
     return failed(
-        f"{clone_dir} exists but has no {needed_dir.name}/ folder",
-        f"check that {clone_dir} is a clone of the best-practices repo: if it is, run git -C {clone_dir} pull, "
+        f"no best-practices clone at {bundle_dir}",
+        "run sbx-gh-login, then sbx-bundle-clone; it clones the repo and runs sbx-init again",
+    )
+
+
+def _incomplete_clone_result(bundle_dir: Path, needed_dir: Path) -> CheckResult:
+    return failed(
+        f"{bundle_dir} exists but has no {needed_dir.name}/ folder",
+        f"check that {bundle_dir} is a clone of the best-practices repo: if it is, run git -C {bundle_dir} pull, "
         "then sbx-init; if not, move it aside, then run sbx-gh-login and sbx-bundle-clone",
     )
 
@@ -124,16 +152,10 @@ def _stale_link_problem_list(config_dir: Path, bundle_dir: Path, skill_name_list
 # ------------------------------------------------------------------------------
 
 def bundle_links_result(config_dir: Path, bundle_dir: Path, links_rules: bool) -> CheckResult:
-    needed_dir = bundle_dir / "rules" if links_rules else bundle_dir / "skills"
+    clone_problem = clone_failure(bundle_dir, links_rules)
 
-    if not path_is_present(bundle_dir):
-        return failed(
-            f"no clone at {bundle_dir}",
-            "clone it in the sandbox shell: sbx-gh-login, then sbx-bundle-clone",
-        )
-
-    if not needed_dir.is_dir():
-        return incomplete_clone_result(bundle_dir, needed_dir)
+    if clone_problem is not None:
+        return clone_problem
 
     skill_name_list = best_practices_skill_name_list(bundle_dir)
     problem_list = []
@@ -147,9 +169,8 @@ def bundle_links_result(config_dir: Path, bundle_dir: Path, links_rules: bool) -
     problem_list.extend(_skill_link_problem_list(config_dir, bundle_dir, skill_name_list))
     problem_list.extend(_stale_link_problem_list(config_dir, bundle_dir, skill_name_list))
 
-    detail = f"{len(skill_name_list)} skills linked from {bundle_dir}"
-
-    if links_rules:
-        detail += ", rules linked"
-
-    return problem_list_result(problem_list, init_hint(), detail)
+    return problem_list_result(
+        problem_list,
+        init_hint(),
+        linked_detail(bundle_dir, links_rules, len(skill_name_list)),
+    )

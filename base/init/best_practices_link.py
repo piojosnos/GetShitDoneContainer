@@ -15,11 +15,11 @@ from bundle_links import (
     RULES_LINK_TEXT,
     SKILL_LINK_TEXT_TEMPLATE,
     best_practices_skill_name_list,
-    incomplete_clone_result,
+    clone_failure,
     is_best_practices_link,
+    linked_detail,
 )
 from check_result import CheckResult, capped_problem_detail, failed, passed
-from paths import path_is_present
 
 
 # ------------------------------------------------------------------------------
@@ -27,16 +27,10 @@ from paths import path_is_present
 # ------------------------------------------------------------------------------
 
 def link_best_practices(config_dir: Path, bundle_dir: Path, links_rules: bool) -> CheckResult:
-    needed_dir = bundle_dir / "rules" if links_rules else bundle_dir / "skills"
+    clone_problem = clone_failure(bundle_dir, links_rules)
 
-    if not path_is_present(bundle_dir):
-        return failed(
-            f"no best-practices clone at {bundle_dir}",
-            "run sbx-gh-login, then sbx-bundle-clone; it clones the repo and runs sbx-init again",
-        )
-
-    if not needed_dir.is_dir():
-        return incomplete_clone_result(bundle_dir, needed_dir)
+    if clone_problem is not None:
+        return clone_problem
 
     skills_dir = config_dir / "skills"
     clash_list: list[Path] = []
@@ -155,12 +149,7 @@ def _result(
     if clash_list:
         return _clash_result(clash_list)
 
-    detail = f"{skill_count} skills linked from {bundle_dir}"
-
-    if links_rules:
-        detail += ", rules linked"
-
-    return passed(detail)
+    return passed(linked_detail(bundle_dir, links_rules, skill_count))
 
 
 def _clash_result(clash_list: list[Path]) -> CheckResult:

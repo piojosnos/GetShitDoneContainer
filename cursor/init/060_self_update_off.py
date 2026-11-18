@@ -12,8 +12,9 @@ import os
 import tempfile
 from pathlib import Path
 
-from check_result import Check, CheckResult, failed, passed
+from check_result import Check, CheckResult, failed, make_state_folder, passed
 from cursor_shared import CLI_CONFIG_FILE
+from hints import state_writable_hint
 
 
 # ------------------------------------------------------------------------------
@@ -21,7 +22,7 @@ from cursor_shared import CLI_CONFIG_FILE
 # ------------------------------------------------------------------------------
 
 def static_channel_result(config_file: Path) -> CheckResult:
-    folder_failure = _make_folder(config_file.parent)
+    folder_failure = make_state_folder(config_file.parent)
 
     if folder_failure is not None:
         return folder_failure
@@ -41,20 +42,8 @@ def static_channel_result(config_file: Path) -> CheckResult:
 
 
 # ------------------------------------------------------------------------------
-# Folder, reading and writing
+# Reading and writing
 # ------------------------------------------------------------------------------
-
-def _make_folder(config_dir: Path) -> CheckResult | None:
-    try:
-        config_dir.mkdir(parents=True, exist_ok=True)
-    except OSError as e:
-        return failed(
-            f"cannot make {config_dir}: {e.strerror}",
-            "make the state folder of the sandbox writable by your Mac user, then run sbx-init again",
-        )
-
-    return None
-
 
 def _fix_or_delete_failure(config_file: Path, problem_text: str) -> CheckResult:
     return failed(
@@ -100,7 +89,7 @@ def _write_config_map(config_file: Path, config_map: dict) -> CheckResult | None
 
         return failed(
             f"cannot write {config_file}: {e.strerror}",
-            "make the state folder of the sandbox writable by your Mac user, then run sbx-init again",
+            state_writable_hint(),
         )
 
     return None

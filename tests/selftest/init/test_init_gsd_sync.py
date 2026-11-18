@@ -155,7 +155,7 @@ def test_a_folder_that_cannot_be_made_fails_and_the_installer_never_runs(tmp_pat
 
     assert not result.passed
     assert str(blocker1 / "config1") in result.detail
-    assert "writable" in result.hint
+    assert result.hint == hints.state_writable_hint()
     assert not (tmp_path / "args1.txt").exists()
 
 

@@ -117,7 +117,7 @@ def test_the_links_result_says_there_is_no_clone_when_the_clone_folder_is_absent
         result = bundle_links.bundle_links_result(config1, clone1, links_rules)
 
         assert not result.passed
-        assert result.detail == f"no clone at {clone1}"
+        assert result.detail == f"no best-practices clone at {clone1}"
         assert "sbx-gh-login" in result.hint
         assert "sbx-bundle-clone" in result.hint
         assert "move it aside" not in result.hint
@@ -193,3 +193,30 @@ def test_bundle_links_result_ignores_a_user_skill_and_a_link_elsewhere_that_the_
     result = bundle_links.bundle_links_result(config1, clone1, True)
 
     assert result.passed
+
+
+# ------------------------------------------------------------------------------
+# Clone failures and the passed detail
+# ------------------------------------------------------------------------------
+
+def test_clone_failure_is_none_for_a_clone_with_what_the_agent_needs(tmp_path):
+    clone1 = tmp_path / "best-practices"
+    (clone1 / "skills").mkdir(parents=True)
+
+    assert bundle_links.clone_failure(clone1, False) is None
+    assert bundle_links.clone_failure(clone1, True).detail == f"{clone1} exists but has no rules/ folder"
+
+
+def test_clone_failure_gives_the_same_missing_clone_failure_for_both_needs(tmp_path):
+    clone1 = tmp_path / "missing1"
+
+    skills_result = bundle_links.clone_failure(clone1, False)
+    rules_result = bundle_links.clone_failure(clone1, True)
+
+    assert skills_result == rules_result
+    assert skills_result.detail == f"no best-practices clone at {clone1}"
+
+
+def test_linked_detail_counts_skills_and_names_rules_only_when_linked(tmp_path):
+    assert bundle_links.linked_detail(tmp_path, False, 3) == f"3 skills linked from {tmp_path}"
+    assert bundle_links.linked_detail(tmp_path, True, 3) == f"3 skills linked from {tmp_path}, rules linked"

@@ -9,8 +9,8 @@ import tempfile
 from pathlib import Path
 
 from check_result import Check, CheckResult, failed, passed
-from hints import init_hint, restart_hint
-from paths import BASE_STATE_DIR_LIST, STATE_DIR
+from hints import init_hint, state_writable_hint
+from paths import STATE_DIR, state_folder_name_list
 
 _STATE_WRITE_PROBE_PREFIX = ".sbx-selfcheck-"
 
@@ -20,7 +20,7 @@ _STATE_WRITE_PROBE_PREFIX = ".sbx-selfcheck-"
 # ------------------------------------------------------------------------------
 
 def state_folders_result(state_dir: Path, state_dirs_text: str) -> CheckResult:
-    folder_list = BASE_STATE_DIR_LIST + state_dirs_text.split()
+    folder_list = state_folder_name_list(state_dirs_text)
     missing_list = []
 
     for folder in folder_list:
@@ -46,7 +46,7 @@ def state_writable_result(state_dir: Path) -> CheckResult:
     except OSError as e:
         return failed(
             f"cannot make a file in {state_dir}: {e}",
-            "make the state folder of the sandbox writable by your Mac user, then " + restart_hint(),
+            state_writable_hint(),
         )
 
     try:
