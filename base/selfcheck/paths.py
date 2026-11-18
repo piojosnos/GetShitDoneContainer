@@ -12,6 +12,11 @@ STATE_DIR = WORKSPACE_DIR / "state"
 BUNDLE_DIR = WORKSPACE_DIR / "best-practices"
 VERSIONS_FILE = Path("/etc/sbx/versions.env")
 TOOL_VERSIONS_FILE = Path("/etc/sbx/tool-versions")
+BASE_STATE_DIR_LIST = ["shell", "gh", "git"]
+AGENT_STEPS_DIR = Path("/etc/sbx/init.d")
+INIT_MARKER_FILE = HOME_DIR / ".sbx-init-done"
+INIT_LOCK_FILE = HOME_DIR / ".sbx-init.lock"
+AGENT_BIN_DIR = Path("/opt/sbx/agents/bin")
 
 
 # ------------------------------------------------------------------------------
@@ -31,3 +36,13 @@ def link_text(link: Path) -> str | None:
         return str(link.readlink())
     except OSError:
         return None
+
+
+def state_folder_name_list(state_dirs_text: str) -> list[str]:
+    name_list = []
+
+    for name in BASE_STATE_DIR_LIST + state_dirs_text.split():
+        if name not in name_list:
+            name_list.append(name)
+
+    return name_list

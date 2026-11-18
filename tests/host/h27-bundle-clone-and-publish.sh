@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# H-27: sbx-claude, sbx-bundle-clone and a push work in a fresh sandbox folder
+# H-27: the first run in a fresh sandbox folder: refusal, init, clone, push
 # ------------------------------------------------------------------------------
 # Needs: images built; the run folder (not the running sandbox)
-# One offline docker run --rm container on a fresh folder of the run folder.
+# One offline docker run --rm container on a fresh folder of the run folder. It
+# walks the first run in order: sbx-claude refuses before sbx-init, sbx-init
+# stops at the missing clone, sbx-bundle-clone clones and runs sbx-init, Claude
+# then starts, and a push reaches the origin. The run also checks that a login
+# shell started inside an sbx-claude session finds claude in the agents folder,
+# and that a plain login shell does not.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -52,6 +57,12 @@ step() { echo "STEP $1 $2"; }
 sbx-claude --version >"$ws/before.out" 2>"$ws/before.err"
 step before $?
 
+command -v claude >"$ws/plainpath.out" 2>&1
+step plainpath $?
+
+sbx-init >"$ws/noclone.out" 2>&1
+step noclone $?
+
 sbx-bundle-clone >"$ws/clone.out" 2>&1
 step clone $?
 
@@ -80,6 +91,15 @@ step push $?
 
 sbx-claude --version >"$ws/after.out" 2>"$ws/after.err"
 step after $?
+
+mkdir -p /tmp/h27-agent-bin1
+printf '%s\n' '#!/bin/sh' 'PATH=/opt/sbx/agents/bin:${PATH#/tmp/h27-agent-bin1:}' 'export PATH' "exec bash -lc 'command -v claude'" >/tmp/h27-agent-bin1/claude
+chmod 755 /tmp/h27-agent-bin1/claude
+SBX_AGENT_BIN_DIR=/tmp/h27-agent-bin1 sbx-claude >"$ws/sessionlogin.out" 2>&1
+step sessionlogin $?
+
+bash -lc 'command -v claude' >"$ws/plainlogin.out" 2>&1
+step plainlogin $?
 
 SBX_BUNDLE_DIR="$ws/h27-missing" BUNDLE_REPO_URL="$ws/no-such-origin.git" sbx-bundle-clone >"$ws/missing.out" 2>&1
 step missing $?
@@ -130,36 +150,110 @@ file_head() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks sbx-claude warned with nothing linked and still ran claude
+# Checks sbx-claude refused to start before sbx-init and printed nothing else
 # ------------------------------------------------------------------------------
 check_before() {
-  local beforeOut expectedOut beforeErr
+  local beforeOut beforeErr
 
-  check_step before 0
+  check_step before 1
   beforeErr=$(cat "$h27Dir/before.err" 2>/dev/null)
   beforeOut=$(cat "$h27Dir/before.out" 2>/dev/null)
-  expectedOut="$(claude_pin) (Claude Code)"
 
-  if [[ "$beforeErr" != *"WARNING: no best-practices clone is linked"* ]]; then
-    add_problem "sbx-claude did not warn with nothing linked; stderr: $(file_head before.err)"
+  if [[ "$beforeErr" != *"run sbx-init first"* ]]; then
+    add_problem "sbx-claude did not tell the user to run sbx-init first; stderr: $(file_head before.err)"
   fi
 
-  if [ "$beforeOut" != "$expectedOut" ]; then
-    add_problem "sbx-claude did not pass --version to claude; expected '$expectedOut'; got: $(file_head before.out)"
+  if [ -n "$beforeOut" ]; then
+    add_problem "sbx-claude printed output before sbx-init; stdout: $(file_head before.out)"
   fi
 }
 
 # ------------------------------------------------------------------------------
-# Checks the first sbx-bundle-clone linked the clone at once
+# Checks claude is not on the plain PATH, so only the wrapper can start it
+# ------------------------------------------------------------------------------
+check_plain_path() {
+  local plainOut
+
+  check_step plainpath 1
+  plainOut=$(cat "$h27Dir/plainpath.out" 2>/dev/null)
+
+  if [ -n "$plainOut" ]; then
+    add_problem "command -v claude found '$plainOut' on the plain PATH; the agent must live off the PATH"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Checks a login shell in an sbx-claude session finds claude in the agents folder
+# ------------------------------------------------------------------------------
+# The stand-in claude in /tmp replaces its own folder at the front of the PATH
+# with the agents folder, which is the PATH the wrapper hands the real agent,
+# then starts the login shell. The image's login files run for real.
+# ------------------------------------------------------------------------------
+check_session_login_shell() {
+  local sessionOut
+
+  check_step sessionlogin 0
+  sessionOut=$(cat "$h27Dir/sessionlogin.out" 2>/dev/null)
+
+  if [ "$sessionOut" != "/opt/sbx/agents/bin/claude" ]; then
+    add_problem "a login shell inside an sbx-claude session did not find /opt/sbx/agents/bin/claude; a login shell may have reset the PATH the wrapper set; got: $(file_head sessionlogin.out)"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Checks a plain login shell finds no claude
+# ------------------------------------------------------------------------------
+check_plain_login_shell() {
+  local plainOut
+
+  check_step plainlogin 1
+  plainOut=$(cat "$h27Dir/plainlogin.out" 2>/dev/null)
+
+  if [ -n "$plainOut" ]; then
+    add_problem "a plain login shell found '$plainOut'; the agent must live off the PATH"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Checks sbx-init without a clone did the mechanical steps, then stopped at the
+# links step and named sbx-bundle-clone
+# ------------------------------------------------------------------------------
+check_init_without_clone() {
+  local noCloneFile=$h27Dir/noclone.out
+  local expectedLine
+
+  check_step noclone 1
+
+  for expectedLine in "OK: state-folders: " "OK: claude-gsd-sync: " "OK: state-owner: "; do
+    if ! grep -Fq "$expectedLine" "$noCloneFile" 2>/dev/null; then
+      add_problem "sbx-init without a clone printed no line with '$expectedLine'; output: $(file_head noclone.out)"
+    fi
+  done
+
+  if ! grep -Fq "FAIL: claude-best-practices-links: no best-practices clone at /home/sandbox/workspace/best-practices" "$noCloneFile" 2>/dev/null; then
+    add_problem "sbx-init without a clone did not fail at claude-best-practices-links; output: $(file_head noclone.out)"
+  fi
+
+  if ! grep -Eq '^ +fix: .*sbx-bundle-clone' "$noCloneFile" 2>/dev/null; then
+    add_problem "sbx-init without a clone printed no fix line naming sbx-bundle-clone; output: $(file_head noclone.out)"
+  fi
+
+  if [ "$(tail -n 1 "$noCloneFile" 2>/dev/null)" != "sbx-init: stopped at claude-best-practices-links" ]; then
+    add_problem "the last sbx-init line is not 'sbx-init: stopped at claude-best-practices-links'; output: $(file_head noclone.out)"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# Checks the first sbx-bundle-clone cloned, ran sbx-init to a pass and linked
 # ------------------------------------------------------------------------------
 check_clone_and_links() {
-  local cloneOut skillName skillLine
+  local cloneFile=$h27Dir/clone.out
+  local skillName skillLine
 
   check_step clone 0
-  cloneOut=$(cat "$h27Dir/clone.out" 2>/dev/null)
 
-  if [[ "$cloneOut" != *"[sbx] best-practices linked from /home/sandbox/workspace/best-practices"* ]]; then
-    add_problem "sbx-bundle-clone did not print the linked line; got: $(file_head clone.out)"
+  if [ "$(tail -n 1 "$cloneFile" 2>/dev/null)" != "sbx-init: 4 steps passed; run sbx-selfcheck to check the sandbox" ]; then
+    add_problem "the last line of sbx-bundle-clone is not 'sbx-init: 4 steps passed; run sbx-selfcheck to check the sandbox'; got: $(file_head clone.out)"
   fi
 
   if ! grep -Fxq "RULES ../../best-practices/rules" "$h27Dir/run.log"; then
@@ -198,6 +292,10 @@ check_second_clone_refused() {
   if [[ "$againOut" != *"already exists; nothing was changed"* ]]; then
     add_problem "the second sbx-bundle-clone did not say it changed nothing; got: $(file_head again.out)"
   fi
+
+  if [[ "$againOut" != *"sbx-init"* ]]; then
+    add_problem "the second sbx-bundle-clone did not name sbx-init as the way to relink; got: $(file_head again.out)"
+  fi
 }
 
 # ------------------------------------------------------------------------------
@@ -230,16 +328,17 @@ check_push() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks sbx-claude no longer warns once the clone is linked
+# Checks sbx-claude starts Claude once sbx-init has passed
 # ------------------------------------------------------------------------------
 check_after() {
-  local afterErr
+  local afterOut expectedOut
 
   check_step after 0
-  afterErr=$(cat "$h27Dir/after.err" 2>/dev/null)
+  afterOut=$(cat "$h27Dir/after.out" 2>/dev/null)
+  expectedOut="$(claude_pin) (Claude Code)"
 
-  if [[ "$afterErr" == *"WARNING"* ]]; then
-    add_problem "sbx-claude still warned after the clone was linked; stderr: $(file_head after.err)"
+  if [ "$afterOut" != "$expectedOut" ]; then
+    add_problem "sbx-claude did not print the pinned version after sbx-init; expected '$expectedOut'; got: $(file_head after.out)"
   fi
 }
 
@@ -262,6 +361,26 @@ check_missing_origin() {
 }
 
 # ------------------------------------------------------------------------------
+# Checks the offline GSD sync wrote the pinned version and never used npx
+# ------------------------------------------------------------------------------
+check_gsd_synced() {
+  local gsdPin syncedVersion outputName
+
+  gsdPin=$(pin_of GSD_CORE_VERSION)
+  syncedVersion=$(cat "$h27Dir/state/claude/gsd-core/VERSION" 2>/dev/null)
+
+  if [ -z "$gsdPin" ] || [ "$syncedVersion" != "$gsdPin" ]; then
+    add_problem "state/claude/gsd-core/VERSION holds '$syncedVersion'; the GSD_CORE_VERSION pin is '$gsdPin'"
+  fi
+
+  for outputName in noclone.out clone.out; do
+    if grep -Eq 'npx|@latest' "$h27Dir/$outputName" 2>/dev/null; then
+      add_problem "$outputName names npx or @latest; the GSD sync must run the image's own installer"
+    fi
+  done
+}
+
+# ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
@@ -276,12 +395,17 @@ if ! grep -Eq '^STEP missing [0-9]+$' "$h27Dir/run.log"; then
 fi
 
 check_before
+check_plain_path
+check_init_without_clone
 check_clone_and_links
 check_read_through_link
 check_second_clone_refused
 check_remote
 check_push
 check_after
+check_session_login_shell
+check_plain_login_shell
 check_missing_origin
-report_check H-27 "the wrappers, the clone or the push are wrong in a fresh sandbox folder" \
-  "offline: sbx-claude warned with nothing linked and ran claude; sbx-bundle-clone linked the clone at once and refused a second run; a branch was pushed to the origin; a failed clone left no folder"
+check_gsd_synced
+report_check H-27 "the first run is wrong in a fresh sandbox folder: the refusal, sbx-init, the clone, the GSD sync or the push" \
+  "offline: sbx-claude refused before sbx-init and claude is off the plain PATH; sbx-init without a clone stopped at the links step naming sbx-bundle-clone; sbx-bundle-clone cloned and its sbx-init passed with 4 steps; a second clone was refused; a branch was pushed to the origin; Claude started after init; a login shell inside an sbx-claude session found claude in /opt/sbx/agents/bin and a plain login shell did not; GSD synced offline at the pinned version; a failed clone left no folder"

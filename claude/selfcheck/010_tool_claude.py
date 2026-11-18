@@ -1,13 +1,43 @@
 # ------------------------------------------------------------------------------
-# Check: claude is the pinned version
+# Checks: claude is the pinned version and stays off the PATH
 # ------------------------------------------------------------------------------
-# The image copies this file to /etc/sbx/selfcheck.d/claude/; the runner loads it
-# after the shared checks.
+# The agent lives in the agents folder, off the PATH; its wrapper puts the folder
+# first. The image copies this file to /etc/sbx/selfcheck.d/claude/; the runner
+# loads it after the shared checks.
 # ------------------------------------------------------------------------------
 
+import os
+from pathlib import Path
+from typing import Mapping
+
 from check_result import Check, CheckResult
+from paths import AGENT_BIN_DIR
 from pins import pin_map_or_missing
-from tools import tool_result
+from tools import agent_path_environment, off_path_result, tool_result
+
+
+# ------------------------------------------------------------------------------
+# Claude version and PATH
+# ------------------------------------------------------------------------------
+
+def claude_version_result(
+    expected_version: str,
+    agent_bin_dir: Path = AGENT_BIN_DIR,
+    environment_map: Mapping[str, str] = os.environ,
+) -> CheckResult:
+    return tool_result(
+        "claude",
+        ["--version"],
+        f"{expected_version} (Claude Code)",
+        environment_map=agent_path_environment(agent_bin_dir, environment_map),
+    )
+
+
+def claude_off_path_result(
+    agent_bin_dir: Path = AGENT_BIN_DIR,
+    environment_map: Mapping[str, str] = os.environ,
+) -> CheckResult:
+    return off_path_result("claude", agent_bin_dir, environment_map)
 
 
 # ------------------------------------------------------------------------------
@@ -20,7 +50,14 @@ def _check_tool_claude() -> CheckResult:
     if missing_result:
         return missing_result
 
-    return tool_result("claude", ["--version"], f"{pin_map['CLAUDE_CODE_VERSION']} (Claude Code)")
+    return claude_version_result(pin_map["CLAUDE_CODE_VERSION"])
 
 
-CHECK_LIST = [Check("tool-claude", _check_tool_claude)]
+def _check_claude_off_path() -> CheckResult:
+    return claude_off_path_result()
+
+
+CHECK_LIST = [
+    Check("tool-claude", _check_tool_claude),
+    Check("claude-off-path", _check_claude_off_path),
+]

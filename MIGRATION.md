@@ -140,7 +140,9 @@ sbx-shell "$NAME"
 - `sbx-fix-modes` then sets every file git tracks to 644 or 755, as git committed, on both sides.
 - For a sandbox already moved without these lines, set `NEW` and run the six lines between `sbx-add` and `sbx-shell` once.
 - If `sbx-shell` says `sbx-claude:local` is not built, run `sbx-upgrade "$NAME"` once.
-- The first start syncs GSD into `state/claude` and relinks the bundle clone, or tells you to run `sbx-bundle-clone`.
+- In the first shell, run `sbx-init`. It syncs GSD into `state/claude` and links the best-practices clone. With no clone it says so; run `sbx-gh-login`, then `sbx-bundle-clone`, which runs `sbx-init` again.
+- Copies of clone skills (or a real `rules` folder) from the old layout are never replaced. They make the first `sbx-init` FAIL until you move them; the FAIL line names the path.
+- A `state/claude/.best-practices-skills` file from an older image is no longer read. It stays where it is and can be deleted by hand.
 - The shell opens in `/home/sandbox/workspace/$NAME`, the folder the renamed history belongs to.
 
 ## Check

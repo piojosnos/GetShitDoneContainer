@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+import hints
 from helpers import load_shared_check
 
 state_folders = load_shared_check("030_state_folders")
@@ -36,6 +37,16 @@ def test_state_folders_pass_when_base_and_extra_folders_exist(tmp_path):
     assert result.passed
 
 
+def test_a_name_listed_twice_is_checked_once_and_listed_once(tmp_path):
+    state1 = tmp_path / "state1"
+    make_state_folders(state1, ["shell", "gh", "git", "claude"])
+
+    result = state_folders.state_folders_result(state1, "claude claude")
+
+    assert result.passed
+    assert result.detail == f"shell, gh, git, claude exist under {state1}"
+
+
 def test_state_folders_fail_naming_the_missing_folder(tmp_path):
     state1 = tmp_path / "state1"
     make_state_folders(state1, ["shell", "gh", "git", "cache/npm"])
@@ -45,7 +56,8 @@ def test_state_folders_fail_naming_the_missing_folder(tmp_path):
     assert not result.passed
     assert "m2" in result.detail
     assert "cache/npm" not in result.detail
-    assert "on the Mac run: sbx-stop" in result.hint
+    assert result.hint == hints.init_hint()
+    assert "sbx-init" in result.hint
 
 
 def test_state_writable_passes_and_leaves_the_folder_empty(tmp_path):
@@ -67,7 +79,7 @@ def test_state_writable_fails_for_a_read_only_folder(tmp_path, restorable_mode):
     result = state_folders.state_writable_result(state1)
 
     assert not result.passed
-    assert "on the Mac run: sbx-stop" in result.hint
+    assert result.hint == hints.state_writable_hint()
 
 
 def test_state_writable_fails_for_a_missing_folder(tmp_path):

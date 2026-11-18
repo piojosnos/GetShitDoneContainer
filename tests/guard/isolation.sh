@@ -48,26 +48,23 @@ host_scripts_keep_sandbox_data() {
 }
 
 # ------------------------------------------------------------------------------
-# managed_settings_deny_skill_edits: the managed settings deny Edit on the synced skills
+# managed_settings_deny_skill_edits: managed settings deny Edit on synced skills
 # ------------------------------------------------------------------------------
-# sbx-selfcheck reads the same two entries in the image (host check H-34).
+# sbx-selfcheck reads the same entry in the image (host check H-34).
 # ------------------------------------------------------------------------------
 managed_settings_deny_skill_edits() {
-  local ok=0
-  local denyEntry
+  local denyEntry='Edit(//home/sandbox/workspace/state/claude/skills/**)'
 
-  for denyEntry in 'Edit(//home/sandbox/workspace/state/claude/.best-practices-skills)' 'Edit(//home/sandbox/workspace/state/claude/skills/**)'; do
-    if ! grep -Fq "\"$denyEntry\"" claude/managed-settings.json; then
-      echo "    claude/managed-settings.json has no deny entry $denyEntry"
-      ok=1
-    fi
-  done
+  if ! grep -Fq "\"$denyEntry\"" claude/managed-settings.json; then
+    echo "    claude/managed-settings.json has no deny entry $denyEntry"
+    return 1
+  fi
 
-  return "$ok"
+  return 0
 }
 
 # ------------------------------------------------------------------------------
-# host_tests_never_name_the_local_tag: a test run never builds, runs or removes the images your sandboxes use
+# host_tests_never_name_the_local_tag: a test run never uses your sandbox images
 # ------------------------------------------------------------------------------
 # host-test.sh and the host checks take their images from SBX_IMAGE_TAG, which
 # they always set to test. A local tag named in one of them, even in a comment,
@@ -78,14 +75,14 @@ host_tests_never_name_the_local_tag() {
 }
 
 # ------------------------------------------------------------------------------
-# owner_fix_hint_matches_container_name: the self-check's Mac fix names the container compose.yml makes
+# owner_fix_hint_matches_container_name: the Mac fix names the compose container
 # ------------------------------------------------------------------------------
-# The fix runs a throwaway root container with --volumes-from sbx-NAME. If the
-# container_name in compose.yml changes, the printed command would name a
-# container that does not exist.
+# The fix, shared by the self-check and sbx-init, runs a throwaway root container
+# with --volumes-from sbx-NAME. If the container_name in compose.yml changes, the
+# printed command would name a container that does not exist.
 # ------------------------------------------------------------------------------
 owner_fix_hint_matches_container_name() {
-  local hintFile=base/selfcheck/checks/040_root_owned_state.py
+  local hintFile=base/selfcheck/root_owned_scan.py
   local namePrefix
 
   namePrefix=$(sed -n 's/^ *container_name: "\(.*\)\${SBX_NAME}".*$/\1/p' $COMPOSE | head -n 1)

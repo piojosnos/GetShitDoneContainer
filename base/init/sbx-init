@@ -1,0 +1,37 @@
+#!/usr/bin/python3 -I
+# ------------------------------------------------------------------------------
+# sbx-init: sets up the sandbox it runs in
+# ------------------------------------------------------------------------------
+# Prints one OK or FAIL line per step, with a fix line under each FAIL. Exit 0
+# when every step passed, 1 when one failed, 2 for a usage error, 130 when the run
+# was interrupted (Ctrl-C, a closed terminal or a stop). The image puts this
+# launcher in /usr/local/lib/sbx-init/ and links it at /usr/local/bin/sbx-init.
+# ------------------------------------------------------------------------------
+
+import sys
+from pathlib import Path
+
+
+def run() -> int:
+    sys.dont_write_bytecode = True
+    # The isolated system interpreter ignores PYTHONPATH and the user site, so the
+    # only code it imports is the folder this file sits in, the self-check folder
+    # next to it (the shared result type, paths and hints) and that folder's
+    # agents folder, where an agent image keeps the library its steps share.
+    launcher_dir = Path(__file__).resolve().parent
+    selfcheck_dir = launcher_dir.parent / "sbx-selfcheck"
+    sys.path.insert(0, str(launcher_dir))
+    sys.path.append(str(selfcheck_dir))
+    sys.path.append(str(selfcheck_dir / "agents"))
+
+    import init_runner
+
+    return init_runner.main(sys.argv[1:])
+
+
+# ------------------------------------------------------------------------------
+# Main / Entry Point
+# ------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    sys.exit(run())

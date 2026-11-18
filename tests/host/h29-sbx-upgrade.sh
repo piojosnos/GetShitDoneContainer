@@ -172,10 +172,6 @@ check_upgrade() {
     add_problem "$CONTAINER is not running after sbx-upgrade"
   fi
 
-  if ! docker exec "$CONTAINER" pgrep -x sleep >/dev/null 2>&1 </dev/null; then
-    add_problem "the start hooks of $CONTAINER are not done after sbx-upgrade returned"
-  fi
-
   for sentinelFile in "$sbxDir/hosttest/h29-sentinel.txt" "$sbxDir/state/h29-sentinel.txt" "$sbxDir/state/claude/h29-sentinel.txt"; do
     if [ "$(cat "$sentinelFile" 2>/dev/null)" != "$sentinelText" ]; then
       add_problem "$sentinelFile is missing or changed after sbx-upgrade"

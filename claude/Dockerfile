@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# The Claude image: Claude Code, ccusage, sbx-claude and the managed settings on sbx-base
+# The Claude image: Claude Code, ccusage, sbx-claude and the managed settings
 # ------------------------------------------------------------------------------
 # BASE_IMAGE keeps a default because it names the local base tag, not a version.
 # Pins come from versions.env through build.sh; no other ARG has a default.
@@ -12,6 +12,8 @@ FROM ${BASE_IMAGE}
 # ------------------------------------------------------------------------------
 # The build uses a throwaway npm cache: the image's is under the mount.
 # ~/.claude links to state/claude only for tools that ignore CLAUDE_CONFIG_DIR.
+# Claude Code stays in /usr/local; only its link moves to the agents folder, off
+# the PATH, so only sbx-claude starts it.
 # ------------------------------------------------------------------------------
 USER root
 ARG CLAUDE_CODE_VERSION
@@ -19,6 +21,8 @@ RUN : "${CLAUDE_CODE_VERSION:?CLAUDE_CODE_VERSION is not set; build with ./build
     && export NPM_CONFIG_CACHE=/tmp/npm-cache \
     && npm install -g --allow-scripts=@anthropic-ai/claude-code "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
     && rm -rf /tmp/npm-cache \
+    && ln -s "$(readlink -f /usr/local/bin/claude)" /opt/sbx/agents/bin/claude \
+    && rm /usr/local/bin/claude \
     && ln -s /home/sandbox/workspace/state/claude /home/sandbox/.claude \
     && chown -h sandbox:sandbox /home/sandbox/.claude
 
@@ -45,15 +49,18 @@ ENV CLAUDE_CONFIG_DIR=/home/sandbox/workspace/state/claude \
     DISABLE_UPDATES=1
 
 # ------------------------------------------------------------------------------
-# Start hooks, sbx-claude and managed settings
+# sbx-init steps, sbx-claude and managed settings
 # ------------------------------------------------------------------------------
-# Managed settings let Claude edit the clone and deny its Edit tool on the skill
-# list and on every path under state/claude/skills. Not a security boundary.
+# Managed settings let Claude edit the clone and deny its Edit tool on every path
+# under state/claude/skills. Not a security boundary. A syntax error in a step
+# file stops the build here.
 # ------------------------------------------------------------------------------
-COPY claude/start.d/ /etc/sbx/start.d/
+RUN mkdir -p /etc/sbx/init.d/claude
+COPY --chmod=644 claude/init/*.py /etc/sbx/init.d/claude/
 COPY --chmod=755 claude/bin/ /usr/local/bin/
 COPY claude/managed-settings.json /etc/claude-code/managed-settings.json
-RUN chmod 755 /etc/sbx/start.d/* \
+RUN PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /etc/sbx/init.d/claude/*.py \
+    && rm -rf /tmp/sbx-pycache \
     && chmod 644 /etc/claude-code/managed-settings.json \
     && node -e 'JSON.parse(require("fs").readFileSync("/etc/claude-code/managed-settings.json", "utf8"))'
 
@@ -86,9 +93,11 @@ USER sandbox
 # ------------------------------------------------------------------------------
 # Build-time smoke test: the installed versions must equal the pins
 # ------------------------------------------------------------------------------
-# Last RUN: the mount point must stay empty; a mount hides what the image holds.
+# The agent must not be on the PATH, so it runs by full path. Last RUN: the mount
+# point must stay empty; a mount hides what the image holds.
 # ------------------------------------------------------------------------------
-RUN test "$(claude --version)" = "${CLAUDE_CODE_VERSION} (Claude Code)" \
+RUN test "$(/opt/sbx/agents/bin/claude --version)" = "${CLAUDE_CODE_VERSION} (Claude Code)" \
+    && ! command -v claude >/dev/null \
     && test "$(ccusage --version)" = "ccusage ${CCUSAGE_VERSION}" \
     && { test -z "$(ls -A /home/sandbox/workspace)" || { echo "Files under the mount point:"; find /home/sandbox/workspace; exit 1; }; }
 

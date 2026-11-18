@@ -116,28 +116,18 @@ pin_digests() {
 }
 
 # ------------------------------------------------------------------------------
-# sandbox_suites: the guard and the entrypoint self-test inside sbx-hosttest
+# sandbox_suites: the guard inside sbx-hosttest
 # ------------------------------------------------------------------------------
-# They run on a clone of the commit under test, so uncommitted edits are left
+# It runs on a clone of the commit under test, so uncommitted edits are left
 # out. Inside the sandbox both linters exist, so every guard rule must pass.
 # ------------------------------------------------------------------------------
 sandbox_suites() {
   local repoDir="$RUN/hosttest/repo"
-  local suite
-  local status=0
 
   rm -rf "$repoDir"
   git clone -q "$PWD" "$repoDir" && git -C "$repoDir" checkout -q "$(git rev-parse HEAD)" || return 1
 
-  for suite in tests/guard/run-all.sh tests/selftest/entrypoint/run-all.sh; do
-    printf -- '-- %s\n' "$suite"
-
-    if ! docker exec -w /home/sandbox/workspace/hosttest/repo sbx-hosttest bash "$suite"; then
-      status=1
-    fi
-  done
-
-  return "$status"
+  docker exec -w /home/sandbox/workspace/hosttest/repo sbx-hosttest bash tests/guard/run-all.sh
 }
 
 # ------------------------------------------------------------------------------
@@ -236,7 +226,7 @@ main() {
   if [ -n "$RUN" ] && [ -d "$RUN" ]; then
     run_step "linter versions" linter_versions
     run_step "pin digests" pin_digests
-    run_step "guard and entrypoint self-test in sbx-hosttest" sandbox_suites
+    run_step "guard in sbx-hosttest" sandbox_suites
     run_step "guard in the Mac shell" mac_guard
     run_step "build warnings" build_warnings
 

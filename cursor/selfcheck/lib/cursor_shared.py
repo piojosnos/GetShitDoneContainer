@@ -10,7 +10,9 @@ from pathlib import Path
 from paths import STATE_DIR
 
 CONFIG_DIR = STATE_DIR / "cursor"
+CLI_CONFIG_FILE = CONFIG_DIR / "cli-config.json"
 
-# The folder the image installs the agent in; the ownership check and the protected
-# paths check of this image walk it. The sbx commands and hooks sit under the base roots.
+# The folder the image installs the agent in; the ownership check and the
+# protected paths check of this image walk it. The sbx commands and hooks sit
+# under the base roots.
 IMAGE_ROOT_LIST = [Path("/usr/local/lib/cursor-agent")]

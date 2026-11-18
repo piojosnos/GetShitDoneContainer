@@ -12,7 +12,8 @@ FROM ${BASE_IMAGE}
 # ------------------------------------------------------------------------------
 # Downloaded at the pinned version and checked against the vendor's .sha256
 # before it is unpacked. /tmp is the work folder: the base image ends in the
-# mount point. The CLI folder is not writable by the agent process.
+# mount point. The CLI folder is not writable by the agent process. Its link
+# goes to the agents folder, off the PATH, so only sbx-cursor starts it.
 # ------------------------------------------------------------------------------
 USER root
 ARG CURSOR_AGENT_VERSION
@@ -28,25 +29,28 @@ RUN : "${CURSOR_AGENT_VERSION:?CURSOR_AGENT_VERSION is not set; build with ./bui
     && tar -xzf agent-cli-package.tar.gz -C /usr/local/lib/cursor-agent --strip-components=1 --no-same-owner \
     && chmod -R go-w /usr/local/lib/cursor-agent \
     && rm agent-cli-package.tar.gz agent-cli-package.tar.gz.sha256 \
-    && ln -s /usr/local/lib/cursor-agent/cursor-agent /usr/local/bin/cursor-agent
+    && ln -s /usr/local/lib/cursor-agent/cursor-agent /opt/sbx/agents/bin/cursor-agent
 WORKDIR /home/sandbox/workspace
 
 # ------------------------------------------------------------------------------
 # Cursor settings as image ENV
 # ------------------------------------------------------------------------------
-# So every docker exec shell gets them. The start creates state/cursor.
+# So every docker exec shell gets them. sbx-init creates state/cursor.
 # ------------------------------------------------------------------------------
 ENV CURSOR_CONFIG_DIR=/home/sandbox/workspace/state/cursor \
     SBX_STATE_DIRS="${SBX_STATE_DIRS} cursor"
 
 # ------------------------------------------------------------------------------
-# Start hooks (self-update off, the GSD sync, the bundle skills) and sbx-cursor
+# sbx-init steps and sbx-cursor
 # ------------------------------------------------------------------------------
-# Root-owned, so the sandbox user cannot change them.
+# Root-owned, so the sandbox user cannot change them. A syntax error in a step
+# file stops the build here.
 # ------------------------------------------------------------------------------
-COPY cursor/start.d/ /etc/sbx/start.d/
+RUN mkdir -p /etc/sbx/init.d/cursor
+COPY --chmod=644 cursor/init/*.py /etc/sbx/init.d/cursor/
 COPY --chmod=755 cursor/bin/ /usr/local/bin/
-RUN chmod 755 /etc/sbx/start.d/*
+RUN PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /etc/sbx/init.d/cursor/*.py \
+    && rm -rf /tmp/sbx-pycache
 
 # ------------------------------------------------------------------------------
 # The Cursor checks for sbx-selfcheck
@@ -91,10 +95,12 @@ RUN mkdir -p /home/sandbox/.config \
 # ------------------------------------------------------------------------------
 # cursor-agent --version writes cli-config.json, so it runs with a throwaway HOME
 # and without CURSOR_CONFIG_DIR; otherwise it would write through the dangling
-# ~/.cursor link into the mount point. Last RUN: the mount point must stay empty.
+# ~/.cursor link into the mount point. The agent must not be on the PATH, so it
+# runs by full path. Last RUN: the mount point must stay empty.
 # ------------------------------------------------------------------------------
 RUN smokeHome="$(mktemp -d)" \
-    && test "$(env -u CURSOR_CONFIG_DIR HOME="$smokeHome" cursor-agent --version)" = "${CURSOR_AGENT_VERSION}" \
+    && test "$(env -u CURSOR_CONFIG_DIR HOME="$smokeHome" /opt/sbx/agents/bin/cursor-agent --version)" = "${CURSOR_AGENT_VERSION}" \
+    && ! command -v cursor-agent >/dev/null \
     && rm -rf "$smokeHome" \
     && { test -z "$(ls -A /home/sandbox/workspace)" || { echo "Files under the mount point:"; find /home/sandbox/workspace; exit 1; }; }
 

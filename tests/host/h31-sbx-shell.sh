@@ -55,7 +55,7 @@ register() {
 # ------------------------------------------------------------------------------
 # Checks the start of a sandbox with no container, run without a terminal
 # ------------------------------------------------------------------------------
-# sbx-shell starts the sandbox and waits for its hooks, then Docker refuses the
+# sbx-shell starts the sandbox, then Docker refuses the
 # shell because stdin is not a terminal. Older Docker says "the input device is
 # not a TTY", newer Docker says "stdin is not a terminal"; both count.
 # ------------------------------------------------------------------------------
@@ -72,10 +72,6 @@ check_start_without_terminal() {
 
   if [ "$(sandbox_field '{{.State.Running}}')" != "true" ]; then
     add_problem "$CONTAINER is not running after sbx-shell started it"
-  fi
-
-  if ! docker exec "$CONTAINER" pgrep -x sleep >/dev/null 2>&1 </dev/null; then
-    add_problem "the start hooks of $CONTAINER are not done after sbx-shell returned"
   fi
 
   firstId=$(sandbox_field '{{.Id}}')
@@ -96,7 +92,7 @@ drive_shell() {
 
   {
     while [ "$waitedSeconds" -lt 240 ]; do
-      if docker exec "$CONTAINER" pgrep -x sleep >/dev/null 2>&1 </dev/null && docker exec "$CONTAINER" pgrep -x bash >/dev/null 2>&1 </dev/null; then
+      if docker exec "$CONTAINER" pgrep -x bash >/dev/null 2>&1 </dev/null; then
         break
       fi
 
@@ -172,10 +168,6 @@ check_stopped_shell() {
   if [ -z "$firstId" ] || [ "$(sandbox_field '{{.Id}}')" != "$firstId" ]; then
     add_problem "sbx-shell of a stopped sandbox replaced the container instead of starting it again"
   fi
-
-  if ! docker exec "$CONTAINER" pgrep -x sleep >/dev/null 2>&1 </dev/null; then
-    add_problem "the start hooks of $CONTAINER are not done after sbx-shell of a stopped sandbox"
-  fi
 }
 
 # ------------------------------------------------------------------------------
@@ -192,4 +184,4 @@ check_running_shell
 check_stopped_shell
 restore_test_sandbox h31
 report_check H-31 "sbx-shell did not start the sandbox or open bash in its project folder" \
-  "sbx-shell started a sandbox with no container and waited for its hooks; without a terminal Docker refused the shell; through a terminal bash opened in /home/sandbox/workspace/hosttest on the running sandbox (not recreated) and on a stopped one (started again)"
+  "sbx-shell started a sandbox with no container; without a terminal Docker refused the shell; through a terminal bash opened in /home/sandbox/workspace/hosttest on the running sandbox (not recreated) and on a stopped one (started again)"

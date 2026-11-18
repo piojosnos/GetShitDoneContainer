@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Guard rules on the container start: ordered hooks, GSD first, agent image, tag
+# Guard rules on the container start: no entrypoint, agent image, tag
 # ------------------------------------------------------------------------------
 # Usage: bash tests/guard/start.sh (exit 0 = every rule holds)
 # ------------------------------------------------------------------------------
@@ -8,57 +8,60 @@ set -u
 . "$(dirname "$0")/lib.sh"
 
 # ------------------------------------------------------------------------------
-# start_hooks_have_two_digit_names: NN-name, so 100- cannot sort before 20-
+# container_runs_no_entrypoint: a start only keeps the container alive
 # ------------------------------------------------------------------------------
-start_hooks_have_two_digit_names() {
-  local hookDir
-  local hookNames
+# sbx-init, run in a shell, sets the sandbox up. An entrypoint in an image or in
+# compose would bring back setup that runs without anyone asking.
+# ------------------------------------------------------------------------------
+container_runs_no_entrypoint() {
   local ok=0
 
-  for hookDir in $HOOK_DIRS; do
-    hookNames=$(find "$hookDir" -type f 2>/dev/null | sed 's#.*/##')
+  if ! nowhere_matches '^ENTRYPOINT' $DOCKERFILES; then
+    echo "    a Dockerfile sets an entrypoint"
+    ok=1
+  fi
 
-    if [ -z "$hookNames" ]; then
-      echo "    $hookDir holds no start hook"
-      ok=1
-      continue
-    fi
+  if ! nowhere_matches '^[[:space:]]*entrypoint:' $COMPOSE; then
+    echo "    $COMPOSE sets an entrypoint"
+    ok=1
+  fi
 
-    if ! printf '%s\n' "$hookNames" | grep -Ev '^[0-9]{2}-[a-z0-9-]+$' | report_lines "start hook name is not NN-name (lowercase, digits, hyphens): "; then
-      ok=1
-    fi
-  done
+  if ! grep -Fq 'init: true' $COMPOSE; then
+    echo "    $COMPOSE does not keep \"init: true\""
+    ok=1
+  fi
+
+  if ! grep -Fq 'command: ["sleep", "infinity"]' $COMPOSE; then
+    echo "    $COMPOSE does not keep the command [\"sleep\", \"infinity\"]"
+    ok=1
+  fi
 
   return "$ok"
 }
 
 # ------------------------------------------------------------------------------
-# gsd_sync_runs_before_the_bundle: GSD syncs first, so a bundle skill wins
+# agents_stay_off_the_path: only the wrappers start an agent
 # ------------------------------------------------------------------------------
-# Each agent folder must hold its own GSD hook.
+# The agents live in /opt/sbx/agents/bin so only their wrappers start them; a
+# link in /usr/local/bin would let a plain shell run an uninitialised agent.
 # ------------------------------------------------------------------------------
-gsd_sync_runs_before_the_bundle() {
+agents_stay_off_the_path() {
   local ok=0
-  local hook
-  local hookDir
-  local hookList
 
-  for hookDir in $HOOK_DIRS; do
-    hookList=$(grep -lE 'gsd-core --(claude|cursor) ' "$hookDir"/* 2>/dev/null)
+  if ! grep -Fq '/opt/sbx/agents/bin/claude --version' $CLAUDE || ! grep -Fq '! command -v claude' $CLAUDE; then
+    echo "    $CLAUDE has no smoke test that runs claude from /opt/sbx/agents/bin and fails when it is on the PATH"
+    ok=1
+  fi
 
-    if [ -z "$hookList" ]; then
-      echo "    $hookDir has no start hook that runs the GSD installer"
-      ok=1
-      continue
-    fi
+  if ! grep -Fq '/opt/sbx/agents/bin/cursor-agent --version' $CURSOR || ! grep -Fq '! command -v cursor-agent' $CURSOR; then
+    echo "    $CURSOR has no smoke test that runs cursor-agent from /opt/sbx/agents/bin and fails when it is on the PATH"
+    ok=1
+  fi
 
-    for hook in $hookList; do
-      if ! [[ "$(basename "$hook")" < "10-best-practices" ]]; then
-        echo "    $hook sorts after 10-best-practices"
-        ok=1
-      fi
-    done
-  done
+  if ! nowhere_matches 'ln -s [^ ]+ /usr/local/bin/(claude|cursor-agent)' $CLAUDE $CURSOR; then
+    echo "    an agent Dockerfile links its agent into /usr/local/bin"
+    ok=1
+  fi
 
   return "$ok"
 }
@@ -117,6 +120,6 @@ compose_image_follows_agent_and_tag() {
 require_no_arguments "$@" || exit 2
 enter_repo_root || exit 1
 run_rules \
-  start_hooks_have_two_digit_names \
-  gsd_sync_runs_before_the_bundle \
+  container_runs_no_entrypoint \
+  agents_stay_off_the_path \
   compose_image_follows_agent_and_tag || exit 1

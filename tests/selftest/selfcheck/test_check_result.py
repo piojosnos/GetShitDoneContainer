@@ -5,6 +5,7 @@
 import pytest
 
 import check_result
+import hints
 
 
 # ------------------------------------------------------------------------------
@@ -36,3 +37,45 @@ def test_problem_list_result_passes_with_the_passed_detail_when_there_is_no_prob
 
 def test_one_line_turns_line_breaks_into_spaces():
     assert check_result.one_line("a\r\nb\nc") == "a  b c"
+
+
+# ------------------------------------------------------------------------------
+# Capped lists
+# ------------------------------------------------------------------------------
+
+def test_capped_list_text_keeps_the_first_ten_items_by_default():
+    item_list = [f"item{number}" for number in range(12)]
+
+    assert check_result.capped_list_text(item_list, ", ") == ", ".join(item_list[:10])
+    assert check_result.capped_list_text(item_list, "; ", 2) == "item0; item1"
+    assert check_result.capped_list_text([], ", ") == ""
+
+
+def test_capped_problem_detail_counts_every_problem_and_lists_the_first_ten():
+    problem_list = [f"problem{number}" for number in range(12)]
+
+    assert check_result.capped_problem_detail(problem_list) == "12 problems: " + "; ".join(problem_list[:10])
+
+
+# ------------------------------------------------------------------------------
+# Making a state folder
+# ------------------------------------------------------------------------------
+
+def test_make_state_folder_makes_nested_folders_and_accepts_an_existing_one(tmp_path):
+    folder1 = tmp_path / "a" / "b"
+
+    assert check_result.make_state_folder(folder1) is None
+    assert folder1.is_dir()
+    assert check_result.make_state_folder(folder1) is None
+
+
+def test_make_state_folder_fails_under_a_plain_file_with_the_writable_hint(tmp_path):
+    blocker1 = tmp_path / "blocker1"
+    blocker1.write_text("a file where a folder is needed")
+
+    result = check_result.make_state_folder(blocker1 / "folder1")
+
+    assert result is not None
+    assert not result.passed
+    assert result.detail.startswith(f"cannot make {blocker1 / 'folder1'}: ")
+    assert result.hint == hints.state_writable_hint()

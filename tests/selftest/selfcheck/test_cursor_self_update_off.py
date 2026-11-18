@@ -45,4 +45,4 @@ def test_self_update_result_fails_for_another_channel_bad_text_and_a_missing_fil
 
     for result in [stable_result, text_result, list_result, missing_result]:
         assert not result.passed
-        assert result.hint.startswith(hints.restart_hint())
+        assert result.hint == hints.init_hint()

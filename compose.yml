@@ -15,8 +15,8 @@ services:
     image: "sbx-${SBX_AGENT:-claude}:${SBX_IMAGE_TAG:-local}"
     pull_policy: never             # a missing image is an error, never a pull from Docker Hub
     container_name: "sbx-${SBX_NAME}"
-    init: true                     # tini as PID 1: reaps zombies, stops promptly
-    command: ["sleep", "infinity"] # shells come from: docker exec -it -w /home/sandbox/workspace/<name> sbx-<name> bash
+    init: true                     # tini is PID 1 (reaps zombies, stops promptly); the image has no entrypoint
+    command: ["sleep", "infinity"] # the container only keeps running; sbx-init in a shell sets the sandbox up: docker exec -it -w /home/sandbox/workspace/<name> sbx-<name> bash
     # working_dir is the mount point, not <name>/: Docker creates a missing
     # working directory, so a mistyped name leaves an empty <name>/ on the Mac.
     working_dir: "/home/sandbox/workspace"

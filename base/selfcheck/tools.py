@@ -117,3 +117,47 @@ def tool_result(
         return failed(problem, rebuild_hint())
 
     return passed(f"{real_path}, {line}")
+
+
+# ------------------------------------------------------------------------------
+# The agents folder on PATH
+# ------------------------------------------------------------------------------
+# The image keeps each agent in its own folder, off the PATH, and its wrapper puts
+# the folder first when it starts the agent. A check that runs the agent does the
+# same; a check that looks for a stray copy takes the folder out first, because
+# the self-check can run inside an agent session whose PATH the wrapper extended.
+# ------------------------------------------------------------------------------
+
+def agent_path_environment(agent_bin_dir: Path, environment_map: Mapping[str, str] = os.environ) -> dict[str, str]:
+    agent_environment_map = dict(environment_map)
+    entry_list = [str(agent_bin_dir)]
+    old_path = environment_map.get("PATH", "")
+
+    if old_path:
+        entry_list.append(old_path)
+
+    agent_environment_map["PATH"] = os.pathsep.join(entry_list)
+
+    return agent_environment_map
+
+
+def off_path_result(
+    command_name: str,
+    agent_bin_dir: Path,
+    environment_map: Mapping[str, str] = os.environ,
+) -> CheckResult:
+    plain_entry_list = []
+
+    for entry in environment_map.get("PATH", "").split(os.pathsep):
+        if entry != str(agent_bin_dir):
+            plain_entry_list.append(entry)
+
+    found_path = shutil.which(command_name, path=os.pathsep.join(plain_entry_list))
+
+    if found_path is not None:
+        return failed(
+            f"{command_name} is on PATH at {found_path}; the image keeps it in {agent_bin_dir} for its wrapper",
+            f"remove {found_path} if you put it there; else " + rebuild_hint(),
+        )
+
+    return passed(f"{command_name} is not on a plain PATH; {agent_bin_dir} holds it")

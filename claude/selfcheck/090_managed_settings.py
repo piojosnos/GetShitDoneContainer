@@ -37,8 +37,8 @@ def _sorted_text_list(value: object) -> list[str] | None:
 
 def managed_settings_result(
     settings_file: Path = _MANAGED_SETTINGS_FILE,
-    bundle_dir: Path = BUNDLE_DIR,
     config_dir: Path = CONFIG_DIR,
+    bundle_dir: Path = BUNDLE_DIR,
 ) -> CheckResult:
     try:
         settings_map = json.loads(settings_file.read_text())
@@ -53,7 +53,7 @@ def managed_settings_result(
         permissions_map = settings_map["permissions"]
 
     expected_directory_list = [str(bundle_dir)]
-    expected_deny_list = sorted([f"Edit(/{config_dir}/.best-practices-skills)", f"Edit(/{config_dir}/skills/**)"])
+    expected_deny_list = [f"Edit(/{config_dir}/skills/**)"]
     problem_list = []
 
     if _sorted_text_list(permissions_map.get("additionalDirectories")) != expected_directory_list:
@@ -67,7 +67,7 @@ def managed_settings_result(
     return problem_list_result(
         problem_list,
         rebuild_hint(),
-        f"{settings_file} names {bundle_dir} and denies edits of the skill list and the skills",
+        f"{settings_file} names {bundle_dir} and denies edits of the skills",
     )
 
 

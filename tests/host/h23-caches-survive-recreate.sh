@@ -22,14 +22,14 @@ container_stdout() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks the entrypoint made state/cache/npm, state/cache/uv and state/m2
+# Checks sbx-init made state/cache/npm, state/cache/uv and state/m2
 # ------------------------------------------------------------------------------
 check_state_folders() {
   local folderName
 
   for folderName in cache/npm cache/uv m2; do
     if [ ! -d "$RUN/state/$folderName" ]; then
-      add_problem "state/$folderName is not a folder; the entrypoint did not make it"
+      add_problem "state/$folderName is not a folder; sbx-init did not make it"
     fi
   done
 }

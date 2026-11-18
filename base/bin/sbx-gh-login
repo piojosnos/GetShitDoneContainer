@@ -9,6 +9,24 @@
 set -eu
 
 # ------------------------------------------------------------------------------
+# Stops when sbx-init has not made the state folders yet
+# ------------------------------------------------------------------------------
+# gh and git write their login into these folders; without them gh fails late.
+# ------------------------------------------------------------------------------
+check_state_folders() {
+  local ghConfigDir=${GH_CONFIG_DIR:?GH_CONFIG_DIR is not set}
+  local gitConfigFile=${GIT_CONFIG_GLOBAL:?GIT_CONFIG_GLOBAL is not set}
+
+  if [ -d "$ghConfigDir" ] && [ -d "$(dirname "$gitConfigFile")" ]; then
+    return
+  fi
+
+  echo "[sbx] ERROR: the state folders do not exist yet; run sbx-init first." >&2
+
+  return 1
+}
+
+# ------------------------------------------------------------------------------
 # Prints a global git setting, or asks for it when it is empty
 # ------------------------------------------------------------------------------
 # Usage: ask_git_setting user.name "Your name"
@@ -48,6 +66,8 @@ ask_git_setting() {
 # ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
+check_state_folders || exit 1
+
 gh auth login --hostname github.com --git-protocol https "$@"
 gh auth setup-git
 

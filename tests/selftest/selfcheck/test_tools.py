@@ -8,6 +8,7 @@ import os
 import platform
 import shutil
 
+import hints
 import tools
 from helpers import environment_with, write_stand_in
 
@@ -163,3 +164,66 @@ def test_tool_result_without_a_version_command_passes_with_the_resolved_path_onl
 
     assert result.passed
     assert result.detail == os.path.realpath(shutil.which("git"))
+
+
+# ------------------------------------------------------------------------------
+# Agent PATH
+# ------------------------------------------------------------------------------
+
+def test_agent_path_environment_puts_the_agents_folder_first_and_keeps_the_input(bin1):
+    input_map = {"PATH": "/a:/b", "X": "1"}
+
+    result_map = tools.agent_path_environment(bin1, input_map)
+
+    assert result_map == {"PATH": f"{bin1}{os.pathsep}/a:/b", "X": "1"}
+    assert input_map == {"PATH": "/a:/b", "X": "1"}
+
+
+def test_agent_path_environment_without_a_path_holds_the_agents_folder_alone(bin1):
+    result_map = tools.agent_path_environment(bin1, {"X": "1"})
+
+    assert result_map["PATH"] == str(bin1)
+
+
+def test_off_path_result_passes_when_the_tool_is_only_in_the_agents_folder(tmp_path, bin1):
+    other1 = tmp_path / "other1"
+    other1.mkdir()
+    write_stand_in(bin1, "tool1", "echo v1")
+
+    result = tools.off_path_result("tool1", bin1, {"PATH": str(other1)})
+
+    assert result.passed
+    assert str(bin1) in result.detail
+
+
+def test_off_path_result_passes_when_the_agents_folder_is_first_on_the_path(bin1):
+    write_stand_in(bin1, "tool1", "echo v1")
+
+    result = tools.off_path_result("tool1", bin1, environment_with(bin1))
+
+    assert result.passed
+
+
+def test_off_path_result_fails_naming_the_found_path_when_the_tool_is_also_elsewhere(tmp_path, bin1):
+    other1 = tmp_path / "other1"
+    other1.mkdir()
+    write_stand_in(bin1, "tool1", "echo v1")
+    write_stand_in(other1, "tool1", "echo v1")
+
+    result = tools.off_path_result("tool1", bin1, {"PATH": f"{bin1}{os.pathsep}{other1}"})
+
+    assert not result.passed
+    assert str(other1 / "tool1") in result.detail
+    assert str(other1 / "tool1") in result.hint
+    assert hints.rebuild_hint() in result.hint
+
+
+def test_off_path_result_fails_when_the_tool_is_only_in_another_folder(tmp_path, bin1):
+    other1 = tmp_path / "other1"
+    other1.mkdir()
+    write_stand_in(other1, "tool1", "echo v1")
+
+    result = tools.off_path_result("tool1", bin1, {"PATH": str(other1)})
+
+    assert not result.passed
+    assert str(other1 / "tool1") in result.detail

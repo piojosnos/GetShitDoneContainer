@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# H-34: sbx-selfcheck passes in a Claude and a Cursor test sandbox
+# H-34: sbx-init and sbx-selfcheck pass in a Claude and a Cursor test sandbox
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; starts and removes a Cursor test sandbox
+# Runs sbx-init first in each sandbox, because the self-check expects an
+# initialised sandbox.
 # A fresh sandbox correctly fails the git identity and login checks, so this
 # plants a git identity and a fake login before each run. The Cursor sandbox
 # runs on its own folder with a space in its path and its own registry inside
@@ -10,6 +12,10 @@
 # every sbx- container. The test images are always built with a root certificate,
 # so no certificate check may print that none was requested; that would mean the
 # build lost the certificate and its fingerprint together.
+# In the Cursor test sandbox, H-34 also checks that the agents folder reaches a
+# login shell inside an sbx-cursor session and no plain login shell; H-27 does the
+# same for Claude in its fresh container. This is the only check that starts a
+# Cursor sandbox, hence the split.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -24,8 +30,10 @@ host_init
 # and in claude/selfcheck/ or cursor/selfcheck/; an inventory test in
 # tests/selftest/selfcheck keeps them equal.
 # ------------------------------------------------------------------------------
-expectedClaudeCount=53
-expectedCursorCount=51
+expectedClaudeCount=55
+expectedCursorCount=53
+expectedClaudeStepCount=4
+expectedCursorStepCount=5
 
 cursorName=hosttest-cursor
 cursorContainer=sbx-hosttest-cursor
@@ -59,6 +67,28 @@ plant_fake_login() {
   if ! printf '{"fake":"%s"}\n' "$plantText" >"$1"; then
     add_problem "could not write the fake login file $1"
   fi
+}
+
+# ------------------------------------------------------------------------------
+# run_init CONTAINER OUTPUT_FILE EXPECTED_COUNT LABEL: runs sbx-init
+# ------------------------------------------------------------------------------
+# The self-check expects an initialised sandbox. Adds a problem when the exit
+# status is not 0 or the last line is not the summary with EXPECTED_COUNT steps.
+# ------------------------------------------------------------------------------
+run_init() {
+  local initStatus expectedLine
+
+  expectedLine="sbx-init: $3 steps passed; run sbx-selfcheck to check the sandbox"
+  run_timeout 600 docker exec "$1" sbx-init >"$2" 2>&1 </dev/null
+  initStatus=$?
+
+  if [ "$initStatus" -ne 0 ]; then
+    add_problem "$4: sbx-init exited $initStatus; output: $2"
+  elif [ "$(tail -n 1 "$2" 2>/dev/null)" != "$expectedLine" ]; then
+    add_problem "$4: the last sbx-init line is not '$expectedLine'; output: $2"
+  fi
+
+  info "H-34 $4: $(tail -n 1 "$2" 2>/dev/null)"
 }
 
 # ------------------------------------------------------------------------------
@@ -138,7 +168,7 @@ check_selfcheck_output() {
 }
 
 # ------------------------------------------------------------------------------
-# check_certificate_requested LABEL OUTPUT_FILE: no certificate check says none was requested
+# check_certificate_requested LABEL OUTPUT_FILE: no check says none was requested
 # ------------------------------------------------------------------------------
 # Always returns 0 and reports only through add_problem. A FAIL line is already
 # reported by check_selfcheck_output.
@@ -165,11 +195,12 @@ report_selfcheck_summary() {
 }
 
 # ------------------------------------------------------------------------------
-# check_claude_sandbox: runs sbx-selfcheck in the Claude test sandbox
+# check_claude_sandbox: sbx-init again, then sbx-selfcheck, in the Claude sandbox
 # ------------------------------------------------------------------------------
 check_claude_sandbox() {
   local outputFile=$RUN/logs/h34-claude.out
 
+  run_init "$CONTAINER" "$RUN/logs/h34-claude-init.out" "$expectedClaudeStepCount" "Claude test sandbox init"
   plant_identity "$CONTAINER"
   plant_fake_login "$RUN/state/claude/.credentials.json"
   run_selfcheck "$CONTAINER" "$outputFile"
@@ -182,7 +213,7 @@ check_claude_sandbox() {
 # ------------------------------------------------------------------------------
 # start_cursor_sandbox: registers, clones the bundle for and starts the sandbox
 # ------------------------------------------------------------------------------
-# The clone must exist before the start, so the start links its skills.
+# The clone must exist before sbx-init runs, so it links the skills.
 # ------------------------------------------------------------------------------
 start_cursor_sandbox() {
   run_sbx h34-add sbx-add "$cursorName" "$sbxDir" cursor
@@ -213,7 +244,7 @@ start_cursor_sandbox() {
 }
 
 # ------------------------------------------------------------------------------
-# check_cursor_sandbox: runs sbx-selfcheck in the Cursor test sandbox
+# check_cursor_sandbox: sbx-init, then sbx-selfcheck, in the Cursor sandbox
 # ------------------------------------------------------------------------------
 # A failed start has already recorded its problem, so nothing more runs.
 # ------------------------------------------------------------------------------
@@ -224,6 +255,8 @@ check_cursor_sandbox() {
     return 0
   fi
 
+  run_init "$cursorContainer" "$RUN/logs/h34-cursor-init.out" "$expectedCursorStepCount" "Cursor test sandbox init"
+  check_cursor_login_shells
   plant_identity "$cursorContainer"
   plant_fake_login "$sbxDir/state/cursor/auth.json"
   run_selfcheck "$cursorContainer" "$outputFile"
@@ -231,6 +264,40 @@ check_cursor_sandbox() {
   check_selfcheck_output "Cursor test sandbox" "$outputFile" "$expectedCursorCount"
   check_certificate_requested "Cursor test sandbox" "$outputFile"
   report_selfcheck_summary "Cursor test sandbox" "$outputFile"
+}
+
+# ------------------------------------------------------------------------------
+# check_cursor_login_shells: a login shell finds cursor-agent only in a session
+# ------------------------------------------------------------------------------
+# The stand-in cursor-agent in /tmp replaces its own folder at the front of the
+# PATH with the agents folder, which is the PATH the wrapper hands the real
+# agent, then starts the login shell. The image's login files run for real.
+# ------------------------------------------------------------------------------
+check_cursor_login_shells() {
+  local scriptText sessionFile plainFile sessionStatus plainStatus
+
+  sessionFile=$RUN/logs/h34-cursor-session-login.out
+  plainFile=$RUN/logs/h34-cursor-plain-login.out
+  IFS= read -r -d '' scriptText <<'SCRIPT' || true
+mkdir -p /tmp/h34-agent-bin1
+printf '%s\n' '#!/bin/sh' 'PATH=/opt/sbx/agents/bin:${PATH#/tmp/h34-agent-bin1:}' 'export PATH' "exec bash -lc 'command -v cursor-agent'" >/tmp/h34-agent-bin1/cursor-agent
+chmod 755 /tmp/h34-agent-bin1/cursor-agent
+SBX_AGENT_BIN_DIR=/tmp/h34-agent-bin1 exec sbx-cursor
+SCRIPT
+
+  run_timeout 60 docker exec "$cursorContainer" bash -c "$scriptText" >"$sessionFile" 2>&1 </dev/null
+  sessionStatus=$?
+
+  if [ "$sessionStatus" -ne 0 ] || [ "$(cat "$sessionFile" 2>/dev/null)" != "/opt/sbx/agents/bin/cursor-agent" ]; then
+    add_problem "a login shell inside an sbx-cursor session did not find /opt/sbx/agents/bin/cursor-agent (exit $sessionStatus); a login shell may have reset the PATH the wrapper set; output: $sessionFile"
+  fi
+
+  run_timeout 60 docker exec "$cursorContainer" bash -lc 'command -v cursor-agent' >"$plainFile" 2>&1 </dev/null
+  plainStatus=$?
+
+  if [ "$plainStatus" -ne 1 ] || [ -s "$plainFile" ]; then
+    add_problem "a plain login shell in the Cursor test sandbox found cursor-agent (exit $plainStatus); the agent must live off the PATH; output: $plainFile"
+  fi
 }
 
 # ------------------------------------------------------------------------------
@@ -267,4 +334,4 @@ check_claude_sandbox
 check_cursor_sandbox
 remove_cursor_sandbox
 report_check H-34 "sbx-selfcheck failed, printed the wrong number of checks, or the Cursor test sandbox did not start or go away" \
-  "sbx-selfcheck printed $expectedClaudeCount PASS lines in the Claude test sandbox and $expectedCursorCount in a Cursor test sandbox, and the Cursor test sandbox is gone"
+  "sbx-selfcheck printed $expectedClaudeCount PASS lines in the Claude test sandbox and $expectedCursorCount in a Cursor test sandbox, a login shell inside an sbx-cursor session found cursor-agent in /opt/sbx/agents/bin and a plain login shell did not, and the Cursor test sandbox is gone"

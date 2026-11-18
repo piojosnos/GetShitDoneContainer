@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # Tests of the agent config result
 # ------------------------------------------------------------------------------
-# Real files inside tmp_path. A planted login token must show up nowhere in a result.
+# Real files inside tmp_path. A planted login token must not show in a result.
 # ------------------------------------------------------------------------------
 
 from pathlib import Path
@@ -94,9 +94,9 @@ def test_gsd_synced_result_fails_for_another_version_and_for_a_missing_file(tmp_
 
     assert not other_result.passed
     assert "1.14.0" in other_result.detail
-    assert other_result.hint.startswith(hints.restart_hint())
+    assert other_result.hint == hints.init_hint()
     assert not missing_result.passed
-    assert missing_result.hint.startswith(hints.restart_hint())
+    assert missing_result.hint == hints.init_hint()
 
 
 def test_gsd_synced_result_fails_when_the_pin_is_missing(tmp_path):

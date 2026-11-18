@@ -17,8 +17,8 @@ came from this project's own memories. I want each piece of guidance to live in 
 one place.
 
 1. Read every file in ~/.claude/rules/ and every SKILL.md under ~/.claude/skills/ that
-   is listed in ~/.claude/.best-practices-skills. These are the bundle, links into the
-   clone at /home/sandbox/workspace/best-practices; do not edit them during this task.
+   is a link into the clone at /home/sandbox/workspace/best-practices. These are the
+   bundle; do not edit them during this task.
 2. Read all of your memories for this project, the project's CLAUDE.md (repo root and
    .claude/CLAUDE.md, if present) and ~/.claude/CLAUDE.md.
 3. Sort every memory and every CLAUDE.md item into one of these groups:

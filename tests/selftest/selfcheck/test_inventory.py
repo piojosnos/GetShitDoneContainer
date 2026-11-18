@@ -21,9 +21,9 @@ from helpers import SHARED_CHECKS_DIR, agent_checks_dir
 
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 NAME_FILE_PATTERN = re.compile(r"^[0-9]{3}_[a-z0-9_]+\.py$")
-SHARED_CHECK_COUNT = 41
-CLAUDE_CHECK_COUNT = 12
-CURSOR_CHECK_COUNT = 10
+SHARED_CHECK_COUNT = 42
+CLAUDE_CHECK_COUNT = 13
+CURSOR_CHECK_COUNT = 11
 
 
 def expected_count(repo_dir: Path, constant_name: str) -> int:
@@ -100,6 +100,7 @@ def test_the_shared_list_holds_the_checks_in_file_name_order(shared_check_list, 
         "project-folder",
         "state-folders",
         "state-writable",
+        "init-marker",
         "no-root-owned-state",
         "user-sandbox",
         "home-layout",
@@ -158,9 +159,10 @@ def test_every_shared_check_file_is_named_with_a_three_digit_prefix_and_ends_in_
         assert "\nCHECK_LIST" in check_file.read_text(), check_file.name
 
 
-def test_the_claude_check_names_are_the_twelve_in_order(agent_check_list_of, check_name_list_of):
+def test_the_claude_check_names_are_the_thirteen_in_order(agent_check_list_of, check_name_list_of):
     assert check_name_list_of(agent_check_list_of("claude")) == [
         "tool-claude",
+        "claude-off-path",
         "tool-ccusage",
         "claude-env",
         "claude-home-links",
@@ -175,9 +177,10 @@ def test_the_claude_check_names_are_the_twelve_in_order(agent_check_list_of, che
     ]
 
 
-def test_the_cursor_check_names_are_the_ten_in_order(agent_check_list_of, check_name_list_of):
+def test_the_cursor_check_names_are_the_eleven_in_order(agent_check_list_of, check_name_list_of):
     assert check_name_list_of(agent_check_list_of("cursor")) == [
         "tool-cursor-agent",
+        "cursor-off-path",
         "cursor-env",
         "cursor-home-links",
         "cursor-self-update-off",

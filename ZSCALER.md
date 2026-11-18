@@ -8,7 +8,7 @@
 
 Docker Desktop, Settings, General, Virtual Machine Manager: pick **Docker VMM**, then Apply & restart.
 
-- With the Apple Virtualization Framework the sandbox builds but does not start: the start hook stops with `EACCES, Permission denied '/home/sandbox/workspace/state/claude/gsd-core/commands/gsd'`.
+- With the Apple Virtualization Framework the sandbox builds and starts, but `sbx-init` FAILs its GSD step with `EACCES, Permission denied '/home/sandbox/workspace/state/claude/gsd-core/commands/gsd'` in the installer log.
 
 ## 2. Update the tools clone
 
@@ -68,6 +68,12 @@ sbx-shell NAME
 In the sandbox shell, one line at a time:
 
 ```bash
+sbx-init
+```
+
+Expect: a last line `sbx-init: N steps passed; run sbx-selfcheck to check the sandbox`. Only the best-practices step may FAIL, because there is no clone yet; the next two lines fix that.
+
+```bash
 sbx-gh-login
 ```
 
@@ -108,10 +114,10 @@ Log in, send one message, then `/exit`.
 In a Cursor sandbox, run this instead of `sbx-claude`:
 
 ```bash
-cursor-agent login
+sbx-cursor login
 ```
 
-Open the printed link in the Mac browser, then start `cursor-agent`, send one prompt and exit.
+Open the printed link in the Mac browser, then start `sbx-cursor`, send one prompt and exit.
 
 - The proxy must pass three Cursor hosts: `downloads.cursor.com` (the build), `cursor.com` (the login page) and `api2.cursor.sh` (the prompts).
 
@@ -136,6 +142,6 @@ None may print `curl: (60)`, `UNABLE_TO_VERIFY_LEAF_SIGNATURE`, `CERTIFICATE_VER
 | `curl: (60)` during the build | The variable is missing in that terminal. Run `echo "$SBX_CA_CERT"`; open a new terminal if it is empty. |
 | `build.sh: SBX_CA_CERT ...` | The rest of the line says what is wrong. It must be an absolute path to a readable PEM file. Nothing was built. |
 | `the build failed; sbx-NAME was left as it was` | Read the build output above it. The sandbox still runs on the old image. |
-| `EACCES ... gsd-core/commands/gsd` at the start | Switch Docker Desktop to Docker VMM (step 1), then `sbx-start NAME`. |
+| `FAIL: ...-gsd-sync` with `EACCES ... gsd-core/commands/gsd` in the log | Switch Docker Desktop to Docker VMM (step 1), then `sbx-start NAME` and `sbx-init`. |
 | `ccusage` cannot fetch its price table | Add `--offline`. |
 | `UNABLE_TO_VERIFY_LEAF_SIGNATURE` from a Node program run with `docker exec` | Run it from `sbx-shell`. |
