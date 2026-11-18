@@ -234,7 +234,7 @@ Plans:
 **Requirements**: TBD (decisions D-01 to D-19 in 09.1-CONTEXT.md are the contract)
 **Depends on**: Phase 9
 
-**Plans**: 8/14 plans executed
+**Plans**: 9/14 plans executed
 
 Plans:
 **Wave 1**
@@ -260,7 +260,7 @@ Plans:
 - [x] 09.1-08-PLAN.md: directory, host scripts and the sbx selftest (wave 7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 09.1-09-PLAN.md: directory, host tests and guard; H-10 renamed (wave 8)
+- [x] 09.1-09-PLAN.md: directory, host tests and guard; H-10 renamed (wave 8)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 - [ ] 09.1-10-PLAN.md: remaining pairs: `sbx-selfcheck` bug hint, image-root-owned checks, agent wrapper wording, `AGENT_CONFIG_DIR`, selftest and spelling (wave 9)
