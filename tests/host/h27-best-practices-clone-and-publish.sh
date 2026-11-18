@@ -12,7 +12,7 @@
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
-. "$(dirname "$0")/lib-bundle.sh"
+. "$(dirname "$0")/lib-best-practices.sh"
 host_init
 
 h27Dir=$RUN/h27-$$-$(date +%s)
@@ -35,7 +35,7 @@ require_run_folder() {
 prepare_folder() {
   mkdir -p "$h27Dir/hosttest" "$h27Dir/state"
 
-  if ! git clone -q --bare "$RUN/bundle-origin.git" "$h27Dir/bundle-origin.git" >"$h27Dir/prepare.log" 2>&1; then
+  if ! git clone -q --bare "$RUN/best-practices-origin.git" "$h27Dir/best-practices-origin.git" >"$h27Dir/prepare.log" 2>&1; then
     fail H-27 "could not copy the fixture origin into $h27Dir" "log: $h27Dir/prepare.log"
     return 1
   fi
@@ -106,7 +106,7 @@ step missing $?
 SCRIPT
 
   run_timeout 180 docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true \
-    -e SBX_NAME=hosttest -e BEST_PRACTICES_REPO_URL=/home/sandbox/workspace/bundle-origin.git \
+    -e SBX_NAME=hosttest -e BEST_PRACTICES_REPO_URL=/home/sandbox/workspace/best-practices-origin.git \
     --mount "type=bind,source=$h27Dir,target=/home/sandbox/workspace" \
     "$CLAUDE_IMAGE" bash -c "$scriptText" </dev/null >"$h27Dir/run.log" 2>&1
   runStatus=$?
@@ -275,7 +275,7 @@ check_clone_and_links() {
 check_read_through_link() {
   check_step read 0
 
-  if ! diff "$HOST_DIR/support/bundle/rules/sbx-fixture-always.md" "$h27Dir/through-link.out" >/dev/null 2>&1; then
+  if ! diff "$HOST_DIR/support/best-practices/rules/sbx-fixture-always.md" "$h27Dir/through-link.out" >/dev/null 2>&1; then
     add_problem "the rule read through state/claude/rules differs from the fixture; got: $(file_head through-link.out)"
   fi
 }
@@ -302,7 +302,7 @@ check_second_clone_refused() {
 # Checks the clone's remote is the given URL, with no credentials in it
 # ------------------------------------------------------------------------------
 check_remote() {
-  if ! grep -Fxq "REMOTE /home/sandbox/workspace/bundle-origin.git" "$h27Dir/run.log"; then
+  if ! grep -Fxq "REMOTE /home/sandbox/workspace/best-practices-origin.git" "$h27Dir/run.log"; then
     add_problem "the clone's remote is not the given URL; run log: $(grep '^REMOTE ' "$h27Dir/run.log" | head -n 1)"
   fi
 }
@@ -315,12 +315,12 @@ check_push() {
 
   check_step push 0
 
-  if ! git -C "$h27Dir/bundle-origin.git" rev-parse --verify -q refs/heads/h27-change >/dev/null 2>&1; then
+  if ! git -C "$h27Dir/best-practices-origin.git" rev-parse --verify -q refs/heads/h27-change >/dev/null 2>&1; then
     add_problem "the branch h27-change is not in the origin; push output: $(file_head push.out)"
   fi
 
-  originMain=$(git -C "$h27Dir/bundle-origin.git" rev-parse main 2>/dev/null)
-  runMain=$(git -C "$RUN/bundle-origin.git" rev-parse main 2>/dev/null)
+  originMain=$(git -C "$h27Dir/best-practices-origin.git" rev-parse main 2>/dev/null)
+  runMain=$(git -C "$RUN/best-practices-origin.git" rev-parse main 2>/dev/null)
 
   if [ -z "$originMain" ] || [ "$originMain" != "$runMain" ]; then
     add_problem "main of the pushed origin is '$originMain'; the run's origin has '$runMain'"

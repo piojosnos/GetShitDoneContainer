@@ -7,7 +7,7 @@
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
-. "$(dirname "$0")/lib-bundle.sh"
+. "$(dirname "$0")/lib-best-practices.sh"
 host_init
 
 cloneDir=$RUN/best-practices
@@ -68,14 +68,14 @@ check_pull_is_live() {
   local otherDir=$RUN/h16-other-$$
   local seenText
 
-  git_step "cloning the origin for the pushed commit" git clone -q "$RUN/bundle-origin.git" "$otherDir" || return
+  git_step "cloning the origin for the pushed commit" git clone -q "$RUN/best-practices-origin.git" "$otherDir" || return
   printf '%s\n' "$sentinelText" >"$otherDir/rules/h16-pulled.md"
   git_step "adding the pulled rule" git -C "$otherDir" add rules/h16-pulled.md || return
   git_step "committing the pulled rule" git -C "$otherDir" -c user.name=sbx-hosttest \
     -c user.email=sbx-hosttest@example.invalid -c commit.gpgsign=false commit -q -m "h16 pulled rule" || return
   git_step "pushing the pulled rule to the origin" git -C "$otherDir" push -q origin main || return
   git_step "pulling in the sandbox" in_container git -C /home/sandbox/workspace/best-practices \
-    pull -q --ff-only /home/sandbox/workspace/bundle-origin.git main || return
+    pull -q --ff-only /home/sandbox/workspace/best-practices-origin.git main || return
 
   seenText=$(in_container cat /home/sandbox/workspace/state/claude/rules/h16-pulled.md)
 
@@ -204,7 +204,7 @@ restore_after_clash() {
     add_problem "sbx-init exited $restoreStatus after the planted folders were moved aside; expected 0; output: $restoreFile"
   fi
 
-  check_bundle_links "$syncedDir" "$cloneDir"
+  check_best_practices_links "$syncedDir" "$cloneDir"
 }
 
 # ------------------------------------------------------------------------------
@@ -217,7 +217,7 @@ check_edit_is_live
 check_pull_is_live
 plant_files
 restart_test_sandbox H-16 h16-down.log || exit 1
-check_bundle_links "$syncedDir" "$cloneDir"
+check_best_practices_links "$syncedDir" "$cloneDir"
 check_dropped_skill_gone
 check_clone_kept
 check_user_files_spared

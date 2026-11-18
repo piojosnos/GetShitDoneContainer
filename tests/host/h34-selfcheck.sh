@@ -21,7 +21,7 @@ set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 . "$(dirname "$0")/lib-sbx.sh"
-. "$(dirname "$0")/lib-bundle.sh"
+. "$(dirname "$0")/lib-best-practices.sh"
 
 # ------------------------------------------------------------------------------
 # Expected check counts: the shared checks plus the agent's own
@@ -211,7 +211,7 @@ check_claude_sandbox() {
 }
 
 # ------------------------------------------------------------------------------
-# start_cursor_sandbox: registers, clones the bundle for and starts the sandbox
+# start_cursor_sandbox: registers, clones the best-practices repo for and starts the sandbox
 # ------------------------------------------------------------------------------
 # The clone must exist before sbx-init runs, so it links the skills.
 # ------------------------------------------------------------------------------
@@ -226,8 +226,8 @@ start_cursor_sandbox() {
 
   cursorAdded=1
 
-  if ! make_bundle_clone "$RUN/bundle-origin.git" "$sbxDir/best-practices" >"$RUN/logs/h34-clone.log" 2>&1; then
-    add_problem "could not clone the fixture bundle for the Cursor test sandbox; log: $RUN/logs/h34-clone.log"
+  if ! make_best_practices_clone "$RUN/best-practices-origin.git" "$sbxDir/best-practices" >"$RUN/logs/h34-clone.log" 2>&1; then
+    add_problem "could not clone the fixture best-practices repo for the Cursor test sandbox; log: $RUN/logs/h34-clone.log"
 
     return 1
   fi

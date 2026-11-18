@@ -1,34 +1,34 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Shared bundle helpers for the host tests: the fixture clone and its links
+# Shared best-practices helpers for the host tests: the fixture clone and its links
 # ------------------------------------------------------------------------------
 # Sourced after lib.sh; runs nothing. Fixture commits use a test identity.
 # The Mac user's git identity and GitHub login are never used.
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# make_bundle_origin ORIGIN_DIR: a local bare repo holding the fixture bundle
+# make_best_practices_origin ORIGIN_DIR: a local bare repo holding the fixture rules and skills
 # ------------------------------------------------------------------------------
 # A seed folder next to ORIGIN_DIR gets one commit on main; ORIGIN_DIR is a bare
 # clone of it, so its HEAD names main. Returns non-zero on any failure.
 # ------------------------------------------------------------------------------
-make_bundle_origin() {
+make_best_practices_origin() {
   local originDir=$1
   local seedDir=$originDir.seed
 
   mkdir -p "$seedDir" || return 1
-  cp -R "$HOST_DIR/support/bundle/." "$seedDir/" || return 1
+  cp -R "$HOST_DIR/support/best-practices/." "$seedDir/" || return 1
   git -C "$seedDir" init -q || return 1
   git -C "$seedDir" symbolic-ref HEAD refs/heads/main || return 1
   git -C "$seedDir" add -A || return 1
-  git -C "$seedDir" -c user.name=sbx-hosttest -c user.email=sbx-hosttest@example.invalid -c commit.gpgsign=false commit -q -m "fixture bundle" || return 1
+  git -C "$seedDir" -c user.name=sbx-hosttest -c user.email=sbx-hosttest@example.invalid -c commit.gpgsign=false commit -q -m "fixture best-practices repo" || return 1
   git clone -q --bare "$seedDir" "$originDir" || return 1
 }
 
 # ------------------------------------------------------------------------------
-# make_bundle_clone ORIGIN_DIR CLONE_DIR: the sandbox's own clone of the origin
+# make_best_practices_clone ORIGIN_DIR CLONE_DIR: the sandbox's own clone of the origin
 # ------------------------------------------------------------------------------
-make_bundle_clone() {
+make_best_practices_clone() {
   git clone -q "$1" "$2"
 }
 
@@ -46,14 +46,14 @@ clone_skill_names() {
 }
 
 # ------------------------------------------------------------------------------
-# check_bundle_links CONFIG_DIR CLONE_DIR: state/claude links into the clone
+# check_best_practices_links CONFIG_DIR CLONE_DIR: state/claude links into the clone
 # ------------------------------------------------------------------------------
 # Reports by add_problem and prints nothing itself. The links are relative, so
 # they must also resolve on the Mac side of the bind mount. Only the links are
 # compared with the clone; a link into the clone for a skill the clone dropped
 # is a problem.
 # ------------------------------------------------------------------------------
-check_bundle_links() {
+check_best_practices_links() {
   local configDir=$1
   local cloneDir=$2
   local linkText rulesDiff skillName skillEntry entryName

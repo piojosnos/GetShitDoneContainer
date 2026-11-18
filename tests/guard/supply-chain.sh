@@ -11,7 +11,7 @@ set -u
 # no_compromised_gsd_package: GSD comes only from @opengsd/gsd-core
 # ------------------------------------------------------------------------------
 no_compromised_gsd_package() {
-  nowhere_matches 'get-shit-done-cc|gsd-build' $SANDBOX_FILES base/bin/* claude/bin/* cursor/bin/* base/init/sbx-init base/init/*.py base/init/steps/*.py claude/init/*.py cursor/init/*.py tests/selftest/init/*.py claude/managed-settings.json README.md MIGRATION.md tests/host-checklist.md tests/host/*.sh tests/host/support/bundle/rules/* tests/host/support/bundle/skills/*/* tests/selftest/*.sh tests/selftest/*/*.sh base/selfcheck/sbx-selfcheck base/selfcheck/*.py claude/selfcheck/*.py cursor/selfcheck/*.py tests/selftest/selfcheck/*.py pyproject.toml uv.lock
+  nowhere_matches 'get-shit-done-cc|gsd-build' $SANDBOX_FILES base/bin/* claude/bin/* cursor/bin/* base/init/sbx-init base/init/*.py base/init/steps/*.py claude/init/*.py cursor/init/*.py tests/selftest/init/*.py claude/managed-settings.json README.md MIGRATION.md tests/host-checklist.md tests/host/*.sh tests/host/support/best-practices/rules/* tests/host/support/best-practices/skills/*/* tests/selftest/*.sh tests/selftest/*/*.sh base/selfcheck/sbx-selfcheck base/selfcheck/*.py claude/selfcheck/*.py cursor/selfcheck/*.py tests/selftest/selfcheck/*.py pyproject.toml uv.lock
 }
 
 # ------------------------------------------------------------------------------
