@@ -234,7 +234,7 @@ Plans:
 **Requirements**: TBD (decisions D-01 to D-19 in 09.1-CONTEXT.md are the contract)
 **Depends on**: Phase 9
 
-**Plans**: 2/14 plans executed
+**Plans**: 3/14 plans executed
 
 Plans:
 **Wave 1**
@@ -242,7 +242,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [x] 09.1-02-PLAN.md: the best-practices repo rule loses its sandbox details, on its own branch in that repo (wave 2)
-- [ ] 09.1-03-PLAN.md: the agreed glossary recorded; the clone command, its variable, the repo URL pin and the environment check renamed, with the MIGRATION note (wave 2)
+- [x] 09.1-03-PLAN.md: the agreed glossary recorded; the clone command, its variable, the repo URL pin and the environment check renamed, with the MIGRATION note (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 09.1-04-PLAN.md: the best-practices links module, link and no-copy checks, host test library, H-27 and the fixture repo renamed; the guard's scan list follows (wave 3)
