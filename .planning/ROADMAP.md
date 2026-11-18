@@ -234,7 +234,7 @@ Plans:
 **Requirements**: TBD (decisions D-01 to D-19 in 09.1-CONTEXT.md are the contract)
 **Depends on**: Phase 9
 
-**Plans**: 10/14 plans executed
+**Plans**: 11/14 plans executed
 
 Plans:
 **Wave 1**
@@ -266,7 +266,7 @@ Plans:
 - [x] 09.1-10-PLAN.md: remaining pairs: `sbx-selfcheck` bug hint, image-root-owned checks, agent wrapper wording, `AGENT_CONFIG_DIR`, selftest and spelling (wave 9)
 
 **Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 09.1-11-PLAN.md: README, MIGRATION, ZSCALER, the memory prompt and the test docs follow the glossary (wave 10)
+- [x] 09.1-11-PLAN.md: README, MIGRATION, ZSCALER, the memory prompt and the test docs follow the glossary (wave 10)
 
 **Wave 11** *(blocked on Wave 10 completion)*
 - [ ] 09.1-12-PLAN.md: live planning docs (PROJECT, open requirements, future roadmap text, two todos) (wave 11)
