@@ -51,7 +51,7 @@ def test_root_owned_state_passes_on_a_tree_owned_by_another_uid(state_tree):
     assert result.detail == "no root-owned path under state/"
 
 
-def test_a_root_owned_path_in_a_gsd_core_folder_fails_the_check(tmp_path):
+def test_a_root_owned_path_in_a_gsd_core_dir_fails_the_check(tmp_path):
     state1 = tmp_path / "state1"
     write_file(state1 / "sub1" / "gsd-core" / "file1")
 
@@ -61,7 +61,7 @@ def test_a_root_owned_path_in_a_gsd_core_folder_fails_the_check(tmp_path):
     assert "sub1/gsd-core/file1" in result.detail
 
 
-def test_paths_in_the_skipped_cache_folders_are_not_listed(tmp_path):
+def test_paths_in_the_skipped_cache_dirs_are_not_listed(tmp_path):
     state1 = tmp_path / "state1"
     write_file(state1 / "cache" / "npm" / "file1")
     write_file(state1 / "m2" / "file2")
@@ -108,8 +108,8 @@ def test_root_owned_state_prints_the_host_owner_fix_under_its_fail_line(tmp_path
     )
 
 
-@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 folder")
-def test_root_owned_state_names_an_unreadable_folder_with_the_host_fix(tmp_path, restorable_mode):
+@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 directory")
+def test_root_owned_state_names_an_unreadable_dir_with_the_host_fix(tmp_path, restorable_mode):
     state1 = tmp_path / "state1"
     write_file(state1 / "sub1" / "private1" / "file1")
     restorable_mode(state1 / "sub1" / "private1", 0o000)
@@ -124,8 +124,8 @@ def test_root_owned_state_names_an_unreadable_folder_with_the_host_fix(tmp_path,
     assert str(state1) in result.hint
 
 
-@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 444 folder")
-def test_root_owned_state_prints_the_owner_fix_for_a_folder_it_cannot_search(tmp_path, restorable_mode, agents1):
+@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 444 directory")
+def test_root_owned_state_prints_the_owner_fix_for_a_dir_it_cannot_search(tmp_path, restorable_mode, agents1):
     state1 = tmp_path / "state1"
     write_file(state1 / "sub1" / "private1" / "file1")
     write_file(state1 / "sub1" / "private1" / "file2")

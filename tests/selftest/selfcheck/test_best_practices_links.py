@@ -108,7 +108,7 @@ def test_best_practices_links_result_fails_for_rules_that_is_not_a_link(tmp_path
     assert "rules" in result.detail
 
 
-def test_the_links_result_says_there_is_no_clone_when_the_clone_folder_is_absent(tmp_path):
+def test_the_links_result_says_there_is_no_clone_when_the_clone_dir_is_absent(tmp_path):
     config1 = tmp_path / "state1" / "agent1"
     config1.mkdir(parents=True)
     clone1 = tmp_path / "missing1"
@@ -123,7 +123,7 @@ def test_the_links_result_says_there_is_no_clone_when_the_clone_folder_is_absent
         assert "move it aside" not in result.hint
 
 
-def test_the_links_result_names_the_folder_a_clone_folder_lacks(tmp_path):
+def test_the_links_result_names_the_dir_a_clone_dir_lacks(tmp_path):
     config1 = tmp_path / "state1" / "agent1"
     config1.mkdir(parents=True)
     clone1 = tmp_path / "best-practices"
@@ -137,9 +137,9 @@ def test_the_links_result_names_the_folder_a_clone_folder_lacks(tmp_path):
     rules_result = best_practices_links.best_practices_links_result(config1, clone1, True)
 
     assert not skills_result.passed
-    assert skills_result.detail == f"{clone1} exists but has no skills/ folder"
+    assert skills_result.detail == f"{clone1} exists but has no skills/ directory"
     assert not rules_result.passed
-    assert rules_result.detail == f"{clone1} exists but has no rules/ folder"
+    assert rules_result.detail == f"{clone1} exists but has no rules/ directory"
 
     for result in [skills_result, rules_result]:
         assert f"git -C {clone1} pull" in result.hint
@@ -158,7 +158,7 @@ def test_best_practices_links_result_without_rules_mode_passes_on_a_tree_with_no
     assert "rules" not in result.detail
 
 
-def test_best_practices_links_result_fails_for_a_skill_link_with_the_right_text_that_misses_the_clone_folder(tmp_path):
+def test_best_practices_links_result_fails_for_a_skill_link_with_the_right_text_that_misses_the_clone_dir(tmp_path):
     config1 = tmp_path / "state1" / "agent1"
     clone1 = tmp_path / "elsewhere1" / "best-practices"
     (config1 / "skills").mkdir(parents=True)
@@ -204,7 +204,7 @@ def test_clone_failure_is_none_for_a_clone_with_what_the_agent_needs(tmp_path):
     (clone1 / "skills").mkdir(parents=True)
 
     assert best_practices_links.clone_failure(clone1, False) is None
-    assert best_practices_links.clone_failure(clone1, True).detail == f"{clone1} exists but has no rules/ folder"
+    assert best_practices_links.clone_failure(clone1, True).detail == f"{clone1} exists but has no rules/ directory"
 
 
 def test_clone_failure_gives_the_same_missing_clone_failure_for_both_needs(tmp_path):

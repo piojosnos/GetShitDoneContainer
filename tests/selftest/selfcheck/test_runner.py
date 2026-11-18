@@ -136,7 +136,7 @@ def test_agent_files_run_after_the_shared_list_sorted_by_file_name(tmp_path, gro
     ]
 
 
-def test_agent_folders_run_in_folder_name_order_and_a_loose_file_is_ignored(tmp_path):
+def test_agent_dirs_run_in_dir_name_order_and_a_loose_file_is_ignored(tmp_path):
     write_agent_file(tmp_path / "group2", "agent3")
     write_agent_file(tmp_path / "group1", "agent2")
     write_agent_file(tmp_path / "group1", "agent1")
@@ -181,7 +181,7 @@ def expected_no_agent_checks_lines(checks_dir: Path) -> list[str]:
     ]
 
 
-def test_empty_and_missing_agent_folders_fail_naming_the_folder(tmp_path, group1):
+def test_empty_and_missing_agent_dirs_fail_naming_the_dir(tmp_path, group1):
     empty_dir = tmp_path / "empty1"
     empty_dir.mkdir()
     missing_dir = tmp_path / "missing1"

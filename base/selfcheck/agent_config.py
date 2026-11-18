@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# What an agent keeps in its config folder
+# What an agent keeps in its config directory
 # ------------------------------------------------------------------------------
 # The login file and the GSD copy sbx-init syncs. The image puts this file in
 # /usr/local/lib/sbx-selfcheck/.

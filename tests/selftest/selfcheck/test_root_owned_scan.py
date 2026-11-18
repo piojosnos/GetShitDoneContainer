@@ -40,11 +40,11 @@ class FailingStatPath(type(Path())):
 # The skip set and the walk
 # ------------------------------------------------------------------------------
 
-def test_the_skip_set_holds_the_cache_and_maven_folders():
+def test_the_skip_set_holds_the_cache_and_maven_dirs():
     assert root_owned_scan.SKIPPED_STATE_DIR_SET == {"cache/npm", "cache/uv", "m2"}
 
 
-def test_scan_owned_state_skips_the_skipped_folders_and_reports_a_sync_folder_like_any_other(state_tree):
+def test_scan_owned_state_skips_the_skipped_dirs_and_reports_a_sync_dir_like_any_other(state_tree):
     path_list = root_owned_scan.scan_owned_state(state_tree, os.getuid(), {"cache/npm"})
 
     assert path_list == [
@@ -70,7 +70,7 @@ def test_scan_owned_state_reports_a_link_without_following_it(state_tree):
         assert not path.startswith("sub1/link1/")
 
 
-def test_scan_owned_state_finds_nothing_in_a_missing_state_folder(tmp_path):
+def test_scan_owned_state_finds_nothing_in_a_missing_state_dir(tmp_path):
     assert root_owned_scan.scan_owned_state(tmp_path / "state1", os.getuid(), set()) == []
 
 
@@ -93,11 +93,11 @@ def test_the_state_walk_never_opens_a_file(state_tree, restorable_mode):
 
 
 # ------------------------------------------------------------------------------
-# Unreadable folders
+# Unreadable directories
 # ------------------------------------------------------------------------------
 
-@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 folder")
-def test_scan_owned_state_marks_a_reported_folder_it_cannot_open(tmp_path, restorable_mode):
+@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 directory")
+def test_scan_owned_state_marks_a_reported_dir_it_cannot_open(tmp_path, restorable_mode):
     state1 = tmp_path / "state1"
     write_file(state1 / "sub1" / "private1" / "file1")
     restorable_mode(state1 / "sub1" / "private1", 0o000)
@@ -105,8 +105,8 @@ def test_scan_owned_state_marks_a_reported_folder_it_cannot_open(tmp_path, resto
     assert root_owned_scan.scan_owned_state(state1, os.getuid(), set()) == ["sub1", "sub1/private1 (unreadable)"]
 
 
-@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 folder")
-def test_scan_owned_state_reports_an_unreadable_folder_of_another_owner(tmp_path, restorable_mode):
+@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 directory")
+def test_scan_owned_state_reports_an_unreadable_dir_of_another_owner(tmp_path, restorable_mode):
     state1 = tmp_path / "state1"
     write_file(state1 / "sub1" / "private1" / "file1")
     restorable_mode(state1 / "sub1" / "private1", 0o000)
@@ -114,8 +114,8 @@ def test_scan_owned_state_reports_an_unreadable_folder_of_another_owner(tmp_path
     assert root_owned_scan.scan_owned_state(state1, os.getuid() + 1, set()) == ["sub1/private1 (unreadable)"]
 
 
-@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 444 folder")
-def test_scan_owned_state_marks_a_folder_it_can_list_but_not_search(tmp_path, restorable_mode):
+@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 444 directory")
+def test_scan_owned_state_marks_a_dir_it_can_list_but_not_search(tmp_path, restorable_mode):
     state1 = tmp_path / "state1"
     write_file(state1 / "sub1" / "private1" / "file1")
     write_file(state1 / "sub1" / "private1" / "file2")
@@ -124,8 +124,8 @@ def test_scan_owned_state_marks_a_folder_it_can_list_but_not_search(tmp_path, re
     assert root_owned_scan.scan_owned_state(state1, os.getuid(), set()) == ["sub1", "sub1/private1 (unreadable)"]
 
 
-@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 folder")
-def test_scan_owned_state_marks_an_unreadable_sync_folder_like_any_other(tmp_path, restorable_mode):
+@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 directory")
+def test_scan_owned_state_marks_an_unreadable_sync_dir_like_any_other(tmp_path, restorable_mode):
     state1 = tmp_path / "state1"
     write_file(state1 / "sub1" / "gsd-core" / "file1")
     restorable_mode(state1 / "sub1" / "gsd-core", 0o000)
@@ -137,7 +137,7 @@ def test_scan_owned_state_marks_an_unreadable_sync_folder_like_any_other(tmp_pat
 # The host fix
 # ------------------------------------------------------------------------------
 
-def test_owner_fix_hint_names_the_container_and_the_state_folder(tmp_path):
+def test_owner_fix_hint_names_the_container_and_the_state_dir(tmp_path):
     state1 = tmp_path / "state1"
 
     assert root_owned_scan.owner_fix_hint(state1, {"SBX_NAME": "name1"}) == (

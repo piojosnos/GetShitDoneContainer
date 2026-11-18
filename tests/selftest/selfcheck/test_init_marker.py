@@ -34,7 +34,7 @@ def test_init_marker_fails_with_the_init_hint_when_the_marker_is_missing(tmp_pat
     assert result.hint == hints.init_hint()
 
 
-def test_init_marker_fails_when_a_folder_sits_at_the_marker_path(tmp_path):
+def test_init_marker_fails_when_a_dir_sits_at_the_marker_path(tmp_path):
     marker1 = tmp_path / "marker1"
     marker1.mkdir()
 

@@ -15,7 +15,7 @@ image_paths_protected = load_shared_check("260_image_paths_protected")
 # Image roots
 # ------------------------------------------------------------------------------
 
-def test_the_sbx_commands_are_the_files_with_the_prefix_and_nothing_else_in_the_folder(tmp_path):
+def test_the_sbx_commands_are_the_files_with_the_prefix_and_nothing_else_in_the_dir(tmp_path):
     write_file(tmp_path / "bin1" / "sbx-b")
     write_file(tmp_path / "bin1" / "sbx-a")
     write_file(tmp_path / "bin1" / "uv")
@@ -24,12 +24,12 @@ def test_the_sbx_commands_are_the_files_with_the_prefix_and_nothing_else_in_the_
     assert image_roots.sbx_command_list(tmp_path / "bin1") == [tmp_path / "bin1" / "sbx-a", tmp_path / "bin1" / "sbx-b"]
 
 
-def test_a_folder_without_sbx_commands_gives_no_roots_but_the_folders(tmp_path):
+def test_a_dir_without_sbx_commands_gives_no_roots_but_the_dirs(tmp_path):
     assert image_roots.sbx_command_list(tmp_path / "missing1") == []
-    assert image_roots.base_root_list(tmp_path / "missing1") == image_roots.BASE_FOLDER_LIST
+    assert image_roots.base_root_list(tmp_path / "missing1") == image_roots.BASE_DIR_LIST
 
 
-def test_the_base_roots_are_the_library_folders_the_config_folder_the_agents_folder_and_the_sbx_commands(tmp_path):
+def test_the_base_roots_are_the_library_dirs_the_config_dir_the_agents_dir_and_the_sbx_commands(tmp_path):
     write_file(tmp_path / "bin1" / "sbx-a")
 
     assert image_roots.base_root_list(tmp_path / "bin1") == [
@@ -48,7 +48,7 @@ def test_both_launchers_are_listed():
     ]
 
 
-def test_no_start_hook_folder_is_left_in_the_roots():
+def test_no_start_hook_dir_is_left_in_the_roots():
     assert not hasattr(image_roots, "HOOK_DIR")
 
 

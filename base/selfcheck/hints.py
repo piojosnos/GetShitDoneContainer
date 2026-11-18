@@ -53,4 +53,4 @@ def init_hint(environment_map: Mapping[str, str] = os.environ) -> str:
 
 
 def state_writable_hint() -> str:
-    return "make the state folder of the sandbox writable by your host user, then run sbx-init again"
+    return "make the state directory of the sandbox writable by your host user, then run sbx-init again"

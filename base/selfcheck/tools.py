@@ -98,7 +98,7 @@ def tool_result(
     if is_under(real_path, home_root):
         return failed(
             f"{command_name} resolves to {real_path}, under {home_root}, not the image",
-            f"a copy under {home_root} hides the image's {command_name}: remove it, or take its folder off PATH in this sandbox",
+            f"a copy under {home_root} hides the image's {command_name}: remove it, or take its directory off PATH in this sandbox",
         )
 
     machine_problem = _native_machine_problem(real_path, command_name)
@@ -120,11 +120,11 @@ def tool_result(
 
 
 # ------------------------------------------------------------------------------
-# The agents folder on PATH
+# The agents directory on PATH
 # ------------------------------------------------------------------------------
-# The image keeps each agent in its own folder, off the PATH, and its wrapper puts
-# the folder first when it starts the agent. A check that runs the agent does the
-# same; a check that looks for a stray copy takes the folder out first, because
+# The image keeps each agent in its own directory, off the PATH, and its wrapper puts
+# the directory first when it starts the agent. A check that runs the agent does the
+# same; a check that looks for a stray copy takes the directory out first, because
 # the self-check can run inside an agent session whose PATH the wrapper extended.
 # ------------------------------------------------------------------------------
 

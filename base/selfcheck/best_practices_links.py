@@ -1,9 +1,9 @@
 # ------------------------------------------------------------------------------
-# Links from an agent's config folder into the best-practices clone
+# Links from an agent config directory into the best-practices clone
 # ------------------------------------------------------------------------------
 # The rules link and one link per skill. Init and the check share the link texts,
 # the skill listing, the own-link test (a link whose target lies under the clone's
-# folder), the clone failures and the passed detail. The image puts this file in
+# directory), the clone failures and the passed detail. The image puts this file in
 # /usr/local/lib/sbx-selfcheck/.
 # ------------------------------------------------------------------------------
 
@@ -69,7 +69,7 @@ def _missing_clone_result(best_practices_dir: Path) -> CheckResult:
 
 def _incomplete_clone_result(best_practices_dir: Path, needed_dir: Path) -> CheckResult:
     return failed(
-        f"{best_practices_dir} exists but has no {needed_dir.name}/ folder",
+        f"{best_practices_dir} exists but has no {needed_dir.name}/ directory",
         f"check that {best_practices_dir} is a clone of the best-practices repo: "
         f"if it is, run git -C {best_practices_dir} pull, "
         "then sbx-init; if not, move it aside, then run sbx-gh-login and sbx-best-practices-clone",
@@ -124,9 +124,9 @@ def _skill_link_problem_list(config_dir: Path, best_practices_dir: Path, skill_n
     return problem_list
 
 
-def _reaches(link: Path, folder: Path) -> bool:
+def _reaches(link: Path, dir_path: Path) -> bool:
     try:
-        return link.samefile(folder)
+        return link.samefile(dir_path)
     except OSError:
         return False
 

@@ -39,5 +39,5 @@ def test_host_hint_puts_the_action_before_the_command():
 
 def test_state_writable_hint_names_the_fix_and_no_sandbox():
     assert hints.state_writable_hint() == (
-        "make the state folder of the sandbox writable by your host user, then run sbx-init again"
+        "make the state directory of the sandbox writable by your host user, then run sbx-init again"
     )

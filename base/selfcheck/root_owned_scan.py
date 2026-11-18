@@ -19,10 +19,10 @@ SKIPPED_STATE_DIR_SET = {"cache/npm", "cache/uv", "m2"}
 
 
 # ------------------------------------------------------------------------------
-# The scan of the state folder
+# The scan of the state directory
 # ------------------------------------------------------------------------------
 
-def _mark_unreadable_folder(reported_list: list[str], relative_dir: Path) -> None:
+def _mark_unreadable_dir(reported_list: list[str], relative_dir: Path) -> None:
     if relative_dir.as_posix() in reported_list:
         reported_list.remove(relative_dir.as_posix())
 
@@ -44,8 +44,8 @@ def scan_owned_state(state_dir: Path, owner_uid: int, skipped_relative_set: set[
         return True
 
     for walk_problem in walk_tree([state_dir], scan_entry):
-        if walk_problem.kind == ProblemKind.UNREADABLE_FOLDER:
-            _mark_unreadable_folder(reported_list, walk_problem.path.relative_to(state_dir))
+        if walk_problem.kind == ProblemKind.UNREADABLE_DIR:
+            _mark_unreadable_dir(reported_list, walk_problem.path.relative_to(state_dir))
 
     return sorted(reported_list)
 

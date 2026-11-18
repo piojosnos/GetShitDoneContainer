@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Links from the home into an agent's config folder
+# Links from the home into an agent config directory
 # ------------------------------------------------------------------------------
 # The image puts this file in /usr/local/lib/sbx-selfcheck/.
 # ------------------------------------------------------------------------------

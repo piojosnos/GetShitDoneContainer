@@ -42,8 +42,8 @@ def make_good_tree(tmp_path) -> None:
     for path in [tmp_path / "root1" / "steps1" / "step1", tmp_path / "root1" / "sub1" / "file1", tmp_path / "bin1" / "uv"]:
         path.chmod(0o644)
 
-    for folder in [tmp_path / "root1", tmp_path / "root1" / "steps1", tmp_path / "root1" / "sub1", tmp_path / "bin1"]:
-        folder.chmod(0o755)
+    for dir_path in [tmp_path / "root1", tmp_path / "root1" / "steps1", tmp_path / "root1" / "sub1", tmp_path / "bin1"]:
+        dir_path.chmod(0o755)
 
 
 # ------------------------------------------------------------------------------
@@ -81,7 +81,7 @@ def test_a_file_writable_by_group_or_others_fails_and_names_its_mode(tmp_path, m
     assert f"{tmp_path / 'root1' / 'sub1' / 'file1'} is writable by group or others ({mode:o})" in result.detail
 
 
-def test_a_folder_writable_by_others_fails(tmp_path):
+def test_a_dir_writable_by_others_fails(tmp_path):
     make_good_tree(tmp_path)
     (tmp_path / "root1" / "sub1").chmod(0o757)
 
@@ -94,7 +94,7 @@ def test_a_folder_writable_by_others_fails(tmp_path):
     "relative_path",
     ["root1/launcher1", "root1/launcher2", "bin1/sbx-a", "root1/sub1"],
 )
-def test_a_launcher_an_sbx_command_and_a_folder_must_be_executable(tmp_path, relative_path):
+def test_a_launcher_an_sbx_command_and_a_dir_must_be_executable(tmp_path, relative_path):
     make_good_tree(tmp_path)
     (tmp_path / relative_path).chmod(0o644)
 
@@ -104,7 +104,7 @@ def test_a_launcher_an_sbx_command_and_a_folder_must_be_executable(tmp_path, rel
     assert f"{tmp_path / relative_path} is not executable (644)" in result.detail
 
 
-def test_a_file_in_a_step_folder_needs_no_executable_bit(tmp_path):
+def test_a_file_in_a_step_dir_needs_no_executable_bit(tmp_path):
     make_good_tree(tmp_path)
 
     result = image_ownership.image_ownership_result([tmp_path / "root1" / "steps1"], rules_for(tmp_path))
@@ -174,8 +174,8 @@ def test_a_missing_root_fails(tmp_path):
     assert f"{tmp_path / 'root1'} is missing" in result.detail
 
 
-@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 folder")
-def test_a_folder_it_cannot_open_fails(tmp_path, restorable_mode):
+@pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 directory")
+def test_a_dir_it_cannot_open_fails(tmp_path, restorable_mode):
     make_good_tree(tmp_path)
     restorable_mode(tmp_path / "root1" / "sub1", 0o000)
 

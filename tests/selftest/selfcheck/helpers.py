@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # Plain helpers the selfcheck tests share
 # ------------------------------------------------------------------------------
-# A pins file, a stand-in executable, a PATH that puts a folder first, a
+# A pins file, a stand-in executable, a PATH that puts a directory first, a
 # mountinfo file, a git environment, check file loading, an agent checks file and
 # a runner call.
 # ------------------------------------------------------------------------------
@@ -29,16 +29,16 @@ CHECK_LIST = [Check("{name}", check_{name})]
 """
 
 
-def write_stand_in(folder: Path, name: str, script_body: str) -> Path:
-    stand_in = folder / name
+def write_stand_in(dir_path: Path, name: str, script_body: str) -> Path:
+    stand_in = dir_path / name
     stand_in.write_text("#!/bin/sh\n" + script_body + "\n")
     stand_in.chmod(0o755)
 
     return stand_in
 
 
-def environment_with(folder: Path) -> dict[str, str]:
-    return {"PATH": f"{folder}{os.pathsep}{os.environ['PATH']}"}
+def environment_with(dir_path: Path) -> dict[str, str]:
+    return {"PATH": f"{dir_path}{os.pathsep}{os.environ['PATH']}"}
 
 
 def load_shared_check(name: str):

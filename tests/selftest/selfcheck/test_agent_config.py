@@ -20,8 +20,8 @@ GSD_PIN1 = "1.15.0"
 TOKEN_TEXT1 = "token1"
 
 
-def write_gsd_pin(folder: Path, version: str = GSD_PIN1) -> Path:
-    versions_file = folder / "versions1.env"
+def write_gsd_pin(dir_path: Path, version: str = GSD_PIN1) -> Path:
+    versions_file = dir_path / "versions1.env"
     versions_file.write_text(f"GSD_CORE_VERSION={version}\n")
 
     return versions_file

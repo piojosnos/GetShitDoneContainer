@@ -225,7 +225,7 @@ def test_a_list_file_from_an_older_image_is_left_byte_for_byte(tmp_path):
 # ------------------------------------------------------------------------------
 
 def incomplete_detail(clone_dir: Path, folder_name: str) -> str:
-    return f"{clone_dir} exists but has no {folder_name}/ folder"
+    return f"{clone_dir} exists but has no {folder_name}/ directory"
 
 
 def assert_incomplete_fix(hint: str, clone_dir: Path) -> None:

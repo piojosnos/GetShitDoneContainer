@@ -109,7 +109,7 @@ def test_tool_result_fails_when_the_tool_resolves_under_the_forbidden_root(bin1)
     assert "remove it" in result.hint
 
 
-def test_tool_result_passes_for_a_tool_in_a_sibling_folder_that_shares_the_root_prefix(tmp_path):
+def test_tool_result_passes_for_a_tool_in_a_sibling_dir_that_shares_the_root_prefix(tmp_path):
     root1 = tmp_path / "home1"
     sibling1 = tmp_path / "home10"
     root1.mkdir()
@@ -121,7 +121,7 @@ def test_tool_result_passes_for_a_tool_in_a_sibling_folder_that_shares_the_root_
     assert result.passed
 
 
-def test_tool_result_follows_a_link_to_the_real_file_before_judging_the_folder(tmp_path, bin1):
+def test_tool_result_follows_a_link_to_the_real_file_before_judging_the_dir(tmp_path, bin1):
     real_dir = tmp_path / "real1"
     real_dir.mkdir()
     write_stand_in(real_dir, "tool1", 'echo "tool1 1.2.3"')
@@ -170,7 +170,7 @@ def test_tool_result_without_a_version_command_passes_with_the_resolved_path_onl
 # Agent PATH
 # ------------------------------------------------------------------------------
 
-def test_agent_path_environment_puts_the_agents_folder_first_and_keeps_the_input(bin1):
+def test_agent_path_environment_puts_the_agents_dir_first_and_keeps_the_input(bin1):
     input_map = {"PATH": "/a:/b", "X": "1"}
 
     result_map = tools.agent_path_environment(bin1, input_map)
@@ -179,13 +179,13 @@ def test_agent_path_environment_puts_the_agents_folder_first_and_keeps_the_input
     assert input_map == {"PATH": "/a:/b", "X": "1"}
 
 
-def test_agent_path_environment_without_a_path_holds_the_agents_folder_alone(bin1):
+def test_agent_path_environment_without_a_path_holds_the_agents_dir_alone(bin1):
     result_map = tools.agent_path_environment(bin1, {"X": "1"})
 
     assert result_map["PATH"] == str(bin1)
 
 
-def test_off_path_result_passes_when_the_tool_is_only_in_the_agents_folder(tmp_path, bin1):
+def test_off_path_result_passes_when_the_tool_is_only_in_the_agents_dir(tmp_path, bin1):
     other1 = tmp_path / "other1"
     other1.mkdir()
     write_stand_in(bin1, "tool1", "echo v1")
@@ -196,7 +196,7 @@ def test_off_path_result_passes_when_the_tool_is_only_in_the_agents_folder(tmp_p
     assert str(bin1) in result.detail
 
 
-def test_off_path_result_passes_when_the_agents_folder_is_first_on_the_path(bin1):
+def test_off_path_result_passes_when_the_agents_dir_is_first_on_the_path(bin1):
     write_stand_in(bin1, "tool1", "echo v1")
 
     result = tools.off_path_result("tool1", bin1, environment_with(bin1))
@@ -218,7 +218,7 @@ def test_off_path_result_fails_naming_the_found_path_when_the_tool_is_also_elsew
     assert hints.rebuild_hint() in result.hint
 
 
-def test_off_path_result_fails_when_the_tool_is_only_in_another_folder(tmp_path, bin1):
+def test_off_path_result_fails_when_the_tool_is_only_in_another_dir(tmp_path, bin1):
     other1 = tmp_path / "other1"
     other1.mkdir()
     write_stand_in(other1, "tool1", "echo v1")

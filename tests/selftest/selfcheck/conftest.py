@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # Shared setup of the sbx-selfcheck tests
 # ------------------------------------------------------------------------------
-# The base selfcheck folder reaches sys.path through the pytest pythonpath
+# The base selfcheck directory reaches sys.path through the pytest pythonpath
 # setting in pyproject.toml, the way the launcher puts it there.
 # ------------------------------------------------------------------------------
 
