@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Shared by the sbx self-test groups: work folder, no Docker socket, runners
+# Shared by the sbx self-test groups: work directory, no Docker socket, runners
 # ------------------------------------------------------------------------------
 # Sourced by the groups, never run directly (functions only).
 # ------------------------------------------------------------------------------
@@ -22,7 +22,7 @@ start_group() {
 
   BIN=$REPO/bin
 
-  make_work_folder sbxtest || return 1
+  make_work_dir sbxtest || return 1
 
   SBX_CONFIG_DIR=$WORK/cfg
   export SBX_CONFIG_DIR

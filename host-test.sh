@@ -68,11 +68,11 @@ host_checks() {
 }
 
 # ------------------------------------------------------------------------------
-# find_run_dir: sets RUN to the host folder the test sandbox mounts
+# find_run_dir: sets RUN to the host directory the test sandbox mounts
 # ------------------------------------------------------------------------------
 find_run_dir() {
   RUN=$(docker container inspect -f '{{range .Mounts}}{{.Source}}{{end}}' sbx-hosttest 2>/dev/null)
-  printf 'run folder: %s\n' "${RUN:-none (the test sandbox is not running)}"
+  printf 'run directory: %s\n' "${RUN:-none (the test sandbox is not running)}"
   [ -n "$RUN" ] && [ -d "$RUN" ]
 }
 
@@ -133,7 +133,7 @@ sandbox_suites() {
 # ------------------------------------------------------------------------------
 # make_linter_standin DIR TOOL: writes DIR/TOOL that runs TOOL in the test base
 # ------------------------------------------------------------------------------
-# The stand-in mounts the current folder read-only at the same path.
+# The stand-in mounts the current directory read-only at the same path.
 # ------------------------------------------------------------------------------
 make_linter_standin() {
   printf '#!/bin/sh\nexec docker run --rm -v "$PWD:$PWD:ro" -w "$PWD" --entrypoint %s sbx-base:%s "$@"\n' "$2" "$SBX_IMAGE_TAG" > "$1/$2"
@@ -193,7 +193,7 @@ build_warnings() {
 }
 
 # ------------------------------------------------------------------------------
-# remove_sandbox: stops the test sandbox and deletes its run folder
+# remove_sandbox: stops the test sandbox and deletes its run directory
 # ------------------------------------------------------------------------------
 remove_sandbox() {
   SBX_NAME=hosttest SBX_DIR="$RUN" docker compose --env-file /dev/null -f compose.yml down </dev/null \
@@ -221,7 +221,7 @@ main() {
   run_step "context" show_context
   run_step "sbx unit tests in the host shell" host_sbx_unit_tests
   run_step "host checks" host_checks
-  run_step "run folder" find_run_dir
+  run_step "run directory" find_run_dir
 
   if [ -n "$RUN" ] && [ -d "$RUN" ]; then
     run_step "linter versions" linter_versions

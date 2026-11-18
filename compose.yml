@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# One sbx sandbox: one container, one folder mounted from the host
+# One sbx sandbox: one container, one directory mounted from the host
 # ------------------------------------------------------------------------------
 # Usage: SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo docker compose up -d --wait
 # README.md explains the variables and the sandbox name rule.
@@ -22,7 +22,7 @@ services:
     working_dir: "/home/sandbox/workspace"
     environment:
       SBX_NAME: "${SBX_NAME}"
-    # No capability is needed: non-root, all writes go to the mounted folder.
+    # No capability is needed: non-root, all writes go to the mounted directory.
     # If a host check fails only on cap_drop, remove it; keep no-new-privileges.
     security_opt:
       - no-new-privileges:true
@@ -32,10 +32,10 @@ services:
       sbx.name: "${SBX_NAME}"
     # The one mount: $SBX_DIR holds <name>/ (code) and state/ (the agent's login
     # and settings, gh, git).
-    # create_host_path: false refuses a missing folder instead of creating one.
+    # create_host_path: false refuses a missing directory instead of creating one.
     volumes:
       - type: bind
-        source: "${SBX_DIR:?SBX_DIR is required (absolute host path of the sandbox folder)}"
+        source: "${SBX_DIR:?SBX_DIR is required (absolute host path of the sandbox directory)}"
         target: /home/sandbox/workspace
         bind:
           create_host_path: false

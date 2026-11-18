@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Shared by the self-test suites: case checks, the work folder, the group runner
+# Shared by the self-test suites: case checks, work directory, group runner
 # ------------------------------------------------------------------------------
 # Usage: sourced by each suite's lib.sh and run-all.sh, never run directly.
 # Loads tests/host/lib.sh for require_no_arguments and the pin readers.
@@ -120,12 +120,12 @@ enter_repo_root() {
 }
 
 # ------------------------------------------------------------------------------
-# make_work_folder PREFIX: makes sbx-PREFIX.XXXXXX under TMPDIR as WORK
+# make_work_dir PREFIX: makes sbx-PREFIX.XXXXXX under TMPDIR as WORK
 # ------------------------------------------------------------------------------
-# It removes that folder, and only it, at exit.
+# It removes that directory, and only it, at exit.
 # ------------------------------------------------------------------------------
-make_work_folder() {
-  local physicalFolder
+make_work_dir() {
+  local physicalDir
 
   if [ -z "${1:-}" ]; then
     return 1
@@ -137,12 +137,12 @@ make_work_folder() {
   trap cleanup_work EXIT
   trap 'exit 130' INT TERM
 
-  physicalFolder=$(cd "$WORK" && pwd -P) || return 1
-  WORK=$physicalFolder
+  physicalDir=$(cd "$WORK" && pwd -P) || return 1
+  WORK=$physicalDir
 }
 
 # ------------------------------------------------------------------------------
-# cleanup_work: removes the work folder, only when its name carries the prefix
+# cleanup_work: removes the work directory, only when its name carries the prefix
 # ------------------------------------------------------------------------------
 cleanup_work() {
   if [ -z "${workPrefix:-}" ]; then

@@ -4,7 +4,7 @@
 # A tag other than local is named on stderr; local, unset and empty are quiet.
 # ------------------------------------------------------------------------------
 # Usage: bash tests/selftest/sbx/image-tag.sh (exit 0 = all pass)
-# Run by run-all.sh; its one work folder under TMPDIR is removed at exit.
+# Run by run-all.sh; its one work directory under TMPDIR is removed at exit.
 # No case reaches a Docker daemon: build.sh runs without docker on its PATH.
 # ------------------------------------------------------------------------------
 set -u
