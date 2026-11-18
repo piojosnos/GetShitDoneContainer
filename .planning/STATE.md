@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: "09.1"
 current_phase_name: Align vocabulary across code and docs
 status: executing
-stopped_at: Completed 09.1-09-PLAN.md
-last_updated: "2026-11-18T06:37:42.128Z"
+stopped_at: Completed 09.1-10-PLAN.md
+last_updated: "2026-11-18T06:41:29.674Z"
 last_activity: 2026-11-18
 last_activity_desc: Phase 09.1 execution started
-state_head: bf8f6a6ff4f5778a0dffbcfbd366ffdc3efc05bd
+state_head: dd86bb92bf9be6bd5e23d6a9f9792b2e8f774185
 progress:
   total_phases: 11
   completed_phases: 4
   total_plans: 55
-  completed_plans: 50
+  completed_plans: 51
   percent: 36
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 09.1 (Align vocabulary across code and docs) — EXECUTING
-Plan: 10 of 14
+Plan: 11 of 14
 Status: Ready to execute
 Last activity: 2026-11-18 — Phase 09.1 execution started
 
@@ -209,6 +209,7 @@ Last activity: 2026-11-18 — Phase 09.1 execution started
 | Phase 09.1 P07 | 10m | 3 tasks | 55 files |
 | Phase 09.1 P08 | 10m | 3 tasks | 16 files |
 | Phase 09.1 P09 | 10min | 3 tasks | 24 files |
+| Phase 09.1 P10 | 35m | 4 tasks | 130 files |
 
 ## Accumulated Context
 
@@ -414,6 +415,8 @@ Recent decisions affecting current work:
 - [Phase 09.1]: Host shell step is named 'sbx unit tests in the host shell' (host_sbx_unit_tests), following GLOSSARY.md over the plan text
 - [Phase 09.1]: Plan 08: sbx-add registers newSandboxDir while the library reads sandboxDir, so re-reading other registry entries cannot overwrite the directory create_dirs uses
 - [Phase 09.1]: Host checklist prose keeps its folder words for the doc plan; plan 09 changed only the H-10 row's file name
+- [Phase 09.1]: tests/selftest becomes tests/unit; the suite is called unit tests, never selftest
+- [Phase 09.1]: Python agent config directory is AGENT_CONFIG_DIR; ownership checks are image-root-owned, claude-image-root-owned, cursor-image-root-owned
 
 ### Pending Todos
 
@@ -488,8 +491,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-18T06:37:42.014Z
-Stopped at: Completed 09.1-09-PLAN.md
+Last session: 2026-11-18T06:41:29.576Z
+Stopped at: Completed 09.1-10-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
