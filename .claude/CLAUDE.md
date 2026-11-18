@@ -20,7 +20,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - **Simplicity**: Anything with logic is Python (through `uv` on the host, the image's `python3` inside); shell stays only for thin `exec` wrappers and Dockerfile `RUN` lines. Why: the v1 bash tooling grew about 10.9k lines of test shell around about 2.1k lines of product shell.
 - **Toolchains**: JDK 21 LTS, Maven, Node.js, and Python in the shared base. Why: these are the stacks the user develops in.
 - **Verification**: Docker isn't available inside the dev sandbox, so plans must include host-side manual verification steps.
-- **Coexistence** (retired in Phase 5): the old layout ran side by side with the new one until every old sandbox moved; it is now deleted, and old `cc_` containers left on the host are plain stopped containers.
+- **Coexistence** (retired): the old layout ran side by side with the new one until every old sandbox moved; it is now deleted, and old `cc_` containers left on the host are plain stopped containers.
 
 <!-- GSD:project-end -->
 
