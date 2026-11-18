@@ -20,7 +20,7 @@ unset SBXTEST_DIR
 # ------------------------------------------------------------------------------
 noSandboxCheckList="h03-variable-interpolation.sh h25-images-match-versions.sh h27-best-practices-clone-and-publish.sh"
 sandboxCheckList="h06-git-on-host-repo.sh h26-isolation-by-inspect.sh h34-selfcheck.sh h35-init-owner-and-lock.sh"
-chainCheckList="h08-history-survives-recreate.sh h16-live-clone-and-restart.sh h23-caches-survive-recreate.sh h09-rebuild-keeps-files-no-volumes.sh h28-sbx-add-start-stop.sh h29-sbx-upgrade.sh h31-sbx-shell.sh h32-sbx-list.sh h33-sbx-rm.sh h10-missing-folder-refused.sh"
+chainCheckList="h08-history-survives-recreate.sh h16-live-clone-and-restart.sh h23-caches-survive-recreate.sh h09-rebuild-keeps-files-no-volumes.sh h28-sbx-add-start-stop.sh h29-sbx-upgrade.sh h31-sbx-shell.sh h32-sbx-list.sh h33-sbx-rm.sh h10-missing-dir-refused.sh"
 
 remainingList="$noSandboxCheckList $sandboxCheckList $chainCheckList"
 passedCount=0

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# H-10: starting the sandbox on a folder that does not exist is refused
+# H-10: starting the sandbox on a directory that does not exist is refused
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; stops and restarts it
 # A FAIL can be a true finding about Compose; nothing is edited or removed.
@@ -24,12 +24,12 @@ stop_sandbox_first() {
 }
 
 # ------------------------------------------------------------------------------
-# Tries to start on the missing folder; notes whether Docker created it
+# Tries to start on the missing directory; notes whether Docker created it
 # ------------------------------------------------------------------------------
-# The folder is $RUN/does-not-exist, so the printed cleanup removes it if
+# The directory is $RUN/does-not-exist, so the printed cleanup removes it if
 # Docker creates it.
 # ------------------------------------------------------------------------------
-try_start_on_missing_folder() {
+try_start_on_missing_dir() {
   upOutput=$(run_timeout 120 env SBX_NAME=hosttest SBX_DIR="$badDir" docker compose --env-file /dev/null -f "$REPO_DIR/compose.yml" up -d --wait </dev/null 2>&1)
   upStatus=$?
   pathExists=0
@@ -53,8 +53,9 @@ restart_real_sandbox() {
 # ------------------------------------------------------------------------------
 # Reports the outcome of the start attempt
 # ------------------------------------------------------------------------------
-# PASS: refused and the folder was not created. FAIL: the folder was created,
-# the sandbox started, or it was refused for another reason (time limit, image).
+# PASS: refused and the directory was not created. FAIL: the directory was
+# created, the sandbox started, or it was refused for another reason (time
+# limit, image).
 # ------------------------------------------------------------------------------
 report_outcome() {
   local lastLines
@@ -62,7 +63,7 @@ report_outcome() {
   lastLines=$(printf '%s\n' "$upOutput" | tail -n 3 | tr '\n' ' ')
 
   if [ "$upStatus" -eq 0 ]; then
-    fail H-10 "the sandbox started on a missing folder (rc=0). Compose $composeVersion.$restartNote" \
+    fail H-10 "the sandbox started on a missing directory (rc=0). Compose $composeVersion.$restartNote" \
       "the path was $badDir; last output: $lastLines"
     return 1
   fi
@@ -70,12 +71,12 @@ report_outcome() {
   if [ "$pathExists" -eq 1 ]; then
     fail H-10 "Docker created $badDir (create_host_path ignored); the start failed with rc=$upStatus. Compose $composeVersion.$restartNote" \
       "last output: $lastLines" \
-      "the printed cleanup removes the run folder, and the path with it"
+      "the printed cleanup removes the run directory, and the path with it"
     return 1
   fi
 
   if ! printf '%s\n' "$upOutput" | grep -Eqi 'does not exist|no such file|bind source'; then
-    fail H-10 "the start failed (rc=$upStatus), but not because the folder is missing.$restartNote" \
+    fail H-10 "the start failed (rc=$upStatus), but not because the directory is missing.$restartNote" \
       "last output: $lastLines"
     return 1
   fi
@@ -85,7 +86,7 @@ report_outcome() {
     return 1
   fi
 
-  pass H-10 "a missing folder is refused (rc=$upStatus) and not created. Compose $composeVersion"
+  pass H-10 "a missing directory is refused (rc=$upStatus) and not created. Compose $composeVersion"
 }
 
 # ------------------------------------------------------------------------------
@@ -94,6 +95,6 @@ report_outcome() {
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-10 || exit 1
 stop_sandbox_first || exit 1
-try_start_on_missing_folder
+try_start_on_missing_dir
 restart_real_sandbox
 report_outcome || exit 1

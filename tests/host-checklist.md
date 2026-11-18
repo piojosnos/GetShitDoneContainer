@@ -41,7 +41,7 @@ What each check proves:
 | H-06 | Git works in the container on a repository made on the host (no dubious ownership) | `h06-git-on-host-repo.sh` | automatic |
 | H-08 | Shell history survives a recreate | `h08-history-survives-recreate.sh` | automatic |
 | H-09 | Files, a planted memory, a fake credentials file and a fake session file survive a rebuild, no volumes exist | `h09-rebuild-keeps-files-no-volumes.sh` | automatic |
-| H-10 | A missing folder is refused | `h10-missing-folder-refused.sh` | automatic |
+| H-10 | A missing folder is refused | `h10-missing-dir-refused.sh` | automatic |
 | H-16 | The clone is live: an edit on the Mac and a pull inside the sandbox show in the sandbox at once (the Mac never runs git on the clone). `sbx-init` relinks it: it links a new skill, removes the link of a dropped skill and keeps an uncommitted edit. A folder of yours named like a clone skill and a real `rules` folder are kept and reported as a FAIL, and your own skills, memories, sessions, settings keys and `CLAUDE.md` are spared | `h16-live-clone-and-restart.sh` | automatic |
 | H-23 | The npm, uv and Maven caches live in the state folder and a file in each survives a recreate | `h23-caches-survive-recreate.sh` | automatic |
 | H-25 | The `versions.env` record in the Claude test image equals the repo's, and a build without build.sh stops naming the missing pin (the Claude build gets the test base image) | `h25-images-match-versions.sh` | automatic |
