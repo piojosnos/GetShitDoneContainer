@@ -89,7 +89,7 @@ def write_versions(versions_file: Path, extra_line_list: list[str] | None = None
         "GSD_CORE_VERSION=1.15.0",
         f"TEMURIN_IMAGE={TEMURIN_PIN1}",
         "UV_IMAGE=ghcr.io/astral-sh/uv:0.12.21@sha256:abc",
-        "BUNDLE_REPO_URL=https://example.test/repo1.git",
+        "BEST_PRACTICES_REPO_URL=https://example.test/repo1.git",
     ]
 
     if extra_line_list:

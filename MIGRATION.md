@@ -209,3 +209,5 @@ A rebuild renames these, and the old names stop working (there is no alias). A r
 | Old | New | Where you meet it |
 |---|---|---|
 | `sbx-bundle-clone` | `sbx-best-practices-clone` | the sandbox shell |
+| `SBX_BUNDLE_DIR` | `SBX_BEST_PRACTICES_DIR` | the sandbox environment |
+| `BUNDLE_REPO_URL` | `BEST_PRACTICES_REPO_URL` | `versions.env` |

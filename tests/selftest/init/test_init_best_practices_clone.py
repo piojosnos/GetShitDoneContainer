@@ -57,8 +57,8 @@ def make_sandbox(base_dir: Path, init_status: int = 0) -> dict:
 
 def run_clone(sandbox: dict, origin_url: str):
     environment = dict(sandbox["environment"])
-    environment["BUNDLE_REPO_URL"] = origin_url
-    environment["SBX_BUNDLE_DIR"] = str(sandbox["clone_dir"])
+    environment["BEST_PRACTICES_REPO_URL"] = origin_url
+    environment["SBX_BEST_PRACTICES_DIR"] = str(sandbox["clone_dir"])
 
     return subprocess.run(
         ["bash", str(SCRIPT_PATH)],

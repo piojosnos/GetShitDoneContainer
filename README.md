@@ -55,7 +55,7 @@ Each step is explained below in "Scripts", "Register a sandbox", "Set up a sandb
 - In a sandbox shell, `cat /etc/sbx/versions.env` shows the pins the image was built with. `sbx-selfcheck` compares the installed tools with them.
 - A `.dockerignore` lets only `base/`, `claude/`, `cursor/` and `versions.env` into the build. The root of `SBX_CA_CERT` comes in as its own named build context, `cacert`, from a temporary folder, never through the repo folder.
 - `SBX_CA_CERT`, when set, makes `./build.sh` add that root certificate to every image (see "Behind a company HTTPS proxy"). Unset or empty changes nothing.
-- `versions.env` also holds `BUNDLE_REPO_URL`, the repo `sbx-best-practices-clone` clones. It is a setting, not a version; change it and rebuild.
+- `versions.env` also holds `BEST_PRACTICES_REPO_URL`, the repo `sbx-best-practices-clone` clones. It is a setting, not a version; change it and rebuild.
 
 ## Behind a company HTTPS proxy
 
@@ -160,7 +160,7 @@ The files stay either way. The login of the other agent starts empty, in its own
 |---|---|---|
 | `$SBX_DIR` (the one mount) | `/home/sandbox/workspace` | |
 | `$SBX_DIR/$SBX_NAME` (your code) | `/home/sandbox/workspace/$SBX_NAME` (the command runs here; shells use `-w`) | |
-| `$SBX_DIR/best-practices` (the clone) | `/home/sandbox/workspace/best-practices` | `SBX_BUNDLE_DIR` |
+| `$SBX_DIR/best-practices` (the clone) | `/home/sandbox/workspace/best-practices` | `SBX_BEST_PRACTICES_DIR` |
 | `$SBX_DIR/state/claude` | `/home/sandbox/workspace/state/claude` (also `~/.claude`) | `CLAUDE_CONFIG_DIR` |
 | `$SBX_DIR/state/cursor` | `/home/sandbox/workspace/state/cursor` (also `~/.cursor` and `~/.config/cursor`) | `CURSOR_CONFIG_DIR` |
 | `$SBX_DIR/state/shell` (holds `bash_history`) | `/home/sandbox/workspace/state/shell` | `HISTFILE` |
@@ -306,8 +306,8 @@ Every sandbox reads the same standing rules and skills (`/pr-reply`, `/merged`) 
 
 | Where | What |
 |---|---|
-| `piojosnos/claude-best-practices` (private GitHub repo) | The source: `rules/` and `skills/`, plain Markdown. Named by `BUNDLE_REPO_URL`. |
-| `$SBX_DIR/best-practices` (`/home/sandbox/workspace/best-practices`, `SBX_BUNDLE_DIR`) | This sandbox's own git clone. Usable from the Mac with the container down. |
+| `piojosnos/claude-best-practices` (private GitHub repo) | The source: `rules/` and `skills/`, plain Markdown. Named by `BEST_PRACTICES_REPO_URL`. |
+| `$SBX_DIR/best-practices` (`/home/sandbox/workspace/best-practices`, `SBX_BEST_PRACTICES_DIR`) | This sandbox's own git clone. Usable from the Mac with the container down. |
 | `$SBX_DIR/state/claude` (`~/.claude`) | Links into the clone: `rules` and one link per bundle skill |
 
 First run, once per sandbox:
@@ -316,7 +316,7 @@ First run, once per sandbox:
 |---|---|---|
 | 1 | `sbx-init` | Sets the sandbox up. With no clone yet, its best-practices step FAILs and says to clone first. |
 | 2 | `sbx-gh-login` | Logs gh in and lets git use that login over HTTPS. It also asks for the git name and email if none is set. |
-| 3 | `sbx-best-practices-clone` | Clones the repo into `SBX_BUNDLE_DIR`, then runs `sbx-init` again, which links it. It refuses an existing folder and prints how to update or relink it. |
+| 3 | `sbx-best-practices-clone` | Clones the repo into `SBX_BEST_PRACTICES_DIR`, then runs `sbx-init` again, which links it. It refuses an existing folder and prints how to update or relink it. |
 | 4 | `sbx-claude` or `sbx-cursor` | Starts the agent. It refuses until `sbx-init` has passed in this container. |
 
 What `sbx-init` does in `state/claude`:

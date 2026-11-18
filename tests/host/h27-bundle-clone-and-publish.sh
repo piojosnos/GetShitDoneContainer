@@ -101,12 +101,12 @@ step sessionlogin $?
 bash -lc 'command -v claude' >"$ws/plainlogin.out" 2>&1
 step plainlogin $?
 
-SBX_BUNDLE_DIR="$ws/h27-missing" BUNDLE_REPO_URL="$ws/no-such-origin.git" sbx-best-practices-clone >"$ws/missing.out" 2>&1
+SBX_BEST_PRACTICES_DIR="$ws/h27-missing" BEST_PRACTICES_REPO_URL="$ws/no-such-origin.git" sbx-best-practices-clone >"$ws/missing.out" 2>&1
 step missing $?
 SCRIPT
 
   run_timeout 180 docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges:true \
-    -e SBX_NAME=hosttest -e BUNDLE_REPO_URL=/home/sandbox/workspace/bundle-origin.git \
+    -e SBX_NAME=hosttest -e BEST_PRACTICES_REPO_URL=/home/sandbox/workspace/bundle-origin.git \
     --mount "type=bind,source=$h27Dir,target=/home/sandbox/workspace" \
     "$CLAUDE_IMAGE" bash -c "$scriptText" </dev/null >"$h27Dir/run.log" 2>&1
   runStatus=$?

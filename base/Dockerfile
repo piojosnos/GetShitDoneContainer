@@ -195,13 +195,13 @@ RUN : "${GSD_CORE_VERSION:?GSD_CORE_VERSION is not set; build with ./build.sh}" 
 # ------------------------------------------------------------------------------
 # Best-practices clone settings
 # ------------------------------------------------------------------------------
-# SBX_BUNDLE_DIR is where a sandbox keeps its clone of BUNDLE_REPO_URL;
+# SBX_BEST_PRACTICES_DIR is where a sandbox keeps its clone of BEST_PRACTICES_REPO_URL;
 # sbx-init links the clone.
 # ------------------------------------------------------------------------------
-ARG BUNDLE_REPO_URL
-RUN : "${BUNDLE_REPO_URL:?BUNDLE_REPO_URL is not set; build with ./build.sh}"
-ENV SBX_BUNDLE_DIR=/home/sandbox/workspace/best-practices \
-    BUNDLE_REPO_URL=${BUNDLE_REPO_URL}
+ARG BEST_PRACTICES_REPO_URL
+RUN : "${BEST_PRACTICES_REPO_URL:?BEST_PRACTICES_REPO_URL is not set; build with ./build.sh}"
+ENV SBX_BEST_PRACTICES_DIR=/home/sandbox/workspace/best-practices \
+    BEST_PRACTICES_REPO_URL=${BEST_PRACTICES_REPO_URL}
 
 # ------------------------------------------------------------------------------
 # Shared helpers: sbx-gh-login, sbx-best-practices-clone and sbx-run-agent

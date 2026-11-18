@@ -11,7 +11,7 @@ from pathlib import Path
 from check_result import Check, CheckResult, failed, problem_list_result
 from claude_shared import CONFIG_DIR
 from hints import rebuild_hint
-from paths import BUNDLE_DIR
+from paths import BEST_PRACTICES_DIR
 
 _MANAGED_SETTINGS_FILE = Path("/etc/claude-code/managed-settings.json")
 
@@ -38,7 +38,7 @@ def _sorted_text_list(value: object) -> list[str] | None:
 def managed_settings_result(
     settings_file: Path = _MANAGED_SETTINGS_FILE,
     config_dir: Path = CONFIG_DIR,
-    bundle_dir: Path = BUNDLE_DIR,
+    best_practices_dir: Path = BEST_PRACTICES_DIR,
 ) -> CheckResult:
     try:
         settings_map = json.loads(settings_file.read_text())
@@ -52,7 +52,7 @@ def managed_settings_result(
     if isinstance(settings_map, dict) and isinstance(settings_map.get("permissions"), dict):
         permissions_map = settings_map["permissions"]
 
-    expected_directory_list = [str(bundle_dir)]
+    expected_directory_list = [str(best_practices_dir)]
     expected_deny_list = [f"Edit(/{config_dir}/skills/**)"]
     problem_list = []
 
@@ -67,7 +67,7 @@ def managed_settings_result(
     return problem_list_result(
         problem_list,
         rebuild_hint(),
-        f"{settings_file} names {bundle_dir} and denies edits of the skills",
+        f"{settings_file} names {best_practices_dir} and denies edits of the skills",
     )
 
 

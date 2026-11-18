@@ -7,20 +7,20 @@
 # ------------------------------------------------------------------------------
 set -eu
 
-: "${BUNDLE_REPO_URL:?BUNDLE_REPO_URL is not set}"
-: "${SBX_BUNDLE_DIR:?SBX_BUNDLE_DIR is not set}"
+: "${BEST_PRACTICES_REPO_URL:?BEST_PRACTICES_REPO_URL is not set}"
+: "${SBX_BEST_PRACTICES_DIR:?SBX_BEST_PRACTICES_DIR is not set}"
 
 # ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
-if [ -e "$SBX_BUNDLE_DIR" ]; then
-  echo "[sbx] ERROR: $SBX_BUNDLE_DIR already exists; nothing was changed." >&2
-  echo "[sbx]        To update it: git -C $SBX_BUNDLE_DIR pull. To relink it: sbx-init" >&2
+if [ -e "$SBX_BEST_PRACTICES_DIR" ]; then
+  echo "[sbx] ERROR: $SBX_BEST_PRACTICES_DIR already exists; nothing was changed." >&2
+  echo "[sbx]        To update it: git -C $SBX_BEST_PRACTICES_DIR pull. To relink it: sbx-init" >&2
   exit 1
 fi
 
-if ! GIT_TERMINAL_PROMPT=0 git clone "$BUNDLE_REPO_URL" "$SBX_BUNDLE_DIR"; then
-  echo "[sbx] ERROR: cannot clone $BUNDLE_REPO_URL. A private repo needs sbx-gh-login first." >&2
+if ! GIT_TERMINAL_PROMPT=0 git clone "$BEST_PRACTICES_REPO_URL" "$SBX_BEST_PRACTICES_DIR"; then
+  echo "[sbx] ERROR: cannot clone $BEST_PRACTICES_REPO_URL. A private repo needs sbx-gh-login first." >&2
   exit 1
 fi
 

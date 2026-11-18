@@ -9,7 +9,7 @@ from pathlib import Path
 HOME_DIR = Path("/home/sandbox")
 WORKSPACE_DIR = HOME_DIR / "workspace"
 STATE_DIR = WORKSPACE_DIR / "state"
-BUNDLE_DIR = WORKSPACE_DIR / "best-practices"
+BEST_PRACTICES_DIR = WORKSPACE_DIR / "best-practices"
 VERSIONS_FILE = Path("/etc/sbx/versions.env")
 TOOL_VERSIONS_FILE = Path("/etc/sbx/tool-versions")
 BASE_STATE_DIR_LIST = ["shell", "gh", "git"]

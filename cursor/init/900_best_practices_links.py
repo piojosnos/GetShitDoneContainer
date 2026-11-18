@@ -9,7 +9,7 @@
 from best_practices_link import link_best_practices
 from check_result import Check, CheckResult
 from cursor_shared import CONFIG_DIR
-from paths import BUNDLE_DIR
+from paths import BEST_PRACTICES_DIR
 
 
 # ------------------------------------------------------------------------------
@@ -17,7 +17,7 @@ from paths import BUNDLE_DIR
 # ------------------------------------------------------------------------------
 
 def _step_cursor_best_practices_links() -> CheckResult:
-    return link_best_practices(CONFIG_DIR, BUNDLE_DIR, False)
+    return link_best_practices(CONFIG_DIR, BEST_PRACTICES_DIR, False)
 
 
 STEP_LIST = [Check("cursor-best-practices-links", _step_cursor_best_practices_links)]
