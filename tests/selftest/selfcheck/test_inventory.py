@@ -135,7 +135,7 @@ def test_the_shared_list_holds_the_checks_in_file_name_order(shared_check_list, 
         "versions-line-quiet",
         "wrappers-root-owned",
         "image-paths-protected",
-        "no-bundle-copy",
+        "no-best-practices-copy",
         "extra-ca-system-bundle",
         "extra-ca-java-cacerts",
     ]
