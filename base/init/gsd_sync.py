@@ -1,8 +1,8 @@
 # ------------------------------------------------------------------------------
 # The GSD sync into an agent config directory
 # ------------------------------------------------------------------------------
-# Runs the image's own installer, offline, and reports only its outcome; the
-# self-check compares the synced version with the pin. The image puts this file
+# Runs the image's own installer, offline, and reports only its outcome;
+# sbx-selfcheck compares the synced version with the pin. The image puts this file
 # in /usr/local/lib/sbx-init/.
 # ------------------------------------------------------------------------------
 

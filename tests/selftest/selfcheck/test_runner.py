@@ -103,7 +103,7 @@ def test_a_check_that_returns_no_result_becomes_a_fail_line_with_the_rebuild_hin
     assert status == 1
     assert line_list == [
         f"FAIL: check1: returned {type_name} instead of a CheckResult",
-        "      fix: this is a bug in the self-check or a broken image; "
+        "      fix: this is a bug in sbx-selfcheck or a broken image; "
         + hints.rebuild_hint(),
         "PASS: check2: detail_check2",
         "PASS: agent1: detail_agent1",

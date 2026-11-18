@@ -125,7 +125,7 @@ def tool_result(
 # The image keeps each agent in its own directory, off the PATH, and its wrapper puts
 # the directory first when it starts the agent. A check that runs the agent does the
 # same; a check that looks for a stray copy takes the directory out first, because
-# the self-check can run inside an agent session whose PATH the wrapper extended.
+# sbx-selfcheck can run inside an agent session whose PATH the wrapper extended.
 # ------------------------------------------------------------------------------
 
 def agent_path_environment(agent_bin_dir: Path, environment_map: Mapping[str, str] = os.environ) -> dict[str, str]:

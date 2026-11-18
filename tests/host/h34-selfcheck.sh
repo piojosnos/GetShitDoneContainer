@@ -3,8 +3,8 @@
 # H-34: sbx-init and sbx-selfcheck pass in a Claude and a Cursor test sandbox
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; starts and removes a Cursor test sandbox
-# Runs sbx-init first in each sandbox, because the self-check expects an
-# initialised sandbox.
+# Runs sbx-init first in each sandbox, because sbx-selfcheck expects an
+# initialized sandbox.
 # A fresh sandbox correctly fails the git identity and login checks, so this
 # plants a git identity and a fake login before each run. The Cursor sandbox
 # runs on its own directory with a space in its path and its own registry inside
@@ -72,7 +72,7 @@ plant_fake_login() {
 # ------------------------------------------------------------------------------
 # run_init CONTAINER OUTPUT_FILE EXPECTED_COUNT LABEL: runs sbx-init
 # ------------------------------------------------------------------------------
-# The self-check expects an initialised sandbox. Adds a problem when the exit
+# sbx-selfcheck expects an initialized sandbox. Adds a problem when the exit
 # status is not 0 or the last line is not the summary with EXPECTED_COUNT steps.
 # ------------------------------------------------------------------------------
 run_init() {

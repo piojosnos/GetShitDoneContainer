@@ -25,7 +25,7 @@ _FILE_KIND = StepFileKind(
     list_name="CHECK_LIST",
     item_word="checks",
     module_prefix="sbx_selfcheck_check_",
-    owner_text="the self-check",
+    owner_text="sbx-selfcheck",
     pass_word="PASS",
 )
 _USAGE_TEXT = "Usage: sbx-selfcheck (no arguments)"

@@ -1,8 +1,8 @@
 # ------------------------------------------------------------------------------
 # The scan for root-owned state paths
 # ------------------------------------------------------------------------------
-# The image puts this file in /usr/local/lib/sbx-selfcheck/; sbx-init and the
-# self-check both use it.
+# The image puts this file in /usr/local/lib/sbx-selfcheck/; sbx-init and
+# sbx-selfcheck both use it.
 # ------------------------------------------------------------------------------
 
 import os

@@ -87,7 +87,7 @@ cert_fingerprint() {
 # extraCertDir holds one .crt file per certificate. Only certificate blocks are
 # kept, so a key in the same file never reaches the build. extraCertFingerprints
 # holds the SHA-256 fingerprint of each one (uppercase hex, no colons), space
-# separated: the image records them, so its self-check knows what to expect.
+# separated: the image records them, so its selfcheck knows what to expect.
 # Both stay empty when the variable is unset or empty.
 # ------------------------------------------------------------------------------
 prepare_extra_cert() {

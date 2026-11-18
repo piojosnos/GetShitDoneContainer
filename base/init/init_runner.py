@@ -45,7 +45,7 @@ _STOP_SIGNAL_LIST = [signal.SIGHUP, signal.SIGTERM]
 # Loading the steps
 # ------------------------------------------------------------------------------
 # Shared and agent step files sort together by file name, so the shared 800 step
-# runs between an agent's 050 and 900; the self-check runs shared checks first.
+# runs between an agent's 050 and 900; sbx-selfcheck runs shared checks first.
 # ------------------------------------------------------------------------------
 
 def load_step_module(module_path: Path) -> ModuleType:
