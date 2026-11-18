@@ -234,7 +234,7 @@ Plans:
 **Requirements**: TBD (decisions D-01 to D-19 in 09.1-CONTEXT.md are the contract)
 **Depends on**: Phase 9
 
-**Plans**: 5/14 plans executed
+**Plans**: 6/14 plans executed
 
 Plans:
 **Wave 1**
@@ -251,7 +251,7 @@ Plans:
 - [x] 09.1-05-PLAN.md: "the host" in hints, scripts and tests; H-06 renamed (wave 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 09.1-06-PLAN.md: directory, selfcheck side: `state-dirs` twin, `project-dir`, the selfcheck library and its tests (wave 5)
+- [x] 09.1-06-PLAN.md: directory, selfcheck side: `state-dirs` twin, `project-dir`, the selfcheck library and its tests (wave 5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 09.1-07-PLAN.md: directory, rest of the image: sbx-init, in-image commands, agent wrappers, agent files, Dockerfiles (wave 6)
