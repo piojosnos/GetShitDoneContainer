@@ -14,8 +14,8 @@ from image_ownership import image_ownership_result
 # Check entries
 # ------------------------------------------------------------------------------
 
-def _check_claude_wrappers() -> CheckResult:
+def _check_claude_image_root_owned() -> CheckResult:
     return image_ownership_result(IMAGE_ROOT_LIST)
 
 
-CHECK_LIST = [Check("claude-wrappers", _check_claude_wrappers)]
+CHECK_LIST = [Check("claude-image-root-owned", _check_claude_image_root_owned)]

@@ -13,8 +13,8 @@ from image_roots import base_root_list
 # Check entries
 # ------------------------------------------------------------------------------
 
-def _check_wrappers_root_owned() -> CheckResult:
+def _check_image_root_owned() -> CheckResult:
     return image_ownership_result(base_root_list())
 
 
-CHECK_LIST = [Check("wrappers-root-owned", _check_wrappers_root_owned)]
+CHECK_LIST = [Check("image-root-owned", _check_image_root_owned)]

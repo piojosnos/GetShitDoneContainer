@@ -122,10 +122,11 @@ def tool_result(
 # ------------------------------------------------------------------------------
 # The agents directory on PATH
 # ------------------------------------------------------------------------------
-# The image keeps each agent in its own directory, off the PATH, and its wrapper puts
-# the directory first when it starts the agent. A check that runs the agent does the
-# same; a check that looks for a stray copy takes the directory out first, because
-# sbx-selfcheck can run inside an agent session whose PATH the wrapper extended.
+# The image keeps each agent in its own directory, off the PATH, and its agent
+# wrapper puts the directory first when it starts the agent. A check that runs the
+# agent does the same; a check that looks for a stray copy takes the directory out
+# first, because sbx-selfcheck can run inside an agent session whose PATH the agent
+# wrapper extended.
 # ------------------------------------------------------------------------------
 
 def agent_path_environment(agent_bin_dir: Path, environment_map: Mapping[str, str] = os.environ) -> dict[str, str]:
@@ -156,7 +157,7 @@ def off_path_result(
 
     if found_path is not None:
         return failed(
-            f"{command_name} is on PATH at {found_path}; the image keeps it in {agent_bin_dir} for its wrapper",
+            f"{command_name} is on PATH at {found_path}; the image keeps it in {agent_bin_dir} for its agent wrapper",
             f"remove {found_path} if you put it there; else " + rebuild_hint(),
         )
 

@@ -270,8 +270,8 @@ check_cursor_sandbox() {
 # check_cursor_login_shells: a login shell finds cursor-agent only in a session
 # ------------------------------------------------------------------------------
 # The stand-in cursor-agent in /tmp replaces its own directory at the front of the
-# PATH with the agents directory, which is the PATH the wrapper hands the real
-# agent, then starts the login shell. The image's login files run for real.
+# PATH with the agents directory, which is the PATH the agent wrapper hands the
+# real agent, then starts the login shell. The image's login files run for real.
 # ------------------------------------------------------------------------------
 check_cursor_login_shells() {
   local scriptText sessionFile plainFile sessionStatus plainStatus
@@ -289,7 +289,7 @@ SCRIPT
   sessionStatus=$?
 
   if [ "$sessionStatus" -ne 0 ] || [ "$(cat "$sessionFile" 2>/dev/null)" != "/opt/sbx/agents/bin/cursor-agent" ]; then
-    add_problem "a login shell inside an sbx-cursor session did not find /opt/sbx/agents/bin/cursor-agent (exit $sessionStatus); a login shell may have reset the PATH the wrapper set; output: $sessionFile"
+    add_problem "a login shell inside an sbx-cursor session did not find /opt/sbx/agents/bin/cursor-agent (exit $sessionStatus); a login shell may have reset the PATH the agent wrapper set; output: $sessionFile"
   fi
 
   run_timeout 60 docker exec "$cursorContainer" bash -lc 'command -v cursor-agent' >"$plainFile" 2>&1 </dev/null

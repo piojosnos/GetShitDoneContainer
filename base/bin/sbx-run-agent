@@ -2,9 +2,9 @@
 # ------------------------------------------------------------------------------
 # Runs an agent from the agents directory once sbx-init has passed in this container
 # ------------------------------------------------------------------------------
-# Usage: sbx-run-agent WRAPPER AGENT [agent arguments]
+# Usage: sbx-run-agent AGENT_WRAPPER AGENT [agent arguments]
 # Each agent wrapper execs this script with its own name and its agent's command.
-# The refusal names the wrapper, so the user sees the command they typed.
+# The refusal names the agent wrapper, so the user sees the command they typed.
 # The agents live in the agents directory, which is off the PATH. This script puts
 # that directory first on the PATH it hands to the agent, so the agent and
 # everything it starts find the agents. The calling shell's PATH stays as it is.
@@ -20,16 +20,16 @@ agentBinDir=${SBX_AGENT_BIN_DIR:-/opt/sbx/agents/bin}
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 if [ "$#" -lt 2 ]; then
-  echo "Usage: sbx-run-agent WRAPPER AGENT [agent arguments]" >&2
+  echo "Usage: sbx-run-agent AGENT_WRAPPER AGENT [agent arguments]" >&2
   exit 2
 fi
 
-wrapperName=$1
+agentWrapperName=$1
 agentName=$2
 shift 2
 
 if [ ! -f "$initMarker" ]; then
-  echo "$wrapperName: sbx-init has not passed in this container; run sbx-init first" >&2
+  echo "$agentWrapperName: sbx-init has not passed in this container; run sbx-init first" >&2
   exit 1
 fi
 

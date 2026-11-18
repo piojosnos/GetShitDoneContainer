@@ -8,7 +8,7 @@ import claude_shared
 from helpers import load_agent_check
 
 image_paths_protected = load_agent_check("claude", "110_image_paths_protected")
-wrappers = load_agent_check("claude", "100_wrappers")
+image_root_owned = load_agent_check("claude", "100_image_root_owned")
 
 
 # ------------------------------------------------------------------------------
@@ -20,5 +20,5 @@ def test_the_image_root_is_the_dir_the_image_installs_the_agent_in():
 
 
 def test_the_ownership_check_and_the_protected_paths_check_share_the_one_roots_list():
-    assert wrappers.IMAGE_ROOT_LIST is claude_shared.IMAGE_ROOT_LIST
+    assert image_root_owned.IMAGE_ROOT_LIST is claude_shared.IMAGE_ROOT_LIST
     assert image_paths_protected.IMAGE_ROOT_LIST is claude_shared.IMAGE_ROOT_LIST

@@ -14,8 +14,8 @@ from image_ownership import image_ownership_result
 # Check entries
 # ------------------------------------------------------------------------------
 
-def _check_cursor_wrappers() -> CheckResult:
+def _check_cursor_image_root_owned() -> CheckResult:
     return image_ownership_result(IMAGE_ROOT_LIST)
 
 
-CHECK_LIST = [Check("cursor-wrappers", _check_cursor_wrappers)]
+CHECK_LIST = [Check("cursor-image-root-owned", _check_cursor_image_root_owned)]

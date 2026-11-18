@@ -169,7 +169,7 @@ check_before() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks claude is not on the plain PATH, so only the wrapper can start it
+# Checks claude is not on the plain PATH, so only the agent wrapper can start it
 # ------------------------------------------------------------------------------
 check_plain_path() {
   local plainOut
@@ -186,8 +186,8 @@ check_plain_path() {
 # Checks a login shell in an sbx-claude session finds claude in the agents dir
 # ------------------------------------------------------------------------------
 # The stand-in claude in /tmp replaces its own directory at the front of the PATH
-# with the agents directory, which is the PATH the wrapper hands the real agent,
-# then starts the login shell. The image's login files run for real.
+# with the agents directory, which is the PATH the agent wrapper hands the real
+# agent, then starts the login shell. The image's login files run for real.
 # ------------------------------------------------------------------------------
 check_session_login_shell() {
   local sessionOut
@@ -196,7 +196,7 @@ check_session_login_shell() {
   sessionOut=$(cat "$h27Dir/sessionlogin.out" 2>/dev/null)
 
   if [ "$sessionOut" != "/opt/sbx/agents/bin/claude" ]; then
-    add_problem "a login shell inside an sbx-claude session did not find /opt/sbx/agents/bin/claude; a login shell may have reset the PATH the wrapper set; got: $(file_head sessionlogin.out)"
+    add_problem "a login shell inside an sbx-claude session did not find /opt/sbx/agents/bin/claude; a login shell may have reset the PATH the agent wrapper set; got: $(file_head sessionlogin.out)"
   fi
 }
 

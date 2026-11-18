@@ -7,7 +7,7 @@ from pathlib import Path
 import image_roots
 from helpers import load_shared_check, write_file
 
-wrappers_root_owned = load_shared_check("250_wrappers_root_owned")
+image_root_owned = load_shared_check("250_image_root_owned")
 image_paths_protected = load_shared_check("260_image_paths_protected")
 
 
@@ -53,5 +53,5 @@ def test_no_start_hook_dir_is_left_in_the_roots():
 
 
 def test_the_ownership_check_and_the_protected_paths_check_share_the_base_roots():
-    assert wrappers_root_owned.base_root_list is image_roots.base_root_list
+    assert image_root_owned.base_root_list is image_roots.base_root_list
     assert image_paths_protected.base_root_list is image_roots.base_root_list
