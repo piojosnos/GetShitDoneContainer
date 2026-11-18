@@ -11,9 +11,9 @@ FROM ${BASE_IMAGE}
 # Cursor CLI: the vendor's versioned package, checked, as root into /usr/local
 # ------------------------------------------------------------------------------
 # Downloaded at the pinned version and checked against the vendor's .sha256
-# before it is unpacked. /tmp is the work folder: the base image ends in the
-# mount point. The CLI folder is not writable by the agent process. Its link
-# goes to the agents folder, off the PATH, so only sbx-cursor starts it.
+# before it is unpacked. /tmp is the work directory: the base image ends in the
+# mount point. The CLI directory is not writable by the agent process. Its link
+# goes to the agents directory, off the PATH, so only sbx-cursor starts it.
 # ------------------------------------------------------------------------------
 USER root
 ARG CURSOR_AGENT_VERSION
@@ -55,7 +55,7 @@ RUN PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /etc/sbx/init.d/c
 # ------------------------------------------------------------------------------
 # The Cursor checks for sbx-selfcheck
 # ------------------------------------------------------------------------------
-# The runner in the base image runs every file in each folder under
+# The runner in the base image runs every file in each directory under
 # /etc/sbx/selfcheck.d, here /etc/sbx/selfcheck.d/cursor. What those checks share
 # goes to /usr/local/lib/sbx-selfcheck/agents, which the runner never loads as a
 # check; the launcher puts it on the import path.
@@ -82,7 +82,7 @@ USER sandbox
 # Home links: the Cursor login and settings live in state/cursor
 # ------------------------------------------------------------------------------
 # The CLI keeps its login in ~/.config/cursor/auth.json and its settings,
-# skills and chats under ~/.cursor. Both links point into one state folder, so
+# skills and chats under ~/.cursor. Both links point into one state directory, so
 # both survive a recreate and an upgrade. Made as sandbox, so ~/.config is the
 # sandbox user's.
 # ------------------------------------------------------------------------------

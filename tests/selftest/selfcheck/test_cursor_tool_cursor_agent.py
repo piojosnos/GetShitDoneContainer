@@ -16,8 +16,8 @@ tool_cursor_agent = load_agent_check("cursor", "010_tool_cursor_agent")
 # Constants and helpers
 # ------------------------------------------------------------------------------
 
-def write_cursor_stand_in(folder: Path, home_record_file: Path) -> None:
-    stand_in = folder / "cursor-agent"
+def write_cursor_stand_in(dir_path: Path, home_record_file: Path) -> None:
+    stand_in = dir_path / "cursor-agent"
     stand_in.write_text(
         "#!/bin/sh\n"
         f'printf \'%s\' "$HOME" > "{home_record_file}"\n'
@@ -27,11 +27,11 @@ def write_cursor_stand_in(folder: Path, home_record_file: Path) -> None:
     stand_in.chmod(0o755)
 
 
-def cursor_environment(folder: Path, with_config_dir: bool) -> dict[str, str]:
-    environment_map = {"PATH": f"{folder}{os.pathsep}{os.environ['PATH']}", "HOME": str(folder / "home1")}
+def cursor_environment(dir_path: Path, with_config_dir: bool) -> dict[str, str]:
+    environment_map = {"PATH": f"{dir_path}{os.pathsep}{os.environ['PATH']}", "HOME": str(dir_path / "home1")}
 
     if with_config_dir:
-        environment_map["CURSOR_CONFIG_DIR"] = str(folder / "state1" / "cursor")
+        environment_map["CURSOR_CONFIG_DIR"] = str(dir_path / "state1" / "cursor")
 
     return environment_map
 
@@ -54,7 +54,7 @@ def test_cursor_version_result_runs_the_cli_with_a_throwaway_home_that_is_gone_a
     assert not (tmp_path / "home1" / "cli-config.json").exists()
 
 
-def test_cursor_version_result_hides_the_config_folder_variable_from_the_cli(tmp_path):
+def test_cursor_version_result_hides_the_config_dir_variable_from_the_cli(tmp_path):
     write_cursor_stand_in(tmp_path, tmp_path / "home-record1")
     environment1 = cursor_environment(tmp_path, True)
 
@@ -82,7 +82,7 @@ def test_the_check_runs_and_reports_on_cursor_whatever_the_image_state():
     assert "cursor" in (result.detail + result.hint).lower()
 
 
-def test_cursor_version_result_finds_a_cursor_agent_that_is_only_in_the_agents_folder(tmp_path):
+def test_cursor_version_result_finds_a_cursor_agent_that_is_only_in_the_agents_dir(tmp_path):
     agent_bin1 = tmp_path / "agent-bin1"
     agent_bin1.mkdir()
     home_record1 = tmp_path / "home-record1"
@@ -102,7 +102,7 @@ def test_cursor_version_result_finds_a_cursor_agent_that_is_only_in_the_agents_f
 # Cursor off the PATH
 # ------------------------------------------------------------------------------
 
-def test_cursor_off_path_fails_when_cursor_agent_is_also_in_another_path_folder(tmp_path, bin1):
+def test_cursor_off_path_fails_when_cursor_agent_is_also_in_another_path_dir(tmp_path, bin1):
     other1 = tmp_path / "other1"
     other1.mkdir()
     write_stand_in(bin1, "cursor-agent", "echo v1")
@@ -114,7 +114,7 @@ def test_cursor_off_path_fails_when_cursor_agent_is_also_in_another_path_folder(
     assert str(other1 / "cursor-agent") in result.detail
 
 
-def test_cursor_off_path_passes_when_cursor_agent_is_only_in_the_agents_folder(bin1):
+def test_cursor_off_path_passes_when_cursor_agent_is_only_in_the_agents_dir(bin1):
     write_stand_in(bin1, "cursor-agent", "echo v1")
 
     result = tool_cursor_agent.cursor_off_path_result(bin1, {"PATH": f"{bin1}{os.pathsep}/nowhere1"})

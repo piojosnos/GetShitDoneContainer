@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Step: link the best-practices clone into the Cursor config folder
+# Step: link the best-practices clone into the agent config directory
 # ------------------------------------------------------------------------------
 # Cursor gets the skills only, because it reads global rules only from .mdc
 # files. The image copies this file to /etc/sbx/init.d/cursor/; it runs last,

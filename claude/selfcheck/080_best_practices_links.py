@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Check: the config folder links the clone's rules and skills
+# Check: the agent config directory links the clone's rules and skills
 # ------------------------------------------------------------------------------
 # The image copies this file to /etc/sbx/selfcheck.d/claude/; the runner loads it
 # after the shared checks.

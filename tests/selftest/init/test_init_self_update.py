@@ -64,7 +64,7 @@ def test_an_already_static_file_passes_with_the_same_content(tmp_path):
     assert [path.name for path in tmp_path.iterdir()] == ["cli-config.json"]
 
 
-def test_a_missing_config_folder_is_made_first(tmp_path):
+def test_a_missing_config_dir_is_made_first(tmp_path):
     config_file1 = tmp_path / "deep1" / "deeper1" / "cli-config.json"
 
     result = self_update_step.static_channel_result(config_file1)
@@ -111,20 +111,20 @@ def test_a_path_that_cannot_be_read_fails_and_leaves_no_temp_file(tmp_path):
     assert [path.name for path in tmp_path.iterdir()] == ["cli-config.json"]
 
 
-def test_a_config_folder_that_cannot_be_made_fails_naming_it(tmp_path):
+def test_a_config_dir_that_cannot_be_made_fails_naming_it(tmp_path):
     blocker1 = tmp_path / "blocker1"
-    blocker1.write_text("a file where a folder is needed")
+    blocker1.write_text("a file where a directory is needed")
 
     result = self_update_step.static_channel_result(blocker1 / "cli-config.json")
 
     assert not result.passed
     assert str(blocker1) in result.detail
     assert result.hint == hints.state_writable_hint()
-    assert blocker1.read_text() == "a file where a folder is needed"
+    assert blocker1.read_text() == "a file where a directory is needed"
 
 
-@pytest.mark.skipif(os.getuid() == 0, reason="root can write to a read-only folder")
-def test_a_config_folder_that_cannot_be_written_fails_with_the_writable_fix(tmp_path):
+@pytest.mark.skipif(os.getuid() == 0, reason="root can write to a read-only directory")
+def test_a_config_dir_that_cannot_be_written_fails_with_the_writable_fix(tmp_path):
     config_dir1 = tmp_path / "config1"
     config_dir1.mkdir()
     config_dir1.chmod(0o555)

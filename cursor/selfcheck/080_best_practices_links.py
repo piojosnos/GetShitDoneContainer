@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Check: the config folder links the clone's skills
+# Check: the agent config directory links the clone's skills
 # ------------------------------------------------------------------------------
 # The image copies this file to /etc/sbx/selfcheck.d/cursor/; the runner loads it
 # after the shared checks.

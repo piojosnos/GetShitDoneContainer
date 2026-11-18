@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Step: sync the image's GSD into the Claude config folder
+# Step: sync the image's GSD into the agent config directory
 # ------------------------------------------------------------------------------
 # The image copies this file to /etc/sbx/init.d/claude/; the runner sorts it in
 # by file name.

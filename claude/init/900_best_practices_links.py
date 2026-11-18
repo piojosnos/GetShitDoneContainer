@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Step: link the best-practices clone into the Claude config folder
+# Step: link the best-practices clone into the agent config directory
 # ------------------------------------------------------------------------------
 # The image copies this file to /etc/sbx/init.d/claude/; it runs last, after the
 # ownership step.

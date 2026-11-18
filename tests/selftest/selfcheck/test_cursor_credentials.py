@@ -13,7 +13,7 @@ credentials = load_agent_check("cursor", "060_credentials")
 # Cursor login file
 # ------------------------------------------------------------------------------
 
-def test_the_check_reads_the_agent_folder_under_the_state_folder():
+def test_the_check_reads_the_agent_dir_under_the_state_dir():
     assert credentials.CONFIG_DIR == paths.STATE_DIR / "cursor"
 
 

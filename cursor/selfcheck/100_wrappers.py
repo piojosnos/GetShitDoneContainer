@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Check: the Cursor image folder is root-owned
+# Check: the Cursor image directory is root-owned
 # ------------------------------------------------------------------------------
 # The image copies this file to /etc/sbx/selfcheck.d/cursor/; the runner loads it
 # after the shared checks.

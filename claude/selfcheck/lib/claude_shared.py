@@ -11,6 +11,6 @@ from paths import STATE_DIR
 
 CONFIG_DIR = STATE_DIR / "claude"
 
-# The folder the image installs the agent in; the ownership check and the protected
+# The directory the image installs the agent in; the ownership check and the protected
 # paths check of this image walk it. The sbx commands and hooks sit under the base roots.
 IMAGE_ROOT_LIST = [Path("/etc/claude-code")]

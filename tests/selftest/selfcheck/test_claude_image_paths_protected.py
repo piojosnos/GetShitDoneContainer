@@ -15,7 +15,7 @@ wrappers = load_agent_check("claude", "100_wrappers")
 # Claude image roots
 # ------------------------------------------------------------------------------
 
-def test_the_image_root_is_the_folder_the_image_installs_the_agent_in():
+def test_the_image_root_is_the_dir_the_image_installs_the_agent_in():
     assert claude_shared.IMAGE_ROOT_LIST == [Path("/etc/claude-code")]
 
 

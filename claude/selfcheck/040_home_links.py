@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Check: ~/.claude links to the Claude config folder
+# Check: ~/.claude links to the agent config directory
 # ------------------------------------------------------------------------------
 # The image copies this file to /etc/sbx/selfcheck.d/claude/; the runner loads it
 # after the shared checks.

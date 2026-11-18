@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Step: sync the image's GSD into the Cursor config folder
+# Step: sync the image's GSD into the agent config directory
 # ------------------------------------------------------------------------------
 # The image copies this file to /etc/sbx/init.d/cursor/; the runner sorts it in
 # by file name.

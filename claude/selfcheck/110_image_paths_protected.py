@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Check: nothing under the Claude image folder is writable or mounted
+# Check: nothing under the Claude image directory is writable or mounted
 # ------------------------------------------------------------------------------
 # The image copies this file to /etc/sbx/selfcheck.d/claude/; the runner loads it
 # after the shared checks.

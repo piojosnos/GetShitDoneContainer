@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Check: the Claude image folder is root-owned
+# Check: the Claude image directory is root-owned
 # ------------------------------------------------------------------------------
 # The image copies this file to /etc/sbx/selfcheck.d/claude/; the runner loads it
 # after the shared checks.

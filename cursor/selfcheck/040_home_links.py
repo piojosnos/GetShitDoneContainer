@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Check: the Cursor home folders link to the Cursor config folder
+# Check: the Cursor home directories link to the agent config directory
 # ------------------------------------------------------------------------------
 # The image copies this file to /etc/sbx/selfcheck.d/cursor/; the runner loads it
 # after the shared checks.
