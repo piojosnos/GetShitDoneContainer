@@ -9,8 +9,8 @@
 # ------------------------------------------------------------------------------
 # make_best_practices_origin ORIGIN_DIR: a local bare repo holding the fixture rules and skills
 # ------------------------------------------------------------------------------
-# A seed folder next to ORIGIN_DIR gets one commit on main; ORIGIN_DIR is a bare
-# clone of it, so its HEAD names main. Returns non-zero on any failure.
+# A seed directory next to ORIGIN_DIR gets one commit on main; ORIGIN_DIR is a
+# bare clone of it, so its HEAD names main. Returns non-zero on any failure.
 # ------------------------------------------------------------------------------
 make_best_practices_origin() {
   local originDir=$1

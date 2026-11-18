@@ -14,7 +14,7 @@ in_container() {
 }
 
 # ------------------------------------------------------------------------------
-# in_project CMD...: like in_container, in the project folder
+# in_project CMD...: like in_container, in the project directory
 # ------------------------------------------------------------------------------
 in_project() {
   docker exec -w "$PROJECT_DIR" "$CONTAINER" "$@" </dev/null 2>&1
@@ -26,7 +26,7 @@ in_project() {
 # --env-file /dev/null: a .env file in the repo never reaches the test sandbox.
 compose_cmd() {
   if [ -z "${RUN:-}" ]; then
-    printf 'No run folder, so no compose command is run.\n' >&2
+    printf 'No run directory, so no compose command is run.\n' >&2
     return 1
   fi
 
@@ -153,7 +153,7 @@ compose_up() {
   if [ "$exitCode" -ne 0 ]; then
     printf 'compose up failed (exit %s); last lines of %s:\n' "$exitCode" "$logFile"
     print_log_tail "$logFile"
-    printf 'If the log says the mount was denied, the run folder is not under a folder shared with Docker Desktop (Settings, Resources, File sharing).\n'
+    printf 'If the log says the mount was denied, the run directory is not under a directory shared with Docker Desktop (Settings, Resources, File sharing).\n'
 
     return "$exitCode"
   fi
@@ -208,7 +208,7 @@ restart_test_sandbox() {
 }
 
 # ------------------------------------------------------------------------------
-# sandbox_mount_source: prints the host folder mounted at the workspace
+# sandbox_mount_source: prints the host directory mounted at the workspace
 # ------------------------------------------------------------------------------
 # Returns 1 when sbx-hosttest cannot be inspected.
 # ------------------------------------------------------------------------------
@@ -253,7 +253,8 @@ assert_test_sandbox() {
 # ------------------------------------------------------------------------------
 # assert_this_run_sandbox: true only for the test sandbox of this run
 # ------------------------------------------------------------------------------
-# For a check about to act: the mount folder must be named like the run folder.
+# For a check about to act: the mount directory must be named like the run
+# directory.
 # ------------------------------------------------------------------------------
 assert_this_run_sandbox() {
   local mountSource
@@ -280,8 +281,8 @@ require_test_sandbox() {
     fi
 
     if [ "$running" = "true" ] && assert_test_sandbox; then
-      fail "$checkId" "sbx-hosttest mounts another run folder: $(sandbox_mount_source)" \
-        "set SBXTEST_DIR to that folder, or run: bash tests/host/run-all.sh"
+      fail "$checkId" "sbx-hosttest mounts another run directory: $(sandbox_mount_source)" \
+        "set SBXTEST_DIR to that directory, or run: bash tests/host/run-all.sh"
 
       return 1
     fi

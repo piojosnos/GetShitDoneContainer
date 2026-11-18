@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Shared setup for the host tests: run folder, clean environment, libraries
+# Shared setup for the host tests: run directory, clean environment, libraries
 # ------------------------------------------------------------------------------
 # Sourced by the checks, runner, guard and self-tests; never run directly.
 # Host code is stock bash 3.2 with BSD tools (macOS); GNU only in docker exec.
@@ -62,10 +62,10 @@ require_no_arguments() {
 # run_dir_name_ok PATH: true if PATH's last component starts with sbx-hosttest-
 # ------------------------------------------------------------------------------
 run_dir_name_ok() {
-  local folderName
+  local dirName
 
-  folderName=$(basename "$1")
-  case "$folderName" in
+  dirName=$(basename "$1")
+  case "$dirName" in
     sbx-hosttest-*) return 0 ;;
   esac
 
@@ -84,7 +84,7 @@ resolve_run_dir() {
     if [ -d "$SBXTEST_DIR" ] && run_dir_name_ok "$SBXTEST_DIR"; then
       RUN=$(cd "$SBXTEST_DIR" && pwd -P)
     else
-      printf 'SBXTEST_DIR is not an existing folder named sbx-hosttest-*: %s\n' "$SBXTEST_DIR" >&2
+      printf 'SBXTEST_DIR is not an existing directory named sbx-hosttest-*: %s\n' "$SBXTEST_DIR" >&2
     fi
 
     return 0
@@ -99,14 +99,14 @@ resolve_run_dir() {
   if [ -d "$mountSource" ] && run_dir_name_ok "$mountSource"; then
     RUN=$(cd "$mountSource" && pwd -P)
   else
-    printf 'The %s mount is not a folder visible on this machine: %s\n' "$CONTAINER" "$mountSource" >&2
+    printf 'The %s mount is not a directory visible on this machine: %s\n' "$CONTAINER" "$mountSource" >&2
   fi
 
   return 0
 }
 
 # ------------------------------------------------------------------------------
-# make_run_dir: creates a fresh run folder; sets RUN, exports SBXTEST_DIR
+# make_run_dir: creates a fresh run directory; sets RUN, exports SBXTEST_DIR
 # ------------------------------------------------------------------------------
 make_run_dir() {
   local baseDir created
@@ -119,7 +119,7 @@ make_run_dir() {
   fi
 
   if ! created=$(mktemp -d "$baseDir/sbx-hosttest-$(date +%Y%m%d-%H%M%S).XXXXXX"); then
-    printf 'Could not create a run folder under %s\n' "$baseDir" >&2
+    printf 'Could not create a run directory under %s\n' "$baseDir" >&2
     return 1
   fi
 

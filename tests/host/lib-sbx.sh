@@ -3,11 +3,11 @@
 # Running sbx-* scripts from the host tests: own registry, /bin/bash, sandbox
 # ------------------------------------------------------------------------------
 # Sourced after lib.sh by the checks that use bin/; functions only.
-# Each registry is in the run folder, so ~/.config/sbx is never touched.
+# Each registry is in the run directory, so ~/.config/sbx is never touched.
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# sbx_test_setup ID PREFIX: sets the registry, the sandbox folder and the PATH
+# sbx_test_setup ID PREFIX: sets the registry, the sandbox directory and the PATH
 # ------------------------------------------------------------------------------
 # Sets and exports SBX_CONFIG_DIR; sets sbxDir (with a space on purpose),
 # sbxBinDir (a bash link to /bin/bash) and sbxPath. Fails for ID without RUN.
@@ -17,7 +17,7 @@ sbx_test_setup() {
   local bashVersion
 
   if [ -z "${RUN:-}" ]; then
-    fail "$checkId" "no run folder" "run: bash tests/host/run-all.sh first"
+    fail "$checkId" "no run directory" "run: bash tests/host/run-all.sh first"
     return 1
   fi
 
@@ -31,7 +31,7 @@ sbx_test_setup() {
     "$RUN"/*)
       ;;
     *)
-      fail "$checkId" "the registry is not inside the run folder: $SBX_CONFIG_DIR"
+      fail "$checkId" "the registry is not inside the run directory: $SBX_CONFIG_DIR"
       return 1
       ;;
   esac
@@ -59,9 +59,9 @@ run_sbx() {
 }
 
 # ------------------------------------------------------------------------------
-# restore_test_sandbox LOG_PREFIX: puts the test sandbox back on the run folder
+# restore_test_sandbox LOG_PREFIX: puts the test sandbox back on the run directory
 # ------------------------------------------------------------------------------
-# The later checks need the test sandbox on the run folder again.
+# The later checks need the test sandbox on the run directory again.
 # ------------------------------------------------------------------------------
 restore_test_sandbox() {
   if ! compose_down >"$RUN/logs/$1-restore-down.log" 2>&1; then

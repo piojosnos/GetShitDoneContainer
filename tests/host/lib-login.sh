@@ -7,7 +7,7 @@
 # The files hold a run-unique text; no real credential is ever written.
 # ------------------------------------------------------------------------------
 
-# The project folder name Claude uses for the hosttest workspace
+# The project directory name Claude uses for the hosttest workspace
 loginProjectName=-home-sandbox-workspace-hosttest
 
 # ------------------------------------------------------------------------------
@@ -21,7 +21,7 @@ plant_login_files() {
   local claudeDir projectDir
 
   if [ -z "$1" ]; then
-    add_problem "no state folder given; the fake login files were not planted"
+    add_problem "no state directory given; the fake login files were not planted"
     return 1
   fi
 

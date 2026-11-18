@@ -148,7 +148,7 @@ print_next_block() {
     printf '  Cleanup when you are done:\n'
     printf '    cd %q && SBX_NAME=hosttest SBX_DIR=%q docker compose down && rm -rf %q\n' "${REPO_DIR:-}" "$RUN" "$RUN"
   else
-    printf '  No run folder was created, so there is nothing to clean up.\n'
+    printf '  No run directory was created, so there is nothing to clean up.\n'
   fi
 }
 
@@ -183,20 +183,20 @@ check_docker_reachable() {
 }
 
 # ------------------------------------------------------------------------------
-# create_run_folder: makes the run folder and prints its path; stops on failure
+# create_run_dir: makes the run directory and prints its path; stops on failure
 # ------------------------------------------------------------------------------
-create_run_folder() {
+create_run_dir() {
   if ! make_run_dir; then
-    fatal "could not create the run folder"
+    fatal "could not create the run directory"
   fi
 
-  info "run folder: $RUN"
+  info "run directory: $RUN"
 }
 
 # ------------------------------------------------------------------------------
 # create_best_practices_clone: makes the fixture origin and the sandbox's clone
 # ------------------------------------------------------------------------------
-# Both sit in the run folder. The run stops when either step fails.
+# Both sit in the run directory. The run stops when either step fails.
 # ------------------------------------------------------------------------------
 create_best_practices_clone() {
   local cloneLog=$RUN/logs/best-practices-clone.log
@@ -246,7 +246,7 @@ make_test_root_cert() {
 # prepare_root_certificates: the build trusts your own root and the test root
 # ------------------------------------------------------------------------------
 # Your own root comes first when SBX_CA_CERT is set. The build file sits outside
-# the run folder, which the sandbox mounts.
+# the run directory, which the sandbox mounts.
 # ------------------------------------------------------------------------------
 prepare_root_certificates() {
   local certFile buildFile rootLog
@@ -339,7 +339,7 @@ require_no_arguments "$@" || exit 2
 install_traps
 print_docker_target
 check_docker_reachable
-create_run_folder
+create_run_dir
 create_best_practices_clone
 prepare_root_certificates
 remove_leftover_test_container
