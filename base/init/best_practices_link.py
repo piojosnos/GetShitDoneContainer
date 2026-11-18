@@ -11,7 +11,7 @@
 
 from pathlib import Path
 
-from bundle_links import (
+from best_practices_links import (
     RULES_LINK_TEXT,
     SKILL_LINK_TEXT_TEMPLATE,
     best_practices_skill_name_list,
@@ -26,8 +26,8 @@ from check_result import CheckResult, capped_problem_detail, failed, passed
 # The linking
 # ------------------------------------------------------------------------------
 
-def link_best_practices(config_dir: Path, bundle_dir: Path, links_rules: bool) -> CheckResult:
-    clone_problem = clone_failure(bundle_dir, links_rules)
+def link_best_practices(config_dir: Path, best_practices_dir: Path, links_rules: bool) -> CheckResult:
+    clone_problem = clone_failure(best_practices_dir, links_rules)
 
     if clone_problem is not None:
         return clone_problem
@@ -41,16 +41,16 @@ def link_best_practices(config_dir: Path, bundle_dir: Path, links_rules: bool) -
     except OSError as e:
         problem_list.append(f"{skills_dir}: {e.strerror}")
 
-        return _result(config_dir, bundle_dir, links_rules, 0, clash_list, problem_list)
+        return _result(config_dir, best_practices_dir, links_rules, 0, clash_list, problem_list)
 
     if links_rules:
-        _place_link(config_dir / "rules", RULES_LINK_TEXT, bundle_dir / "rules", clash_list, problem_list)
+        _place_link(config_dir / "rules", RULES_LINK_TEXT, best_practices_dir / "rules", clash_list, problem_list)
 
-    skill_name_list = best_practices_skill_name_list(bundle_dir)
-    _link_skills(skills_dir, bundle_dir, skill_name_list, clash_list, problem_list)
-    _remove_stale_links(skills_dir, bundle_dir, skill_name_list, problem_list)
+    skill_name_list = best_practices_skill_name_list(best_practices_dir)
+    _link_skills(skills_dir, best_practices_dir, skill_name_list, clash_list, problem_list)
+    _remove_stale_links(skills_dir, best_practices_dir, skill_name_list, problem_list)
 
-    return _result(config_dir, bundle_dir, links_rules, len(skill_name_list), clash_list, problem_list)
+    return _result(config_dir, best_practices_dir, links_rules, len(skill_name_list), clash_list, problem_list)
 
 
 # ------------------------------------------------------------------------------
@@ -85,12 +85,12 @@ def _place_link(
 
 def _link_skills(
     skills_dir: Path,
-    bundle_dir: Path,
+    best_practices_dir: Path,
     skill_name_list: list[str],
     clash_list: list[Path],
     problem_list: list[str],
 ) -> None:
-    own_root = bundle_dir / "skills"
+    own_root = best_practices_dir / "skills"
 
     for skill_name in skill_name_list:
         link_text = SKILL_LINK_TEXT_TEMPLATE.format(name=skill_name)
@@ -103,11 +103,11 @@ def _link_skills(
 
 def _remove_stale_links(
     skills_dir: Path,
-    bundle_dir: Path,
+    best_practices_dir: Path,
     skill_name_list: list[str],
     problem_list: list[str],
 ) -> None:
-    own_root = bundle_dir / "skills"
+    own_root = best_practices_dir / "skills"
 
     try:
         entry_list = sorted(skills_dir.iterdir())
@@ -132,7 +132,7 @@ def _remove_stale_links(
 
 def _result(
     config_dir: Path,
-    bundle_dir: Path,
+    best_practices_dir: Path,
     links_rules: bool,
     skill_count: int,
     clash_list: list[Path],
@@ -147,7 +147,7 @@ def _result(
     if clash_list:
         return _clash_result(clash_list)
 
-    return passed(linked_detail(bundle_dir, links_rules, skill_count))
+    return passed(linked_detail(best_practices_dir, links_rules, skill_count))
 
 
 def _clash_result(clash_list: list[Path]) -> CheckResult:

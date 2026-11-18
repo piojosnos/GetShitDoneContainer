@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-import bundle_links
+import best_practices_links
 from best_practices_link import link_best_practices
 from init_helpers import REPO_DIR, load_step
 
@@ -301,7 +301,7 @@ def test_init_and_the_self_check_give_the_same_text_for_an_incomplete_clone(tmp_
     (clone1 / "rules").rmdir()
 
     init_result = link_best_practices(config1, clone1, True)
-    check_result = bundle_links.bundle_links_result(config1, clone1, True)
+    check_result = best_practices_links.best_practices_links_result(config1, clone1, True)
 
     assert not init_result.passed
     assert init_result.detail == check_result.detail

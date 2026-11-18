@@ -1,17 +1,17 @@
 # ------------------------------------------------------------------------------
-# Tests of the Claude bundle links check
+# Tests of the Cursor best-practices links check
 # ------------------------------------------------------------------------------
 
 import paths
 
 from helpers import load_agent_check
 
-bundle_links_check = load_agent_check("claude", "080_bundle_links")
+best_practices_links_check = load_agent_check("cursor", "080_best_practices_links")
 
 
 # ------------------------------------------------------------------------------
-# Claude bundle links
+# Cursor best-practices links
 # ------------------------------------------------------------------------------
 
 def test_the_check_reads_the_agent_folder_under_the_state_folder():
-    assert bundle_links_check.CONFIG_DIR == paths.STATE_DIR / "claude"
+    assert best_practices_links_check.CONFIG_DIR == paths.STATE_DIR / "cursor"

@@ -39,20 +39,20 @@ def is_best_practices_link(link: Path, target_root: Path) -> bool:
     return is_under(target, str(target_root))
 
 
-def clone_failure(bundle_dir: Path, links_rules: bool) -> CheckResult | None:
-    needed_dir = bundle_dir / "rules" if links_rules else bundle_dir / "skills"
+def clone_failure(best_practices_dir: Path, links_rules: bool) -> CheckResult | None:
+    needed_dir = best_practices_dir / "rules" if links_rules else best_practices_dir / "skills"
 
-    if not path_is_present(bundle_dir):
-        return _missing_clone_result(bundle_dir)
+    if not path_is_present(best_practices_dir):
+        return _missing_clone_result(best_practices_dir)
 
     if not needed_dir.is_dir():
-        return _incomplete_clone_result(bundle_dir, needed_dir)
+        return _incomplete_clone_result(best_practices_dir, needed_dir)
 
     return None
 
 
-def linked_detail(bundle_dir: Path, links_rules: bool, skill_count: int) -> str:
-    detail = f"{skill_count} skills linked from {bundle_dir}"
+def linked_detail(best_practices_dir: Path, links_rules: bool, skill_count: int) -> str:
+    detail = f"{skill_count} skills linked from {best_practices_dir}"
 
     if links_rules:
         detail += ", rules linked"
@@ -60,23 +60,24 @@ def linked_detail(bundle_dir: Path, links_rules: bool, skill_count: int) -> str:
     return detail
 
 
-def _missing_clone_result(bundle_dir: Path) -> CheckResult:
+def _missing_clone_result(best_practices_dir: Path) -> CheckResult:
     return failed(
-        f"no best-practices clone at {bundle_dir}",
+        f"no best-practices clone at {best_practices_dir}",
         "run sbx-gh-login, then sbx-best-practices-clone; it clones the repo and runs sbx-init again",
     )
 
 
-def _incomplete_clone_result(bundle_dir: Path, needed_dir: Path) -> CheckResult:
+def _incomplete_clone_result(best_practices_dir: Path, needed_dir: Path) -> CheckResult:
     return failed(
-        f"{bundle_dir} exists but has no {needed_dir.name}/ folder",
-        f"check that {bundle_dir} is a clone of the best-practices repo: if it is, run git -C {bundle_dir} pull, "
+        f"{best_practices_dir} exists but has no {needed_dir.name}/ folder",
+        f"check that {best_practices_dir} is a clone of the best-practices repo: "
+        f"if it is, run git -C {best_practices_dir} pull, "
         "then sbx-init; if not, move it aside, then run sbx-gh-login and sbx-best-practices-clone",
     )
 
 
-def best_practices_skill_name_list(bundle_dir: Path) -> list[str]:
-    skills_dir = bundle_dir / "skills"
+def best_practices_skill_name_list(best_practices_dir: Path) -> list[str]:
+    skills_dir = best_practices_dir / "skills"
     skill_name_list = []
 
     if not skills_dir.is_dir():
@@ -89,7 +90,7 @@ def best_practices_skill_name_list(bundle_dir: Path) -> list[str]:
     return skill_name_list
 
 
-def _rules_link_problem(config_dir: Path, bundle_dir: Path) -> str:
+def _rules_link_problem(config_dir: Path, best_practices_dir: Path) -> str:
     rules_link = config_dir / "rules"
     actual_text = link_text(rules_link)
 
@@ -99,13 +100,13 @@ def _rules_link_problem(config_dir: Path, bundle_dir: Path) -> str:
     if actual_text != RULES_LINK_TEXT:
         return f"{rules_link} links to '{actual_text}', expected '{RULES_LINK_TEXT}'"
 
-    if not _reaches(rules_link, bundle_dir / "rules"):
-        return f"{rules_link} does not reach {bundle_dir / 'rules'}"
+    if not _reaches(rules_link, best_practices_dir / "rules"):
+        return f"{rules_link} does not reach {best_practices_dir / 'rules'}"
 
     return ""
 
 
-def _skill_link_problem_list(config_dir: Path, bundle_dir: Path, skill_name_list: list[str]) -> list[str]:
+def _skill_link_problem_list(config_dir: Path, best_practices_dir: Path, skill_name_list: list[str]) -> list[str]:
     problem_list = []
 
     for skill_name in skill_name_list:
@@ -117,8 +118,8 @@ def _skill_link_problem_list(config_dir: Path, bundle_dir: Path, skill_name_list
             problem_list.append(f"{skill_link} is not a link")
         elif actual_text != expected_text:
             problem_list.append(f"{skill_link} links to '{actual_text}', expected '{expected_text}'")
-        elif not _reaches(skill_link, bundle_dir / "skills" / skill_name):
-            problem_list.append(f"{skill_link} does not reach {bundle_dir / 'skills' / skill_name}")
+        elif not _reaches(skill_link, best_practices_dir / "skills" / skill_name):
+            problem_list.append(f"{skill_link} does not reach {best_practices_dir / 'skills' / skill_name}")
 
     return problem_list
 
@@ -130,7 +131,7 @@ def _reaches(link: Path, folder: Path) -> bool:
         return False
 
 
-def _stale_link_problem_list(config_dir: Path, bundle_dir: Path, skill_name_list: list[str]) -> list[str]:
+def _stale_link_problem_list(config_dir: Path, best_practices_dir: Path, skill_name_list: list[str]) -> list[str]:
     skills_dir = config_dir / "skills"
     problem_list = []
 
@@ -141,36 +142,36 @@ def _stale_link_problem_list(config_dir: Path, bundle_dir: Path, skill_name_list
         if entry.name in skill_name_list:
             continue
 
-        if is_best_practices_link(entry, bundle_dir / "skills"):
+        if is_best_practices_link(entry, best_practices_dir / "skills"):
             problem_list.append(f"{entry} links into the clone, which has no skill {entry.name}")
 
     return problem_list
 
 
 # ------------------------------------------------------------------------------
-# Bundle links result
+# Best-practices links result
 # ------------------------------------------------------------------------------
 
-def bundle_links_result(config_dir: Path, bundle_dir: Path, links_rules: bool) -> CheckResult:
-    clone_problem = clone_failure(bundle_dir, links_rules)
+def best_practices_links_result(config_dir: Path, best_practices_dir: Path, links_rules: bool) -> CheckResult:
+    clone_problem = clone_failure(best_practices_dir, links_rules)
 
     if clone_problem is not None:
         return clone_problem
 
-    skill_name_list = best_practices_skill_name_list(bundle_dir)
+    skill_name_list = best_practices_skill_name_list(best_practices_dir)
     problem_list = []
 
     if links_rules:
-        rules_problem = _rules_link_problem(config_dir, bundle_dir)
+        rules_problem = _rules_link_problem(config_dir, best_practices_dir)
 
         if rules_problem:
             problem_list.append(rules_problem)
 
-    problem_list.extend(_skill_link_problem_list(config_dir, bundle_dir, skill_name_list))
-    problem_list.extend(_stale_link_problem_list(config_dir, bundle_dir, skill_name_list))
+    problem_list.extend(_skill_link_problem_list(config_dir, best_practices_dir, skill_name_list))
+    problem_list.extend(_stale_link_problem_list(config_dir, best_practices_dir, skill_name_list))
 
     return problem_list_result(
         problem_list,
         init_hint(),
-        linked_detail(bundle_dir, links_rules, len(skill_name_list)),
+        linked_detail(best_practices_dir, links_rules, len(skill_name_list)),
     )
