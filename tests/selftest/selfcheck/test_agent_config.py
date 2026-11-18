@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # Tests of the agent config result
 # ------------------------------------------------------------------------------
-# Real files inside tmp_path. A planted login token must show up nowhere in a result.
+# Real files inside tmp_path. A planted login token must not show in a result.
 # ------------------------------------------------------------------------------
 
 from pathlib import Path

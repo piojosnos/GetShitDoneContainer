@@ -70,7 +70,7 @@ plant_fake_login() {
 }
 
 # ------------------------------------------------------------------------------
-# run_init CONTAINER OUTPUT_FILE EXPECTED_COUNT LABEL: runs sbx-init, checks its summary
+# run_init CONTAINER OUTPUT_FILE EXPECTED_COUNT LABEL: runs sbx-init
 # ------------------------------------------------------------------------------
 # The self-check expects an initialised sandbox. Adds a problem when the exit
 # status is not 0 or the last line is not the summary with EXPECTED_COUNT steps.
@@ -168,7 +168,7 @@ check_selfcheck_output() {
 }
 
 # ------------------------------------------------------------------------------
-# check_certificate_requested LABEL OUTPUT_FILE: no certificate check says none was requested
+# check_certificate_requested LABEL OUTPUT_FILE: no check says none was requested
 # ------------------------------------------------------------------------------
 # Always returns 0 and reports only through add_problem. A FAIL line is already
 # reported by check_selfcheck_output.
@@ -195,7 +195,7 @@ report_selfcheck_summary() {
 }
 
 # ------------------------------------------------------------------------------
-# check_claude_sandbox: runs sbx-init again, then sbx-selfcheck, in the Claude test sandbox
+# check_claude_sandbox: sbx-init again, then sbx-selfcheck, in the Claude sandbox
 # ------------------------------------------------------------------------------
 check_claude_sandbox() {
   local outputFile=$RUN/logs/h34-claude.out
@@ -244,7 +244,7 @@ start_cursor_sandbox() {
 }
 
 # ------------------------------------------------------------------------------
-# check_cursor_sandbox: runs sbx-init, then sbx-selfcheck, in the Cursor test sandbox
+# check_cursor_sandbox: sbx-init, then sbx-selfcheck, in the Cursor sandbox
 # ------------------------------------------------------------------------------
 # A failed start has already recorded its problem, so nothing more runs.
 # ------------------------------------------------------------------------------
@@ -267,11 +267,11 @@ check_cursor_sandbox() {
 }
 
 # ------------------------------------------------------------------------------
-# check_cursor_login_shells: a login shell finds cursor-agent in a session, not otherwise
+# check_cursor_login_shells: a login shell finds cursor-agent only in a session
 # ------------------------------------------------------------------------------
-# The stand-in cursor-agent in /tmp replaces its own folder at the front of the PATH
-# with the agents folder, which is the PATH the wrapper hands the real agent, then
-# starts the login shell. The image's login files run for real.
+# The stand-in cursor-agent in /tmp replaces its own folder at the front of the
+# PATH with the agents folder, which is the PATH the wrapper hands the real
+# agent, then starts the login shell. The image's login files run for real.
 # ------------------------------------------------------------------------------
 check_cursor_login_shells() {
   local scriptText sessionFile plainFile sessionStatus plainStatus

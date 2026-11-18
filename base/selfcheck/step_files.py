@@ -116,7 +116,7 @@ def outcome_lines(name: str, result: CheckResult, kind: StepFileKind) -> list[st
     return [f"FAIL: {name}: {detail}", f"{_FIX_LINE_INDENT}fix: {one_line(result.hint)}"]
 
 
-def write_outcome(output: TextIO, name: str, result: CheckResult, kind: StepFileKind) -> None:
+def write_outcome(name: str, result: CheckResult, kind: StepFileKind, output: TextIO) -> None:
     for line in outcome_lines(name, result, kind):
         output.write(line + "\n")
 

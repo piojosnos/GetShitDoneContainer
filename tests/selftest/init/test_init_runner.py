@@ -6,6 +6,7 @@
 # the lock holder is a real second process.
 # ------------------------------------------------------------------------------
 
+import errno
 import fcntl
 import subprocess
 import sys
@@ -355,8 +356,34 @@ def test_a_lock_file_that_cannot_be_opened_is_a_lock_failure(shared1, agents1, m
 
     assert status == 1
     assert line_list[0].startswith(f"FAIL: lock: cannot open {lock_in_missing_dir}: ")
-    assert line_list[1] == "      fix: check that /home/sandbox is writable; " + rebuild_hint()
+    assert line_list[1] == f"      fix: check that {lock_in_missing_dir.parent} is writable; " + rebuild_hint()
     assert line_list[2] == "sbx-init: stopped at lock"
+
+
+def test_a_lock_call_that_fails_with_another_error_closes_the_handle_and_raises(tmp_path):
+    handle_list = []
+
+    def failing_flock(handle, operation):
+        handle_list.append(handle)
+
+        raise OSError(errno.EIO, "input/output error")
+
+    with pytest.raises(OSError):
+        init_runner._take_lock(tmp_path / "lock1", failing_flock)
+
+    assert handle_list[0].closed
+
+
+def test_a_lock_call_that_would_block_closes_the_handle_and_returns_none(tmp_path):
+    handle_list = []
+
+    def blocking_flock(handle, operation):
+        handle_list.append(handle)
+
+        raise BlockingIOError(errno.EAGAIN, "resource temporarily unavailable")
+
+    assert init_runner._take_lock(tmp_path / "lock1", blocking_flock) is None
+    assert handle_list[0].closed
 
 
 # ------------------------------------------------------------------------------

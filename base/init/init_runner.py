@@ -10,7 +10,7 @@ import signal
 import sys
 from pathlib import Path
 from types import ModuleType
-from typing import TextIO
+from typing import Callable, TextIO
 
 import paths
 from check_result import Check, CheckResult, failed
@@ -43,6 +43,9 @@ _STOP_SIGNAL_LIST = [signal.SIGHUP, signal.SIGTERM]
 
 # ------------------------------------------------------------------------------
 # Loading the steps
+# ------------------------------------------------------------------------------
+# Shared and agent step files sort together by file name, so the shared 800 step
+# runs between an agent's 050 and 900; the self-check runs shared checks first.
 # ------------------------------------------------------------------------------
 
 def load_step_module(module_path: Path) -> ModuleType:
@@ -98,14 +101,14 @@ def collect_steps(shared_steps_dir: Path, agent_steps_dir: Path) -> list[Check]:
 # Running and printing
 # ------------------------------------------------------------------------------
 
-def _write_line(output: TextIO, line: str) -> None:
+def _write_line(line: str, output: TextIO) -> None:
     output.write(line + "\n")
     output.flush()
 
 
-def _stop_at(output: TextIO, name: str, result: CheckResult) -> int:
-    write_outcome(output, name, result, _FILE_KIND)
-    _write_line(output, f"sbx-init: stopped at {name}")
+def _stop_at(name: str, result: CheckResult, output: TextIO) -> int:
+    write_outcome(name, result, _FILE_KIND, output)
+    _write_line(f"sbx-init: stopped at {name}", output)
 
     return 1
 
@@ -115,7 +118,7 @@ def _run_steps(step_list: list[Check], output: TextIO) -> tuple[int, str]:
 
     for step in step_list:
         result = run_one(step, _FILE_KIND)
-        write_outcome(output, step.name, result, _FILE_KIND)
+        write_outcome(step.name, result, _FILE_KIND, output)
 
         if not result.passed:
             return passed_count, step.name
@@ -129,23 +132,31 @@ def _run_steps(step_list: list[Check], output: TextIO) -> tuple[int, str]:
 # Lock and marker
 # ------------------------------------------------------------------------------
 
-def _take_lock(lock_file: Path) -> TextIO | None:
+def _take_lock(lock_file: Path, flock_function: Callable[[TextIO, int], None] = fcntl.flock) -> TextIO | None:
     handle = open(lock_file, "a+")
 
     try:
-        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        flock_function(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
         handle.close()
 
         return None
+    except OSError:
+        handle.close()
+
+        raise
 
     return handle
+
+
+def _folder_writable_hint(file: Path) -> str:
+    return f"check that {file.parent} is writable; " + rebuild_hint()
 
 
 def _marker_failure(action_text: str, marker_file: Path, error: OSError) -> CheckResult:
     return failed(
         f"cannot {action_text} {marker_file}: {error.strerror}",
-        "check that /home/sandbox is writable; " + rebuild_hint(),
+        _folder_writable_hint(marker_file),
     )
 
 
@@ -153,21 +164,21 @@ def _run_locked(shared_steps_dir: Path, agent_steps_dir: Path, marker_file: Path
     try:
         marker_file.unlink(missing_ok=True)
     except OSError as e:
-        return _stop_at(output, _MARKER_STEP_NAME, _marker_failure("remove", marker_file, e))
+        return _stop_at(_MARKER_STEP_NAME, _marker_failure("remove", marker_file, e), output)
 
     passed_count, stopped_name = _run_steps(collect_steps(shared_steps_dir, agent_steps_dir), output)
 
     if stopped_name:
-        _write_line(output, f"sbx-init: stopped at {stopped_name}")
+        _write_line(f"sbx-init: stopped at {stopped_name}", output)
 
         return 1
 
     try:
         marker_file.touch()
     except OSError as e:
-        return _stop_at(output, _MARKER_STEP_NAME, _marker_failure("write", marker_file, e))
+        return _stop_at(_MARKER_STEP_NAME, _marker_failure("write", marker_file, e), output)
 
-    _write_line(output, f"sbx-init: {passed_count} steps passed; run sbx-selfcheck to check the sandbox")
+    _write_line(f"sbx-init: {passed_count} steps passed; run sbx-selfcheck to check the sandbox", output)
 
     return 0
 
@@ -177,16 +188,16 @@ def run_init(shared_steps_dir: Path, agent_steps_dir: Path, marker_file: Path, l
         lock_handle = _take_lock(lock_file)
     except OSError as e:
         return _stop_at(
-            output,
             _LOCK_STEP_NAME,
-            failed(f"cannot open {lock_file}: {e.strerror}", "check that /home/sandbox is writable; " + rebuild_hint()),
+            failed(f"cannot open {lock_file}: {e.strerror}", _folder_writable_hint(lock_file)),
+            output,
         )
 
     if lock_handle is None:
         return _stop_at(
-            output,
             _LOCK_STEP_NAME,
             failed("another sbx-init is running", "wait for it to finish, then run sbx-init again"),
+            output,
         )
 
     try:

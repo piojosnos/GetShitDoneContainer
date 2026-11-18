@@ -43,7 +43,7 @@ container_runs_no_entrypoint() {
 # agents_stay_off_the_path: only the wrappers start an agent
 # ------------------------------------------------------------------------------
 # The agents live in /opt/sbx/agents/bin so only their wrappers start them; a
-# link back into /usr/local/bin would let a plain shell run an uninitialised agent.
+# link in /usr/local/bin would let a plain shell run an uninitialised agent.
 # ------------------------------------------------------------------------------
 agents_stay_off_the_path() {
   local ok=0

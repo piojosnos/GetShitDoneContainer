@@ -145,9 +145,10 @@ check_user_files_spared() {
 # ------------------------------------------------------------------------------
 # Checks sbx-init keeps a user's skill folder and rules folder and reports both
 # ------------------------------------------------------------------------------
-# The two links are moved aside into the run folder, then a real skills/sbx-fixture-one
-# folder and a real rules folder take their place. sbx-init must fail at the
-# links step naming both, leave both files as they are and not write its marker.
+# The two links are moved aside into the run folder, then a real
+# skills/sbx-fixture-one folder and a real rules folder take their place.
+# sbx-init must fail at the links step naming both, leave both files as they are
+# and not write its marker.
 # ------------------------------------------------------------------------------
 check_clash_kept_and_reported() {
   local clashFile=$RUN/logs/h16-clash.out

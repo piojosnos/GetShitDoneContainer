@@ -168,6 +168,6 @@ def test_a_newline_or_carriage_return_becomes_a_space():
 def test_write_outcome_writes_each_line_with_a_newline():
     output = io.StringIO()
 
-    step_files.write_outcome(output, "name1", failed("detail1", "hint1"), KIND1)
+    step_files.write_outcome("name1", failed("detail1", "hint1"), KIND1, output)
 
     assert output.getvalue() == "FAIL: name1: detail1\n      fix: hint1\n"

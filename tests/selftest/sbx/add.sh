@@ -9,7 +9,7 @@ set -u
 . "$(dirname "$0")/lib.sh"
 
 # ------------------------------------------------------------------------------
-# entry_equals NAME PATH [AGENT]: true when the entry NAME is exactly the two lines
+# entry_equals NAME PATH [AGENT]: true when entry NAME is exactly the two lines
 # ------------------------------------------------------------------------------
 # AGENT is claude when left out.
 # ------------------------------------------------------------------------------
@@ -204,7 +204,8 @@ folders_absent() {
 # Case: a folder that is, holds or sits inside the repo folder is refused
 # ------------------------------------------------------------------------------
 # The script runs from a copy of bin/ alone in WORK/box/repo, so the host scripts
-# need nothing from base/, and a failing case makes folders in the copy and never in the real repo.
+# need nothing from base/, and a failing case makes folders in the copy and never
+# in the real repo.
 # ------------------------------------------------------------------------------
 case_repo_overlap() {
   local realBin=$BIN
@@ -267,10 +268,10 @@ case_overlaps() {
 }
 
 # ------------------------------------------------------------------------------
-# Case: folders are compared as folders, so a symlink or a letter case cannot hide one
+# Case: folders are compared as folders; a symlink or letter case cannot hide one
 # ------------------------------------------------------------------------------
 # Runs after case_overlaps, which registered demo (WORK/sbx one) and deep
-# (WORK/a/b/c). /tmp against /private/tmp on the Mac is the same case as a symlink.
+# (WORK/a/b/c). /tmp against /private/tmp on the Mac is a symlink case too.
 # ------------------------------------------------------------------------------
 case_same_folder() {
   local sandboxText='overlaps the folder of sandbox'

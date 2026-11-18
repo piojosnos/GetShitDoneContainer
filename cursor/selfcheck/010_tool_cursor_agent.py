@@ -21,13 +21,13 @@ _THROWAWAY_HOME_PREFIX = "sbx-selfcheck-cursor-"
 
 
 # ------------------------------------------------------------------------------
-# Cursor version
+# Cursor version and PATH
 # ------------------------------------------------------------------------------
 
 def cursor_version_result(
     expected_version: str,
-    environment_map: Mapping[str, str] = os.environ,
     agent_bin_dir: Path = AGENT_BIN_DIR,
+    environment_map: Mapping[str, str] = os.environ,
 ) -> CheckResult:
     throwaway_home = tempfile.mkdtemp(prefix=_THROWAWAY_HOME_PREFIX)
 

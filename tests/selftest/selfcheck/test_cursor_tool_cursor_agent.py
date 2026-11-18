@@ -45,7 +45,7 @@ def test_cursor_version_result_runs_the_cli_with_a_throwaway_home_that_is_gone_a
     write_cursor_stand_in(tmp_path, home_record1)
     environment1 = cursor_environment(tmp_path, False)
 
-    result = tool_cursor_agent.cursor_version_result("v1", environment1)
+    result = tool_cursor_agent.cursor_version_result("v1", environment_map=environment1)
 
     seen_home = Path(home_record1.read_text())
     assert result.passed
@@ -58,7 +58,7 @@ def test_cursor_version_result_hides_the_config_folder_variable_from_the_cli(tmp
     write_cursor_stand_in(tmp_path, tmp_path / "home-record1")
     environment1 = cursor_environment(tmp_path, True)
 
-    result = tool_cursor_agent.cursor_version_result("v1", environment1)
+    result = tool_cursor_agent.cursor_version_result("v1", environment_map=environment1)
 
     assert result.passed
     assert environment1["CURSOR_CONFIG_DIR"] == str(tmp_path / "state1" / "cursor")
@@ -69,7 +69,7 @@ def test_cursor_version_result_fails_for_another_version(tmp_path):
     home_record1 = tmp_path / "home-record1"
     write_cursor_stand_in(tmp_path, home_record1)
 
-    result = tool_cursor_agent.cursor_version_result("v2", cursor_environment(tmp_path, False))
+    result = tool_cursor_agent.cursor_version_result("v2", environment_map=cursor_environment(tmp_path, False))
 
     assert not result.passed
     assert "v1" in result.detail
@@ -89,7 +89,7 @@ def test_cursor_version_result_finds_a_cursor_agent_that_is_only_in_the_agents_f
     write_cursor_stand_in(agent_bin1, home_record1)
     environment1 = {"PATH": "/nowhere1", "HOME": str(tmp_path / "home1")}
 
-    result = tool_cursor_agent.cursor_version_result("v1", environment1, agent_bin1)
+    result = tool_cursor_agent.cursor_version_result("v1", agent_bin1, environment1)
 
     seen_home = Path(home_record1.read_text())
     assert result.passed

@@ -17,7 +17,7 @@ from tools import agent_path_environment, off_path_result, tool_result
 
 
 # ------------------------------------------------------------------------------
-# Claude
+# Claude version and PATH
 # ------------------------------------------------------------------------------
 
 def claude_version_result(

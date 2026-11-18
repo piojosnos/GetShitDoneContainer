@@ -41,7 +41,7 @@ ENV CURSOR_CONFIG_DIR=/home/sandbox/workspace/state/cursor \
     SBX_STATE_DIRS="${SBX_STATE_DIRS} cursor"
 
 # ------------------------------------------------------------------------------
-# sbx-init steps (the GSD sync, self-update off, the best-practices skills) and sbx-cursor
+# sbx-init steps and sbx-cursor
 # ------------------------------------------------------------------------------
 # Root-owned, so the sandbox user cannot change them. A syntax error in a step
 # file stops the build here.

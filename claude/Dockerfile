@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# The Claude image: Claude Code, ccusage, sbx-claude and the managed settings on sbx-base
+# The Claude image: Claude Code, ccusage, sbx-claude and the managed settings
 # ------------------------------------------------------------------------------
 # BASE_IMAGE keeps a default because it names the local base tag, not a version.
 # Pins come from versions.env through build.sh; no other ARG has a default.
@@ -52,7 +52,8 @@ ENV CLAUDE_CONFIG_DIR=/home/sandbox/workspace/state/claude \
 # sbx-init steps, sbx-claude and managed settings
 # ------------------------------------------------------------------------------
 # Managed settings let Claude edit the clone and deny its Edit tool on every path
-# under state/claude/skills. Not a security boundary.
+# under state/claude/skills. Not a security boundary. A syntax error in a step
+# file stops the build here.
 # ------------------------------------------------------------------------------
 RUN mkdir -p /etc/sbx/init.d/claude
 COPY --chmod=644 claude/init/*.py /etc/sbx/init.d/claude/

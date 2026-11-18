@@ -183,11 +183,11 @@ check_plain_path() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks a login shell inside an sbx-claude session finds claude in the agents folder
+# Checks a login shell in an sbx-claude session finds claude in the agents folder
 # ------------------------------------------------------------------------------
-# The stand-in claude in /tmp replaces its own folder at the front of the PATH with
-# the agents folder, which is the PATH the wrapper hands the real agent, then starts
-# the login shell. The image's login files run for real.
+# The stand-in claude in /tmp replaces its own folder at the front of the PATH
+# with the agents folder, which is the PATH the wrapper hands the real agent,
+# then starts the login shell. The image's login files run for real.
 # ------------------------------------------------------------------------------
 check_session_login_shell() {
   local sessionOut

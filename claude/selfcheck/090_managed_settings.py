@@ -37,8 +37,8 @@ def _sorted_text_list(value: object) -> list[str] | None:
 
 def managed_settings_result(
     settings_file: Path = _MANAGED_SETTINGS_FILE,
-    bundle_dir: Path = BUNDLE_DIR,
     config_dir: Path = CONFIG_DIR,
+    bundle_dir: Path = BUNDLE_DIR,
 ) -> CheckResult:
     try:
         settings_map = json.loads(settings_file.read_text())

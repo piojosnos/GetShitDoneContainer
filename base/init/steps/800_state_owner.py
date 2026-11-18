@@ -66,25 +66,23 @@ def give_back_state_result(
     environment_map: Mapping[str, str] = os.environ,
 ) -> CheckResult:
     given_back_count = 0
+    round_count = 0
+    name_list = _scanned_name_list(state_dir, from_uid)
 
-    for _ in range(_GIVE_BACK_ROUND_LIMIT):
-        name_list = _scanned_name_list(state_dir, from_uid)
-
-        if not name_list:
-            return passed(f"{given_back_count} paths given back to sandbox")
-
-        round_count, problem_list = _give_back_round(state_dir, name_list, to_uid, to_gid, chown_function)
-        given_back_count += round_count
+    while name_list and round_count < _GIVE_BACK_ROUND_LIMIT:
+        done_count, problem_list = _give_back_round(state_dir, name_list, to_uid, to_gid, chown_function)
+        given_back_count += done_count
 
         if problem_list:
             return failed(capped_problem_detail(problem_list), owner_fix_hint(state_dir, environment_map))
 
-    leftover_list = _scanned_name_list(state_dir, from_uid)
+        round_count += 1
+        name_list = _scanned_name_list(state_dir, from_uid)
 
-    if leftover_list:
+    if name_list:
         problem_list = []
 
-        for name in leftover_list:
+        for name in name_list:
             problem_list.append(f"{name}: still owned by uid {from_uid}")
 
         return failed(capped_problem_detail(problem_list), owner_fix_hint(state_dir, environment_map))

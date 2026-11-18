@@ -63,26 +63,24 @@ def _place_link(
     own_root: Path,
     clash_list: list[Path],
     problem_list: list[str],
-) -> bool:
+) -> None:
     try:
         if not entry.is_symlink() and not entry.exists():
             entry.symlink_to(link_text)
 
-            return True
+            return
 
         if is_best_practices_link(entry, own_root):
             entry.unlink()
             entry.symlink_to(link_text)
 
-            return True
+            return
     except OSError as e:
         problem_list.append(f"{entry}: {e.strerror}")
 
-        return False
+        return
 
     clash_list.append(entry)
-
-    return False
 
 
 def _link_skills(

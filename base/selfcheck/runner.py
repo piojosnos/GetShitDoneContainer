@@ -84,12 +84,12 @@ def _run_all_checks(check_list: list[Check], output: TextIO) -> int:
         if not result.passed:
             failed_count += 1
 
-        write_outcome(output, check.name, result, _FILE_KIND)
+        write_outcome(check.name, result, _FILE_KIND, output)
 
     return failed_count
 
 
-def _write_summary(output: TextIO, check_count: int, failed_count: int) -> None:
+def _write_summary(check_count: int, failed_count: int, output: TextIO) -> None:
     output.write(f"sbx-selfcheck: {check_count} checks, {failed_count} failed\n")
     output.flush()
 
@@ -97,7 +97,7 @@ def _write_summary(output: TextIO, check_count: int, failed_count: int) -> None:
 def report_checks(check_list: list[Check], output: TextIO) -> int:
     failed_count = _run_all_checks(check_list, output)
 
-    _write_summary(output, len(check_list), failed_count)
+    _write_summary(len(check_list), failed_count, output)
 
     if failed_count > 0:
         return 1
