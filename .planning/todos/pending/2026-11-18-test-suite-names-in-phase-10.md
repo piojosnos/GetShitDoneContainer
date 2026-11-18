@@ -1,6 +1,6 @@
 ---
 created: 2026-11-18
-title: Reassess whether tests/unit/ needs a separate component suite
+title: Revisit the test suite names in Phase 10 (host versus integration, unit versus component)
 area: tests
 source: Glossary review in the vocabulary alignment phase (2026-11-18)
 ---
@@ -14,4 +14,10 @@ Reassess when Phase 10 (host side to Python) rewrites the `bin/` commands and re
 - whether the new tests for the Python host commands are plain unit tests (call functions in-process), so `tests/unit/` stays accurate; or
 - whether some still run a whole command as a process with a faked dependency, and earn a `tests/component/` suite next to `tests/unit/`, `tests/guard/` and `tests/host/`.
 
-Update `GLOSSARY.md` and `tests/README.md` with the outcome.
+Also in Phase 10, revisit the name of the host tests. `tests/host/` runs the real images on real Docker, so "integration" is the standard term and pairs with `tests/unit/`; the recommendation is `tests/integration/`. But "host" carries a fact the user values: these tests run only on the host, never in the dev sandbox. The user wants to balance the two then, against the state of the code at that point, rather than decide now. The Python rewrite replaces every bash host test and its runner anyway, so whatever is chosen costs little there:
+
+- the suite directory (`tests/host/` or `tests/integration/`);
+- the runner in place of `host-test.sh`, its log in place of `host-test.log`, `tests/host-checklist.md` and the H-nn IDs;
+- if the name becomes "integration", the docs keep the fact that "host" carried.
+
+Update `GLOSSARY.md` and `tests/README.md` with the outcome of both.
