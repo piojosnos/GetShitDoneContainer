@@ -3,7 +3,7 @@
 # H-32: sbx-list shows each sandbox with the status docker ps -a shows
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; takes it down and restores it
-# Only the hosttest lines are read: the Mac also has the user's own sandboxes.
+# Only the hosttest lines are read: the host also has the user's own sandboxes.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"

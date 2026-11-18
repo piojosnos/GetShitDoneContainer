@@ -3,7 +3,7 @@
 # Shared best-practices helpers for the host tests: the fixture clone and its links
 # ------------------------------------------------------------------------------
 # Sourced after lib.sh; runs nothing. Fixture commits use a test identity.
-# The Mac user's git identity and GitHub login are never used.
+# The host user's git identity and GitHub login are never used.
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ clone_skill_names() {
 # check_best_practices_links CONFIG_DIR CLONE_DIR: state/claude links into the clone
 # ------------------------------------------------------------------------------
 # Reports by add_problem and prints nothing itself. The links are relative, so
-# they must also resolve on the Mac side of the bind mount. Only the links are
+# they must also resolve on the host side of the bind mount. Only the links are
 # compared with the clone; a link into the clone for a skill the clone dropped
 # is a problem.
 # ------------------------------------------------------------------------------

@@ -170,7 +170,7 @@ plant_and_snapshot() {
   closingLine="sbx-rm: the container sbx-hosttest is gone; nothing in $sbxDir was changed"
 
   if ! network_exists; then
-    add_problem "the network sbx-hosttest_default does not exist while the sandbox runs; Compose names its network differently on this Mac"
+    add_problem "the network sbx-hosttest_default does not exist while the sandbox runs; Compose names its network differently on this host"
   fi
 }
 

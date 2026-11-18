@@ -3,7 +3,7 @@
 # Shared by the guard groups: file lists, the search helper, the rule runner
 # ------------------------------------------------------------------------------
 # Sourced by the groups and the runner, never run; reads files only.
-# Stock bash 3.2 with BSD tools: the guard may run by hand on the Mac.
+# Stock bash 3.2 with BSD tools: the guard may run by hand on the host.
 # ------------------------------------------------------------------------------
 
 . "$(dirname "${BASH_SOURCE[0]}")/../host/lib.sh"

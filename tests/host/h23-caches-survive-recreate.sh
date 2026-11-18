@@ -70,7 +70,7 @@ plant_cache_files() {
 }
 
 # ------------------------------------------------------------------------------
-# check_files_on_host WHEN: each cache folder on the Mac holds the marker
+# check_files_on_host WHEN: each cache folder on the host holds the marker
 # ------------------------------------------------------------------------------
 # WHEN names the moment in the message.
 # ------------------------------------------------------------------------------
@@ -79,7 +79,7 @@ check_files_on_host() {
 
   for folderName in cache/npm cache/uv m2; do
     if ! grep -Fq "$marker" "$RUN/state/$folderName/$marker" 2>/dev/null; then
-      add_problem "state/$folderName/$marker is missing on the Mac $1"
+      add_problem "state/$folderName/$marker is missing on the host $1"
     fi
   done
 }

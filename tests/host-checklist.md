@@ -38,7 +38,7 @@ What each check proves:
 | ID | What it proves | Script (in `tests/host/`) | Run |
 |---|---|---|---|
 | H-03 | Name and folder variables are required; `up` refuses an uppercase name before it creates anything; Compose renders the Claude test image `sbx-claude:test` | `h03-variable-interpolation.sh` | automatic |
-| H-06 | Git works in the container on a repository made on the Mac (no dubious ownership) | `h06-git-on-mac-repo.sh` | automatic |
+| H-06 | Git works in the container on a repository made on the host (no dubious ownership) | `h06-git-on-host-repo.sh` | automatic |
 | H-08 | Shell history survives a recreate | `h08-history-survives-recreate.sh` | automatic |
 | H-09 | Files, a planted memory, a fake credentials file and a fake session file survive a rebuild, no volumes exist | `h09-rebuild-keeps-files-no-volumes.sh` | automatic |
 | H-10 | A missing folder is refused | `h10-missing-folder-refused.sh` | automatic |

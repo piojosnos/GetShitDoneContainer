@@ -45,7 +45,7 @@ prepare_folder() {
 # Runs the whole in-container script in one offline container
 # ------------------------------------------------------------------------------
 # The script prints one 'STEP NAME STATUS' line per step to the run log and
-# writes each step's output into the folder, where the Mac side reads it.
+# writes each step's output into the folder, where the host side reads it.
 # ------------------------------------------------------------------------------
 run_script() {
   local scriptText

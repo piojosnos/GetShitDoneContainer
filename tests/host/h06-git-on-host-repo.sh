@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# H-06: git works in the container on a repository made on the Mac
+# H-06: git works in the container on a repository made on the host
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running
 # The host-side git call ignores your own git configuration.
@@ -49,5 +49,5 @@ require_test_sandbox H-06 || exit 1
 init_host_repo
 read_git_state
 check_git_status
-report_check H-06 "git in the container fails on a repository made on the Mac" \
-  "git status works in the container on a repository made on the Mac, with no ownership error"
+report_check H-06 "git in the container fails on a repository made on the host" \
+  "git status works in the container on a repository made on the host, with no ownership error"

@@ -43,7 +43,7 @@ git_step() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks an uncommitted edit in the clone on the Mac shows in the container
+# Checks an uncommitted edit in the clone on the host shows in the container
 # ------------------------------------------------------------------------------
 check_edit_is_live() {
   local seenText
@@ -52,7 +52,7 @@ check_edit_is_live() {
   seenText=$(in_container cat /home/sandbox/workspace/state/claude/rules/sbx-fixture-always.md)
 
   if [[ "$seenText" != *"$sentinelText edit"* ]]; then
-    add_problem "an edit of the clone's rule on the Mac is not in the sandbox at once; got: $(first_lines "$seenText")"
+    add_problem "an edit of the clone's rule on the host is not in the sandbox at once; got: $(first_lines "$seenText")"
   fi
 }
 
@@ -61,8 +61,8 @@ check_edit_is_live() {
 # ------------------------------------------------------------------------------
 # The pulled commit only adds a file, so the uncommitted edit does not block it.
 # The pull runs inside the container: the clone's .git is writable by the agent,
-# so the Mac never runs git on it. The container reaches the origin by its
-# mounted path, not by the clone's recorded Mac path.
+# so the host never runs git on it. The container reaches the origin by its
+# mounted path, not by the clone's recorded host path.
 # ------------------------------------------------------------------------------
 check_pull_is_live() {
   local otherDir=$RUN/h16-other-$$
@@ -224,4 +224,4 @@ check_user_files_spared
 check_clash_kept_and_reported
 restore_after_clash
 report_check H-16 "the clone is not live, or sbx-init did not relink it, spare your files or report a clash" \
-  "an edit of the clone on the Mac and a pull inside the sandbox showed in the sandbox at once; sbx-init relinked the clone, dropped the link of a removed skill, kept the uncommitted edit and kept your skills, memories, sessions, settings key and CLAUDE.md; a skill folder and a rules folder of your own were kept and reported, and sbx-init relinked once they were moved aside"
+  "an edit of the clone on the host and a pull inside the sandbox showed in the sandbox at once; sbx-init relinked the clone, dropped the link of a removed skill, kept the uncommitted edit and kept your skills, memories, sessions, settings key and CLAUDE.md; a skill folder and a rules folder of your own were kept and reported, and sbx-init relinked once they were moved aside"
