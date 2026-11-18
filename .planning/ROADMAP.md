@@ -234,14 +234,14 @@ Plans:
 **Requirements**: TBD (decisions D-01 to D-19 in 09.1-CONTEXT.md are the contract)
 **Depends on**: Phase 9
 
-**Plans**: 1/14 plans executed
+**Plans**: 2/14 plans executed
 
 Plans:
 **Wave 1**
 - [x] 09.1-01-PLAN.md: GLOSSARY.md drafted and linked from the README, then the blocking glossary checkpoint (wave 1, checkpoint)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 09.1-02-PLAN.md: the best-practices repo rule loses its sandbox details, on its own branch in that repo (wave 2)
+- [x] 09.1-02-PLAN.md: the best-practices repo rule loses its sandbox details, on its own branch in that repo (wave 2)
 - [ ] 09.1-03-PLAN.md: the agreed glossary recorded; the clone command, its variable, the repo URL pin and the environment check renamed, with the MIGRATION note (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*

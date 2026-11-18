@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: "09.1"
 current_phase_name: Align vocabulary across code and docs
 status: executing
-stopped_at: Completed 09.1-01-PLAN.md
-last_updated: "2026-11-18T06:15:40.308Z"
+stopped_at: Completed 09.1-02-PLAN.md
+last_updated: "2026-11-18T06:17:06.132Z"
 last_activity: 2026-11-18
 last_activity_desc: Phase 09.1 execution started
-state_head: a0da0db517378867cf516974b61adf36dc570898
+state_head: b12282adbbf03c8cb7b363edcd01b09920381892
 progress:
   total_phases: 11
   completed_phases: 4
   total_plans: 55
-  completed_plans: 42
+  completed_plans: 43
   percent: 36
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 09.1 (Align vocabulary across code and docs) — EXECUTING
-Plan: 2 of 14
+Plan: 3 of 14
 Status: Ready to execute
 Last activity: 2026-11-18 — Phase 09.1 execution started
 
@@ -201,6 +201,7 @@ Last activity: 2026-11-18 — Phase 09.1 execution started
 | Phase 09 P13 | 40 min | 2 tasks | 0 files |
 | Phase 09 P14 | n/a | 4 tasks | 15 files |
 | Phase 09.1 P01 | 2h 20m | 3 tasks | 2 files |
+| Phase 09.1 P02 | 3m | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -400,6 +401,7 @@ Recent decisions affecting current work:
 - [Phase 09]: An incomplete best-practices clone folder gets its own FAIL: pull it or move it aside, never delete
 - [Phase 09.1]: Glossary approved with changes: directory in prose and dir in identifiers; the host; best-practices names are outright renames with no alias
 - [Phase 09.1]: tests/selftest/ becomes tests/unit/ in plan 10; the start hook glossary row is dropped; the best-practices repo rules are decoupled from the sandbox
+- [Phase 09.1]: The best-practices repo rule rules/best-practices.md names no sandbox command, path or hook and says 'best-practices repo' instead of 'bundle repo'; the clone is found by following a link
 
 ### Pending Todos
 
@@ -474,8 +476,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-18T06:15:40.212Z
-Stopped at: Completed 09.1-01-PLAN.md
+Last session: 2026-11-18T06:17:06.034Z
+Stopped at: Completed 09.1-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
