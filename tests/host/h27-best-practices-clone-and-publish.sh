@@ -224,7 +224,7 @@ check_init_without_clone() {
 
   check_step noclone 1
 
-  for expectedLine in "OK: state-folders: " "OK: claude-gsd-sync: " "OK: state-owner: "; do
+  for expectedLine in "OK: state-dirs: " "OK: claude-gsd-sync: " "OK: state-owner: "; do
     if ! grep -Fq "$expectedLine" "$noCloneFile" 2>/dev/null; then
       add_problem "sbx-init without a clone printed no line with '$expectedLine'; output: $(file_head noclone.out)"
     fi

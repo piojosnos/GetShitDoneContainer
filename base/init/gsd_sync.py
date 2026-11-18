@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 from typing import Mapping
 
-from check_result import CheckResult, failed, make_state_folder, passed
+from check_result import CheckResult, failed, make_state_dir, passed
 from hints import rebuild_hint
 
 
@@ -41,10 +41,10 @@ def gsd_sync_result(
     environment_map: Mapping[str, str] = os.environ,
     log_dir: Path | None = None,
 ) -> CheckResult:
-    folder_failure = make_state_folder(config_dir)
+    dir_failure = make_state_dir(config_dir)
 
-    if folder_failure is not None:
-        return folder_failure
+    if dir_failure is not None:
+        return dir_failure
 
     argument_list = [installer_command, agent_option, "--global", "--config-dir", str(config_dir)]
 

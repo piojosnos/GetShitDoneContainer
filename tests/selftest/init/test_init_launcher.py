@@ -1,8 +1,8 @@
 # ------------------------------------------------------------------------------
 # Tests of the sbx-init launcher
 # ------------------------------------------------------------------------------
-# The launcher runs from a copy of the image layout in a temp folder, with the
-# paths it reads pointed into that folder. Nothing here touches /home/sandbox or
+# The launcher runs from a copy of the image layout in a temp directory, with the
+# paths it reads pointed into that directory. Nothing here touches /home/sandbox or
 # /etc/sbx. One test interrupts a real run while a stand-in installer sleeps.
 # ------------------------------------------------------------------------------
 
@@ -126,13 +126,13 @@ def test_an_argument_exits_two_with_the_usage_line_and_touches_no_file(layout1):
     assert not layout1["state"].exists()
 
 
-def test_one_run_makes_the_state_folders_runs_the_agent_step_gives_state_back_and_writes_the_marker(layout1):
+def test_one_run_makes_the_state_dirs_runs_the_agent_step_gives_state_back_and_writes_the_marker(layout1):
     completed = run_launcher(layout1, [], "cache/npm claude")
 
     state1 = layout1["state"]
     assert completed.stderr == ""
     assert completed.stdout.splitlines() == [
-        f"OK: state-folders: shell, gh, git, cache/npm, claude exist under {state1}",
+        f"OK: state-dirs: shell, gh, git, cache/npm, claude exist under {state1}",
         "OK: step1: detail_step1",
         "OK: state-owner: 0 paths given back to sandbox",
         "sbx-init: 3 steps passed; run sbx-selfcheck to check the sandbox",
@@ -210,7 +210,7 @@ def test_an_interrupted_run_stops_the_installer_and_its_child_drops_the_log_and_
 
         assert launcher.returncode == 130
         assert stderr_text.splitlines()[-1] == INTERRUPTED_LINE
-        assert "OK: state-folders:" in stdout_text
+        assert "OK: state-dirs:" in stdout_text
         assert "steps passed" not in stdout_text
         assert process_is_gone(installer_id)
 

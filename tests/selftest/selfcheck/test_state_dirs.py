@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
-# Tests of the state folder checks
+# Tests of the state directory checks
 # ------------------------------------------------------------------------------
-# The folders exist and a file can be made in the state folder.
+# The directories exist and a file can be made in the state directory.
 # ------------------------------------------------------------------------------
 
 import os
@@ -12,46 +12,46 @@ import pytest
 import hints
 from helpers import load_shared_check
 
-state_folders = load_shared_check("030_state_folders")
+state_dirs = load_shared_check("030_state_dirs")
 
 
 # ------------------------------------------------------------------------------
 # Constants and helpers
 # ------------------------------------------------------------------------------
 
-def make_state_folders(state1: Path, name_list: list[str]) -> None:
+def make_state_dirs(state1: Path, name_list: list[str]) -> None:
     for name in name_list:
         (state1 / name).mkdir(parents=True)
 
 
 # ------------------------------------------------------------------------------
-# State folders and writable
+# State directories and writable
 # ------------------------------------------------------------------------------
 
-def test_state_folders_pass_when_base_and_extra_folders_exist(tmp_path):
+def test_state_dirs_pass_when_base_and_extra_dirs_exist(tmp_path):
     state1 = tmp_path / "state1"
-    make_state_folders(state1, ["shell", "gh", "git", "cache/npm", "m2"])
+    make_state_dirs(state1, ["shell", "gh", "git", "cache/npm", "m2"])
 
-    result = state_folders.state_folders_result(state1, "cache/npm m2")
+    result = state_dirs.state_dirs_result(state1, "cache/npm m2")
 
     assert result.passed
 
 
 def test_a_name_listed_twice_is_checked_once_and_listed_once(tmp_path):
     state1 = tmp_path / "state1"
-    make_state_folders(state1, ["shell", "gh", "git", "claude"])
+    make_state_dirs(state1, ["shell", "gh", "git", "claude"])
 
-    result = state_folders.state_folders_result(state1, "claude claude")
+    result = state_dirs.state_dirs_result(state1, "claude claude")
 
     assert result.passed
     assert result.detail == f"shell, gh, git, claude exist under {state1}"
 
 
-def test_state_folders_fail_naming_the_missing_folder(tmp_path):
+def test_state_dirs_fail_naming_the_missing_dir(tmp_path):
     state1 = tmp_path / "state1"
-    make_state_folders(state1, ["shell", "gh", "git", "cache/npm"])
+    make_state_dirs(state1, ["shell", "gh", "git", "cache/npm"])
 
-    result = state_folders.state_folders_result(state1, "cache/npm m2")
+    result = state_dirs.state_dirs_result(state1, "cache/npm m2")
 
     assert not result.passed
     assert "m2" in result.detail
@@ -60,29 +60,29 @@ def test_state_folders_fail_naming_the_missing_folder(tmp_path):
     assert "sbx-init" in result.hint
 
 
-def test_state_writable_passes_and_leaves_the_folder_empty(tmp_path):
+def test_state_writable_passes_and_leaves_the_dir_empty(tmp_path):
     state1 = tmp_path / "state1"
     state1.mkdir()
 
-    result = state_folders.state_writable_result(state1)
+    result = state_dirs.state_writable_result(state1)
 
     assert result.passed
     assert list(state1.iterdir()) == []
 
 
-@pytest.mark.skipif(os.getuid() == 0, reason="root can write to a read-only folder")
-def test_state_writable_fails_for_a_read_only_folder(tmp_path, restorable_mode):
+@pytest.mark.skipif(os.getuid() == 0, reason="root can write to a read-only directory")
+def test_state_writable_fails_for_a_read_only_dir(tmp_path, restorable_mode):
     state1 = tmp_path / "state1"
     state1.mkdir()
     restorable_mode(state1, 0o555)
 
-    result = state_folders.state_writable_result(state1)
+    result = state_dirs.state_writable_result(state1)
 
     assert not result.passed
     assert result.hint == hints.state_writable_hint()
 
 
-def test_state_writable_fails_for_a_missing_folder(tmp_path):
-    result = state_folders.state_writable_result(tmp_path / "state1")
+def test_state_writable_fails_for_a_missing_dir(tmp_path):
+    result = state_dirs.state_writable_result(tmp_path / "state1")
 
     assert not result.passed

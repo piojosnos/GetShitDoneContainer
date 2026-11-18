@@ -20,9 +20,9 @@ NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 NAME_FILE_PATTERN = re.compile(r"^[0-9]{3}_[a-z0-9_]+\.py$")
 SHARED_STEPS_DIR = REPO_DIR / "base" / "init" / "steps"
 STEP_ORDER_BY_AGENT_MAP = {
-    "claude": ["state-folders", "claude-gsd-sync", "state-owner", "claude-best-practices-links"],
+    "claude": ["state-dirs", "claude-gsd-sync", "state-owner", "claude-best-practices-links"],
     "cursor": [
-        "state-folders",
+        "state-dirs",
         "cursor-gsd-sync",
         "cursor-self-update-off",
         "state-owner",
@@ -61,8 +61,8 @@ def collected_name_list(tmp_path: Path, agent_name: str) -> list[str]:
     return [step.name for step in init_runner.collect_steps(SHARED_STEPS_DIR, agents1)]
 
 
-def dockerfile_text(folder_name: str) -> str:
-    return (REPO_DIR / folder_name / "Dockerfile").read_text()
+def dockerfile_text(dir_name: str) -> str:
+    return (REPO_DIR / dir_name / "Dockerfile").read_text()
 
 
 # ------------------------------------------------------------------------------

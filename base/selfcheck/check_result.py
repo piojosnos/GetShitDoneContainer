@@ -66,13 +66,13 @@ def one_line(text: str) -> str:
 
 
 # ------------------------------------------------------------------------------
-# Making a state folder
+# Making a state directory
 # ------------------------------------------------------------------------------
 
-def make_state_folder(folder: Path) -> CheckResult | None:
+def make_state_dir(dir_path: Path) -> CheckResult | None:
     try:
-        folder.mkdir(parents=True, exist_ok=True)
+        dir_path.mkdir(parents=True, exist_ok=True)
     except OSError as e:
-        return failed(f"cannot make {folder}: {e.strerror}", state_writable_hint())
+        return failed(f"cannot make {dir_path}: {e.strerror}", state_writable_hint())
 
     return None

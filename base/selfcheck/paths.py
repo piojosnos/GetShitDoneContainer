@@ -38,7 +38,7 @@ def link_text(link: Path) -> str | None:
         return None
 
 
-def state_folder_name_list(state_dirs_text: str) -> list[str]:
+def state_dir_name_list(state_dirs_text: str) -> list[str]:
     name_list = []
 
     for name in BASE_STATE_DIR_LIST + state_dirs_text.split():

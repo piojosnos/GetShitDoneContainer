@@ -78,13 +78,13 @@ def test_every_entry_is_a_check_with_a_callable_function(shared_check_list, agen
             assert callable(check.function)
 
 
-def test_collect_checks_loads_both_agent_folders_without_a_load_failure(repo_dir, tmp_path):
-    folder1 = tmp_path / "folder1"
-    folder1.mkdir()
-    shutil.copytree(repo_dir / "claude" / "selfcheck", folder1 / "claude")
-    shutil.copytree(repo_dir / "cursor" / "selfcheck", folder1 / "cursor")
+def test_collect_checks_loads_both_agent_dirs_without_a_load_failure(repo_dir, tmp_path):
+    dir1 = tmp_path / "dir1"
+    dir1.mkdir()
+    shutil.copytree(repo_dir / "claude" / "selfcheck", dir1 / "claude")
+    shutil.copytree(repo_dir / "cursor" / "selfcheck", dir1 / "cursor")
 
-    check_list = runner.collect_checks(SHARED_CHECKS_DIR, folder1)
+    check_list = runner.collect_checks(SHARED_CHECKS_DIR, dir1)
 
     assert len(check_list) == SHARED_CHECK_COUNT + CLAUDE_CHECK_COUNT + CURSOR_CHECK_COUNT
 
@@ -98,7 +98,7 @@ def test_the_shared_list_holds_the_checks_in_file_name_order(shared_check_list, 
     assert name_list == [
         "workspace-mount",
         "project-folder",
-        "state-folders",
+        "state-dirs",
         "state-writable",
         "init-marker",
         "no-root-owned-state",

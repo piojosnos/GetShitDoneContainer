@@ -211,7 +211,7 @@ A Cursor sandbox:
 
 | Order | Step | What it does | Agent |
 |---|---|---|---|
-| 1 | `state-folders` | Makes the folders under `state/` that the tools write to | both |
+| 1 | `state-dirs` | Makes the directories under `state/` that the tools write to | both |
 | 2 | `claude-gsd-sync` or `cursor-gsd-sync` | Syncs the image's GSD into the agent's config folder, offline | by agent |
 | 3 | `cursor-self-update-off` | Sets the static channel in `cli-config.json` | Cursor |
 | 4 | `state-owner` | Gives root-owned files in `state/` back to `sandbox` | both |
@@ -222,7 +222,7 @@ A Claude sandbox runs 4 steps (1, 2, 4, 5); a Cursor sandbox runs 5.
 A full pass in a Claude sandbox:
 
 ```text
-OK: state-folders: shell, gh, git, cache/npm, cache/uv, m2, claude exist under /home/sandbox/workspace/state
+OK: state-dirs: shell, gh, git, cache/npm, cache/uv, m2, claude exist under /home/sandbox/workspace/state
 OK: claude-gsd-sync: the GSD installer finished into /home/sandbox/workspace/state/claude
 OK: state-owner: 0 paths given back to sandbox
 OK: claude-best-practices-links: 12 skills linked from /home/sandbox/workspace/best-practices, rules linked
@@ -232,7 +232,7 @@ sbx-init: 4 steps passed; run sbx-selfcheck to check the sandbox
 The same run with no clone yet:
 
 ```text
-OK: state-folders: shell, gh, git, cache/npm, cache/uv, m2, claude exist under /home/sandbox/workspace/state
+OK: state-dirs: shell, gh, git, cache/npm, cache/uv, m2, claude exist under /home/sandbox/workspace/state
 OK: claude-gsd-sync: the GSD installer finished into /home/sandbox/workspace/state/claude
 OK: state-owner: 0 paths given back to sandbox
 FAIL: claude-best-practices-links: no best-practices clone at /home/sandbox/workspace/best-practices

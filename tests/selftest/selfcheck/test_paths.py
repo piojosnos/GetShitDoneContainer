@@ -30,8 +30,8 @@ def test_link_text_returns_the_link_text_and_none_for_a_file(tmp_path):
     assert paths.link_text(tmp_path / "file1") is None
 
 
-def test_state_folder_name_list_puts_the_base_folders_first_and_keeps_each_name_once():
-    assert paths.state_folder_name_list("cache/npm claude claude shell") == [
+def test_state_dir_name_list_puts_the_base_dirs_first_and_keeps_each_name_once():
+    assert paths.state_dir_name_list("cache/npm claude claude shell") == [
         "shell", "gh", "git", "cache/npm", "claude",
     ]
-    assert paths.state_folder_name_list("") == ["shell", "gh", "git"]
+    assert paths.state_dir_name_list("") == ["shell", "gh", "git"]

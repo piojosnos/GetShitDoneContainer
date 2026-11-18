@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Checks: the state folders exist and can be written
+# Checks: the state directories exist and can be written
 # ------------------------------------------------------------------------------
 # The image puts this file in /usr/local/lib/sbx-selfcheck/checks/.
 # ------------------------------------------------------------------------------
@@ -10,22 +10,22 @@ from pathlib import Path
 
 from check_result import Check, CheckResult, failed, passed
 from hints import init_hint, state_writable_hint
-from paths import STATE_DIR, state_folder_name_list
+from paths import STATE_DIR, state_dir_name_list
 
 _STATE_WRITE_PROBE_PREFIX = ".sbx-selfcheck-"
 
 
 # ------------------------------------------------------------------------------
-# State folders
+# State directories
 # ------------------------------------------------------------------------------
 
-def state_folders_result(state_dir: Path, state_dirs_text: str) -> CheckResult:
-    folder_list = state_folder_name_list(state_dirs_text)
+def state_dirs_result(state_dir: Path, state_dirs_text: str) -> CheckResult:
+    dir_name_list = state_dir_name_list(state_dirs_text)
     missing_list = []
 
-    for folder in folder_list:
-        if not (state_dir / folder).is_dir():
-            missing_list.append(folder)
+    for dir_name in dir_name_list:
+        if not (state_dir / dir_name).is_dir():
+            missing_list.append(dir_name)
 
     if missing_list:
         return failed(
@@ -33,7 +33,7 @@ def state_folders_result(state_dir: Path, state_dirs_text: str) -> CheckResult:
             init_hint(),
         )
 
-    return passed(f"{', '.join(folder_list)} exist under {state_dir}")
+    return passed(f"{', '.join(dir_name_list)} exist under {state_dir}")
 
 
 # ------------------------------------------------------------------------------
@@ -61,8 +61,8 @@ def state_writable_result(state_dir: Path) -> CheckResult:
 # Check entries
 # ------------------------------------------------------------------------------
 
-def _check_state_folders() -> CheckResult:
-    return state_folders_result(STATE_DIR, os.environ.get("SBX_STATE_DIRS", ""))
+def _check_state_dirs() -> CheckResult:
+    return state_dirs_result(STATE_DIR, os.environ.get("SBX_STATE_DIRS", ""))
 
 
 def _check_state_writable() -> CheckResult:
@@ -70,6 +70,6 @@ def _check_state_writable() -> CheckResult:
 
 
 CHECK_LIST = [
-    Check("state-folders", _check_state_folders),
+    Check("state-dirs", _check_state_dirs),
     Check("state-writable", _check_state_writable),
 ]
