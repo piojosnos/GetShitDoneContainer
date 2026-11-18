@@ -234,7 +234,7 @@ Plans:
 **Requirements**: TBD (decisions D-01 to D-19 in 09.1-CONTEXT.md are the contract)
 **Depends on**: Phase 9
 
-**Plans**: 3/14 plans executed
+**Plans**: 4/14 plans executed
 
 Plans:
 **Wave 1**
@@ -245,7 +245,7 @@ Plans:
 - [x] 09.1-03-PLAN.md: the agreed glossary recorded; the clone command, its variable, the repo URL pin and the environment check renamed, with the MIGRATION note (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 09.1-04-PLAN.md: the best-practices links module, link and no-copy checks, host test library, H-27 and the fixture repo renamed; the guard's scan list follows (wave 3)
+- [x] 09.1-04-PLAN.md: the best-practices links module, link and no-copy checks, host test library, H-27 and the fixture repo renamed; the guard's scan list follows (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 09.1-05-PLAN.md: "the host" in hints, scripts and tests; H-06 renamed (wave 4)
