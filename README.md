@@ -536,7 +536,7 @@ docker run --rm sbx-claude:local /opt/sbx/agents/bin/claude --version
 | `build.sh: SBX_CA_CERT ...` | The rest of the line says what is wrong with the variable or the file. It must be an absolute path to a readable PEM file. Nothing was built. |
 | `UNABLE_TO_VERIFY_LEAF_SIGNATURE` from a Node program run with `docker exec` | Run it from `sbx-shell`, or pass `-e NODE_EXTRA_CA_CERTS=/etc/sbx/extra-ca.pem` to `docker exec`. |
 | `ccusage` cannot fetch its price table behind a company proxy | Add `--offline`. |
-| `overlaps the registry folder`, `overlaps the repo folder` or `overlaps the folder of sandbox` | Pick a folder of its own for the sandbox. |
+| `overlaps the registry directory`, `overlaps the tools clone` or `overlaps the directory of sandbox` | Pick a directory of its own for the sandbox. |
 | `required variable SBX_DIR is missing a value` | Only the raw Compose commands read `SBX_NAME` and `SBX_DIR` from your terminal; export both, or use the `sbx-*` scripts. |
 | Maven fails with `java.io.IOException: Input/output error` and `Failed to delete tracking file` | Maven 3.9.12 and later cannot keep their local repository on the Docker Desktop for Mac mount. Keep `MAVEN_VERSION` at 3.9.11. Before raising it, run a Maven build in a sandbox on the Mac by hand; no automatic check covers this. |
 | `up` fails with `... must be lowercase` and names `sbx-<name>-name-check` | `SBX_NAME` has an uppercase letter. Use the lowercase name; see the name rule in Requirements. |
