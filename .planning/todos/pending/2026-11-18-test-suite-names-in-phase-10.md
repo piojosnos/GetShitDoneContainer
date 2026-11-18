@@ -5,7 +5,7 @@ area: tests
 source: Glossary review in the vocabulary alignment phase (2026-11-18)
 ---
 
-`tests/selftest/` is being renamed to `tests/unit/`. Most of it is unit tests in the strict sense: `init/` and `selfcheck/` import one function or check and call it in-process. `sbx/` is not: each harness runs a whole `bin/sbx-*` script as a process against the stand-in docker and asserts on its exit code, output and files. That is a component test.
+`tests/selftest/` was renamed to `tests/unit/`. Most of it is unit tests in the strict sense: `init/` and `selfcheck/` import one function or check and call it in-process. `sbx/` is not: each harness runs a whole `bin/sbx-*` script as a process against the stand-in docker and asserts on its exit code, output and files. That is a component test.
 
 The user chose to keep one `tests/unit/` suite for now, with a line in `tests/README.md` saying what `sbx/` does.
 
