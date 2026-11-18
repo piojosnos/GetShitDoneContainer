@@ -15,9 +15,9 @@ from pathlib import Path
 def run() -> int:
     sys.dont_write_bytecode = True
     # The isolated system interpreter ignores PYTHONPATH and the user site, so the
-    # only code it imports is the folder this file sits in, the self-check folder
-    # next to it (the shared result type, paths and hints) and that folder's
-    # agents folder, where an agent image keeps the library its steps share.
+    # only code it imports is the directory this file sits in, the selfcheck directory
+    # next to it (the shared result type, paths and hints) and that directory's
+    # agents directory, where an agent image keeps the library its steps share.
     launcher_dir = Path(__file__).resolve().parent
     selfcheck_dir = launcher_dir.parent / "sbx-selfcheck"
     sys.path.insert(0, str(launcher_dir))

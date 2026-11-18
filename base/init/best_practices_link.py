@@ -1,9 +1,9 @@
 # ------------------------------------------------------------------------------
-# Links from an agent's config folder into the best-practices clone
+# Links from an agent config directory into the best-practices clone
 # ------------------------------------------------------------------------------
-# A link of init's own is one whose target lies under the clone's folder; init
+# A link of init's own is one whose target lies under the clone's directory; init
 # replaces it and removes it when the clone drops the skill. Anything else in the
-# way (a folder, a file, a copy, a link elsewhere) is left as it is and reported.
+# way (a directory, a file, a copy, a link elsewhere) is left as it is and reported.
 # The only removal in this file is Path.unlink on an own link. The step does not
 # check that a link resolves; the self-check does. The image puts this file in
 # /usr/local/lib/sbx-init/.

@@ -2,7 +2,7 @@
 # Tests of the sbx-init runner
 # ------------------------------------------------------------------------------
 # The lock, the marker, the order of the steps, the stop at the first FAIL, the
-# load failures and the rerun. Every case runs on real files in a temp folder;
+# load failures and the rerun. Every case runs on real files in a temp directory;
 # the lock holder is a real second process.
 # ------------------------------------------------------------------------------
 
@@ -229,7 +229,7 @@ def test_a_step_list_that_is_not_a_list_of_steps_is_one_load_failure(shared1, ag
     ]
 
 
-def test_a_missing_agent_folder_prints_only_the_agent_steps_failure(shared1, tmp_path, marker1, lock1):
+def test_a_missing_agent_dir_prints_only_the_agent_steps_failure(shared1, tmp_path, marker1, lock1):
     side_effect1 = tmp_path / "side_effect1"
     write_step_file(shared1, "010_step1", "step1", touch_file=side_effect1)
     missing_dir = tmp_path / "missing1"
@@ -246,7 +246,7 @@ def test_a_missing_agent_folder_prints_only_the_agent_steps_failure(shared1, tmp
     assert not marker1.exists()
 
 
-def test_an_empty_agent_folder_prints_only_the_agent_steps_failure(shared1, tmp_path, marker1, lock1):
+def test_an_empty_agent_dir_prints_only_the_agent_steps_failure(shared1, tmp_path, marker1, lock1):
     write_step_file(shared1, "010_step1", "step1")
     empty_dir = tmp_path / "empty1"
     empty_dir.mkdir()
@@ -258,7 +258,7 @@ def test_an_empty_agent_folder_prints_only_the_agent_steps_failure(shared1, tmp_
     assert len(line_list) == 3
 
 
-def test_an_agent_folder_with_only_empty_subfolders_prints_only_the_agent_steps_failure(
+def test_an_agent_dir_with_only_empty_subdirs_prints_only_the_agent_steps_failure(
     shared1, agents1, marker1, lock1
 ):
     write_step_file(shared1, "010_step1", "step1")

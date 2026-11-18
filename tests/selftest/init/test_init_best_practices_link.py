@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # Tests of the best-practices links step
 # ------------------------------------------------------------------------------
-# Real folders and links inside tmp_path. The config folder and the clone are
+# Real directories and links inside tmp_path. The config directory and the clone are
 # siblings under it, as in the container, so the relative link texts resolve.
 # ------------------------------------------------------------------------------
 
@@ -40,7 +40,7 @@ def make_trees(base_dir: Path, skill_name_list: list[str]) -> tuple[Path, Path]:
 # One clone skill and the rules, linked
 # ------------------------------------------------------------------------------
 
-def test_an_empty_config_folder_gets_the_rules_link_and_one_link_per_skill(tmp_path):
+def test_an_empty_config_dir_gets_the_rules_link_and_one_link_per_skill(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1", "skill2"])
 
     result = link_best_practices(config1, clone1, True)
@@ -65,7 +65,7 @@ def test_the_claude_step_file_holds_one_step_named_for_the_agent():
 # Clashes with what the user keeps
 # ------------------------------------------------------------------------------
 
-def test_a_user_folder_with_a_clone_skill_name_is_left_named_and_the_rest_is_linked(tmp_path):
+def test_a_user_dir_with_a_clone_skill_name_is_left_named_and_the_rest_is_linked(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1", "skill2"])
     (config1 / "skills" / "skill1").mkdir(parents=True)
     (config1 / "skills" / "skill1" / "SKILL.md").write_bytes(b"mine\n")
@@ -83,7 +83,7 @@ def test_a_user_folder_with_a_clone_skill_name_is_left_named_and_the_rest_is_lin
     assert os.readlink(config1 / "rules") == RULES_LINK_TEXT
 
 
-def test_a_real_rules_folder_is_left_named_and_the_skills_are_linked(tmp_path):
+def test_a_real_rules_dir_is_left_named_and_the_skills_are_linked(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"])
     (config1 / "rules").mkdir()
     (config1 / "rules" / "mine1.md").write_bytes(b"my rule\n")
@@ -134,7 +134,7 @@ def test_a_copy_of_a_clone_skill_is_left_and_named(tmp_path):
     assert not (config1 / "skills" / "skill1").is_symlink()
 
 
-def test_a_gsd_skill_folder_that_shares_a_clone_skill_name_is_left_and_named(tmp_path):
+def test_a_gsd_skill_dir_that_shares_a_clone_skill_name_is_left_and_named(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["gsd-skill1"])
     (config1 / "skills" / "gsd-skill1").mkdir(parents=True)
     (config1 / "skills" / "gsd-skill1" / "SKILL.md").write_bytes(b"gsd\n")
@@ -198,7 +198,7 @@ def test_a_dangling_own_link_for_a_dropped_skill_is_removed(tmp_path):
     assert (config1 / "skills" / "skill1").is_symlink()
 
 
-def test_a_link_into_a_sibling_folder_of_the_clone_skills_is_kept(tmp_path):
+def test_a_link_into_a_sibling_dir_of_the_clone_skills_is_kept(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"])
     (clone1 / "skills-old" / "old1").mkdir(parents=True)
     (config1 / "skills").mkdir()
@@ -224,8 +224,8 @@ def test_a_list_file_from_an_older_image_is_left_byte_for_byte(tmp_path):
 # The clone's shape
 # ------------------------------------------------------------------------------
 
-def incomplete_detail(clone_dir: Path, folder_name: str) -> str:
-    return f"{clone_dir} exists but has no {folder_name}/ directory"
+def incomplete_detail(clone_dir: Path, dir_name: str) -> str:
+    return f"{clone_dir} exists but has no {dir_name}/ directory"
 
 
 def assert_incomplete_fix(hint: str, clone_dir: Path) -> None:
@@ -235,7 +235,7 @@ def assert_incomplete_fix(hint: str, clone_dir: Path) -> None:
     assert "sbx-best-practices-clone" in hint
 
 
-def test_a_clone_folder_without_rules_fails_the_claude_step_as_incomplete_and_makes_no_link(tmp_path):
+def test_a_clone_dir_without_rules_fails_the_claude_step_as_incomplete_and_makes_no_link(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"])
     (clone1 / "rules").rmdir()
 
@@ -247,7 +247,7 @@ def test_a_clone_folder_without_rules_fails_the_claude_step_as_incomplete_and_ma
     assert list(config1.iterdir()) == []
 
 
-def test_a_clone_folder_without_skills_fails_the_cursor_step_as_incomplete_and_makes_no_link(tmp_path):
+def test_a_clone_dir_without_skills_fails_the_cursor_step_as_incomplete_and_makes_no_link(tmp_path):
     config1, clone1 = make_trees(tmp_path, [])
     (clone1 / "skills").rmdir()
 
@@ -260,7 +260,7 @@ def test_a_clone_folder_without_skills_fails_the_cursor_step_as_incomplete_and_m
 
 
 @pytest.mark.parametrize("links_rules", [True, False])
-def test_no_clone_folder_fails_both_steps_with_the_clone_fix(tmp_path, links_rules):
+def test_no_clone_dir_fails_both_steps_with_the_clone_fix(tmp_path, links_rules):
     config1 = tmp_path / "state1" / "agent1"
     config1.mkdir(parents=True)
     clone1 = tmp_path / "best-practices"
@@ -275,13 +275,13 @@ def test_no_clone_folder_fails_both_steps_with_the_clone_fix(tmp_path, links_rul
     assert list(config1.iterdir()) == []
 
 
-@pytest.mark.parametrize("kind", ["folder", "file", "link"])
-def test_an_empty_folder_a_file_or_a_dangling_link_at_the_clone_path_is_incomplete_not_missing(tmp_path, kind):
+@pytest.mark.parametrize("kind", ["directory", "file", "link"])
+def test_an_empty_dir_a_file_or_a_dangling_link_at_the_clone_path_is_incomplete_not_missing(tmp_path, kind):
     config1 = tmp_path / "state1" / "agent1"
     config1.mkdir(parents=True)
     clone1 = tmp_path / "best-practices"
 
-    if kind == "folder":
+    if kind == "directory":
         clone1.mkdir()
     elif kind == "file":
         clone1.write_text("not a clone\n")
@@ -308,7 +308,7 @@ def test_init_and_the_self_check_give_the_same_text_for_an_incomplete_clone(tmp_
     assert init_result.hint == check_result.hint
 
 
-def test_a_clone_with_rules_and_no_skills_folder_links_rules_and_zero_skills(tmp_path):
+def test_a_clone_with_rules_and_no_skills_dir_links_rules_and_zero_skills(tmp_path):
     config1, clone1 = make_trees(tmp_path, [])
     (clone1 / "skills").rmdir()
 
@@ -319,7 +319,7 @@ def test_a_clone_with_rules_and_no_skills_folder_links_rules_and_zero_skills(tmp
     assert os.readlink(config1 / "rules") == RULES_LINK_TEXT
 
 
-def test_a_missing_skills_folder_in_the_config_folder_is_made(tmp_path):
+def test_a_missing_skills_dir_in_the_config_dir_is_made(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"])
 
     assert not (config1 / "skills").exists()
@@ -329,7 +329,7 @@ def test_a_missing_skills_folder_in_the_config_folder_is_made(tmp_path):
     assert (config1 / "skills").is_dir()
 
 
-def test_a_clone_folder_with_a_leading_dot_is_not_linked(tmp_path):
+def test_a_clone_dir_with_a_leading_dot_is_not_linked(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1", ".hidden1"])
 
     result = link_best_practices(config1, clone1, True)
@@ -343,15 +343,15 @@ def test_a_clone_folder_with_a_leading_dot_is_not_linked(tmp_path):
 # Cursor links skills only
 # ------------------------------------------------------------------------------
 
-def test_the_skills_only_step_leaves_a_real_rules_folder_and_a_foreign_rules_link_alone(tmp_path):
+def test_the_skills_only_step_leaves_a_real_rules_dir_and_a_foreign_rules_link_alone(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"])
     (config1 / "rules").mkdir()
     (config1 / "rules" / "mine1.md").write_bytes(b"my rule\n")
 
-    folder_result = link_best_practices(config1, clone1, False)
+    dir_result = link_best_practices(config1, clone1, False)
 
-    assert folder_result.passed
-    assert "rules" not in folder_result.detail
+    assert dir_result.passed
+    assert "rules" not in dir_result.detail
     assert (config1 / "rules" / "mine1.md").read_bytes() == b"my rule\n"
 
     (config1 / "rules" / "mine1.md").unlink()

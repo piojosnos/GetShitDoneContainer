@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# The GSD sync into an agent's config folder
+# The GSD sync into an agent config directory
 # ------------------------------------------------------------------------------
 # Runs the image's own installer, offline, and reports only its outcome; the
 # self-check compares the synced version with the pin. The image puts this file
@@ -29,8 +29,8 @@ _LOG_PREFIX = "sbx-init-gsd-"
 # ------------------------------------------------------------------------------
 # The sync
 # ------------------------------------------------------------------------------
-# The installer waits forever on a folder it cannot create, so the folder is made
-# first and a folder that cannot be made fails here at once.
+# The installer waits forever on a directory it cannot create, so the directory is made
+# first and a directory that cannot be made fails here at once.
 # ------------------------------------------------------------------------------
 
 def gsd_sync_result(

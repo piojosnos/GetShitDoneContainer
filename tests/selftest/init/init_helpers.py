@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # Plain helpers the init tests share
 # ------------------------------------------------------------------------------
-# The repo folder, step files, stand-in executables, a PATH that puts a folder
+# The repo directory, step files, stand-in executables, a PATH that puts a directory
 # first, step file loading and a runner call.
 # ------------------------------------------------------------------------------
 
@@ -57,16 +57,16 @@ def write_step_file(
     return step_path
 
 
-def write_stand_in(folder: Path, name: str, script_body: str) -> Path:
-    stand_in = folder / name
+def write_stand_in(dir_path: Path, name: str, script_body: str) -> Path:
+    stand_in = dir_path / name
     stand_in.write_text("#!/bin/sh\n" + script_body + "\n")
     stand_in.chmod(0o755)
 
     return stand_in
 
 
-def environment_with(folder: Path) -> dict[str, str]:
-    return {"PATH": f"{folder}{os.pathsep}{os.environ['PATH']}"}
+def environment_with(dir_path: Path) -> dict[str, str]:
+    return {"PATH": f"{dir_path}{os.pathsep}{os.environ['PATH']}"}
 
 
 def process_is_gone(process_id: int) -> bool:

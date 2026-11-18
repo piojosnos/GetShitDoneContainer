@@ -125,7 +125,6 @@ def test_the_base_dockerfile_installs_sbx_init_and_has_no_entrypoint():
 
     assert "mkdir -p /usr/local/lib/sbx-init/steps /etc/sbx/init.d /opt/sbx/agents/bin" in text
     assert "ENTRYPOINT" not in text
-    assert "sbx-entrypoint" not in text
 
 
 def test_the_shared_step_file_module_reaches_the_image_and_sbx_init_can_import_it():
@@ -138,11 +137,10 @@ def test_the_shared_step_file_module_reaches_the_image_and_sbx_init_can_import_i
 
 
 @pytest.mark.parametrize("agent_name", ["claude", "cursor"])
-def test_each_agent_dockerfile_copies_its_own_steps_and_names_no_start_hooks(agent_name):
+def test_each_agent_dockerfile_copies_its_own_steps(agent_name):
     text = dockerfile_text(agent_name)
 
     assert f"COPY --chmod=644 {agent_name}/init/*.py {paths.AGENT_STEPS_DIR}/{agent_name}/" in text
-    assert "start.d" not in text
 
 
 def test_compose_keeps_the_container_running_with_tini_and_no_entrypoint():

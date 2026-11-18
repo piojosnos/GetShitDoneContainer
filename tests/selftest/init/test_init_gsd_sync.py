@@ -66,7 +66,7 @@ def pinned_gsd_version() -> str:
 # The installer call
 # ------------------------------------------------------------------------------
 
-def test_the_installer_gets_the_agent_option_global_and_the_config_folder(tmp_path):
+def test_the_installer_gets_the_agent_option_global_and_the_config_dir(tmp_path):
     environment_map = stand_in_environment(tmp_path, RECORDING_BODY)
     config1 = tmp_path / "config1"
 
@@ -88,7 +88,7 @@ def test_the_installer_reads_an_already_closed_stdin(tmp_path):
 # Outcomes
 # ------------------------------------------------------------------------------
 
-def test_exit_zero_passes_names_the_folder_and_leaves_no_log(tmp_path):
+def test_exit_zero_passes_names_the_dir_and_leaves_no_log(tmp_path):
     environment_map = stand_in_environment(tmp_path, RECORDING_BODY)
     config1 = tmp_path / "config1"
     log_dir1 = tmp_path / "logs1"
@@ -144,10 +144,10 @@ def test_the_time_limit_stops_the_installer_and_everything_it_started(tmp_path):
     assert process_is_gone(grandchild_id)
 
 
-def test_a_folder_that_cannot_be_made_fails_and_the_installer_never_runs(tmp_path):
+def test_a_dir_that_cannot_be_made_fails_and_the_installer_never_runs(tmp_path):
     environment_map = stand_in_environment(tmp_path, RECORDING_BODY)
     blocker1 = tmp_path / "blocker1"
-    blocker1.write_text("a file where a folder is needed")
+    blocker1.write_text("a file where a directory is needed")
 
     result = gsd_sync_result(
         blocker1 / "config1", "--claude", STAND_IN_NAME, environment_map=environment_map, log_dir=tmp_path
@@ -159,8 +159,8 @@ def test_a_folder_that_cannot_be_made_fails_and_the_installer_never_runs(tmp_pat
     assert not (tmp_path / "args1.txt").exists()
 
 
-@pytest.mark.skipif(os.geteuid() == 0, reason="root can make a folder under a read-only parent")
-def test_a_config_folder_under_a_read_only_parent_fails_and_the_installer_never_runs(tmp_path):
+@pytest.mark.skipif(os.geteuid() == 0, reason="root can make a directory under a read-only parent")
+def test_a_config_dir_under_a_read_only_parent_fails_and_the_installer_never_runs(tmp_path):
     environment_map = stand_in_environment(tmp_path, RECORDING_BODY)
     parent1 = tmp_path / "parent1"
     parent1.mkdir()
