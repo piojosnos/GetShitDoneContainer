@@ -17,7 +17,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - **Security**: Agents never run on the host, and each container sees only its project's mount. Why: this isolation is the reason the project exists.
 - **Security**: GSD comes only from `@opengsd/gsd-core`. Never use `get-shit-done-cc` or `gsd-build`. Why: the old package was compromised.
 - **Platform**: Must work on macOS + Docker Desktop (likely arm64), with bind mounts. Why: that's the user's only host.
-- **Simplicity**: Anything with logic is Python (through `uv` on the host, the image's `python3` inside); shell stays only for thin `exec` wrappers and Dockerfile `RUN` lines. Why: the v1 bash tooling grew about 10.9k lines of test shell around about 2.1k lines of product shell.
+- **Simplicity**: Anything with logic is Python (through `uv` on the host, the image's `python3` inside); shell stays only for thin `exec` scripts (the agent wrappers) and Dockerfile `RUN` lines. Why: the v1 bash tooling grew about 10.9k lines of test shell around about 2.1k lines of product shell.
 - **Toolchains**: JDK 21 LTS, Maven, Node.js, and Python in the shared base. Why: these are the stacks the user develops in.
 - **Verification**: Docker isn't available inside the dev sandbox, so plans must include host-side manual verification steps.
 - **Coexistence** (retired): the old layout ran side by side with the new one until every old sandbox moved; it is now deleted, and old `cc_` containers left on the host are plain stopped containers.
@@ -91,7 +91,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - `Dockerfile` (base): Shared base layer; installs system packages, downloads and verifies all tools, sets up `sandbox` user (UID 1000), creates mount point
 - `Dockerfile` (claude): Claude-specific layers; installs Claude Code and ccusage; links home directories to persistent state directories
 - `Dockerfile` (cursor): Cursor-specific layers; installs cursor-agent CLI; links home directories to persistent state directories
-- `docker-compose.yml`: Service definition; accepts `SBX_NAME`, `SBX_DIR`, `SBX_AGENT`, `SBX_IMAGE_TAG` environment variables; binds the sandbox directory to `/home/sandbox/workspace`; the container's command is `sleep infinity` and the image has no entrypoint
+- `compose.yml`: Service definition; accepts `SBX_NAME`, `SBX_DIR`, `SBX_AGENT`, `SBX_IMAGE_TAG` environment variables; binds the sandbox directory to `/home/sandbox/workspace`; the container's command is `sleep infinity` and the image has no entrypoint
 - `sbx-init` (Python launcher): Run by the user in the sandbox shell; runs the shared steps in `/usr/local/lib/sbx-init/steps/` and the agent steps in `/etc/sbx/init.d/<agent>/` in file-name order; prints one OK or FAIL line per step and stops at the first FAIL
 - Init steps: `state-dirs`, the agent GSD sync (`claude-gsd-sync` or `cursor-gsd-sync`), `cursor-self-update-off` (Cursor only), `state-owner`, and the best-practices links (`claude-best-practices-links` or `cursor-best-practices-links`)
 - `/home/sandbox/.sbx-init-done` marker file: Written in the container layer when every step passed; `sbx-claude` and `sbx-cursor` refuse until it exists, and a recreated container starts without it
@@ -202,7 +202,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - Fail closed: an input the script cannot use (missing config, invalid name) stops with an error (never skip silently)
 - Exit codes: 0 for success, 1 for failure, 2 for usage error
 - Error messages print to stderr with label: `sbx_error MESSAGE` sends to stderr with script name prefixed
-- Start errors in containers: `start_error MESSAGE` prefixed with `[sbx] ERROR:` and remediation advice
+- A failing `sbx-init` step returns `failed(problem, hint)`; the runner prints `FAIL: NAME: problem` and a `fix:` line under it, then stops. The commands in `base/bin/` print `[sbx] ERROR: ...` to stderr
 - Guards and tests: failures reported as `FAIL: name` on stdout, counted and summarized
 - A check function returns a `CheckResult` object with `passed` bool, `detail` string (on success), and `hint` string (on failure)
 - Check helpers like `tool_result` take injectable parameters (environment map, home root) for testability
