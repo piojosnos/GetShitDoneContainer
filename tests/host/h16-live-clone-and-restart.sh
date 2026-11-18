@@ -3,7 +3,7 @@
 # H-16: the clone is live; sbx-init relinks it and never touches your files
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; stops and restarts it
-# Moved and planted files stay in the run folder for the printed cleanup.
+# Moved and planted files stay in the run directory for the printed cleanup.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -18,11 +18,11 @@ sessionFile=$syncedDir/projects/-home-sandbox-workspace-hosttest/h16-session.jso
 settingsScript='const fs = require("fs"); const file = process.env.CLAUDE_CONFIG_DIR + "/settings.json"; let settings = {}; if (fs.existsSync(file)) { settings = JSON.parse(fs.readFileSync(file, "utf8")); } settings.h16Sentinel = process.argv[1]; fs.writeFileSync(file, JSON.stringify(settings, null, 2) + "\n");'
 
 # ------------------------------------------------------------------------------
-# Stops the check when the run folder has no best-practices clone
+# Stops the check when the run directory has no best-practices clone
 # ------------------------------------------------------------------------------
 require_clone() {
   if [ ! -d "$cloneDir/.git" ]; then
-    fail H-16 "the run folder has no best-practices clone" "looked in $cloneDir"
+    fail H-16 "the run directory has no best-practices clone" "looked in $cloneDir"
     return 1
   fi
 }
@@ -87,7 +87,7 @@ check_pull_is_live() {
 # ------------------------------------------------------------------------------
 # Plants user files and drops a skill from the clone
 # ------------------------------------------------------------------------------
-# One fixture skill is moved aside into the run folder, never deleted. User
+# One fixture skill is moved aside into the run directory, never deleted. User
 # files: a skill, memory, session, CLAUDE.md and a settings.json key.
 # ------------------------------------------------------------------------------
 plant_files() {
@@ -143,10 +143,10 @@ check_user_files_spared() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks sbx-init keeps a user's skill folder and rules folder and reports both
+# Checks sbx-init keeps a user's skill and rules directories and reports both
 # ------------------------------------------------------------------------------
-# The two links are moved aside into the run folder, then a real
-# skills/sbx-fixture-one folder and a real rules folder take their place.
+# The two links are moved aside into the run directory, then a real
+# skills/sbx-fixture-one directory and a real rules directory take their place.
 # sbx-init must fail at the links step naming both, leave both files as they are
 # and not write its marker.
 # ------------------------------------------------------------------------------
@@ -164,7 +164,7 @@ check_clash_kept_and_reported() {
   clashStatus=$?
 
   if [ "$clashStatus" -ne 1 ]; then
-    add_problem "sbx-init exited $clashStatus with a user skill folder and rules folder in the way; expected 1; output: $clashFile"
+    add_problem "sbx-init exited $clashStatus with a user skill directory and rules directory in the way; expected 1; output: $clashFile"
   fi
 
   if ! grep -E '^FAIL: claude-best-practices-links: ' "$clashFile" 2>/dev/null | grep -F 'skills/sbx-fixture-one' | grep -Fq 'state/claude/rules'; then
@@ -185,23 +185,23 @@ check_clash_kept_and_reported() {
 }
 
 # ------------------------------------------------------------------------------
-# Moves the planted folders aside, reruns sbx-init and checks the links again
+# Moves the planted directories aside, reruns sbx-init and checks the links again
 # ------------------------------------------------------------------------------
-# Both folders go into the run folder, never deleted. The rerun must pass and
-# relink, so the chain continues on a passing sandbox.
+# Both directories go into the run directory, never deleted. The rerun must
+# pass and relink, so the chain continues on a passing sandbox.
 # ------------------------------------------------------------------------------
 restore_after_clash() {
   local restoreFile=$RUN/logs/h16-restore.out
   local restoreStatus
 
-  mv "$syncedDir/skills/sbx-fixture-one" "$RUN/h16-clash-skill-folder-$$"
-  mv "$syncedDir/rules" "$RUN/h16-clash-rules-folder-$$"
+  mv "$syncedDir/skills/sbx-fixture-one" "$RUN/h16-clash-skill-dir-$$"
+  mv "$syncedDir/rules" "$RUN/h16-clash-rules-dir-$$"
 
   run_timeout 600 docker exec "$CONTAINER" sbx-init >"$restoreFile" 2>&1 </dev/null
   restoreStatus=$?
 
   if [ "$restoreStatus" -ne 0 ]; then
-    add_problem "sbx-init exited $restoreStatus after the planted folders were moved aside; expected 0; output: $restoreFile"
+    add_problem "sbx-init exited $restoreStatus after the planted directories were moved aside; expected 0; output: $restoreFile"
   fi
 
   check_best_practices_links "$syncedDir" "$cloneDir"
@@ -224,4 +224,4 @@ check_user_files_spared
 check_clash_kept_and_reported
 restore_after_clash
 report_check H-16 "the clone is not live, or sbx-init did not relink it, spare your files or report a clash" \
-  "an edit of the clone on the host and a pull inside the sandbox showed in the sandbox at once; sbx-init relinked the clone, dropped the link of a removed skill, kept the uncommitted edit and kept your skills, memories, sessions, settings key and CLAUDE.md; a skill folder and a rules folder of your own were kept and reported, and sbx-init relinked once they were moved aside"
+  "an edit of the clone on the host and a pull inside the sandbox showed in the sandbox at once; sbx-init relinked the clone, dropped the link of a removed skill, kept the uncommitted edit and kept your skills, memories, sessions, settings key and CLAUDE.md; a skill directory and a rules directory of your own were kept and reported, and sbx-init relinked once they were moved aside"

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# H-27: the first run in a fresh sandbox folder: refusal, init, clone, push
+# H-27: the first run in a fresh sandbox directory: refusal, init, clone, push
 # ------------------------------------------------------------------------------
-# Needs: images built; the run folder (not the running sandbox)
-# One offline docker run --rm container on a fresh folder of the run folder. It
-# walks the first run in order: sbx-claude refuses before sbx-init, sbx-init
-# stops at the missing clone, sbx-best-practices-clone clones and runs sbx-init, Claude
-# then starts, and a push reaches the origin. The run also checks that a login
-# shell started inside an sbx-claude session finds claude in the agents folder,
-# and that a plain login shell does not.
+# Needs: images built; the run directory (not the running sandbox)
+# One offline docker run --rm container on a fresh directory of the run
+# directory. It walks the first run in order: sbx-claude refuses before
+# sbx-init, sbx-init stops at the missing clone, sbx-best-practices-clone clones
+# and runs sbx-init, Claude then starts, and a push reaches the origin. The run
+# also checks that a login shell started inside an sbx-claude session finds
+# claude in the agents directory, and that a plain login shell does not.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -18,21 +18,21 @@ host_init
 h27Dir=$RUN/h27-$$-$(date +%s)
 
 # ------------------------------------------------------------------------------
-# FAIL and return 1 when there is no run folder
+# FAIL and return 1 when there is no run directory
 # ------------------------------------------------------------------------------
-require_run_folder() {
+require_run_dir() {
   if [ -z "${RUN:-}" ]; then
-    fail H-27 "no run folder" "run: bash tests/host/run-all.sh first"
+    fail H-27 "no run directory" "run: bash tests/host/run-all.sh first"
     return 1
   fi
 }
 
 # ------------------------------------------------------------------------------
-# Makes the fresh folder: project, state and a bare origin
+# Makes the fresh directory: project, state and a bare origin
 # ------------------------------------------------------------------------------
 # The origin is a bare copy of the run's origin; a push here never changes it.
 # ------------------------------------------------------------------------------
-prepare_folder() {
+prepare_dir() {
   mkdir -p "$h27Dir/hosttest" "$h27Dir/state"
 
   if ! git clone -q --bare "$RUN/best-practices-origin.git" "$h27Dir/best-practices-origin.git" >"$h27Dir/prepare.log" 2>&1; then
@@ -45,7 +45,7 @@ prepare_folder() {
 # Runs the whole in-container script in one offline container
 # ------------------------------------------------------------------------------
 # The script prints one 'STEP NAME STATUS' line per step to the run log and
-# writes each step's output into the folder, where the host side reads it.
+# writes each step's output into the directory, where the host side reads it.
 # ------------------------------------------------------------------------------
 run_script() {
   local scriptText
@@ -138,7 +138,7 @@ check_step() {
 }
 
 # ------------------------------------------------------------------------------
-# Prints the first lines of a file in the folder, or a note when it is missing
+# Prints the first lines of a file in the directory, or a note when it is missing
 # ------------------------------------------------------------------------------
 file_head() {
   if [ ! -f "$h27Dir/$1" ]; then
@@ -183,10 +183,10 @@ check_plain_path() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks a login shell in an sbx-claude session finds claude in the agents folder
+# Checks a login shell in an sbx-claude session finds claude in the agents dir
 # ------------------------------------------------------------------------------
-# The stand-in claude in /tmp replaces its own folder at the front of the PATH
-# with the agents folder, which is the PATH the wrapper hands the real agent,
+# The stand-in claude in /tmp replaces its own directory at the front of the PATH
+# with the agents directory, which is the PATH the wrapper hands the real agent,
 # then starts the login shell. The image's login files run for real.
 # ------------------------------------------------------------------------------
 check_session_login_shell() {
@@ -343,7 +343,7 @@ check_after() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks a clone of a missing origin failed, named sbx-gh-login, left no folder
+# Checks a clone of a missing origin failed, named sbx-gh-login, left no directory
 # ------------------------------------------------------------------------------
 check_missing_origin() {
   local missingOut
@@ -356,7 +356,7 @@ check_missing_origin() {
   fi
 
   if [ -e "$h27Dir/h27-missing" ]; then
-    add_problem "the failed clone left the folder $h27Dir/h27-missing"
+    add_problem "the failed clone left the directory $h27Dir/h27-missing"
   fi
 }
 
@@ -384,8 +384,8 @@ check_gsd_synced() {
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
-require_run_folder || exit 1
-prepare_folder || exit 1
+require_run_dir || exit 1
+prepare_dir || exit 1
 run_script
 
 if ! grep -Eq '^STEP missing [0-9]+$' "$h27Dir/run.log"; then
@@ -407,5 +407,5 @@ check_session_login_shell
 check_plain_login_shell
 check_missing_origin
 check_gsd_synced
-report_check H-27 "the first run is wrong in a fresh sandbox folder: the refusal, sbx-init, the clone, the GSD sync or the push" \
-  "offline: sbx-claude refused before sbx-init and claude is off the plain PATH; sbx-init without a clone stopped at the links step naming sbx-best-practices-clone; sbx-best-practices-clone cloned and its sbx-init passed with 4 steps; a second clone was refused; a branch was pushed to the origin; Claude started after init; a login shell inside an sbx-claude session found claude in /opt/sbx/agents/bin and a plain login shell did not; GSD synced offline at the pinned version; a failed clone left no folder"
+report_check H-27 "the first run is wrong in a fresh sandbox directory: the refusal, sbx-init, the clone, the GSD sync or the push" \
+  "offline: sbx-claude refused before sbx-init and claude is off the plain PATH; sbx-init without a clone stopped at the links step naming sbx-best-practices-clone; sbx-best-practices-clone cloned and its sbx-init passed with 4 steps; a second clone was refused; a branch was pushed to the origin; Claude started after init; a login shell inside an sbx-claude session found claude in /opt/sbx/agents/bin and a plain login shell did not; GSD synced offline at the pinned version; a failed clone left no directory"

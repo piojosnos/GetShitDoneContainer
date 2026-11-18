@@ -43,7 +43,7 @@ expect_row() {
   dockerState=$(docker_state)
 
   if ! grep -qxF -- "$expectedRow" "$RUN/logs/$1.out"; then
-    add_problem "sbx-list did not show hosttest as $2 with its folder; docker ps -a shows: ${dockerState:-no container}; log: $RUN/logs/$1.out"
+    add_problem "sbx-list did not show hosttest as $2 with its directory; docker ps -a shows: ${dockerState:-no container}; log: $RUN/logs/$1.out"
   fi
 }
 
@@ -104,7 +104,7 @@ check_unregistered() {
 }
 
 # ------------------------------------------------------------------------------
-# Takes the test sandbox down, then registers it on its own folder
+# Takes the test sandbox down, then registers it on its own directory
 # ------------------------------------------------------------------------------
 take_sandbox_down() {
   if ! compose_down >"$RUN/logs/h32-down.log" 2>&1; then
@@ -177,4 +177,4 @@ check_running
 check_stopped
 restore_test_sandbox h32
 report_check H-32 "sbx-list did not match docker ps -a" \
-  "sbx-list showed no container, running and stopped as docker ps -a did, with the folder that has a space; it marked no sandbox on the current image and listed the unregistered test container by its label, with no cc_ container"
+  "sbx-list showed no container, running and stopped as docker ps -a did, with the directory that has a space; it marked no sandbox on the current image and listed the unregistered test container by its label, with no cc_ container"

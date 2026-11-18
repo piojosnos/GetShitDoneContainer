@@ -3,7 +3,7 @@
 # H-03: variables and the image tag reach compose.yml; bad names are refused
 # ------------------------------------------------------------------------------
 # Needs: nothing
-# The probes use folders that do not exist, so nothing can start by mistake.
+# The probes use directories that do not exist, so nothing can start by mistake.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -30,7 +30,7 @@ read_name_probes() {
   noNameOutput=$(env -u SBX_NAME SBX_DIR=/sbx-hosttest-config-only docker compose --env-file /dev/null -f "$REPO_DIR/compose.yml" config </dev/null 2>&1)
   noNameStatus=$?
 
-  upperOutput=$(run_timeout 60 env SBX_NAME=HostTest SBX_DIR=/sbx-hosttest-no-such-folder docker compose --env-file /dev/null -f "$REPO_DIR/compose.yml" up -d </dev/null 2>&1)
+  upperOutput=$(run_timeout 60 env SBX_NAME=HostTest SBX_DIR=/sbx-hosttest-no-such-dir docker compose --env-file /dev/null -f "$REPO_DIR/compose.yml" up -d </dev/null 2>&1)
   upperStatus=$?
 }
 

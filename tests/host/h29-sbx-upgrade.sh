@@ -36,7 +36,7 @@ list_other_containers() {
 }
 
 # ------------------------------------------------------------------------------
-# Registers the test sandbox on its own folder and starts it by name
+# Registers the test sandbox on its own directory and starts it by name
 # ------------------------------------------------------------------------------
 prepare() {
   if ! compose_down >"$RUN/logs/h29-down.log" 2>&1; then
@@ -96,7 +96,7 @@ check_failed_build() {
 }
 
 # ------------------------------------------------------------------------------
-# Writes sentinels in three folders and the fake login files, then records the
+# Writes sentinels in three directories and the fake login files, then records the
 # volumes and other sandboxes
 # ------------------------------------------------------------------------------
 plant_and_snapshot() {
@@ -110,10 +110,10 @@ plant_and_snapshot() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks the one bind mount: the registered folder at the workspace
+# Checks the one bind mount: the registered directory at the workspace
 # ------------------------------------------------------------------------------
 # The Source is compared by its last path component only, because Docker Desktop
-# may show the folder under a different prefix.
+# may show the directory under a different prefix.
 # ------------------------------------------------------------------------------
 check_one_bind_mount() {
   local mountLines mountCount sbxBase mountType mountDestination mountSource

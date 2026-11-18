@@ -2,7 +2,7 @@
 # ------------------------------------------------------------------------------
 # H-25: the images match versions.env; a bare build is refused
 # ------------------------------------------------------------------------------
-# Needs: images built; the run folder (not the running sandbox)
+# Needs: images built; the run directory (not the running sandbox)
 # The tools are sbx-selfcheck's (H-34); a build without build.sh must name the missing pin.
 # ------------------------------------------------------------------------------
 set -u
@@ -10,11 +10,11 @@ set -u
 host_init
 
 # ------------------------------------------------------------------------------
-# FAIL and return 1 when there is no run folder
+# FAIL and return 1 when there is no run directory
 # ------------------------------------------------------------------------------
-require_run_folder() {
+require_run_dir() {
   if [ -z "${RUN:-}" ]; then
-    fail H-25 "no run folder" "run: bash tests/host/run-all.sh first"
+    fail H-25 "no run directory" "run: bash tests/host/run-all.sh first"
     return 1
   fi
 }
@@ -68,7 +68,7 @@ check_bare_builds() {
 # Main / Entry Point
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
-require_run_folder || exit 1
+require_run_dir || exit 1
 check_record
 check_bare_builds
 report_check H-25 "the image's versions.env differs from the repo's, or a build without build.sh did not stop" \

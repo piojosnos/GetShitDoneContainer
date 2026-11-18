@@ -115,7 +115,8 @@ pins_are_exact() {
 # dockerfile_args_have_no_defaults: no ARG default, every FROM takes a pin
 # ------------------------------------------------------------------------------
 # The one literal stage, FROM scratch AS cacert, is the empty default of the
-# optional root certificate folder that build.sh passes when SBX_CA_CERT is set.
+# optional root certificate directory that build.sh passes when SBX_CA_CERT is
+# set.
 # ------------------------------------------------------------------------------
 dockerfile_args_have_no_defaults() {
   local ok=0

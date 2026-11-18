@@ -7,12 +7,12 @@
 # initialised sandbox.
 # A fresh sandbox correctly fails the git identity and login checks, so this
 # plants a git identity and a fake login before each run. The Cursor sandbox
-# runs on its own folder with a space in its path and its own registry inside
-# the run folder. It is removed before H-34 ends, because H-32 and H-33 compare
+# runs on its own directory with a space in its path and its own registry inside
+# the run directory. It is removed before H-34 ends, because H-32 and H-33 compare
 # every sbx- container. The test images are always built with a root certificate,
 # so no certificate check may print that none was requested; that would mean the
 # build lost the certificate and its fingerprint together.
-# In the Cursor test sandbox, H-34 also checks that the agents folder reaches a
+# In the Cursor test sandbox, H-34 also checks that the agents directory reaches a
 # login shell inside an sbx-cursor session and no plain login shell; H-27 does the
 # same for Claude in its fresh container. This is the only check that starts a
 # Cursor sandbox, hence the split.
@@ -61,7 +61,7 @@ plant_identity() {
 # ------------------------------------------------------------------------------
 plant_fake_login() {
   if ! mkdir -p "$(dirname "$1")"; then
-    add_problem "could not make the folder of the fake login file $1"
+    add_problem "could not make the directory of the fake login file $1"
   fi
 
   if ! printf '{"fake":"%s"}\n' "$plantText" >"$1"; then
@@ -269,8 +269,8 @@ check_cursor_sandbox() {
 # ------------------------------------------------------------------------------
 # check_cursor_login_shells: a login shell finds cursor-agent only in a session
 # ------------------------------------------------------------------------------
-# The stand-in cursor-agent in /tmp replaces its own folder at the front of the
-# PATH with the agents folder, which is the PATH the wrapper hands the real
+# The stand-in cursor-agent in /tmp replaces its own directory at the front of the
+# PATH with the agents directory, which is the PATH the wrapper hands the real
 # agent, then starts the login shell. The image's login files run for real.
 # ------------------------------------------------------------------------------
 check_cursor_login_shells() {

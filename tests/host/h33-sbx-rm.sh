@@ -3,8 +3,8 @@
 # H-33: sbx-rm removes the container, keeps every file; sbx-add brings it back
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; takes it down and restores it
-# A real compose down on a folder with a space, then sbx-add of the same folder
-# after --unregister. The running sandbox is first refused without a terminal,
+# A real compose down on a directory with a space, then sbx-add of the same
+# directory after --unregister. The running sandbox is first refused without a terminal,
 # then removed with --yes.
 # ------------------------------------------------------------------------------
 set -u
@@ -106,7 +106,7 @@ sentinels_intact() {
 }
 
 # ------------------------------------------------------------------------------
-# Registers the test sandbox on its own folder and starts it by name
+# Registers the test sandbox on its own directory and starts it by name
 # ------------------------------------------------------------------------------
 prepare() {
   if ! compose_down >"$RUN/logs/h33-down.log" 2>&1; then
@@ -299,11 +299,11 @@ check_remove_again() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks sbx-rm while the registered folder is moved away
+# Checks sbx-rm while the registered directory is moved away
 # ------------------------------------------------------------------------------
-# The folder goes back by mv in every case; the host tests delete no file.
+# The directory goes back by mv in every case; the host tests delete no file.
 # ------------------------------------------------------------------------------
-check_moved_folder() {
+check_moved_dir() {
   run_sbx h33-start-moved sbx-start hosttest
   expect_exit_zero h33-start-moved "sbx-start"
 
@@ -316,10 +316,10 @@ check_moved_folder() {
   fi
 
   run_sbx h33-rm-moved sbx-rm hosttest
-  expect_exit_zero h33-rm-moved "sbx-rm with the folder moved away"
+  expect_exit_zero h33-rm-moved "sbx-rm with the directory moved away"
 
   if container_exists; then
-    add_problem "$CONTAINER still exists after sbx-rm with the folder moved away"
+    add_problem "$CONTAINER still exists after sbx-rm with the directory moved away"
   fi
 
   if ! mv "$sbxDir moved" "$sbxDir"; then
@@ -327,11 +327,11 @@ check_moved_folder() {
     return
   fi
 
-  sentinels_intact "after sbx-rm with the folder moved away"
+  sentinels_intact "after sbx-rm with the directory moved away"
 }
 
 # ------------------------------------------------------------------------------
-# Checks --unregister: the entry goes, the folder stays
+# Checks --unregister: the entry goes, the directory stays
 # ------------------------------------------------------------------------------
 check_unregister() {
   run_sbx h33-unregister sbx-rm hosttest --unregister
@@ -346,26 +346,26 @@ check_unregister() {
   fi
 
   if [ ! -d "$sbxDir/hosttest" ] || [ ! -d "$sbxDir/state" ]; then
-    add_problem "sbx-rm --unregister changed the sandbox folder $sbxDir"
+    add_problem "sbx-rm --unregister changed the sandbox directory $sbxDir"
   fi
 
   sentinels_intact "after sbx-rm --unregister"
 }
 
 # ------------------------------------------------------------------------------
-# Checks that sbx-add of the same folder brings the login and history back
+# Checks that sbx-add of the same directory brings the login and history back
 # ------------------------------------------------------------------------------
 # state/claude and state/shell hold the login and the history, so a new
-# container on the same folder finds both again.
+# container on the same directory finds both again.
 # ------------------------------------------------------------------------------
 check_add_again() {
   local historyText
 
   run_sbx h33-add-again sbx-add hosttest "$sbxDir"
-  expect_exit_zero h33-add-again "sbx-add of the same folder"
+  expect_exit_zero h33-add-again "sbx-add of the same directory"
 
   if ! entry_is_registered; then
-    add_problem "sbx-add of the same folder did not write the same entry again"
+    add_problem "sbx-add of the same directory did not write the same entry again"
   fi
 
   run_sbx h33-start-again sbx-start hosttest
@@ -382,7 +382,7 @@ check_add_again() {
   fi
 
   if [ "$(in_container cat /home/sandbox/workspace/hosttest/h33-sentinel.txt)" != "$sentinelText" ]; then
-    add_problem "the file in the project folder did not come back in the new container"
+    add_problem "the file in the project directory did not come back in the new container"
   fi
 }
 
@@ -398,9 +398,9 @@ plant_and_snapshot
 check_refused_without_yes
 check_remove_running
 check_remove_again
-check_moved_folder
+check_moved_dir
 check_unregister
 check_add_again
 restore_test_sandbox h33
 report_check H-33 "sbx-rm did not remove the sandbox safely, or sbx-add did not bring it back" \
-  "sbx-rm without a terminal or --yes refused the running sandbox and kept it; with --yes it took the container and its network and kept the folder, the entry, the volumes, the images and the other sandboxes; it ran again with no container and with the folder moved; --unregister deleted only the entry; sbx-add of the same folder brought back state/claude and the history"
+  "sbx-rm without a terminal or --yes refused the running sandbox and kept it; with --yes it took the container and its network and kept the directory, the entry, the volumes, the images and the other sandboxes; it ran again with no container and with the directory moved; --unregister deleted only the entry; sbx-add of the same directory brought back state/claude and the history"

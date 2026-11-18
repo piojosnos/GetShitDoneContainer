@@ -10,7 +10,7 @@ set -u
 host_init
 
 # ------------------------------------------------------------------------------
-# Makes the project folder a git repository from the host
+# Makes the project directory a git repository from the host
 # ------------------------------------------------------------------------------
 # GIT_CONFIG_GLOBAL=/dev/null and GIT_CONFIG_NOSYSTEM=1 keep your own identity
 # from being read or written.
@@ -25,7 +25,7 @@ init_host_repo() {
 }
 
 # ------------------------------------------------------------------------------
-# Runs git status in the container, in the project folder
+# Runs git status in the container, in the project directory
 # ------------------------------------------------------------------------------
 read_git_state() {
   statusOutput=$(in_project git status)
