@@ -3,26 +3,12 @@
 # Runs Claude once sbx-init has passed in this container
 # ------------------------------------------------------------------------------
 # Usage: sbx-claude [claude arguments]
-# The agent lives in the agents folder, which is off the PATH. This wrapper puts
-# that folder first on the PATH it hands to Claude, so Claude and everything it
-# starts find the agents. The calling shell's PATH stays as it is.
-# SBX_INIT_MARKER and SBX_AGENT_BIN_DIR override the marker file and the agents
-# folder for tests; they are not a security boundary.
+# sbx-run-agent checks the init marker and puts the agents folder first on the
+# PATH it hands to Claude; the calling shell's PATH stays as it is.
 # ------------------------------------------------------------------------------
 set -eu
-
-initMarker=${SBX_INIT_MARKER:-/home/sandbox/.sbx-init-done}
-agentBinDir=${SBX_AGENT_BIN_DIR:-/opt/sbx/agents/bin}
 
 # ------------------------------------------------------------------------------
 # Main / Entry Point
 # ------------------------------------------------------------------------------
-if [ ! -f "$initMarker" ]; then
-  echo "sbx-claude: sbx-init has not passed in this container; run sbx-init first" >&2
-  exit 1
-fi
-
-PATH=$agentBinDir:$PATH
-export PATH
-
-exec claude "$@"
+exec sbx-run-agent sbx-claude claude "$@"

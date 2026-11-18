@@ -204,7 +204,7 @@ ENV SBX_BUNDLE_DIR=/home/sandbox/workspace/best-practices \
     BUNDLE_REPO_URL=${BUNDLE_REPO_URL}
 
 # ------------------------------------------------------------------------------
-# Shared helpers: sbx-gh-login and sbx-bundle-clone
+# Shared helpers: sbx-gh-login, sbx-bundle-clone and sbx-run-agent
 # ------------------------------------------------------------------------------
 # Copied as root into /usr/local/bin, mode 755, so the sandbox user cannot
 # change them. Same paths for every agent.

@@ -30,7 +30,7 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 | | |
 |---|---|
-| Runs | pytest on the `sbx-init` runner, its steps and libraries (`base/init/`, `claude/init/`, `cursor/init/`), the two wrappers `sbx-claude` and `sbx-cursor`, `sbx-bundle-clone` and `sbx-gh-login`, against real files, git and a real second process holding the lock, in a temp folder |
+| Runs | pytest on the `sbx-init` runner, its steps and libraries (`base/init/`, `claude/init/`, `cursor/init/`), the two wrappers `sbx-claude` and `sbx-cursor` with the `sbx-run-agent` script they share, `sbx-bundle-clone` and `sbx-gh-login`, against real files, git and a real second process holding the lock, in a temp folder |
 | Where | A Linux sandbox with uv (the dev sandbox). `./host-test.sh` does not run it |
 | Catches | A step out of order, a lock or marker mistake, a user skill touched, an installer hang, a wrapper that starts an agent without init |
 | Does not catch | Whether the steps work in a real image, which H-27, H-34 and H-35 cover |

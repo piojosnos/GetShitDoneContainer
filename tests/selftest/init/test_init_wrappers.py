@@ -1,8 +1,11 @@
 # ------------------------------------------------------------------------------
-# Tests of the agent wrappers sbx-claude and sbx-cursor
+# Tests of the agent wrappers sbx-claude and sbx-cursor and the sbx-run-agent
+# script they share
 # ------------------------------------------------------------------------------
 # The real scripts run under bash. SBX_INIT_MARKER and SBX_AGENT_BIN_DIR point
 # into tmp_path, and a stand-in agent in the agents folder records how it ran.
+# The repo's base/bin goes first on the PATH, so the wrappers find the repo copy
+# of sbx-run-agent ahead of any installed one.
 # ------------------------------------------------------------------------------
 
 import os
@@ -21,6 +24,8 @@ WRAPPER_CASE_LIST = [
     ("cursor-agent", "cursor/bin/sbx-cursor", "sbx-cursor"),
 ]
 WRAPPER_IDS = ["claude", "cursor"]
+RUN_AGENT_PATH = "base/bin/sbx-run-agent"
+RUN_AGENT_USAGE_TEXT = "Usage: sbx-run-agent WRAPPER AGENT [agent arguments]\n"
 STAND_IN_BODY = """{
   echo "args=$*"
   echo "command=$(command -v AGENT)"
@@ -51,6 +56,7 @@ def run_wrapper(script_path: str, sandbox: dict, argument_list: list[str]):
     environment["SBX_INIT_MARKER"] = str(sandbox["marker_file"])
     environment["SBX_AGENT_BIN_DIR"] = str(sandbox["agent_bin_dir"])
     environment["RECORD_FILE"] = str(sandbox["record_file"])
+    environment["PATH"] = str(REPO_DIR / "base" / "bin") + os.pathsep + os.environ["PATH"]
 
     return subprocess.run(
         ["bash", str(REPO_DIR / script_path), *argument_list],
@@ -59,6 +65,19 @@ def run_wrapper(script_path: str, sandbox: dict, argument_list: list[str]):
         text=True,
         timeout=30,
     )
+
+
+def code_line_list(script_path: str) -> list[str]:
+    kept_line_list = []
+
+    for line in (REPO_DIR / script_path).read_text().splitlines():
+        stripped_line = line.strip()
+        if stripped_line == "" or stripped_line.startswith("#"):
+            continue
+
+        kept_line_list.append(stripped_line)
+
+    return kept_line_list
 
 
 def default_text(script_path: str, variable_name: str) -> str:
@@ -127,22 +146,23 @@ def test_with_the_marker_the_agent_runs_from_the_agents_folder_with_every_argume
 # Neither wrapper warns, pauses or tests for a clone
 # ------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("agent_name,script_path,wrapper_name", WRAPPER_CASE_LIST, ids=WRAPPER_IDS)
-def test_the_wrapper_holds_no_sleep_warning_or_clone_test(agent_name, script_path, wrapper_name):
-    script_text = (REPO_DIR / script_path).read_text()
+def test_no_wrapper_and_not_sbx_run_agent_holds_a_sleep_warning_or_clone_test():
+    script_path_list = [case[1] for case in WRAPPER_CASE_LIST] + [RUN_AGENT_PATH]
 
-    for forbidden_text in ["sleep", "WARNING", "SBX_BUNDLE_DIR", "best-practices-skills"]:
-        assert forbidden_text not in script_text
+    for script_path in script_path_list:
+        script_text = (REPO_DIR / script_path).read_text()
+
+        for forbidden_text in ["sleep", "WARNING", "SBX_BUNDLE_DIR", "best-practices-skills"]:
+            assert forbidden_text not in script_text
 
 
 # ------------------------------------------------------------------------------
 # The shell literals equal the Python paths
 # ------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("agent_name,script_path,wrapper_name", WRAPPER_CASE_LIST, ids=WRAPPER_IDS)
-def test_the_default_marker_and_agents_folder_equal_the_python_paths(agent_name, script_path, wrapper_name):
-    assert default_text(script_path, "initMarker") == str(paths.INIT_MARKER_FILE)
-    assert default_text(script_path, "agentBinDir") == str(paths.AGENT_BIN_DIR)
+def test_the_sbx_run_agent_defaults_equal_the_python_paths():
+    assert default_text(RUN_AGENT_PATH, "initMarker") == str(paths.INIT_MARKER_FILE)
+    assert default_text(RUN_AGENT_PATH, "agentBinDir") == str(paths.AGENT_BIN_DIR)
 
 
 # ------------------------------------------------------------------------------
@@ -157,3 +177,63 @@ def test_the_two_wrappers_are_the_same_script_apart_from_the_agent_names():
     cursor_text = cursor_text.replace("cursor-agent", "AGENT").replace("cursor", "AGENT").replace("Cursor", "AGENT")
 
     assert claude_text == cursor_text
+
+
+# ------------------------------------------------------------------------------
+# The wrappers are one exec line over sbx-run-agent
+# ------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("agent_name,script_path,wrapper_name", WRAPPER_CASE_LIST, ids=WRAPPER_IDS)
+def test_the_wrapper_code_is_set_and_one_exec_line(agent_name, script_path, wrapper_name):
+    exec_line = f'exec sbx-run-agent {wrapper_name} {agent_name} "$@"'
+
+    assert code_line_list(script_path) == ["set -eu", exec_line]
+
+
+# ------------------------------------------------------------------------------
+# sbx-run-agent called directly
+# ------------------------------------------------------------------------------
+
+def test_the_refusal_names_the_first_argument(tmp_path):
+    sandbox = make_sandbox(tmp_path, "agent1")
+
+    result = run_wrapper(RUN_AGENT_PATH, sandbox, ["sbx-x1", "agent1"])
+
+    assert result.returncode == 1
+    assert result.stderr == "sbx-x1: sbx-init has not passed in this container; run sbx-init first\n"
+    assert not sandbox["record_file"].exists()
+
+
+@pytest.mark.parametrize("argument_list", [[], ["sbx-x1"]], ids=["none", "one"])
+def test_fewer_than_two_arguments_print_the_usage_line_and_exit_2(tmp_path, argument_list):
+    sandbox = make_sandbox(tmp_path, "agent1")
+    sandbox["marker_file"].write_text("")
+
+    result = run_wrapper(RUN_AGENT_PATH, sandbox, argument_list)
+
+    assert result.returncode == 2
+    assert result.stderr == RUN_AGENT_USAGE_TEXT
+    assert result.stdout == ""
+    assert not sandbox["record_file"].exists()
+
+
+def test_sbx_run_agent_names_no_agent():
+    script_text = (REPO_DIR / RUN_AGENT_PATH).read_text().lower()
+
+    assert "claude" not in script_text
+    assert "cursor" not in script_text
+
+
+# ------------------------------------------------------------------------------
+# The image puts the wrappers and sbx-run-agent in one folder on the PATH
+# ------------------------------------------------------------------------------
+
+def test_the_dockerfiles_copy_the_bin_folders_into_usr_local_bin():
+    base_text = (REPO_DIR / "base/Dockerfile").read_text()
+
+    assert "COPY --chmod=755 base/bin/ /usr/local/bin/" in base_text
+
+    for agent_folder in ["claude", "cursor"]:
+        agent_text = (REPO_DIR / agent_folder / "Dockerfile").read_text()
+
+        assert f"COPY --chmod=755 {agent_folder}/bin/ /usr/local/bin/" in agent_text

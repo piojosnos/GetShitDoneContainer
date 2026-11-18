@@ -33,7 +33,7 @@ Each step is explained below in "Scripts", "Register a sandbox", "Set up a sandb
 
 | Image | Holds |
 |---|---|
-| `sbx-base:local` | Ubuntu 24.04, git, gh, Node.js 24, Python 3 (pip, venv) and uv, the Temurin JDK 21, Maven, jq, ripgrep, zip and unzip, the ssh client, make and a C compiler, shellcheck and hadolint, GSD, and the `sbx-gh-login` and `sbx-bundle-clone` helpers, `sbx-init` with the shared steps, and `sbx-selfcheck` with the shared checks |
+| `sbx-base:local` | Ubuntu 24.04, git, gh, Node.js 24, Python 3 (pip, venv) and uv, the Temurin JDK 21, Maven, jq, ripgrep, zip and unzip, the ssh client, make and a C compiler, shellcheck and hadolint, GSD, the `sbx-gh-login` and `sbx-bundle-clone` helpers, `sbx-run-agent` (the init check and agents PATH both agent wrappers run), `sbx-init` with the shared steps, and `sbx-selfcheck` with the shared checks |
 | `sbx-claude:local` | `sbx-base` plus Claude Code, ccusage, the Claude steps of `sbx-init`, the `sbx-claude` wrapper, the managed settings and the Claude checks of `sbx-selfcheck`. `claude` sits in `/opt/sbx/agents/bin`, off the PATH, and only `sbx-claude` starts it. |
 | `sbx-cursor:local` | `sbx-base` plus the Cursor CLI, the Cursor steps of `sbx-init`, the `sbx-cursor` wrapper and the Cursor checks of `sbx-selfcheck`. `cursor-agent` sits in `/opt/sbx/agents/bin`, off the PATH, and only `sbx-cursor` starts it. |
 
