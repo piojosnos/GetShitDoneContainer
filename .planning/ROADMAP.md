@@ -234,11 +234,11 @@ Plans:
 **Requirements**: TBD (decisions D-01 to D-19 in 09.1-CONTEXT.md are the contract)
 **Depends on**: Phase 9
 
-**Plans**: 14 plans
+**Plans**: 1/14 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 09.1-01-PLAN.md: GLOSSARY.md drafted and linked from the README, then the blocking glossary checkpoint (wave 1, checkpoint)
+- [x] 09.1-01-PLAN.md: GLOSSARY.md drafted and linked from the README, then the blocking glossary checkpoint (wave 1, checkpoint)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 09.1-02-PLAN.md: the best-practices repo rule loses its sandbox details, on its own branch in that repo (wave 2)
