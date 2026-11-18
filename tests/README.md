@@ -37,7 +37,7 @@ There is no CI yet. Docs and shell portability have no automated check; PR revie
 
 ## tests/unit/sbx/
 
-`tests/unit/sbx/` runs whole `bin/sbx-*` scripts as processes against the stand-in docker, component-style.
+`tests/unit/sbx/` runs the whole `bin/sbx-*` scripts as processes (component-style) with Docker unreachable, so it covers refusals and what a command does when Docker does not answer.
 
 | | |
 |---|---|

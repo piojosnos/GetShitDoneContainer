@@ -219,7 +219,7 @@ sandbox_mount_source() {
 }
 
 # ------------------------------------------------------------------------------
-# assert_test_sandbox: for cleanup; true only for the labelled test sandbox
+# assert_test_sandbox: for cleanup; true only for the labeled test sandbox
 # ------------------------------------------------------------------------------
 # Needs label sbx.name=hosttest; the mount or its parent is sbx-hosttest-*.
 # Loose: also accepts an earlier run's sandbox and what H-10 leaves.

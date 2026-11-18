@@ -130,7 +130,7 @@ print_older_image_note() {
 }
 
 # ------------------------------------------------------------------------------
-# print_leftovers: lists the labelled containers that have no registry entry
+# print_leftovers: lists the labeled containers that have no registry entry
 # ------------------------------------------------------------------------------
 # For example the host-test sandbox, or one whose entry was deleted by hand.
 # ------------------------------------------------------------------------------

@@ -129,7 +129,7 @@ In the sandbox: `sbx-init`, `sbx-gh-login`, `sbx-best-practices-clone` and `sbx-
 
 ## Register a sandbox
 
-- `sbx-add demo /Users/you/sbx-demo`, once per sandbox, creates `/Users/you/sbx-demo`, `/Users/you/sbx-demo/demo` (your code) and `/Users/you/sbx-demo/state`. The container creates the subdirectories of `state/` itself.
+- `sbx-add demo /Users/you/sbx-demo`, once per sandbox, creates `/Users/you/sbx-demo`, `/Users/you/sbx-demo/demo` (your code) and `/Users/you/sbx-demo/state`. `sbx-init` makes the subdirectories of `state/` when you first run it in the sandbox.
 - It refuses a name outside the name rule, `state`, `best-practices`, or a name already registered; and a relative path, or one with a `.`, `..` or empty part.
 - It refuses a directory that holds the registry directory (such as `/` or your home), that is, holds or sits inside the tools clone (the host runs its scripts), or that is, holds or sits inside another sandbox's directory.
 - The directory checks compare directories, not spelling: a symlink, `/tmp` against `/private/tmp` or another letter case (on a macOS host) is still the same directory.
@@ -274,10 +274,10 @@ sbx-init: stopped at claude-best-practices-links
 
 ## Upgrade
 
-1. Change the pin in `versions.env` of the clone whose `bin/` is on your PATH (or merge the change and `git pull` there).
+1. Change the pin in `versions.env` of the tools clone whose `bin/` is on your PATH (or merge the change and `git pull` there).
 2. Run `sbx-upgrade NAME`, for example `sbx-upgrade demo`. Add `--no-cache` for a clean build.
 
-- `sbx-upgrade` builds every image with `./build.sh` from that clone, so it reads that clone's `versions.env`.
+- `sbx-upgrade` builds every image with `./build.sh` from the tools clone, so it reads the tools clone's `versions.env`.
 - `sbx-upgrade` passes on `SBX_CA_CERT` from the shell it runs in. Without it the images lose the extra root, and behind a company proxy the build stops with `curl: (60)`. Keep the `export` in `~/.zshrc` (see "Behind a company HTTPS proxy").
 - The build runs while the sandbox keeps running. A failed build leaves it as it was.
 - On success the sandbox is recreated without asking, after one line warning that its open shells and Claude sessions close. It ends running, even when it was stopped.

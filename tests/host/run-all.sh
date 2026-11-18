@@ -297,7 +297,7 @@ remove_leftover_test_container() {
 
   label=$(docker container inspect --format '{{index .Config.Labels "sbx.name"}}' "$CONTAINER" 2>/dev/null </dev/null)
   if [ "$label" != "hosttest" ]; then
-    printf 'A container named %s exists but is not labelled sbx.name=hosttest. It was left alone.\n' "$CONTAINER" >&2
+    printf 'A container named %s exists but is not labeled sbx.name=hosttest. It was left alone.\n' "$CONTAINER" >&2
     fatal "an earlier sbx-hosttest container is in the way and was not removed (see the messages above)"
   fi
 
