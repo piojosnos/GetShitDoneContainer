@@ -17,7 +17,7 @@ Options, from cheapest:
 | Option | What it buys | Cost |
 |---|---|---|
 | B. Fine-grained GitHub token per sandbox (one repo, contents and pull requests only, short expiry) instead of the broad `gh auth login` token | A leak reaches one repo until the token expires | README recipe; token made on github.com |
-| A. No gh token in the sandbox; push and open PRs from the Mac | The gh token is never in `state/`; fits "every push needs the user's go" | Push and `gh pr create` move to the Mac; `sbx-bundle-clone` needs another way to clone |
+| A. No gh token in the sandbox; push and open PRs from the host | The gh token is never in `state/`; fits "every push needs the user's go" | Push and `gh pr create` move to the host; `sbx-best-practices-clone` needs another way to clone |
 | C. Outbound network allowlist (Anthropic, GitHub, npm) | Stops sending tokens to arbitrary hosts; GitHub stays a channel | Project-sized; against keeping the scripts small |
 | Claude login | Cannot be hidden from Claude; a leak spends the subscription until logged out on claude.ai | Accept |
 

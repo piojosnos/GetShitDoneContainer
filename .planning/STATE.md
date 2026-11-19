@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
-current_phase: "09.1"
-current_phase_name: Align vocabulary across code and docs
+current_phase: 10
+current_phase_name: Host side to Python
 status: planning
-stopped_at: Phase 9 complete, ready to plan Phase 09.1
-last_updated: "2026-11-18T00:55:45.566Z"
-last_activity: "2026-11-18, completed quick task 261118-02m: PR 52 review fixes (shared agent wrapper and shared step-file runner code)"
-state_head: 8bcede8f1bf8deee6393ac1ee52f23175cd7e55b
+stopped_at: Phase 09.1 complete, ready to plan Phase 10
+last_updated: "2026-11-18T07:24:52.594Z"
+last_activity: 2026-11-18
+last_activity_desc: Phase 09.1 complete, transitioned to Phase 10
+state_head: e3dd6017fcd8e2ce853c935038073a810cec67c8
 progress:
-  total_phases: 10
+  total_phases: 11
   completed_phases: 4
-  total_plans: 41
-  completed_plans: 41
-  percent: 50
-last_activity_desc: Phase 9 complete, transitioned to Phase 09.1
+  total_plans: 55
+  completed_plans: 55
+  percent: 44
 ---
 
 # Project State
@@ -25,19 +25,19 @@ last_activity_desc: Phase 9 complete, transitioned to Phase 09.1
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 9 — sbx-init replaces the start hooks
+**Current focus:** Phase 09.1 — Align vocabulary across code and docs
 
 ## Current Position
 
-Phase: 09.1 — Align vocabulary across code and docs
+Phase: 10 — Host side to Python
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-11-18, completed quick task 261118-0vx: PR 52 best-practices review fixes
+Last activity: 2026-11-18 — Phase 09.1 complete, transitioned to Phase 10
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 130
+- Total plans completed: 144
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -63,6 +63,7 @@ Last activity: 2026-11-18, completed quick task 261118-0vx: PR 52 best-practices
 | 07 | 3 | - | - |
 | 08 | 13 | - | - |
 | 9 | 14 | - | - |
+| 09.1 | 14 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -200,6 +201,20 @@ Last activity: 2026-11-18, completed quick task 261118-0vx: PR 52 best-practices
 | Phase 09 P12 | 25min | 3 tasks | 6 files |
 | Phase 09 P13 | 40 min | 2 tasks | 0 files |
 | Phase 09 P14 | n/a | 4 tasks | 15 files |
+| Phase 09.1 P01 | 2h 20m | 3 tasks | 2 files |
+| Phase 09.1 P02 | 3m | 2 tasks | 1 files |
+| Phase 09.1 P03 | 20m | 2 tasks | 25 files |
+| Phase 09.1 P04 | 25m | 3 tasks | 36 files |
+| Phase 09.1 P05 | 20m | 3 tasks | 38 files |
+| Phase 09.1 P06 | 25m | 3 tasks | 52 files |
+| Phase 09.1 P07 | 10m | 3 tasks | 55 files |
+| Phase 09.1 P08 | 10m | 3 tasks | 16 files |
+| Phase 09.1 P09 | 10min | 3 tasks | 24 files |
+| Phase 09.1 P10 | 35m | 4 tasks | 130 files |
+| Phase 09.1 P11 | 15m | 3 tasks | 6 files |
+| Phase 09.1 P12 | 10min | 2 tasks | 6 files |
+| Phase 09.1 P13 | 10min | 2 tasks | 1 files |
+| Phase 09.1 P14 | n/a (spans a host run) | 3 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -397,6 +412,18 @@ Recent decisions affecting current work:
 - [Phase 09]: Phase 9 gate: A1 (sandbox user can give root-owned state back on Docker Desktop) and A2 to A4 confirmed by the Mac run; no gap-closure plan needed
 - [Phase 09]: WR-02 needed no code change: the Mac run proves login shells inside agent sessions keep /opt/sbx/agents/bin and plain login shells do not
 - [Phase 09]: An incomplete best-practices clone folder gets its own FAIL: pull it or move it aside, never delete
+- [Phase 09.1]: Glossary approved with changes: directory in prose and dir in identifiers; the host; best-practices names are outright renames with no alias
+- [Phase 09.1]: tests/selftest/ becomes tests/unit/ in plan 10; the start hook glossary row is dropped; the best-practices repo rules are decoupled from the sandbox
+- [Phase 09.1]: The best-practices repo rule rules/best-practices.md names no sandbox command, path or hook and says 'best-practices repo' instead of 'bundle repo'; the clone is found by following a link
+- [Phase 09.1]: Renames are outright with no alias; MIGRATION.md tells users to run sbx-upgrade NAME
+- [Phase 09.1]: Selfcheck module is best_practices_links (plural) so it cannot shadow the init module best_practices_link
+- [Phase 09.1]: Host shell step is named 'sbx unit tests in the host shell' (host_sbx_unit_tests), following GLOSSARY.md over the plan text
+- [Phase 09.1]: Plan 08: sbx-add registers newSandboxDir while the library reads sandboxDir, so re-reading other registry entries cannot overwrite the directory create_dirs uses
+- [Phase 09.1]: Host checklist prose keeps its folder words for the doc plan; plan 09 changed only the H-10 row's file name
+- [Phase 09.1]: tests/selftest becomes tests/unit; the suite is called unit tests, never selftest
+- [Phase 09.1]: Python agent config directory is AGENT_CONFIG_DIR; ownership checks are image-root-owned, claude-image-root-owned, cursor-image-root-owned
+- [Phase 09.1]: Plan 11: macOS is named only for facts that hold only there (Keychain, bash 3.2, override_stat, BSD script); the docs say the host everywhere else
+- [Phase 09.1]: Plan 14: the phase's changes sit on three local one-kind branches (chore/vocabulary-code, chore/claude-md-vocabulary, chore/planning-phase-09.1) cut from origin/main by cherry-picking; none pushed, waiting for the user's go
 
 ### Pending Todos
 
@@ -471,8 +498,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-17T23:29:11.909Z
-Stopped at: Phase 9 complete, ready to plan Phase 09.1
+Last session: 2026-11-18T07:11:35.339Z
+Stopped at: Phase 09.1 complete, ready to plan Phase 10
 Resume file: None
 
 ## Operator Next Steps

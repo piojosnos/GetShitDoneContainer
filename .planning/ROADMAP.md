@@ -32,17 +32,17 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
 **Milestone Goal:** Make the tests, and the tooling they test, simple: tests check our setup with real Docker and simple proxies, not other people's software.
 
-Each phase depends on the one before. Docker does not run in the dev sandbox, so every criterion that needs Docker is proven by `./host-test.sh` on the Mac.
+Each phase depends on the one before. Docker does not run in the dev sandbox, so every criterion that needs Docker is proven by `./host-test.sh` on the host.
 
 - [x] **Phase 6: Test diet**: the tests check only our setup, nothing waits for a person, and the guard self-test and every stand-in docker are gone (completed 2026-11-13)
 - [x] **Phase 06.1: Cursor agent image** (INSERTED): a separate Cursor image; a sandbox picks Claude or Cursor when it is added (completed 2026-11-14)
 - [x] **Phase 7: Separate test images**: a test run builds and checks its own image tags and never replaces the images the sandboxes run (completed 2026-11-14)
 - [x] **Phase 8: In-image self-check**: `sbx-selfcheck` in the image checks the sandbox, replaces most host probes and doubles as the doctor (completed 2026-11-15)
 - [x] **Phase 9: sbx-init replaces the start hooks**: the user runs `sbx-init` to sync GSD and link the bundle; a container start runs no hooks (completed 2026-11-17)
-- [ ] **Phase 09.1: Align vocabulary** (INSERTED): code, tests and docs use one set of terms; best-practices, never bundle
-- [ ] **Phase 10: Host side to Python**: the Mac commands and host tests are Python run through `uv`, with one JSON registry file per sandbox
-- [ ] **Phase 10.1: Full skills and best-practices support in Cursor** (INSERTED): the bundle's rules and skills work in Cursor as they do in Claude
-- [ ] **Phase 10.1.1: Shared agent checks** (INSERTED): the Claude and Cursor self-check twins become one shared list of agent checks before the third agent arrives
+- [x] **Phase 09.1: Align vocabulary** (INSERTED): code, tests and docs use one set of terms; best-practices, never bundle (completed 2026-11-18)
+- [ ] **Phase 10: Host side to Python**: the host commands and host tests are Python run through `uv`, with one JSON registry file per sandbox
+- [ ] **Phase 10.1: Full skills and best-practices support in Cursor** (INSERTED): the best-practices repo's rules and skills work in Cursor as they do in Claude
+- [ ] **Phase 10.1.1: Shared agent checks** (INSERTED): the Claude and Cursor selfcheck twins become one shared list of agent checks before the third agent arrives
 - [ ] **Phase 10.2: OpenCode agent image** (INSERTED): a third agent image with full skills and best-practices support; may split into more phases
 - [ ] **Phase 11: CI widened**: GitHub runs the guard, builds the test images and runs the Linux-runnable checks on every PR push
 
@@ -231,29 +231,70 @@ Plans:
 ### Phase 09.1: Align vocabulary across code and docs (INSERTED)
 
 **Goal**: Code, tests and docs use one set of terms. The user's rules and skills repo is called best-practices everywhere, never bundle, and any other inconsistent names the sweep finds are fixed.
-**Requirements**: TBD
+**Requirements**: TBD (decisions D-01 to D-19 in 09.1-CONTEXT.md are the contract)
 **Depends on**: Phase 9
 
-**Plans**: TBD
+**Plans**: 14/14 plans complete
+
+Plans:
+**Wave 1**
+- [x] 09.1-01-PLAN.md: GLOSSARY.md drafted and linked from the README, then the blocking glossary checkpoint (wave 1, checkpoint)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 09.1-02-PLAN.md: the best-practices repo rule loses its sandbox details, on its own branch in that repo (wave 2)
+- [x] 09.1-03-PLAN.md: the agreed glossary recorded; the clone command, its variable, the repo URL pin and the environment check renamed, with the MIGRATION note (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 09.1-04-PLAN.md: the best-practices links module, link and no-copy checks, host test library, H-27 and the fixture repo renamed; the guard's scan list follows (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 09.1-05-PLAN.md: "the host" in hints, scripts and tests; H-06 renamed (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 09.1-06-PLAN.md: directory, selfcheck side: `state-dirs` twin, `project-dir`, the selfcheck library and its tests (wave 5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 09.1-07-PLAN.md: directory, rest of the image: sbx-init, in-image commands, agent wrappers, agent files, Dockerfiles (wave 6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 09.1-08-PLAN.md: directory, host scripts and the sbx selftest (wave 7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 09.1-09-PLAN.md: directory, host tests and guard; H-10 renamed (wave 8)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [x] 09.1-10-PLAN.md: remaining pairs: `sbx-selfcheck` bug hint, image-root-owned checks, agent wrapper wording, `AGENT_CONFIG_DIR`, selftest and spelling (wave 9)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [x] 09.1-11-PLAN.md: README, MIGRATION, ZSCALER, the memory prompt and the test docs follow the glossary (wave 10)
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [x] 09.1-12-PLAN.md: live planning docs (PROJECT, open requirements, future roadmap text, two todos) (wave 11)
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [x] 09.1-13-PLAN.md: `.claude/CLAUDE.md` links the glossary and follows it (wave 12)
+
+**Wave 13** *(blocked on Wave 12 completion)*
+- [x] 09.1-14-PLAN.md: dev-sandbox gate, local PR branches, then the host run (wave 13, checkpoint)
 
 ### Phase 10: Host side to Python
 
-**Goal**: Every Mac command and its tests are short Python run through `uv`, with one JSON registry file per sandbox. The command names stay, and the bash host scripts, the bash host tests and the last of the fake docker are gone.
+**Goal**: Every host command and its tests are short Python run through `uv`, with one JSON registry file per sandbox. The command names stay, and the bash host scripts, the bash host tests and the last of the fake docker are gone.
 **Depends on**: Phase 9
 **Requirements**: HOST-01, HOST-02, HOST-03, HOST-04, HOST-05
 **Success Criteria** (what must be TRUE):
-  1. On a Mac with only `brew install uv` added, every `bin/sbx-*` command, `build.sh` and `./host-test.sh` run under the same names as before, as Python run through `uv`.
+  1. On a macOS host with only `brew install uv` added, every `bin/sbx-*` command, `build.sh` and `./host-test.sh` run under the same names as before, as Python run through `uv`.
   2. `sbx-add` writes `~/.config/sbx/sandboxes/NAME.json` with `path` and `agent`, and every other command reads the sandbox from that file.
-  3. `sbx-add` refuses a folder that is, holds or sits inside another sandbox's folder, also when it is given through a symlink or a `..` path, because both paths are resolved before they are compared.
-  4. On the Mac, the pytest suite runs one persistence group (planted files survive one `sbx-upgrade`), one refusal group and smoke tests for add, start, stop, shell, list and rm; a failing group stops at its first failure and names the step.
-  5. No bash host script, bash host test or fake docker is left in the repo, and `./host-test.sh` passes on the Mac.
+  3. `sbx-add` refuses a directory that is, holds or sits inside another sandbox's directory, also when it is given through a symlink or a `..` path, because both paths are resolved before they are compared.
+  4. On the host, the pytest suite runs one persistence group (planted files survive one `sbx-upgrade`), one refusal group and smoke tests for add, start, stop, shell, list and rm; a failing group stops at its first failure and names the step.
+  5. No bash host script, bash host test or fake docker is left in the repo, and `./host-test.sh` passes on the host.
   6. The host tests are one shared harness run for each agent: the checks common to both agents are written once, and only a few small checks differ between Claude and Cursor.
 
 **Plans**: TBD
 
 ### Phase 10.1: Full skills and best-practices support in Cursor (INSERTED)
 
-**Goal:** Cursor sandboxes get the same skills and best-practices support as Claude sandboxes: the bundle's rules and skills reach Cursor in the form it reads, and the self-check proves they are there. Scope and split into one or more phases are decided at discuss time.
+**Goal:** Cursor sandboxes get the same skills and best-practices support as Claude sandboxes: the best-practices repo's rules and skills reach Cursor in the form it reads, and the selfcheck proves they are there. Scope and split into one or more phases are decided at discuss time.
 **Requirements**: TBD
 **Depends on:** Phase 10
 **Plans:** 0 plans
@@ -263,7 +304,7 @@ Plans:
 
 ### Phase 10.1.1: Shared agent checks before the third agent (INSERTED)
 
-**Goal:** The self-check files that Claude and Cursor repeat with only a different config folder, root list or flag become one shared list of agent checks, built from a small per-agent description. Each agent keeps only its truly specific checks, so the OpenCode image starts from the shared list instead of a third copy. Output stays the same; the check counts in H-34 do not change.
+**Goal:** The selfcheck files that Claude and Cursor repeat with only a different agent config directory, root list or flag become one shared list of agent checks, built from a small per-agent description. Each agent keeps only its truly specific checks, so the OpenCode image starts from the shared list instead of a third copy. Output stays the same; the check counts in H-34 do not change.
 **Requirements**: TBD
 **Depends on:** Phase 10.1
 **Plans:** 0 plans
@@ -273,7 +314,7 @@ Plans:
 
 ### Phase 10.2: OpenCode agent image with full skills and best-practices support (INSERTED)
 
-**Goal:** An OpenCode agent image next to Claude and Cursor, with the same skills and best-practices support from the start, and its own self-check files. This may become more than one phase; that is decided at discuss time.
+**Goal:** An OpenCode agent image next to Claude and Cursor, with the same skills and best-practices support from the start, and its own selfcheck files. This may become more than one phase; that is decided at discuss time.
 **Requirements**: TBD
 **Depends on:** Phase 10.1.1
 **Plans:** 0 plans
@@ -283,14 +324,14 @@ Plans:
 
 ### Phase 11: CI widened
 
-**Goal**: GitHub runs every check that does not need the Mac on each PR push and shows the result on the PR. The Mac is left for what only Docker Desktop shows.
+**Goal**: GitHub runs every check that does not need the host on each PR push and shows the result on the PR. The host is left for what only Docker Desktop shows.
 **Depends on**: Phase 10
 **Requirements**: CI-01, CI-02
 **Success Criteria** (what must be TRUE):
   1. Every push to a PR runs the guard on GitHub, and the PR shows it as a check; breaking a guard rule on a PR branch turns the check red, and fixing it turns it green.
-  2. On GitHub, the same PR push builds the test images and runs the self-check and the Linux-runnable host checks against them, and the PR shows the result.
-  3. Nothing CI runs touches the Mac or a sandbox: there is no git hook, and nothing the agent can edit is executed by the Mac.
-  4. Each check CI runs still works the same way by hand, and `./host-test.sh` on the Mac still passes.
+  2. On GitHub, the same PR push builds the test images and runs the selfcheck and the Linux-runnable host checks against them, and the PR shows the result.
+  3. Nothing CI runs touches the host or a sandbox: there is no git hook, and nothing the agent can edit is executed by the host.
+  4. Each check CI runs still works the same way by hand, and `./host-test.sh` on the host still passes.
 
 **Plans**: TBD
 
@@ -315,10 +356,10 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 
 ### Phase 999.3: More tools in the image (BACKLOG)
 
-**Goal:** The image grows the tools real projects ask for, each pinned in `versions.env` like the rest, so an agent can build in the sandbox what today only builds on the Mac.
+**Goal:** The image grows the tools real projects ask for, each pinned in `versions.env` like the rest, so an agent can build in the sandbox what today only builds on the host.
 **Source phase:** 05 (the RadioPractice migration)
 **Deferred at:** 2026-11-08
-**First request:** audio for RadioPractice. Its MP3s need `ffmpeg` and Piper (`pip install piper-tts`). The project's `.venv` is the Mac's and does not run in the container, so Piper needs its own Python environment there.
+**First request:** audio for RadioPractice. Its MP3s need `ffmpeg` and Piper (`pip install piper-tts`). The project's `.venv` is the host's and does not run in the container, so Piper needs its own Python environment there.
 **Options:**
 - [ ] Bake `ffmpeg` and `piper-tts` into the image, pinned; Piper in its own venv under the image home so it never clashes with a project's `.venv`.
 - [ ] Keep `sbx-claude` small and add an opt-in tool layer (a second image or a build option) for heavy or project-specific tools.
