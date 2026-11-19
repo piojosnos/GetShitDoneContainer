@@ -22,8 +22,8 @@ Every host command (`bin/sbx-*`, `build.sh`, `host-test.sh`, `clean.sh`) and eve
 
 ### Registry
 - **D-06:** `sbx-add` writes `~/.config/sbx/sandboxes/NAME.json` with `path` and `agent`; every other command reads it.
-- **D-07:** A one-off `sbx-migrate-registry` converts every old `KEY=value` entry (`SBX_DIR`, `SBX_AGENT`) to `NAME.json` and prints what it did. Until it runs, the other commands refuse a sandbox that has only an old entry and name the command. It leaves the old files in place (only `sbx-rm` deletes data); `MIGRATION.md` says they can be deleted. The command is deleted in a later milestone.
-  **Reversibility:** reversible: one file and one refusal path.
+- **D-07:** A one-off `sbx-migrate-registry` converts every old `KEY=value` entry (`SBX_DIR`, `SBX_AGENT`) to `NAME.json` and prints what it did. The other commands know only `NAME.json`: no old-entry detection, no special message, no `old entry` row in `sbx-list` (an unmigrated sandbox is simply not found). The user migrates about four sandboxes once, by hand. It leaves the old files in place (only `sbx-rm` deletes data); `MIGRATION.md` says they can be deleted. The command is deleted in a later milestone.
+  **Reversibility:** reversible: one file.
 
 ### Test runner
 - **D-08:** Every suite runs under pytest (the pinned 9.2.0), not hand-rolled PASS/FAIL scripts. A full run never uses `-x`: every scenario runs, and the summary lists every failure.
@@ -62,6 +62,28 @@ Every host command (`bin/sbx-*`, `build.sh`, `host-test.sh`, `clean.sh`) and eve
 - **D-21:** The real-Docker suite is `tests/integration/`. `tests/README.md` and `GLOSSARY.md` say it runs only on the host, the fact the old name carried.
 - **D-22:** The H-nn IDs go; scenario names and step names replace them. `tests/host-checklist.md` shrinks to what cannot live in code: the manual Cursor login check and how to read `host-test.log`.
 - **D-23:** `./host-test.sh` and `host-test.log` keep their names.
+- **D-24:** One term, "launcher", for every small file run by name that starts our Python code: in the image a Python file (`sbx-init`, `sbx-selfcheck`), on the host a two-line shell file that runs `uv` (`bin/sbx-*`, `build.sh`, `clean.sh`, `host-test.sh`). Say "host launcher" or "image launcher" only where a sentence must tell them apart. `GLOSSARY.md` widens its launcher row to both kinds; the agent wrapper stays a separate term (it wraps a third-party program behind a precondition, it does not start our code).
+
+### Settled after research
+- **D-25:** `sbx-add` keeps refusing a `HOST_PATH` with an empty, `.` or `..` part, as today. In addition the overlap function resolves both paths itself (symlinks and `..`) before comparing, and a unit test calls it directly with a `..` path and a symlink to prove HOST-03.
+- **D-26:** `./host-test.sh` runs `tests/unit/sbx`, `tests/guard` and `tests/integration` on the Mac. `tests/unit/selfcheck` and `tests/unit/init` test image code and stay on the dev sandbox and in CI. This narrows D-09's "unit".
+- **D-27:** The integration tests create and drive their sandboxes with the real `sbx-*` commands, as a user does, against a test registry (not raw `docker compose`). The test containers get per-agent names (`sbx-hosttest-claude`, `sbx-hosttest-cursor`); `clean.sh` and the docs follow.
+- **D-28:** Old checks not settled by D-16 or D-17:
+
+  | Old check | Decision |
+  |---|---|
+  | Guard run inside `sbx-hosttest` on a clone of HEAD | dropped: the host guard runs the same linter binaries from `sbx-base:test` |
+  | H-03 missing `SBX_DIR` or `SBX_NAME` refused | dropped: the commands always set both |
+  | H-16 user skill directory and real `rules` directory kept | dropped: `tests/unit/init` covers it against real files |
+  | H-27 clone of a missing origin | dropped: `tests/unit/init` covers it |
+  | H-27 GSD synced at the pin, no `npx` or `@latest` | kept, in "First run and relink" (guards the compromised-package constraint) |
+  | H-29 failed build leaves the sandbox untouched | kept, as its own scenario "failed upgrade changes nothing" |
+  | H-29 other sandboxes unchanged, a stopped sandbox starts | kept, as steps in the persistence scenario |
+  | H-09 volume list unchanged | dropped: the one-mount check in isolation covers it |
+  | H-25 bare `docker build` | unit test: `build` refuses a missing or empty `versions.env`, and every `*_VERSION` ARG has its `:?` guard RUN line |
+  | Pin digests against the registry | kept as an integration test: INFO on a moved tag, FAIL only when a pin cannot be resolved |
+  | No `InvalidDefaultArgInFrom` in build logs | kept, as an assertion in the image-build fixture |
+  | Linter versions print | dropped: the guard fails when a linter is missing |
 
 ### Claude's Discretion
 - Package location and module names (`sbx/` at the repo root or under a folder), and the launcher's exact uv flags.
