@@ -290,7 +290,41 @@ Plans:
   5. No bash host script, bash host test or fake docker is left in the repo, and `./host-test.sh` passes on the host.
   6. The host tests are one shared harness run for each agent: the checks common to both agents are written once, and only a few small checks differ between Claude and Cursor.
 
-**Plans**: TBD
+**Plans**: 11 plans
+
+Plans:
+**Wave 1**
+- [ ] 10-01-PLAN.md: tracer; `sbx-list` and the new `sbx-migrate-registry` run through uv launchers on the JSON registry, Docker as a parameter; read-only host check on a copy of the real registry (wave 1, checkpoint)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 10-02-PLAN.md: `sbx-add` with the overlap check that resolves both paths, and `sbx-start`, `sbx-stop`, `sbx-shell` in Python (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 10-03-PLAN.md: `build.sh`, `sbx-upgrade`, `sbx-rm`, `sbx-fix-modes` in Python; `bin/sbx-lib.sh` and the bash unit harness go (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 10-04-PLAN.md: the guard in pytest (20 rules plus the launcher rule); the bash guard goes (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 10-05-PLAN.md: tracer; the integration harness, `./host-test.sh` in Python with a live log, the init and selfcheck scenario for both agents; host run (wave 5, checkpoint)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 10-06-PLAN.md: scenarios: persistence across one `sbx-upgrade`, failed upgrade, the two plain-Compose refusals, isolation (wave 6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 10-07-PLAN.md: smoke scenarios: lifecycle, list, rm, shell through a pseudo-terminal, git on a host-made repo (wave 7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 10-08-PLAN.md: scenarios: first run and relink, owner fix, images match `versions.env`; the pin digest test (wave 8)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 10-09-PLAN.md: `clean.sh` in Python; review of the old-check map; `tests/host/` goes; guard rule against host logic in shell (wave 9, checkpoint)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 10-10-PLAN.md: README, MIGRATION, ZSCALER, test docs, glossary; `.claude/CLAUDE.md` stack notes; the D-19 amendment of the criteria and HOST-04 (wave 10)
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 10-11-PLAN.md: dev-sandbox phase gate, local PR branches, then the host run of `./host-test.sh` (wave 11, checkpoint)
 
 ### Phase 10.1: Full skills and best-practices support in Cursor (INSERTED)
 
@@ -346,7 +380,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 7. Separate test images | v2.0 | 3/3 | Complete    | 2026-11-14 |
 | 8. In-image self-check | v2.0 | 13/13 | Complete    | 2026-11-15 |
 | 9. sbx-init replaces the start hooks | v2.0 | 14/14 | Complete    | 2026-11-17 |
-| 10. Host side to Python | v2.0 | 0/TBD | Not started | - |
+| 10. Host side to Python | v2.0 | 0/11 | Planned | - |
 | 10.1. Cursor skills and best practices | v2.0 | 0/TBD | Not started | - |
 | 10.1.1. Shared agent checks | v2.0 | 0/TBD | Not started | - |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
