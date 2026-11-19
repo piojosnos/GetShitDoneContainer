@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
-# The one folder walk of the checks
+# The one directory walk of the checks
 # ------------------------------------------------------------------------------
-# Every check that walks folders goes through walk_tree and keeps its own rule in
+# Every check that walks directories goes through walk_tree and keeps its own rule in
 # a hook. The image puts this file in /usr/local/lib/sbx-selfcheck/.
 # ------------------------------------------------------------------------------
 
@@ -17,7 +17,7 @@ from typing import Callable
 # Hook and problem types
 # ------------------------------------------------------------------------------
 # A hook gets an entry and its lstat result. It returns False to keep the walk out
-# of that folder; the return value of a file or a link entry is not used.
+# of that directory; the return value of a file or a link entry is not used.
 # ------------------------------------------------------------------------------
 
 EntryHook = Callable[[Path, os.stat_result], bool]
@@ -25,7 +25,7 @@ EntryHook = Callable[[Path, os.stat_result], bool]
 
 class ProblemKind(Enum):
     MISSING_ROOT = "missing"
-    UNREADABLE_FOLDER = "unreadable"
+    UNREADABLE_DIR = "unreadable"
 
 
 @dataclass(frozen=True)
@@ -37,7 +37,7 @@ class WalkProblem:
 # ------------------------------------------------------------------------------
 # The walk
 # ------------------------------------------------------------------------------
-# Links are never followed. A permission error on a folder or on an entry of it
+# Links are never followed. A permission error on a directory or on an entry of it
 # is returned as a problem; any other error surfaces.
 # ------------------------------------------------------------------------------
 
@@ -58,7 +58,7 @@ def _walk_root(root: Path, on_entry: EntryHook, problem_list: list[WalkProblem])
 
         return
     except PermissionError:
-        problem_list.append(WalkProblem(root, ProblemKind.UNREADABLE_FOLDER))
+        problem_list.append(WalkProblem(root, ProblemKind.UNREADABLE_DIR))
 
         return
 
@@ -67,14 +67,14 @@ def _walk_root(root: Path, on_entry: EntryHook, problem_list: list[WalkProblem])
 
     def on_error(error: OSError) -> None:
         if not isinstance(error, FileNotFoundError):
-            problem_list.append(WalkProblem(Path(error.filename), ProblemKind.UNREADABLE_FOLDER))
+            problem_list.append(WalkProblem(Path(error.filename), ProblemKind.UNREADABLE_DIR))
 
-    for folder, dir_name_list, file_name_list in root.walk(on_error=on_error, follow_symlinks=False):
-        dir_name_list[:] = _visit_folder(folder, dir_name_list + file_name_list, on_entry, problem_list)
+    for current_dir, dir_name_list, file_name_list in root.walk(on_error=on_error, follow_symlinks=False):
+        dir_name_list[:] = _visit_dir(current_dir, dir_name_list + file_name_list, on_entry, problem_list)
 
 
-def _visit_folder(
-    folder: Path,
+def _visit_dir(
+    current_dir: Path,
     name_list: list[str],
     on_entry: EntryHook,
     problem_list: list[WalkProblem],
@@ -82,15 +82,15 @@ def _visit_folder(
     descend_name_list = []
 
     for name in name_list:
-        entry = folder / name
+        entry = current_dir / name
 
         try:
             entry_stat = entry.lstat()
         except FileNotFoundError:
             continue
         except PermissionError:
-            # A stat needs search permission on the folder, so every other entry would fail the same way.
-            problem_list.append(WalkProblem(folder, ProblemKind.UNREADABLE_FOLDER))
+            # A stat needs search permission on the directory, so every other entry would fail the same way.
+            problem_list.append(WalkProblem(current_dir, ProblemKind.UNREADABLE_DIR))
 
             return []
 

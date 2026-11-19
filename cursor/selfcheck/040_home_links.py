@@ -1,12 +1,12 @@
 # ------------------------------------------------------------------------------
-# Check: the Cursor home folders link to the Cursor config folder
+# Check: the Cursor home directories link to the agent config directory
 # ------------------------------------------------------------------------------
 # The image copies this file to /etc/sbx/selfcheck.d/cursor/; the runner loads it
 # after the shared checks.
 # ------------------------------------------------------------------------------
 
 from check_result import Check, CheckResult
-from cursor_shared import CONFIG_DIR
+from cursor_shared import AGENT_CONFIG_DIR
 from home_links import home_links_result
 from paths import HOME_DIR
 
@@ -21,7 +21,7 @@ def _check_cursor_home_links() -> CheckResult:
     link_target_list = []
 
     for home_link in _HOME_LINK_LIST:
-        link_target_list.append((home_link, CONFIG_DIR))
+        link_target_list.append((home_link, AGENT_CONFIG_DIR))
 
     return home_links_result(link_target_list)
 

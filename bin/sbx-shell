@@ -3,7 +3,7 @@
 # Opens a bash shell in a registered sandbox, starting it when needed
 # ------------------------------------------------------------------------------
 # Usage: sbx-shell NAME
-# The shell is bash in the project folder for every agent. In a new or
+# The shell is bash in the project directory for every agent. In a new or
 # recreated container, run sbx-init there first, then sbx-claude or sbx-cursor.
 # A running sandbox is entered as it is, never recreated, so its other shells
 # and agent sessions stay open.
@@ -14,7 +14,7 @@ set -eu
 . "$(dirname "$0")/sbx-lib.sh"
 
 # ------------------------------------------------------------------------------
-# open_shell NAME: replaces this script with bash in the project folder
+# open_shell NAME: replaces this script with bash in the project directory
 # ------------------------------------------------------------------------------
 # The one docker call that keeps stdin, because the terminal is the shell's.
 # exec hands over the exit status of the shell and its Ctrl-C.

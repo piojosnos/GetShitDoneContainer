@@ -2,7 +2,7 @@
 # Root-owned image files
 # ------------------------------------------------------------------------------
 # Everything under the roots of an image belongs to root and cannot be changed by
-# group or others. Folders, the sbx commands and the launchers are executable.
+# group or others. Directories, the sbx commands and the launchers are executable.
 # The image puts this file in /usr/local/lib/sbx-selfcheck/.
 # ------------------------------------------------------------------------------
 

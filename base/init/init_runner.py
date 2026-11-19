@@ -45,7 +45,7 @@ _STOP_SIGNAL_LIST = [signal.SIGHUP, signal.SIGTERM]
 # Loading the steps
 # ------------------------------------------------------------------------------
 # Shared and agent step files sort together by file name, so the shared 800 step
-# runs between an agent's 050 and 900; the self-check runs shared checks first.
+# runs between an agent's 050 and 900; sbx-selfcheck runs shared checks first.
 # ------------------------------------------------------------------------------
 
 def load_step_module(module_path: Path) -> ModuleType:
@@ -149,14 +149,14 @@ def _take_lock(lock_file: Path, flock_function: Callable[[TextIO, int], None] = 
     return handle
 
 
-def _folder_writable_hint(file: Path) -> str:
+def _dir_writable_hint(file: Path) -> str:
     return f"check that {file.parent} is writable; " + rebuild_hint()
 
 
 def _marker_failure(action_text: str, marker_file: Path, error: OSError) -> CheckResult:
     return failed(
         f"cannot {action_text} {marker_file}: {error.strerror}",
-        _folder_writable_hint(marker_file),
+        _dir_writable_hint(marker_file),
     )
 
 
@@ -189,7 +189,7 @@ def run_init(shared_steps_dir: Path, agent_steps_dir: Path, marker_file: Path, l
     except OSError as e:
         return _stop_at(
             _LOCK_STEP_NAME,
-            failed(f"cannot open {lock_file}: {e.strerror}", _folder_writable_hint(lock_file)),
+            failed(f"cannot open {lock_file}: {e.strerror}", _dir_writable_hint(lock_file)),
             output,
         )
 

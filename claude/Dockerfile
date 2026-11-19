@@ -12,7 +12,7 @@ FROM ${BASE_IMAGE}
 # ------------------------------------------------------------------------------
 # The build uses a throwaway npm cache: the image's is under the mount.
 # ~/.claude links to state/claude only for tools that ignore CLAUDE_CONFIG_DIR.
-# Claude Code stays in /usr/local; only its link moves to the agents folder, off
+# Claude Code stays in /usr/local; only its link moves to the agents directory, off
 # the PATH, so only sbx-claude starts it.
 # ------------------------------------------------------------------------------
 USER root
@@ -67,7 +67,7 @@ RUN PYTHONPYCACHEPREFIX=/tmp/sbx-pycache python3 -m py_compile /etc/sbx/init.d/c
 # ------------------------------------------------------------------------------
 # The Claude checks for sbx-selfcheck
 # ------------------------------------------------------------------------------
-# The runner in the base image runs every file in each folder under
+# The runner in the base image runs every file in each directory under
 # /etc/sbx/selfcheck.d, here /etc/sbx/selfcheck.d/claude. What those checks share
 # goes to /usr/local/lib/sbx-selfcheck/agents, which the runner never loads as a
 # check; the launcher puts it on the import path.

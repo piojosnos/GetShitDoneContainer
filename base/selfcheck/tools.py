@@ -98,7 +98,7 @@ def tool_result(
     if is_under(real_path, home_root):
         return failed(
             f"{command_name} resolves to {real_path}, under {home_root}, not the image",
-            f"a copy under {home_root} hides the image's {command_name}: remove it, or take its folder off PATH in this sandbox",
+            f"a copy under {home_root} hides the image's {command_name}: remove it, or take its directory off PATH in this sandbox",
         )
 
     machine_problem = _native_machine_problem(real_path, command_name)
@@ -120,12 +120,13 @@ def tool_result(
 
 
 # ------------------------------------------------------------------------------
-# The agents folder on PATH
+# The agents directory on PATH
 # ------------------------------------------------------------------------------
-# The image keeps each agent in its own folder, off the PATH, and its wrapper puts
-# the folder first when it starts the agent. A check that runs the agent does the
-# same; a check that looks for a stray copy takes the folder out first, because
-# the self-check can run inside an agent session whose PATH the wrapper extended.
+# The image keeps each agent in its own directory, off the PATH, and its agent
+# wrapper puts the directory first when it starts the agent. A check that runs the
+# agent does the same; a check that looks for a stray copy takes the directory out
+# first, because sbx-selfcheck can run inside an agent session whose PATH the agent
+# wrapper extended.
 # ------------------------------------------------------------------------------
 
 def agent_path_environment(agent_bin_dir: Path, environment_map: Mapping[str, str] = os.environ) -> dict[str, str]:
@@ -156,7 +157,7 @@ def off_path_result(
 
     if found_path is not None:
         return failed(
-            f"{command_name} is on PATH at {found_path}; the image keeps it in {agent_bin_dir} for its wrapper",
+            f"{command_name} is on PATH at {found_path}; the image keeps it in {agent_bin_dir} for its agent wrapper",
             f"remove {found_path} if you put it there; else " + rebuild_hint(),
         )
 

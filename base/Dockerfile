@@ -34,7 +34,7 @@ RUN apt-get update \
 # ------------------------------------------------------------------------------
 # Optional extra root certificate: the system store, before any download
 # ------------------------------------------------------------------------------
-# build.sh mounts a folder of one-certificate .crt files as the cacert context
+# build.sh mounts a directory of one-certificate .crt files as the cacert context
 # when SBX_CA_CERT is set; without it the empty stage above is mounted and this
 # step changes nothing.
 # ------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ RUN --mount=type=bind,from=cacert,target=/mnt \
 # Optional extra root certificate: the fingerprints sbx-selfcheck expects
 # ------------------------------------------------------------------------------
 # build.sh computes them from the same file and passes them as a space separated
-# list, apart from the mounted folder, so a lost certificate cannot take its
+# list, apart from the mounted directory, so a lost certificate cannot take its
 # expectation with it. Empty means no certificate was requested.
 # ------------------------------------------------------------------------------
 ARG EXTRA_CA_FINGERPRINTS
@@ -149,16 +149,16 @@ COPY --from=hadolint --chmod=755 /bin/hadolint /usr/local/bin/hadolint
 # ------------------------------------------------------------------------------
 # The sandbox user, replacing the ubuntu user at 1000:1000
 # ------------------------------------------------------------------------------
-# So files on the mounted folder keep predictable owners.
+# So files on the mounted directory keep predictable owners.
 # ------------------------------------------------------------------------------
 RUN (userdel -r ubuntu || true) \
     && useradd -m -u 1000 -s /bin/bash sandbox \
     && test "$(id -u sandbox):$(id -g sandbox)" = "1000:1000"
 
 # ------------------------------------------------------------------------------
-# git safe.directory for every folder
+# git safe.directory for every directory
 # ------------------------------------------------------------------------------
-# In /etc/gitconfig (image, not mount): Mac repos never hit "dubious ownership".
+# In /etc/gitconfig (image, not mount): repos made on the host never hit "dubious ownership".
 # ------------------------------------------------------------------------------
 RUN git config --system safe.directory '*'
 
@@ -166,7 +166,7 @@ RUN git config --system safe.directory '*'
 # Per-shell settings as image ENV
 # ------------------------------------------------------------------------------
 # Every shell, docker exec ones included, gets these from ENV.
-# GIT_CONFIG_GLOBAL points into a folder: git replaces the file by rename.
+# GIT_CONFIG_GLOBAL points into a directory: git replaces the file by rename.
 # ------------------------------------------------------------------------------
 ENV HISTFILE=/home/sandbox/workspace/state/shell/bash_history \
     PROMPT_COMMAND="history -a" \
@@ -182,7 +182,7 @@ ENV HISTFILE=/home/sandbox/workspace/state/shell/bash_history \
 # ------------------------------------------------------------------------------
 # GSD from @opengsd/gsd-core at the exact pin
 # ------------------------------------------------------------------------------
-# sbx-init syncs it into the agent's config folder (its GSD step), so the
+# sbx-init syncs it into the agent config directory (its GSD step), so the
 # image's GSD wins. Late in this file, so a GSD bump rebuilds only the layers
 # below it.
 # ------------------------------------------------------------------------------
@@ -195,16 +195,16 @@ RUN : "${GSD_CORE_VERSION:?GSD_CORE_VERSION is not set; build with ./build.sh}" 
 # ------------------------------------------------------------------------------
 # Best-practices clone settings
 # ------------------------------------------------------------------------------
-# SBX_BUNDLE_DIR is where a sandbox keeps its clone of BUNDLE_REPO_URL;
+# SBX_BEST_PRACTICES_DIR is where a sandbox keeps its clone of BEST_PRACTICES_REPO_URL;
 # sbx-init links the clone.
 # ------------------------------------------------------------------------------
-ARG BUNDLE_REPO_URL
-RUN : "${BUNDLE_REPO_URL:?BUNDLE_REPO_URL is not set; build with ./build.sh}"
-ENV SBX_BUNDLE_DIR=/home/sandbox/workspace/best-practices \
-    BUNDLE_REPO_URL=${BUNDLE_REPO_URL}
+ARG BEST_PRACTICES_REPO_URL
+RUN : "${BEST_PRACTICES_REPO_URL:?BEST_PRACTICES_REPO_URL is not set; build with ./build.sh}"
+ENV SBX_BEST_PRACTICES_DIR=/home/sandbox/workspace/best-practices \
+    BEST_PRACTICES_REPO_URL=${BEST_PRACTICES_REPO_URL}
 
 # ------------------------------------------------------------------------------
-# Shared helpers: sbx-gh-login, sbx-bundle-clone and sbx-run-agent
+# Shared helpers: sbx-gh-login, sbx-best-practices-clone and sbx-run-agent
 # ------------------------------------------------------------------------------
 # Copied as root into /usr/local/bin, mode 755, so the sandbox user cannot
 # change them. Same paths for every agent.
@@ -232,7 +232,7 @@ RUN printf 'gsd %s | node %s | jdk %s | mvn %s | python %s\n' \
 # sbx-selfcheck: the runner, its libraries and the shared checks
 # ------------------------------------------------------------------------------
 # Root-owned and read-only to the sandbox user. Each agent image adds its checks
-# folder to /etc/sbx/selfcheck.d. A syntax error in any file stops the build here.
+# directory to /etc/sbx/selfcheck.d. A syntax error in any file stops the build here.
 # ------------------------------------------------------------------------------
 RUN mkdir -p /usr/local/lib/sbx-selfcheck/checks /etc/sbx/selfcheck.d
 COPY --chmod=755 base/selfcheck/sbx-selfcheck /usr/local/lib/sbx-selfcheck/sbx-selfcheck
@@ -246,7 +246,7 @@ RUN ln -s /usr/local/lib/sbx-selfcheck/sbx-selfcheck /usr/local/bin/sbx-selfchec
 # sbx-init: the runner, its libraries and the shared steps
 # ------------------------------------------------------------------------------
 # Root-owned and read-only to the sandbox user. Each agent image adds its steps
-# folder to /etc/sbx/init.d. A syntax error in any file stops the build here.
+# directory to /etc/sbx/init.d. A syntax error in any file stops the build here.
 # ------------------------------------------------------------------------------
 RUN mkdir -p /usr/local/lib/sbx-init/steps /etc/sbx/init.d /opt/sbx/agents/bin
 COPY --chmod=755 base/init/sbx-init /usr/local/lib/sbx-init/sbx-init
@@ -257,7 +257,7 @@ RUN ln -s /usr/local/lib/sbx-init/sbx-init /usr/local/bin/sbx-init \
     && rm -rf /tmp/sbx-pycache
 
 # ------------------------------------------------------------------------------
-# Home folders: the empty mount target and ~/.local/state
+# Home directories: the empty mount target and ~/.local/state
 # ------------------------------------------------------------------------------
 # Build time, so no mount exists yet. ~/.m2 links into state/m2: Maven has no
 # clean variable for its repository.

@@ -7,7 +7,7 @@
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
-. "$(dirname "$0")/lib-bundle.sh"
+. "$(dirname "$0")/lib-best-practices.sh"
 host_init
 RUN=""
 unset SBXTEST_DIR
@@ -18,9 +18,9 @@ unset SBXTEST_DIR
 # The chain stops at its first failure. H-10 runs last: it is the likeliest to
 # fail for an environmental reason.
 # ------------------------------------------------------------------------------
-noSandboxCheckList="h03-variable-interpolation.sh h25-images-match-versions.sh h27-bundle-clone-and-publish.sh"
-sandboxCheckList="h06-git-on-mac-repo.sh h26-isolation-by-inspect.sh h34-selfcheck.sh h35-init-owner-and-lock.sh"
-chainCheckList="h08-history-survives-recreate.sh h16-live-clone-and-restart.sh h23-caches-survive-recreate.sh h09-rebuild-keeps-files-no-volumes.sh h28-sbx-add-start-stop.sh h29-sbx-upgrade.sh h31-sbx-shell.sh h32-sbx-list.sh h33-sbx-rm.sh h10-missing-folder-refused.sh"
+noSandboxCheckList="h03-variable-interpolation.sh h25-images-match-versions.sh h27-best-practices-clone-and-publish.sh"
+sandboxCheckList="h06-git-on-host-repo.sh h26-isolation-by-inspect.sh h34-selfcheck.sh h35-init-owner-and-lock.sh"
+chainCheckList="h08-history-survives-recreate.sh h16-live-clone-and-restart.sh h23-caches-survive-recreate.sh h09-rebuild-keeps-files-no-volumes.sh h28-sbx-add-start-stop.sh h29-sbx-upgrade.sh h31-sbx-shell.sh h32-sbx-list.sh h33-sbx-rm.sh h10-missing-dir-refused.sh"
 
 remainingList="$noSandboxCheckList $sandboxCheckList $chainCheckList"
 passedCount=0
@@ -148,7 +148,7 @@ print_next_block() {
     printf '  Cleanup when you are done:\n'
     printf '    cd %q && SBX_NAME=hosttest SBX_DIR=%q docker compose down && rm -rf %q\n' "${REPO_DIR:-}" "$RUN" "$RUN"
   else
-    printf '  No run folder was created, so there is nothing to clean up.\n'
+    printf '  No run directory was created, so there is nothing to clean up.\n'
   fi
 }
 
@@ -183,30 +183,30 @@ check_docker_reachable() {
 }
 
 # ------------------------------------------------------------------------------
-# create_run_folder: makes the run folder and prints its path; stops on failure
+# create_run_dir: makes the run directory and prints its path; stops on failure
 # ------------------------------------------------------------------------------
-create_run_folder() {
+create_run_dir() {
   if ! make_run_dir; then
-    fatal "could not create the run folder"
+    fatal "could not create the run directory"
   fi
 
-  info "run folder: $RUN"
+  info "run directory: $RUN"
 }
 
 # ------------------------------------------------------------------------------
-# create_bundle_clone: makes the fixture origin and the sandbox's clone
+# create_best_practices_clone: makes the fixture origin and the sandbox's clone
 # ------------------------------------------------------------------------------
-# Both sit in the run folder. The run stops when either step fails.
+# Both sit in the run directory. The run stops when either step fails.
 # ------------------------------------------------------------------------------
-create_bundle_clone() {
-  local cloneLog=$RUN/logs/bundle-clone.log
+create_best_practices_clone() {
+  local cloneLog=$RUN/logs/best-practices-clone.log
 
-  if ! make_bundle_origin "$RUN/bundle-origin.git" >"$cloneLog" 2>&1 ||
-    ! make_bundle_clone "$RUN/bundle-origin.git" "$RUN/best-practices" >>"$cloneLog" 2>&1; then
-    fatal "could not make the fixture bundle clone (log: $cloneLog)"
+  if ! make_best_practices_origin "$RUN/best-practices-origin.git" >"$cloneLog" 2>&1 ||
+    ! make_best_practices_clone "$RUN/best-practices-origin.git" "$RUN/best-practices" >>"$cloneLog" 2>&1; then
+    fatal "could not make the fixture best-practices clone (log: $cloneLog)"
   fi
 
-  info "bundle clone: $RUN/best-practices"
+  info "best-practices clone: $RUN/best-practices"
 }
 
 # ------------------------------------------------------------------------------
@@ -246,7 +246,7 @@ make_test_root_cert() {
 # prepare_root_certificates: the build trusts your own root and the test root
 # ------------------------------------------------------------------------------
 # Your own root comes first when SBX_CA_CERT is set. The build file sits outside
-# the run folder, which the sandbox mounts.
+# the run directory, which the sandbox mounts.
 # ------------------------------------------------------------------------------
 prepare_root_certificates() {
   local certFile buildFile rootLog
@@ -297,7 +297,7 @@ remove_leftover_test_container() {
 
   label=$(docker container inspect --format '{{index .Config.Labels "sbx.name"}}' "$CONTAINER" 2>/dev/null </dev/null)
   if [ "$label" != "hosttest" ]; then
-    printf 'A container named %s exists but is not labelled sbx.name=hosttest. It was left alone.\n' "$CONTAINER" >&2
+    printf 'A container named %s exists but is not labeled sbx.name=hosttest. It was left alone.\n' "$CONTAINER" >&2
     fatal "an earlier sbx-hosttest container is in the way and was not removed (see the messages above)"
   fi
 
@@ -339,8 +339,8 @@ require_no_arguments "$@" || exit 2
 install_traps
 print_docker_target
 check_docker_reachable
-create_run_folder
-create_bundle_clone
+create_run_dir
+create_best_practices_clone
 prepare_root_certificates
 remove_leftover_test_container
 build_all_images

@@ -104,10 +104,10 @@ check_volumes_unchanged() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks the container has exactly one bind mount of the run folder
+# Checks the container has exactly one bind mount of the run directory
 # ------------------------------------------------------------------------------
 # The Source is compared by its last path component only, because Docker Desktop
-# may show the folder under a different prefix.
+# may show the directory under a different prefix.
 # ------------------------------------------------------------------------------
 check_one_bind_mount() {
   local mountLines mountCount runBase mountType mountDestination mountSource

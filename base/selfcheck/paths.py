@@ -9,7 +9,7 @@ from pathlib import Path
 HOME_DIR = Path("/home/sandbox")
 WORKSPACE_DIR = HOME_DIR / "workspace"
 STATE_DIR = WORKSPACE_DIR / "state"
-BUNDLE_DIR = WORKSPACE_DIR / "best-practices"
+BEST_PRACTICES_DIR = WORKSPACE_DIR / "best-practices"
 VERSIONS_FILE = Path("/etc/sbx/versions.env")
 TOOL_VERSIONS_FILE = Path("/etc/sbx/tool-versions")
 BASE_STATE_DIR_LIST = ["shell", "gh", "git"]
@@ -38,7 +38,7 @@ def link_text(link: Path) -> str | None:
         return None
 
 
-def state_folder_name_list(state_dirs_text: str) -> list[str]:
+def state_dir_name_list(state_dirs_text: str) -> list[str]:
     name_list = []
 
     for name in BASE_STATE_DIR_LIST + state_dirs_text.split():

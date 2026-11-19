@@ -4,8 +4,8 @@
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; runs after H-34
 # One throwaway root container makes a root-owned file in the test sandbox's
-# state folder. A process in the test sandbox holds the run lock, so a second
-# sbx-init is refused. The file is the test's own; it stays in the run folder.
+# state directory. A process in the test sandbox holds the run lock, so a second
+# sbx-init is refused. The file is the test's own; it stays in the run directory.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"

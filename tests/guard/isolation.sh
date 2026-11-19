@@ -75,9 +75,9 @@ host_tests_never_name_the_local_tag() {
 }
 
 # ------------------------------------------------------------------------------
-# owner_fix_hint_matches_container_name: the Mac fix names the compose container
+# owner_fix_hint_matches_container_name: the host fix names the compose container
 # ------------------------------------------------------------------------------
-# The fix, shared by the self-check and sbx-init, runs a throwaway root container
+# The fix, shared by sbx-selfcheck and sbx-init, runs a throwaway root container
 # with --volumes-from sbx-NAME. If the container_name in compose.yml changes, the
 # printed command would name a container that does not exist.
 # ------------------------------------------------------------------------------

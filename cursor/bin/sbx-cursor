@@ -3,7 +3,7 @@
 # Runs Cursor once sbx-init has passed in this container
 # ------------------------------------------------------------------------------
 # Usage: sbx-cursor [cursor-agent arguments]
-# sbx-run-agent checks the init marker and puts the agents folder first on the
+# sbx-run-agent checks the init marker and puts the agents directory first on the
 # PATH it hands to Cursor; the calling shell's PATH stays as it is.
 # ------------------------------------------------------------------------------
 set -eu

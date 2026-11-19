@@ -3,16 +3,16 @@
 # H-34: sbx-init and sbx-selfcheck pass in a Claude and a Cursor test sandbox
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; starts and removes a Cursor test sandbox
-# Runs sbx-init first in each sandbox, because the self-check expects an
-# initialised sandbox.
+# Runs sbx-init first in each sandbox, because sbx-selfcheck expects an
+# initialized sandbox.
 # A fresh sandbox correctly fails the git identity and login checks, so this
 # plants a git identity and a fake login before each run. The Cursor sandbox
-# runs on its own folder with a space in its path and its own registry inside
-# the run folder. It is removed before H-34 ends, because H-32 and H-33 compare
+# runs on its own directory with a space in its path and its own registry inside
+# the run directory. It is removed before H-34 ends, because H-32 and H-33 compare
 # every sbx- container. The test images are always built with a root certificate,
 # so no certificate check may print that none was requested; that would mean the
 # build lost the certificate and its fingerprint together.
-# In the Cursor test sandbox, H-34 also checks that the agents folder reaches a
+# In the Cursor test sandbox, H-34 also checks that the agents directory reaches a
 # login shell inside an sbx-cursor session and no plain login shell; H-27 does the
 # same for Claude in its fresh container. This is the only check that starts a
 # Cursor sandbox, hence the split.
@@ -21,14 +21,14 @@ set -u
 . "$(dirname "$0")/lib.sh"
 host_init
 . "$(dirname "$0")/lib-sbx.sh"
-. "$(dirname "$0")/lib-bundle.sh"
+. "$(dirname "$0")/lib-best-practices.sh"
 
 # ------------------------------------------------------------------------------
 # Expected check counts: the shared checks plus the agent's own
 # ------------------------------------------------------------------------------
 # Count the check entries in the CHECK_LIST of each file in base/selfcheck/checks/
 # and in claude/selfcheck/ or cursor/selfcheck/; an inventory test in
-# tests/selftest/selfcheck keeps them equal.
+# tests/unit/selfcheck keeps them equal.
 # ------------------------------------------------------------------------------
 expectedClaudeCount=55
 expectedCursorCount=53
@@ -61,7 +61,7 @@ plant_identity() {
 # ------------------------------------------------------------------------------
 plant_fake_login() {
   if ! mkdir -p "$(dirname "$1")"; then
-    add_problem "could not make the folder of the fake login file $1"
+    add_problem "could not make the directory of the fake login file $1"
   fi
 
   if ! printf '{"fake":"%s"}\n' "$plantText" >"$1"; then
@@ -72,7 +72,7 @@ plant_fake_login() {
 # ------------------------------------------------------------------------------
 # run_init CONTAINER OUTPUT_FILE EXPECTED_COUNT LABEL: runs sbx-init
 # ------------------------------------------------------------------------------
-# The self-check expects an initialised sandbox. Adds a problem when the exit
+# sbx-selfcheck expects an initialized sandbox. Adds a problem when the exit
 # status is not 0 or the last line is not the summary with EXPECTED_COUNT steps.
 # ------------------------------------------------------------------------------
 run_init() {
@@ -211,7 +211,7 @@ check_claude_sandbox() {
 }
 
 # ------------------------------------------------------------------------------
-# start_cursor_sandbox: registers, clones the bundle for and starts the sandbox
+# start_cursor_sandbox: registers, clones the best-practices repo for and starts the sandbox
 # ------------------------------------------------------------------------------
 # The clone must exist before sbx-init runs, so it links the skills.
 # ------------------------------------------------------------------------------
@@ -226,8 +226,8 @@ start_cursor_sandbox() {
 
   cursorAdded=1
 
-  if ! make_bundle_clone "$RUN/bundle-origin.git" "$sbxDir/best-practices" >"$RUN/logs/h34-clone.log" 2>&1; then
-    add_problem "could not clone the fixture bundle for the Cursor test sandbox; log: $RUN/logs/h34-clone.log"
+  if ! make_best_practices_clone "$RUN/best-practices-origin.git" "$sbxDir/best-practices" >"$RUN/logs/h34-clone.log" 2>&1; then
+    add_problem "could not clone the fixture best-practices repo for the Cursor test sandbox; log: $RUN/logs/h34-clone.log"
 
     return 1
   fi
@@ -269,9 +269,9 @@ check_cursor_sandbox() {
 # ------------------------------------------------------------------------------
 # check_cursor_login_shells: a login shell finds cursor-agent only in a session
 # ------------------------------------------------------------------------------
-# The stand-in cursor-agent in /tmp replaces its own folder at the front of the
-# PATH with the agents folder, which is the PATH the wrapper hands the real
-# agent, then starts the login shell. The image's login files run for real.
+# The stand-in cursor-agent in /tmp replaces its own directory at the front of the
+# PATH with the agents directory, which is the PATH the agent wrapper hands the
+# real agent, then starts the login shell. The image's login files run for real.
 # ------------------------------------------------------------------------------
 check_cursor_login_shells() {
   local scriptText sessionFile plainFile sessionStatus plainStatus
@@ -289,7 +289,7 @@ SCRIPT
   sessionStatus=$?
 
   if [ "$sessionStatus" -ne 0 ] || [ "$(cat "$sessionFile" 2>/dev/null)" != "/opt/sbx/agents/bin/cursor-agent" ]; then
-    add_problem "a login shell inside an sbx-cursor session did not find /opt/sbx/agents/bin/cursor-agent (exit $sessionStatus); a login shell may have reset the PATH the wrapper set; output: $sessionFile"
+    add_problem "a login shell inside an sbx-cursor session did not find /opt/sbx/agents/bin/cursor-agent (exit $sessionStatus); a login shell may have reset the PATH the agent wrapper set; output: $sessionFile"
   fi
 
   run_timeout 60 docker exec "$cursorContainer" bash -lc 'command -v cursor-agent' >"$plainFile" 2>&1 </dev/null

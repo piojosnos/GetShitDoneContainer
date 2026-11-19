@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Mac test run: every Docker check in one go, all output kept in host-test.log
+# Host test run: every Docker check in one go, all output kept in host-test.log
 # ------------------------------------------------------------------------------
 # Usage: ./host-test.sh [--keep]   (exit 0 = every step passed; sh works too)
 # --keep leaves the test sandbox up to look around after a failure.
@@ -68,11 +68,11 @@ host_checks() {
 }
 
 # ------------------------------------------------------------------------------
-# find_run_dir: sets RUN to the host folder the test sandbox mounts
+# find_run_dir: sets RUN to the host directory the test sandbox mounts
 # ------------------------------------------------------------------------------
 find_run_dir() {
   RUN=$(docker container inspect -f '{{range .Mounts}}{{.Source}}{{end}}' sbx-hosttest 2>/dev/null)
-  printf 'run folder: %s\n' "${RUN:-none (the test sandbox is not running)}"
+  printf 'run directory: %s\n' "${RUN:-none (the test sandbox is not running)}"
   [ -n "$RUN" ] && [ -d "$RUN" ]
 }
 
@@ -133,7 +133,7 @@ sandbox_suites() {
 # ------------------------------------------------------------------------------
 # make_linter_standin DIR TOOL: writes DIR/TOOL that runs TOOL in the test base
 # ------------------------------------------------------------------------------
-# The stand-in mounts the current folder read-only at the same path.
+# The stand-in mounts the current directory read-only at the same path.
 # ------------------------------------------------------------------------------
 make_linter_standin() {
   printf '#!/bin/sh\nexec docker run --rm -v "$PWD:$PWD:ro" -w "$PWD" --entrypoint %s sbx-base:%s "$@"\n' "$2" "$SBX_IMAGE_TAG" > "$1/$2"
@@ -141,12 +141,12 @@ make_linter_standin() {
 }
 
 # ------------------------------------------------------------------------------
-# mac_guard: the guard in the Mac shell (stock bash 3.2 and BSD tools)
+# host_guard: the guard in the host shell (on macOS, stock bash 3.2, BSD tools)
 # ------------------------------------------------------------------------------
-# The Mac has no shellcheck or hadolint. Two stand-ins on PATH run them from
+# A macOS host has no shellcheck or hadolint. Two stand-ins on PATH run them from
 # the test base image, so every rule must pass here and any FAIL fails the step.
 # ------------------------------------------------------------------------------
-mac_guard() {
+host_guard() {
   local output standinDir status
 
   standinDir=$(mktemp -d "${TMPDIR:-/tmp}/sbx-linters.XXXXXX") || return 1
@@ -163,19 +163,19 @@ mac_guard() {
 }
 
 # ------------------------------------------------------------------------------
-# mac_sbx_selftest: the sbx-* self-test in the Mac shell, under /bin/bash
+# host_sbx_unit_tests: the sbx-* unit tests in the host shell, under /bin/bash
 # ------------------------------------------------------------------------------
 # A bash link first on PATH makes the suite and every script it runs use
 # /bin/bash, the stock 3.2.
 # ------------------------------------------------------------------------------
-mac_sbx_selftest() {
+host_sbx_unit_tests() {
   local standinDir status
 
   standinDir=$(mktemp -d "${TMPDIR:-/tmp}/sbx-bash.XXXXXX") || return 1
   ln -s /bin/bash "$standinDir/bash"
   printf '/bin/bash is %s\n' "$(/bin/bash -c 'printf %s "$BASH_VERSION"')"
 
-  PATH="$standinDir:$PATH" /bin/bash tests/selftest/sbx/run-all.sh
+  PATH="$standinDir:$PATH" /bin/bash tests/unit/sbx/run-all.sh
   status=$?
   rm -rf "$standinDir"
 
@@ -193,7 +193,7 @@ build_warnings() {
 }
 
 # ------------------------------------------------------------------------------
-# remove_sandbox: stops the test sandbox and deletes its run folder
+# remove_sandbox: stops the test sandbox and deletes its run directory
 # ------------------------------------------------------------------------------
 remove_sandbox() {
   SBX_NAME=hosttest SBX_DIR="$RUN" docker compose --env-file /dev/null -f compose.yml down </dev/null \
@@ -219,15 +219,15 @@ main() {
   require_compose_v2 || exit 1
 
   run_step "context" show_context
-  run_step "sbx self-test in the Mac shell" mac_sbx_selftest
+  run_step "sbx unit tests in the host shell" host_sbx_unit_tests
   run_step "host checks" host_checks
-  run_step "run folder" find_run_dir
+  run_step "run directory" find_run_dir
 
   if [ -n "$RUN" ] && [ -d "$RUN" ]; then
     run_step "linter versions" linter_versions
     run_step "pin digests" pin_digests
     run_step "guard in sbx-hosttest" sandbox_suites
-    run_step "guard in the Mac shell" mac_guard
+    run_step "guard in the host shell" host_guard
     run_step "build warnings" build_warnings
 
     if [ "$keepSandbox" = true ]; then

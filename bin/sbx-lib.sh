@@ -3,7 +3,7 @@
 # Shared by the sbx-* host scripts: registry, name rule, Compose
 # ------------------------------------------------------------------------------
 # A library: defines variables and functions, runs nothing, sets no options.
-# Stock bash 3.2 with BSD tools, because it runs in the Mac shell.
+# It runs in the host shell (on a macOS host, stock bash 3.2 with BSD tools).
 # ------------------------------------------------------------------------------
 
 knownAgentList="claude cursor"
@@ -14,7 +14,7 @@ knownImageTagList="local test"
 nameRulePattern='^[a-z][a-z0-9-]{0,30}$'
 nameRuleText='starts with a lowercase letter, then lowercase letters, digits or hyphens, 31 characters at most'
 
-# Names of the sandbox folder's own folders.
+# Directory names the sandbox directory holds itself.
 reservedNameList="state best-practices"
 
 # ------------------------------------------------------------------------------
@@ -62,7 +62,7 @@ check_image_tag() {
 }
 
 # ------------------------------------------------------------------------------
-# sbx_init: sets scriptName, repoDir and the registry folder
+# sbx_init: sets scriptName, repoDir and the registry directory
 # ------------------------------------------------------------------------------
 # repoDir comes from the place of this library, not from $0, so a test that
 # sources the library finds the repo too. COMPOSE_* variables are unset, and the
@@ -116,7 +116,7 @@ check_name() {
 
   for reservedName in $reservedNameList; do
     if [ "$sandboxName" = "$reservedName" ]; then
-      sbx_error "'$sandboxName' is taken: the sandbox folder uses $reservedName/ itself. Pick another name."
+      sbx_error "'$sandboxName' is taken: the sandbox directory uses $reservedName/ itself. Pick another name."
       return 1
     fi
   done
@@ -138,7 +138,7 @@ is_known_agent() {
 }
 
 # ------------------------------------------------------------------------------
-# read_registry_entry NAME: sets entryFile, entryDir, entryAgent and agentImage
+# read_registry_entry NAME: sets entryFile, sandboxDir, entryAgent and agentImage
 # ------------------------------------------------------------------------------
 # The caller checked the name. The file is read line by line as text and never
 # sourced, so a value such as $(command) is only a path that does not exist.
@@ -148,7 +148,7 @@ read_registry_entry() {
   local line
 
   entryFile=$registryDir/$sandboxName
-  entryDir=""
+  sandboxDir=""
   entryAgent=""
   agentImage=""
 
@@ -165,7 +165,7 @@ read_registry_entry() {
   while IFS= read -r line || [ -n "$line" ]; do
     case "$line" in
       SBX_DIR=*)
-        entryDir=${line#SBX_DIR=}
+        sandboxDir=${line#SBX_DIR=}
         ;;
       SBX_AGENT=*)
         entryAgent=${line#SBX_AGENT=}
@@ -173,7 +173,7 @@ read_registry_entry() {
     esac
   done <"$entryFile"
 
-  if [[ "$entryDir" != /* ]]; then
+  if [[ "$sandboxDir" != /* ]]; then
     sbx_error "the entry $entryFile has no absolute SBX_DIR"
     return 1
   fi
@@ -187,17 +187,17 @@ read_registry_entry() {
 }
 
 # ------------------------------------------------------------------------------
-# check_sandbox_folders NAME: NAME/ and state/ exist in the registered folder
+# check_sandbox_dirs NAME: NAME/ and state/ exist in the registered directory
 # ------------------------------------------------------------------------------
 # Docker would make a missing bind source as root, so this runs first.
 # ------------------------------------------------------------------------------
-check_sandbox_folders() {
+check_sandbox_dirs() {
   local sandboxName=$1
-  local folderName
+  local dirName
 
-  for folderName in "$sandboxName" state; do
-    if [ ! -d "$entryDir/$folderName" ]; then
-      sbx_error "missing $entryDir/$folderName; create it with mkdir -p, or fix SBX_DIR in $entryFile"
+  for dirName in "$sandboxName" state; do
+    if [ ! -d "$sandboxDir/$dirName" ]; then
+      sbx_error "missing $sandboxDir/$dirName; create it with mkdir -p, or fix SBX_DIR in $entryFile"
       return 1
     fi
   done
@@ -215,7 +215,7 @@ run_compose() {
   local sandboxName=$1
 
   shift
-  SBX_NAME="$sandboxName" SBX_DIR="$entryDir" SBX_IMAGE_TAG="$imageTag" SBX_AGENT="$entryAgent" docker compose --env-file /dev/null -p "sbx-$sandboxName" -f "$repoDir/compose.yml" "$@" </dev/null
+  SBX_NAME="$sandboxName" SBX_DIR="$sandboxDir" SBX_IMAGE_TAG="$imageTag" SBX_AGENT="$entryAgent" docker compose --env-file /dev/null -p "sbx-$sandboxName" -f "$repoDir/compose.yml" "$@" </dev/null
 }
 
 # ------------------------------------------------------------------------------
@@ -290,7 +290,7 @@ warn_sessions_close() {
 }
 
 # ------------------------------------------------------------------------------
-# bring_up_sandbox NAME: folders, image, then up
+# bring_up_sandbox NAME: directories, image, then up
 # ------------------------------------------------------------------------------
 # The caller read the registry entry. A running sandbox on an older image is
 # recreated by up, after the sessions warning.
@@ -298,7 +298,7 @@ warn_sessions_close() {
 bring_up_sandbox() {
   local sandboxName=$1
 
-  check_sandbox_folders "$sandboxName" || return 1
+  check_sandbox_dirs "$sandboxName" || return 1
   require_images "$sandboxName" || return 1
 
   if runs_older_image "$sandboxName"; then

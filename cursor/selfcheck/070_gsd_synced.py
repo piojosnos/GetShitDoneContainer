@@ -7,7 +7,7 @@
 
 from agent_config import gsd_synced_result
 from check_result import Check, CheckResult
-from cursor_shared import CONFIG_DIR
+from cursor_shared import AGENT_CONFIG_DIR
 
 
 # ------------------------------------------------------------------------------
@@ -15,7 +15,7 @@ from cursor_shared import CONFIG_DIR
 # ------------------------------------------------------------------------------
 
 def _check_cursor_gsd_synced() -> CheckResult:
-    return gsd_synced_result(CONFIG_DIR)
+    return gsd_synced_result(AGENT_CONFIG_DIR)
 
 
 CHECK_LIST = [Check("cursor-gsd-synced", _check_cursor_gsd_synced)]

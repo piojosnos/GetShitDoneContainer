@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# H-31: sbx-shell starts the sandbox if needed, then opens bash in its folder
+# H-31: sbx-shell starts the sandbox if needed, then opens bash in its directory
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; takes it down and restores it
-# BSD script gives sbx-shell a terminal; the shell writes its folder to a file.
+# BSD script gives sbx-shell a terminal; the shell writes its directory to a file.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -42,7 +42,7 @@ check_lookup() {
 }
 
 # ------------------------------------------------------------------------------
-# Registers the test sandbox on its own folder
+# Registers the test sandbox on its own directory
 # ------------------------------------------------------------------------------
 register() {
   run_sbx h31-add sbx-add hosttest "$sbxDir"
@@ -124,20 +124,20 @@ run_shell() {
 }
 
 # ------------------------------------------------------------------------------
-# shell_wrote FILE_NAME: true when the file holds the one line of the folder
+# shell_wrote FILE_NAME: true when the file holds the one line of the directory
 # ------------------------------------------------------------------------------
 shell_wrote() {
   [ "$(cat "$sbxDir/hosttest/$1" 2>/dev/null)" = "/home/sandbox/workspace/hosttest" ]
 }
 
 # ------------------------------------------------------------------------------
-# Checks the shell on the running sandbox: the folder, and no recreate
+# Checks the shell on the running sandbox: the directory, and no recreate
 # ------------------------------------------------------------------------------
 check_running_shell() {
   run_shell h31-running h31-running.txt
 
   if ! shell_wrote h31-running.txt; then
-    add_problem "a shell opened through BSD script wrote no h31-running.txt with /home/sandbox/workspace/hosttest; script may not give sbx-shell a terminal on this Mac (log: $RUN/logs/h31-running.log)"
+    add_problem "a shell opened through BSD script wrote no h31-running.txt with /home/sandbox/workspace/hosttest; script may not give sbx-shell a terminal on this macOS host (log: $RUN/logs/h31-running.log)"
   fi
 
   if [ -z "$firstId" ] || [ "$(sandbox_field '{{.Id}}')" != "$firstId" ] || [ "$(sandbox_field '{{.State.StartedAt}}')" != "$firstStart" ]; then
@@ -158,7 +158,7 @@ check_stopped_shell() {
   run_shell h31-stopped h31-stopped.txt
 
   if ! shell_wrote h31-stopped.txt; then
-    add_problem "a shell opened through BSD script wrote no h31-stopped.txt with /home/sandbox/workspace/hosttest; script may not give sbx-shell a terminal on this Mac (log: $RUN/logs/h31-stopped.log)"
+    add_problem "a shell opened through BSD script wrote no h31-stopped.txt with /home/sandbox/workspace/hosttest; script may not give sbx-shell a terminal on this macOS host (log: $RUN/logs/h31-stopped.log)"
   fi
 
   if [ "$(sandbox_field '{{.State.Running}}')" != "true" ]; then
@@ -183,5 +183,5 @@ check_start_without_terminal
 check_running_shell
 check_stopped_shell
 restore_test_sandbox h31
-report_check H-31 "sbx-shell did not start the sandbox or open bash in its project folder" \
+report_check H-31 "sbx-shell did not start the sandbox or open bash in its project directory" \
   "sbx-shell started a sandbox with no container; without a terminal Docker refused the shell; through a terminal bash opened in /home/sandbox/workspace/hosttest on the running sandbox (not recreated) and on a stopped one (started again)"

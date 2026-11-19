@@ -1,8 +1,8 @@
 # ------------------------------------------------------------------------------
-# The GSD sync into an agent's config folder
+# The GSD sync into an agent config directory
 # ------------------------------------------------------------------------------
-# Runs the image's own installer, offline, and reports only its outcome; the
-# self-check compares the synced version with the pin. The image puts this file
+# Runs the image's own installer, offline, and reports only its outcome;
+# sbx-selfcheck compares the synced version with the pin. The image puts this file
 # in /usr/local/lib/sbx-init/.
 # ------------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 from typing import Mapping
 
-from check_result import CheckResult, failed, make_state_folder, passed
+from check_result import CheckResult, failed, make_state_dir, passed
 from hints import rebuild_hint
 
 
@@ -29,8 +29,8 @@ _LOG_PREFIX = "sbx-init-gsd-"
 # ------------------------------------------------------------------------------
 # The sync
 # ------------------------------------------------------------------------------
-# The installer waits forever on a folder it cannot create, so the folder is made
-# first and a folder that cannot be made fails here at once.
+# The installer waits forever on a directory it cannot create, so the directory is made
+# first and a directory that cannot be made fails here at once.
 # ------------------------------------------------------------------------------
 
 def gsd_sync_result(
@@ -41,10 +41,10 @@ def gsd_sync_result(
     environment_map: Mapping[str, str] = os.environ,
     log_dir: Path | None = None,
 ) -> CheckResult:
-    folder_failure = make_state_folder(config_dir)
+    dir_failure = make_state_dir(config_dir)
 
-    if folder_failure is not None:
-        return folder_failure
+    if dir_failure is not None:
+        return dir_failure
 
     argument_list = [installer_command, agent_option, "--global", "--config-dir", str(config_dir)]
 

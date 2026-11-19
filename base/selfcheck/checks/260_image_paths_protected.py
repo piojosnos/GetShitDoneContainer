@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Check: nothing under the image's folders is writable or mounted
+# Check: nothing under the image's directories is writable or mounted
 # ------------------------------------------------------------------------------
 # The image puts this file in /usr/local/lib/sbx-selfcheck/checks/.
 # ------------------------------------------------------------------------------

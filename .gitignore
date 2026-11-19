@@ -35,12 +35,12 @@ build/
 .vscode/
 
 ### Mac OS ###
-.DS_Store.mvn
+.DS_Store
 .idea
 _old
 .mvn
 
-### Mac test run ###
+### Host test run ###
 host-test.log
 
 ### Python (uv and pytest) ###

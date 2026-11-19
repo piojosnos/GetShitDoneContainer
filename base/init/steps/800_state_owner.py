@@ -52,7 +52,7 @@ def _give_back_round(
 # ------------------------------------------------------------------------------
 # Give-back result
 # ------------------------------------------------------------------------------
-# A round that gave paths back may have opened folders the scan could not read,
+# A round that gave paths back may have opened directories the scan could not read,
 # so the scan and the give-back repeat. Whatever is still owned by from_uid after
 # the last round is a failure.
 # ------------------------------------------------------------------------------

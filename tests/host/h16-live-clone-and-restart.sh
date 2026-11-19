@@ -3,11 +3,11 @@
 # H-16: the clone is live; sbx-init relinks it and never touches your files
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; stops and restarts it
-# Moved and planted files stay in the run folder for the printed cleanup.
+# Moved and planted files stay in the run directory for the printed cleanup.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
-. "$(dirname "$0")/lib-bundle.sh"
+. "$(dirname "$0")/lib-best-practices.sh"
 host_init
 
 cloneDir=$RUN/best-practices
@@ -18,11 +18,11 @@ sessionFile=$syncedDir/projects/-home-sandbox-workspace-hosttest/h16-session.jso
 settingsScript='const fs = require("fs"); const file = process.env.CLAUDE_CONFIG_DIR + "/settings.json"; let settings = {}; if (fs.existsSync(file)) { settings = JSON.parse(fs.readFileSync(file, "utf8")); } settings.h16Sentinel = process.argv[1]; fs.writeFileSync(file, JSON.stringify(settings, null, 2) + "\n");'
 
 # ------------------------------------------------------------------------------
-# Stops the check when the run folder has no best-practices clone
+# Stops the check when the run directory has no best-practices clone
 # ------------------------------------------------------------------------------
 require_clone() {
   if [ ! -d "$cloneDir/.git" ]; then
-    fail H-16 "the run folder has no best-practices clone" "looked in $cloneDir"
+    fail H-16 "the run directory has no best-practices clone" "looked in $cloneDir"
     return 1
   fi
 }
@@ -43,7 +43,7 @@ git_step() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks an uncommitted edit in the clone on the Mac shows in the container
+# Checks an uncommitted edit in the clone on the host shows in the container
 # ------------------------------------------------------------------------------
 check_edit_is_live() {
   local seenText
@@ -52,7 +52,7 @@ check_edit_is_live() {
   seenText=$(in_container cat /home/sandbox/workspace/state/claude/rules/sbx-fixture-always.md)
 
   if [[ "$seenText" != *"$sentinelText edit"* ]]; then
-    add_problem "an edit of the clone's rule on the Mac is not in the sandbox at once; got: $(first_lines "$seenText")"
+    add_problem "an edit of the clone's rule on the host is not in the sandbox at once; got: $(first_lines "$seenText")"
   fi
 }
 
@@ -61,21 +61,21 @@ check_edit_is_live() {
 # ------------------------------------------------------------------------------
 # The pulled commit only adds a file, so the uncommitted edit does not block it.
 # The pull runs inside the container: the clone's .git is writable by the agent,
-# so the Mac never runs git on it. The container reaches the origin by its
-# mounted path, not by the clone's recorded Mac path.
+# so the host never runs git on it. The container reaches the origin by its
+# mounted path, not by the clone's recorded host path.
 # ------------------------------------------------------------------------------
 check_pull_is_live() {
   local otherDir=$RUN/h16-other-$$
   local seenText
 
-  git_step "cloning the origin for the pushed commit" git clone -q "$RUN/bundle-origin.git" "$otherDir" || return
+  git_step "cloning the origin for the pushed commit" git clone -q "$RUN/best-practices-origin.git" "$otherDir" || return
   printf '%s\n' "$sentinelText" >"$otherDir/rules/h16-pulled.md"
   git_step "adding the pulled rule" git -C "$otherDir" add rules/h16-pulled.md || return
   git_step "committing the pulled rule" git -C "$otherDir" -c user.name=sbx-hosttest \
     -c user.email=sbx-hosttest@example.invalid -c commit.gpgsign=false commit -q -m "h16 pulled rule" || return
   git_step "pushing the pulled rule to the origin" git -C "$otherDir" push -q origin main || return
   git_step "pulling in the sandbox" in_container git -C /home/sandbox/workspace/best-practices \
-    pull -q --ff-only /home/sandbox/workspace/bundle-origin.git main || return
+    pull -q --ff-only /home/sandbox/workspace/best-practices-origin.git main || return
 
   seenText=$(in_container cat /home/sandbox/workspace/state/claude/rules/h16-pulled.md)
 
@@ -87,7 +87,7 @@ check_pull_is_live() {
 # ------------------------------------------------------------------------------
 # Plants user files and drops a skill from the clone
 # ------------------------------------------------------------------------------
-# One fixture skill is moved aside into the run folder, never deleted. User
+# One fixture skill is moved aside into the run directory, never deleted. User
 # files: a skill, memory, session, CLAUDE.md and a settings.json key.
 # ------------------------------------------------------------------------------
 plant_files() {
@@ -143,10 +143,10 @@ check_user_files_spared() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks sbx-init keeps a user's skill folder and rules folder and reports both
+# Checks sbx-init keeps a user's skill and rules directories and reports both
 # ------------------------------------------------------------------------------
-# The two links are moved aside into the run folder, then a real
-# skills/sbx-fixture-one folder and a real rules folder take their place.
+# The two links are moved aside into the run directory, then a real
+# skills/sbx-fixture-one directory and a real rules directory take their place.
 # sbx-init must fail at the links step naming both, leave both files as they are
 # and not write its marker.
 # ------------------------------------------------------------------------------
@@ -164,7 +164,7 @@ check_clash_kept_and_reported() {
   clashStatus=$?
 
   if [ "$clashStatus" -ne 1 ]; then
-    add_problem "sbx-init exited $clashStatus with a user skill folder and rules folder in the way; expected 1; output: $clashFile"
+    add_problem "sbx-init exited $clashStatus with a user skill directory and rules directory in the way; expected 1; output: $clashFile"
   fi
 
   if ! grep -E '^FAIL: claude-best-practices-links: ' "$clashFile" 2>/dev/null | grep -F 'skills/sbx-fixture-one' | grep -Fq 'state/claude/rules'; then
@@ -185,26 +185,26 @@ check_clash_kept_and_reported() {
 }
 
 # ------------------------------------------------------------------------------
-# Moves the planted folders aside, reruns sbx-init and checks the links again
+# Moves the planted directories aside, reruns sbx-init and checks the links again
 # ------------------------------------------------------------------------------
-# Both folders go into the run folder, never deleted. The rerun must pass and
-# relink, so the chain continues on a passing sandbox.
+# Both directories go into the run directory, never deleted. The rerun must
+# pass and relink, so the chain continues on a passing sandbox.
 # ------------------------------------------------------------------------------
 restore_after_clash() {
   local restoreFile=$RUN/logs/h16-restore.out
   local restoreStatus
 
-  mv "$syncedDir/skills/sbx-fixture-one" "$RUN/h16-clash-skill-folder-$$"
-  mv "$syncedDir/rules" "$RUN/h16-clash-rules-folder-$$"
+  mv "$syncedDir/skills/sbx-fixture-one" "$RUN/h16-clash-skill-dir-$$"
+  mv "$syncedDir/rules" "$RUN/h16-clash-rules-dir-$$"
 
   run_timeout 600 docker exec "$CONTAINER" sbx-init >"$restoreFile" 2>&1 </dev/null
   restoreStatus=$?
 
   if [ "$restoreStatus" -ne 0 ]; then
-    add_problem "sbx-init exited $restoreStatus after the planted folders were moved aside; expected 0; output: $restoreFile"
+    add_problem "sbx-init exited $restoreStatus after the planted directories were moved aside; expected 0; output: $restoreFile"
   fi
 
-  check_bundle_links "$syncedDir" "$cloneDir"
+  check_best_practices_links "$syncedDir" "$cloneDir"
 }
 
 # ------------------------------------------------------------------------------
@@ -217,11 +217,11 @@ check_edit_is_live
 check_pull_is_live
 plant_files
 restart_test_sandbox H-16 h16-down.log || exit 1
-check_bundle_links "$syncedDir" "$cloneDir"
+check_best_practices_links "$syncedDir" "$cloneDir"
 check_dropped_skill_gone
 check_clone_kept
 check_user_files_spared
 check_clash_kept_and_reported
 restore_after_clash
 report_check H-16 "the clone is not live, or sbx-init did not relink it, spare your files or report a clash" \
-  "an edit of the clone on the Mac and a pull inside the sandbox showed in the sandbox at once; sbx-init relinked the clone, dropped the link of a removed skill, kept the uncommitted edit and kept your skills, memories, sessions, settings key and CLAUDE.md; a skill folder and a rules folder of your own were kept and reported, and sbx-init relinked once they were moved aside"
+  "an edit of the clone on the host and a pull inside the sandbox showed in the sandbox at once; sbx-init relinked the clone, dropped the link of a removed skill, kept the uncommitted edit and kept your skills, memories, sessions, settings key and CLAUDE.md; a skill directory and a rules directory of your own were kept and reported, and sbx-init relinked once they were moved aside"

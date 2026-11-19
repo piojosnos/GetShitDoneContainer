@@ -1,9 +1,9 @@
 # ------------------------------------------------------------------------------
 # Checks: cursor-agent is the pinned version and stays off the PATH
 # ------------------------------------------------------------------------------
-# The agent lives in the agents folder, off the PATH; its wrapper puts the folder
-# first. The image copies this file to /etc/sbx/selfcheck.d/cursor/; the runner
-# loads it after the shared checks.
+# The agent lives in the agents directory, off the PATH; its agent wrapper puts the
+# directory first. The image copies this file to /etc/sbx/selfcheck.d/cursor/; the
+# runner loads it after the shared checks.
 # ------------------------------------------------------------------------------
 
 import os

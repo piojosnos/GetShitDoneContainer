@@ -1,15 +1,15 @@
 # ------------------------------------------------------------------------------
 # The scan for root-owned state paths
 # ------------------------------------------------------------------------------
-# The image puts this file in /usr/local/lib/sbx-selfcheck/; sbx-init and the
-# self-check both use it.
+# The image puts this file in /usr/local/lib/sbx-selfcheck/; sbx-init and
+# sbx-selfcheck both use it.
 # ------------------------------------------------------------------------------
 
 import os
 from pathlib import Path
 from typing import Mapping
 
-from hints import mac_hint, sandbox_name
+from hints import host_hint, sandbox_name
 from tree_walk import ProblemKind, walk_tree
 from users import SANDBOX_GID, SANDBOX_UID
 
@@ -19,10 +19,10 @@ SKIPPED_STATE_DIR_SET = {"cache/npm", "cache/uv", "m2"}
 
 
 # ------------------------------------------------------------------------------
-# The scan of the state folder
+# The scan of the state directory
 # ------------------------------------------------------------------------------
 
-def _mark_unreadable_folder(reported_list: list[str], relative_dir: Path) -> None:
+def _mark_unreadable_dir(reported_list: list[str], relative_dir: Path) -> None:
     if relative_dir.as_posix() in reported_list:
         reported_list.remove(relative_dir.as_posix())
 
@@ -44,18 +44,18 @@ def scan_owned_state(state_dir: Path, owner_uid: int, skipped_relative_set: set[
         return True
 
     for walk_problem in walk_tree([state_dir], scan_entry):
-        if walk_problem.kind == ProblemKind.UNREADABLE_FOLDER:
-            _mark_unreadable_folder(reported_list, walk_problem.path.relative_to(state_dir))
+        if walk_problem.kind == ProblemKind.UNREADABLE_DIR:
+            _mark_unreadable_dir(reported_list, walk_problem.path.relative_to(state_dir))
 
     return sorted(reported_list)
 
 
 # ------------------------------------------------------------------------------
-# The Mac fix
+# The host fix
 # ------------------------------------------------------------------------------
 
 def owner_fix_hint(state_dir: Path, environment_map: Mapping[str, str] = os.environ) -> str:
-    return mac_hint(
+    return host_hint(
         "give the paths back to the sandbox user from a throwaway root container, "
         "since the sandbox cannot change owners",
         "docker run --rm --network none -u root --entrypoint chown "

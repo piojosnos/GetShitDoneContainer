@@ -3,7 +3,7 @@
 # H-28: sbx-add registers a sandbox once; sbx-start and sbx-stop work by name
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; takes it down and restores it
-# The real scripts run with /bin/bash on a folder with a space in its path.
+# The real scripts run with /bin/bash on a directory with a space in its path.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -43,7 +43,7 @@ check_lookup() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks sbx-add: the entry, the folders, and the refusal of a second run
+# Checks sbx-add: the entry, the directories, and the refusal of a second run
 # ------------------------------------------------------------------------------
 check_add() {
   entryFile=$SBX_CONFIG_DIR/sandboxes/hosttest
@@ -85,7 +85,7 @@ check_stop_before_start() {
 }
 
 # ------------------------------------------------------------------------------
-# Checks sbx-start: running, on the registered folder, in the right project
+# Checks sbx-start: running, on the registered directory, in the right project
 # ------------------------------------------------------------------------------
 # The exported COMPOSE_PROJECT_NAME of run_sbx must have been ignored.
 # ------------------------------------------------------------------------------
@@ -113,7 +113,7 @@ check_start() {
     */"$(basename "$sbxDir")")
       ;;
     *)
-      add_problem "the workspace mount source is '$mountSource', not the registered folder '$sbxDir'"
+      add_problem "the workspace mount source is '$mountSource', not the registered directory '$sbxDir'"
       ;;
   esac
 
@@ -130,7 +130,7 @@ check_start() {
   fi
 
   if [ "$(in_container cat /home/sandbox/workspace/hosttest/h28-sentinel.txt)" != "$sentinelText" ]; then
-    add_problem "the project folder in the container does not hold the sentinel written on the host"
+    add_problem "the project directory in the container does not hold the sentinel written on the host"
   fi
 
   firstId=$(sandbox_field '{{.Id}}')
@@ -231,4 +231,4 @@ check_start_again
 check_start_running
 restore_test_sandbox h28
 report_check H-28 "the sbx scripts did not register, start or stop the sandbox by name" \
-  "sbx-add registered a folder with a space and refused it twice; sbx-start and sbx-stop worked by name with /bin/bash; sbx-stop returned in under 10 s; the container and the files stayed; sbx-start of a running sandbox on the current image printed no warning"
+  "sbx-add registered a directory with a space and refused it twice; sbx-start and sbx-stop worked by name with /bin/bash; sbx-stop returned in under 10 s; the container and the files stayed; sbx-start of a running sandbox on the current image printed no warning"

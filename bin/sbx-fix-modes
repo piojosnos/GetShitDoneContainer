@@ -1,34 +1,34 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Sets the mode of every tracked file to what git committed, on the Mac and in
+# Sets the mode of every tracked file to what git committed, on the host and in
 # the sandbox
 # ------------------------------------------------------------------------------
 # Usage: sbx-fix-modes NAME
 # Docker Desktop keeps the mode the sandbox sees in the extended attribute
-# user.containers.override_stat (uid:gid:mode) of the Mac file. A chmod in the
+# user.containers.override_stat (uid:gid:mode) of the host file. A chmod in the
 # sandbox changes only that attribute, so the two sides drift apart. This sets
-# the Mac mode and the attribute's mode to 644 or 755 from the git index, so the
-# Mac, the sandbox and git agree. A file without the attribute gets the Mac
+# the host mode and the attribute's mode to 644 or 755 from the git index, so the
+# host, the sandbox and git agree. A file without the attribute gets the host
 # mode only.
 # ------------------------------------------------------------------------------
 
-# The library sets entryDir.
+# The library sets sandboxDir.
 # shellcheck disable=SC2154
 set -eu
 
 . "$(dirname "$0")/sbx-lib.sh"
 
 overrideName=user.containers.override_stat
-macCount=0
+hostCount=0
 sandboxCount=0
 
 # ------------------------------------------------------------------------------
-# fix_mac_mode PATH GIT_MODE: sets the Mac mode of PATH to 644 or 755 from git
+# fix_host_mode PATH GIT_MODE: sets the host mode of PATH to 644 or 755 from git
 # ------------------------------------------------------------------------------
 # The mode is read from ls, the same on macOS and Linux; macOS appends @ or + to
 # it when the file has attributes, so only its first ten characters count.
 # ------------------------------------------------------------------------------
-fix_mac_mode() {
+fix_host_mode() {
   local wantedText=-rw-r--r--
   local listLine
 
@@ -40,14 +40,14 @@ fix_mac_mode() {
 
   if [ "${listLine:0:10}" != "$wantedText" ]; then
     chmod "${2#100}" "$1"
-    macCount=$((macCount + 1))
+    hostCount=$((hostCount + 1))
   fi
 }
 
 # ------------------------------------------------------------------------------
 # fix_sandbox_mode PATH GIT_MODE: sets the attribute's mode of PATH to GIT_MODE
 # ------------------------------------------------------------------------------
-# The uid and gid stay. It runs after fix_mac_mode, so the file is writable:
+# The uid and gid stay. It runs after fix_host_mode, so the file is writable:
 # macOS refuses to write an attribute on a read-only file.
 # ------------------------------------------------------------------------------
 fix_sandbox_mode() {
@@ -71,10 +71,10 @@ sbx_init
 check_name "$1"
 read_registry_entry "$1"
 
-codeDir=$entryDir/$1
+projectDir=$sandboxDir/$1
 
-if [ "$(git -C "$codeDir" rev-parse --show-prefix 2>/dev/null || echo none)" != "" ]; then
-  sbx_error "$codeDir is not the top folder of a git repository"
+if [ "$(git -C "$projectDir" rev-parse --show-prefix 2>/dev/null || echo none)" != "" ]; then
+  sbx_error "$projectDir is not the top directory of a git repository"
   exit 1
 fi
 
@@ -86,14 +86,14 @@ fi
 
 # The loop reads git through process substitution, which hides its exit
 # status, so one plain run checks first that git can list the index.
-if ! git -C "$codeDir" ls-files -s >/dev/null; then
-  sbx_error "git ls-files failed in $codeDir"
+if ! git -C "$projectDir" ls-files -s >/dev/null; then
+  sbx_error "git ls-files failed in $projectDir"
   exit 1
 fi
 
 while IFS= read -r -d '' indexEntry; do
   gitMode=${indexEntry%% *}
-  filePath=$codeDir/${indexEntry#*$'\t'}
+  filePath=$projectDir/${indexEntry#*$'\t'}
 
   if [ "$gitMode" != 100755 ] && [ "$gitMode" != 100644 ]; then
     continue
@@ -103,14 +103,14 @@ while IFS= read -r -d '' indexEntry; do
     continue
   fi
 
-  fix_mac_mode "$filePath" "$gitMode"
+  fix_host_mode "$filePath" "$gitMode"
 
   if [ "$hasXattr" = true ]; then
     fix_sandbox_mode "$filePath" "$gitMode"
   fi
-done < <(git -C "$codeDir" ls-files -s -z)
+done < <(git -C "$projectDir" ls-files -s -z)
 
-echo "sbx-fix-modes: set $macCount Mac modes and $sandboxCount sandbox modes from git in $codeDir"
+echo "sbx-fix-modes: set $hostCount host modes and $sandboxCount sandbox modes from git in $projectDir"
 
 if [ "$hasXattr" = false ]; then
   echo "sbx-fix-modes: xattr is not installed, so the sandbox modes were not looked at"

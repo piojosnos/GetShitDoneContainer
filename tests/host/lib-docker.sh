@@ -7,7 +7,7 @@
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# build_images LOG_PREFIX [--no-cache]: runs build.sh, logging to the run folder
+# build_images LOG_PREFIX [--no-cache]: runs build.sh, logs to the run directory
 # ------------------------------------------------------------------------------
 # The log is RUN/logs/LOG_PREFIX-images.log. build.sh reads SBX_IMAGE_TAG, which
 # host_init sets to test, so it builds the test images.
@@ -51,8 +51,8 @@ claude_pin() {
 # ------------------------------------------------------------------------------
 # test_root_ca_file: the throwaway root certificate the test images trust
 # ------------------------------------------------------------------------------
-# Kept outside the run folder and reused, so the test images keep their build
-# cache; clean.sh removes it with the run folders.
+# Kept outside the run directory and reused, so the test images keep their build
+# cache; clean.sh removes it with the run directories.
 # ------------------------------------------------------------------------------
 test_root_ca_file() {
   local baseDir

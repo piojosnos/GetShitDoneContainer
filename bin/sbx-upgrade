@@ -71,7 +71,7 @@ shift
 sbx_init
 check_name "$sandboxName"
 read_registry_entry "$sandboxName"
-check_sandbox_folders "$sandboxName"
+check_sandbox_dirs "$sandboxName"
 warn_if_running "$sandboxName"
 run_build "$sandboxName" "$@"
 recreate_sandbox "$sandboxName"

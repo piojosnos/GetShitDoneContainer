@@ -3,7 +3,7 @@
 # H-23: the npm, uv and Maven caches live in state/ and survive a recreate
 # ------------------------------------------------------------------------------
 # Needs: test sandbox running; stops and restarts it
-# Files written into the caches are left in the run folder for the cleanup.
+# Files written into the caches are left in the run directory for the cleanup.
 # ------------------------------------------------------------------------------
 set -u
 . "$(dirname "$0")/lib.sh"
@@ -24,12 +24,12 @@ container_stdout() {
 # ------------------------------------------------------------------------------
 # Checks sbx-init made state/cache/npm, state/cache/uv and state/m2
 # ------------------------------------------------------------------------------
-check_state_folders() {
-  local folderName
+check_state_dirs() {
+  local dirName
 
-  for folderName in cache/npm cache/uv m2; do
-    if [ ! -d "$RUN/state/$folderName" ]; then
-      add_problem "state/$folderName is not a folder; sbx-init did not make it"
+  for dirName in cache/npm cache/uv m2; do
+    if [ ! -d "$RUN/state/$dirName" ]; then
+      add_problem "state/$dirName is not a directory; sbx-init did not make it"
     fi
   done
 }
@@ -70,16 +70,16 @@ plant_cache_files() {
 }
 
 # ------------------------------------------------------------------------------
-# check_files_on_host WHEN: each cache folder on the Mac holds the marker
+# check_files_on_host WHEN: each cache directory on the host holds the marker
 # ------------------------------------------------------------------------------
 # WHEN names the moment in the message.
 # ------------------------------------------------------------------------------
 check_files_on_host() {
-  local folderName
+  local dirName
 
-  for folderName in cache/npm cache/uv m2; do
-    if ! grep -Fq "$marker" "$RUN/state/$folderName/$marker" 2>/dev/null; then
-      add_problem "state/$folderName/$marker is missing on the Mac $1"
+  for dirName in cache/npm cache/uv m2; do
+    if ! grep -Fq "$marker" "$RUN/state/$dirName/$marker" 2>/dev/null; then
+      add_problem "state/$dirName/$marker is missing on the host $1"
     fi
   done
 }
@@ -89,11 +89,11 @@ check_files_on_host() {
 # ------------------------------------------------------------------------------
 require_no_arguments "$@" || exit 2
 require_test_sandbox H-23 || exit 1
-check_state_folders
+check_state_dirs
 check_cache_locations
 plant_cache_files
 check_files_on_host "before the recreate"
 restart_test_sandbox H-23 h23-down.log || exit 1
 check_files_on_host "after the recreate"
-report_check H-23 "a cache is not in the state folder or did not survive the recreate" \
+report_check H-23 "a cache is not in the state directory or did not survive the recreate" \
   "npm, uv and Maven use state/cache/npm, state/cache/uv and state/m2, and a file in each survived the recreate"

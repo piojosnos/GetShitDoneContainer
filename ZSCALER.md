@@ -1,6 +1,6 @@
 # Set up a sandbox on a computer behind Zscaler
 
-- Zscaler opens HTTPS and signs it again with its own root certificate. The Mac trusts that root; the images do not, so a plain build stops with `curl: (60) SSL certificate problem`.
+- Zscaler opens HTTPS and signs it again with its own root certificate. macOS trusts that root (it is in the Keychain); the images do not, so a plain build stops with `curl: (60) SSL certificate problem`.
 - The fix is to hand the root to `./build.sh` through `SBX_CA_CERT`. How it works and what trusts the root: "Behind a company HTTPS proxy" in [`README.md`](README.md).
 - Keep Zscaler on for every step. Each step is a copy/paste block with what to expect under it.
 
@@ -117,7 +117,7 @@ In a Cursor sandbox, run this instead of `sbx-claude`:
 sbx-cursor login
 ```
 
-Open the printed link in the Mac browser, then start `sbx-cursor`, send one prompt and exit.
+Open the printed link in the host browser, then start `sbx-cursor`, send one prompt and exit.
 
 - The proxy must pass three Cursor hosts: `downloads.cursor.com` (the build), `cursor.com` (the login page) and `api2.cursor.sh` (the prompts).
 

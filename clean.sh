@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Frees Docker disk space on the Mac and removes leftover host-test runs
+# Frees Docker disk space on the host and removes leftover host-test runs
 # ------------------------------------------------------------------------------
 # Usage: ./clean.sh [--yes]
 # Without --yes it only shows what it would remove.
@@ -8,9 +8,9 @@
 set -u
 
 # ------------------------------------------------------------------------------
-# test_container_mount_source: prints the host folder sbx-hosttest mounts
+# test_container_mount_source: prints the host directory sbx-hosttest mounts
 # ------------------------------------------------------------------------------
-# It is the folder mounted at /home/sandbox/workspace; nothing if there is none.
+# It is the directory mounted at /home/sandbox/workspace; nothing if none.
 # ------------------------------------------------------------------------------
 test_container_mount_source() {
   docker container inspect --format '{{range .Mounts}}{{if eq .Destination "/home/sandbox/workspace"}}{{.Source}}{{end}}{{end}}' sbx-hosttest 2>/dev/null </dev/null
@@ -19,7 +19,7 @@ test_container_mount_source() {
 # ------------------------------------------------------------------------------
 # test_container_verdict: prints absent, remove or keep for sbx-hosttest
 # ------------------------------------------------------------------------------
-# Only a container that mounts a host-test run folder is removed; a sandbox of
+# Only a container that mounts a host-test run directory is removed; a sandbox of
 # yours that is named hosttest is kept.
 # ------------------------------------------------------------------------------
 test_container_verdict() {
@@ -29,16 +29,16 @@ test_container_verdict() {
     return 0
   fi
 
-  # Docker Desktop may report the temp folder with a /private prefix;
+  # Docker Desktop may report the temp directory with a /private prefix;
   # the leading * covers it.
   case "$(test_container_mount_source)" in
-    *"${tempFolder%/}"/sbx-hosttest-*) echo "remove" ;;
+    *"${tempDir%/}"/sbx-hosttest-*) echo "remove" ;;
     *) echo "keep" ;;
   esac
 }
 
 # ------------------------------------------------------------------------------
-# show_state: prints disk use, containers, host-test run folders and images
+# show_state: prints disk use, containers, host-test run directories and images
 # ------------------------------------------------------------------------------
 # The dry run lists all images; docker image prune -a decides which of them go.
 # ------------------------------------------------------------------------------
@@ -46,19 +46,19 @@ show_state() {
   echo "=== Docker disk use"
   docker system df
   echo
-  echo "=== Containers (all kept, except sbx-hosttest when it mounts a host-test run folder)"
+  echo "=== Containers (all kept, except sbx-hosttest when it mounts a host-test run directory)"
   docker ps -a --format '{{.Names}}  {{.Image}}  {{.Status}}'
 
   case "$testVerdict" in
-    remove) echo "sbx-hosttest mounts a host-test run folder: --yes removes it" ;;
-    keep) echo "sbx-hosttest does not mount a host-test run folder: --yes keeps it" ;;
+    remove) echo "sbx-hosttest mounts a host-test run directory: --yes removes it" ;;
+    keep) echo "sbx-hosttest does not mount a host-test run directory: --yes keeps it" ;;
   esac
 
   echo
-  echo "=== Host-test run folders"
+  echo "=== Host-test run directories"
 
-  if [ -n "$runFolderList" ]; then
-    echo "$runFolderList"
+  if [ -n "$runDirList" ]; then
+    echo "$runDirList"
   else
     echo "(none)"
   fi
@@ -71,10 +71,10 @@ show_state() {
 }
 
 # ------------------------------------------------------------------------------
-# remove_test_runs: removes the test sandbox, its network and the run folders
+# remove_test_runs: removes the test sandbox, its network and the run directories
 # ------------------------------------------------------------------------------
 remove_test_runs() {
-  local runFolder
+  local runDir
 
   echo "=== Removing the test sandbox"
 
@@ -84,7 +84,7 @@ remove_test_runs() {
       docker network rm sbx-hosttest_default 2>/dev/null || echo "(no sbx-hosttest_default network)"
       ;;
     keep)
-      echo "sbx-hosttest does not mount a host-test run folder (it mounts: $(test_container_mount_source)); left alone, with its network"
+      echo "sbx-hosttest does not mount a host-test run directory (it mounts: $(test_container_mount_source)); left alone, with its network"
       ;;
     *)
       echo "(no sbx-hosttest container)"
@@ -93,18 +93,18 @@ remove_test_runs() {
   esac
 
   echo
-  echo "=== Removing host-test run folders"
+  echo "=== Removing host-test run directories"
 
-  if [ -z "$runFolderList" ]; then
+  if [ -z "$runDirList" ]; then
     echo "(none)"
   fi
 
-  while IFS= read -r runFolder; do
-    if [ -n "$runFolder" ]; then
-      rm -rf "$runFolder" && echo "removed $runFolder"
+  while IFS= read -r runDir; do
+    if [ -n "$runDir" ]; then
+      rm -rf "$runDir" && echo "removed $runDir"
     fi
   done <<EOF
-$runFolderList
+$runDirList
 EOF
 
   echo
@@ -134,8 +134,8 @@ if [ $# -gt 1 ] || { [ $# -eq 1 ] && [ "$1" != "--yes" ]; }; then
   exit 2
 fi
 
-tempFolder=${TMPDIR:-/tmp}
-runFolderList=$(ls -d "${tempFolder%/}"/sbx-hosttest-* 2>/dev/null)
+tempDir=${TMPDIR:-/tmp}
+runDirList=$(ls -d "${tempDir%/}"/sbx-hosttest-* 2>/dev/null)
 testVerdict=$(test_container_verdict)
 show_state
 

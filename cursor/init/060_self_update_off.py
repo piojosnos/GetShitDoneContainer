@@ -12,7 +12,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from check_result import Check, CheckResult, failed, make_state_folder, passed
+from check_result import Check, CheckResult, failed, make_state_dir, passed
 from cursor_shared import CLI_CONFIG_FILE
 from hints import state_writable_hint
 
@@ -22,10 +22,10 @@ from hints import state_writable_hint
 # ------------------------------------------------------------------------------
 
 def static_channel_result(config_file: Path) -> CheckResult:
-    folder_failure = make_state_folder(config_file.parent)
+    dir_failure = make_state_dir(config_file.parent)
 
-    if folder_failure is not None:
-        return folder_failure
+    if dir_failure is not None:
+        return dir_failure
 
     config_map, read_failure = _read_config_map(config_file)
 
