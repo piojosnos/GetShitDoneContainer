@@ -39,12 +39,12 @@ case_upgrade_refusals() {
   run_sbx up3 sbx-upgrade ../x
   expect "sbx-upgrade: a path as a name is refused before the build" refused_before_build up3 "$ruleText"
 
-  run_sbx nodir sbx-add nodir "$dirRoot/one"
+  plant_sandbox nodir "$dirRoot/one"
   mv "$dirRoot/one/nodir" "$dirRoot/one/nodir-aside"
   run_sbx up4 sbx-upgrade nodir --no-cache
   expect "sbx-upgrade: a missing project directory is refused before the build" refused_before_build up4 "missing $dirRoot/one/nodir; create it"
 
-  run_sbx nostate sbx-add nostate "$dirRoot/two"
+  plant_sandbox nostate "$dirRoot/two"
   mv "$dirRoot/two/state" "$dirRoot/two/state-aside"
   run_sbx up5 sbx-upgrade nostate
   expect "sbx-upgrade: a missing state directory is refused before the build" refused_before_build up5 "missing $dirRoot/two/state; create it"

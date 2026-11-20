@@ -92,6 +92,17 @@ plant_entry() {
 }
 
 # ------------------------------------------------------------------------------
+# plant_sandbox NAME PATH: makes PATH/NAME and PATH/state, plants the entry NAME
+# ------------------------------------------------------------------------------
+# The groups that still run a bash command read the older entry format, which
+# sbx-add no longer writes.
+# ------------------------------------------------------------------------------
+plant_sandbox() {
+  mkdir -p "$2/$1" "$2/state"
+  plant_entry "$1" "SBX_DIR=$2" "SBX_AGENT=claude"
+}
+
+# ------------------------------------------------------------------------------
 # lib_eval SNIPPET: runs SNIPPET after sourcing the real library and sbx_init
 # ------------------------------------------------------------------------------
 lib_eval() {

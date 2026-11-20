@@ -102,7 +102,7 @@ case_fix_modes_refusals() {
   run_sbx modes3 sbx-fix-modes ../x
   expect "sbx-fix-modes: a path as a name is refused" refused_cleanly modes3 "breaks the sandbox name rule" "" ""
 
-  run_sbx nogit sbx-add nogit "$WORK/modes dir/nogit"
+  plant_sandbox nogit "$WORK/modes dir/nogit"
   run_sbx modes4 sbx-fix-modes nogit
   expect "sbx-fix-modes: a project directory that is not a git repo is refused" refused_cleanly modes4 "is not the top directory of a git repository" "" ""
 }
@@ -119,7 +119,7 @@ case_fix_modes_sets_both_sides() {
   echo '--- sbx-fix-modes on a drifted repo'
 
   make_xattr_standin
-  run_sbx fixed sbx-add fixed "$WORK/modes dir/fixed"
+  plant_sandbox fixed "$WORK/modes dir/fixed"
   make_repo "$repoDir"
 
   PATH=$WORK/xattr-bin:$PATH run_sbx modes5 sbx-fix-modes fixed
@@ -153,7 +153,7 @@ case_fix_modes_without_xattr() {
     return 0
   fi
 
-  run_sbx bare sbx-add bare "$WORK/modes dir/bare"
+  plant_sandbox bare "$WORK/modes dir/bare"
   make_repo "$repoDir"
 
   run_sbx modes7 sbx-fix-modes bare

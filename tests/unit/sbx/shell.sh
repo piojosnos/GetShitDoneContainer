@@ -47,17 +47,17 @@ case_shell_checks_before_compose() {
 
   echo '--- sbx-shell checks before compose'
 
-  run_sbx nodir sbx-add nodir "$dirRoot/one"
+  plant_sandbox nodir "$dirRoot/one"
   mv "$dirRoot/one/nodir" "$dirRoot/one/nodir-aside"
   run_sbx nodirrun sbx-shell nodir
   expect "sbx-shell: a missing project directory is refused before compose and the shell" refused_cleanly nodirrun "missing $dirRoot/one/nodir" "" ""
 
-  run_sbx nostate sbx-add nostate "$dirRoot/two"
+  plant_sandbox nostate "$dirRoot/two"
   mv "$dirRoot/two/state" "$dirRoot/two/state-aside"
   run_sbx nostaterun sbx-shell nostate
   expect "sbx-shell: a missing state directory is refused before compose and the shell" refused_cleanly nostaterun "missing $dirRoot/two/state" "" ""
 
-  run_sbx noimage sbx-add noimage "$dirRoot/three"
+  plant_sandbox noimage "$dirRoot/three"
   run_sbx dockerdownrun sbx-shell noimage
   expect "sbx-shell: Docker not answering is refused before compose and the shell" refused_cleanly dockerdownrun "cannot reach Docker; is Docker running?" "" ""
   expect "sbx-shell: Docker not answering does not advise sbx-upgrade" lacks_text "$WORK/dockerdownrun.err" "sbx-upgrade"

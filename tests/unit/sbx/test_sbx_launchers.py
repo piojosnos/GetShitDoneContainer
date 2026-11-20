@@ -16,6 +16,7 @@ import pytest
 from sbx_helpers import REPO_DIR
 
 LAUNCHER_BAD_ARGUMENTS_MAP = {
+    "sbx-add": ["only-one"],
     "sbx-list": ["extra"],
     "sbx-migrate-registry": ["extra"],
 }
@@ -119,3 +120,23 @@ def test_the_migrate_launcher_converts_an_old_entry_from_another_directory(tmp_p
     assert result.returncode == 0
     assert json.loads((registry / "sbx1.json").read_text()) == {"path": "/x/one dir", "agent": "cursor"}
     assert old_file.read_bytes() == before
+
+
+def test_the_add_launcher_stores_a_path_with_a_space_and_a_non_ascii_letter_as_given(tmp_path):
+    registry = tmp_path / "config1" / "sandboxes"
+    registry.mkdir(parents=True)
+    path = f"{tmp_path}/one dir/caf\u00e9"
+
+    result = subprocess.run(
+        [str(REPO_DIR / "bin" / "sbx-add"), "sbx1", path],
+        cwd=tmp_path,
+        env=_launcher_environ(tmp_path / "config1"),
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert json.loads((registry / "sbx1.json").read_text(encoding="utf-8")) == {"path": path, "agent": "claude"}
+    assert (tmp_path / "one dir" / "caf\u00e9" / "sbx1").is_dir()

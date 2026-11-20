@@ -18,7 +18,7 @@ case_docker_down() {
 
   echo '--- sbx-start with Docker stopped'
 
-  run_sbx downadd sbx-add down "$WORK/start dir/down"
+  plant_sandbox down "$WORK/start dir/down"
 
   run_sbx downstart sbx-start down
   expect "sbx-start: Docker not answering is refused before compose up" refused_cleanly downstart "cannot reach Docker; is Docker running?" "" ""
