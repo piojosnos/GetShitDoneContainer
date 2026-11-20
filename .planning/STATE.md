@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 10
 current_phase_name: Host side to Python
 status: executing
-stopped_at: Completed 10-06-PLAN.md
-last_updated: "2026-11-20T02:46:03.176Z"
+stopped_at: Completed 10-07-PLAN.md
+last_updated: "2026-11-20T02:53:35.963Z"
 last_activity: 2026-11-20
 last_activity_desc: Phase 10 execution started
-state_head: df75d593b186feddcecd072b591400baa77cb198
+state_head: 6aa8ddc0518896575de16b3ec121031763167418
 progress:
   total_phases: 11
   completed_phases: 4
   total_plans: 66
-  completed_plans: 61
+  completed_plans: 62
   percent: 36
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 10 (Host side to Python) — EXECUTING
-Plan: 7 of 11
+Plan: 8 of 11
 Status: Ready to execute
 Last activity: 2026-11-20 — Phase 10 execution started
 
@@ -221,6 +221,7 @@ Last activity: 2026-11-20 — Phase 10 execution started
 | Phase 10 P04 | 10min | 3 tasks | 13 files |
 | Phase 10 P05 | 35min | 3 tasks | 16 files |
 | Phase 10 P06 | 25min | 3 tasks | 4 files |
+| Phase 10 P07 | 40min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -440,6 +441,8 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-05: the output stream is an injected parameter of run_and_log, main and run_streamed; only the entry point and the build fixture pass sys.stdout
 - [Phase 10]: 10-06: failed upgrade runs through run_streamed (merged stream) so the warning-before-failure order is checkable
 - [Phase 10]: 10-06: refusal scenarios fail on a made container only; a leftover network is removed by the finalizer
+- [Phase 10]: Shared scenario helpers (throwaway_sandbox, register_sandbox, describe_result, container_is_running, container_id_of) live in scenario_helpers.py with unit tests that run the real sbx-add launcher
+- [Phase 10]: The sbx-shell scenario drives the shell through pty.openpty and writes its script once a bash runs in the container; the exit status through uv is proven only by the host run
 
 ### Pending Todos
 
@@ -514,8 +517,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-20T02:46:02.980Z
-Stopped at: Completed 10-06-PLAN.md
+Last session: 2026-11-20T02:53:35.840Z
+Stopped at: Completed 10-07-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
