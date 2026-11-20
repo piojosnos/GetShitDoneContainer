@@ -42,7 +42,7 @@ Milestone v2.0 Simple tooling. Decisions behind them: `.planning/research/v2-sim
 - [ ] **HOST-02**: The registry is one JSON file per sandbox, `~/.config/sbx/sandboxes/NAME.json`, with `path` and `agent`.
 - [ ] **HOST-03**: The directory-overlap check resolves both paths and compares them.
 - [ ] **HOST-04**: A pytest suite runs one persistence group (planted files survive one `sbx-upgrade`), one refusal group, and smoke tests for add, start, stop, shell, list and rm; a group stops at its first failure and names the step.
-- [ ] **HOST-05**: The bash host scripts, the bash host tests and the last of the fake docker are gone.
+- [x] **HOST-05**: The bash host scripts, the bash host tests and the last of the fake docker are gone.
 
 ### CI
 
@@ -94,7 +94,7 @@ Tracked, not in this roadmap.
 | HOST-02 | Phase 10 | Pending |
 | HOST-03 | Phase 10 | Pending |
 | HOST-04 | Phase 10 | Pending |
-| HOST-05 | Phase 10 | Pending |
+| HOST-05 | Phase 10 | Complete |
 | CI-01 | Phase 11 | Pending |
 | CI-02 | Phase 11 | Pending |
 
