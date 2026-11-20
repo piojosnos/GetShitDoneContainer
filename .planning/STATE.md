@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 10
 current_phase_name: Host side to Python
 status: executing
-stopped_at: Completed 10-04-PLAN.md
-last_updated: "2026-11-20T02:02:39.475Z"
+stopped_at: Completed 10-05-PLAN.md
+last_updated: "2026-11-20T02:41:38.564Z"
 last_activity: 2026-11-20
 last_activity_desc: Phase 10 execution started
-state_head: 8c144e0ae49da05ef748ec80ae4762ceaacedcda
+state_head: 6af5ddd987601b647738a200c4fafe1efdd35fff
 progress:
   total_phases: 11
   completed_phases: 4
   total_plans: 66
-  completed_plans: 59
+  completed_plans: 60
   percent: 36
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 10 (Host side to Python) — EXECUTING
-Plan: 5 of 11
+Plan: 6 of 11
 Status: Ready to execute
 Last activity: 2026-11-20 — Phase 10 execution started
 
@@ -219,6 +219,7 @@ Last activity: 2026-11-20 — Phase 10 execution started
 | Phase 10 P02 | 25min | 3 tasks | 26 files |
 | Phase 10 P03 | 15min | 3 tasks | 25 files |
 | Phase 10 P04 | 10min | 3 tasks | 13 files |
+| Phase 10 P05 | 35min | 3 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -435,6 +436,7 @@ Recent decisions affecting current work:
 - [Phase 10]: build reads versions.env as NAME=value text and never runs it; each pin is a bare build argument with its value in the Docker environment
 - [Phase 10]: A command that calls another takes it as a parameter (sbx-upgrade: build_function); only sbx/rm.py deletes an entry or removes a container
 - [Phase 10]: 10-04: the guard is 21 pytest rules; the linters fall back to docker run of sbx-base:test and write no stand-in; the launcher rule reads the exec bit from git
+- [Phase 10]: 10-05: the output stream is an injected parameter of run_and_log, main and run_streamed; only the entry point and the build fixture pass sys.stdout
 
 ### Pending Todos
 
@@ -509,8 +511,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-20T02:02:34.760Z
-Stopped at: Completed 10-04-PLAN.md
+Last session: 2026-11-20T02:41:38.387Z
+Stopped at: Completed 10-05-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
