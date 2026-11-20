@@ -3,18 +3,18 @@ gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
 current_phase: 10
-current_phase_name: host-side-to-python
+current_phase_name: Host side to Python
 status: executing
-stopped_at: Phase 10 context gathered
-last_updated: "2026-11-19T22:02:41.724Z"
-last_activity: 2026-11-18
-last_activity_desc: Phase 09.1 complete, transitioned to Phase 10
-state_head: fcc3cd44d752cc3a04a2bdccebdb70b4cebf687b
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-11-20T01:40:24.695Z"
+last_activity: 2026-11-20
+last_activity_desc: Phase 10 execution started
+state_head: 318d528734c7d08fd1a6eebc72d13b9d5e538765
 progress:
   total_phases: 11
   completed_phases: 4
   total_plans: 66
-  completed_plans: 55
+  completed_plans: 56
   percent: 36
 ---
 
@@ -25,14 +25,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 09.1 — Align vocabulary across code and docs
+**Current focus:** Phase 10 — Host side to Python
 
 ## Current Position
 
-Phase: 10 (host-side-to-python) — READY TO EXECUTE
-Plan: Not started
+Phase: 10 (Host side to Python) — EXECUTING
+Plan: 2 of 11
 Status: Ready to execute
-Last activity: 2026-11-18 — Phase 09.1 complete, transitioned to Phase 10
+Last activity: 2026-11-20 — Phase 10 execution started
 
 ## Performance Metrics
 
@@ -215,6 +215,7 @@ Last activity: 2026-11-18 — Phase 09.1 complete, transitioned to Phase 10
 | Phase 09.1 P12 | 10min | 2 tasks | 6 files |
 | Phase 09.1 P13 | 10min | 2 tasks | 1 files |
 | Phase 09.1 P14 | n/a (spans a host run) | 3 tasks | 0 files |
+| Phase 10 P01 | 45min | 3 tasks | 19 files |
 
 ## Accumulated Context
 
@@ -424,6 +425,8 @@ Recent decisions affecting current work:
 - [Phase 09.1]: Python agent config directory is AGENT_CONFIG_DIR; ownership checks are image-root-owned, claude-image-root-owned, cursor-image-root-owned
 - [Phase 09.1]: Plan 11: macOS is named only for facts that hold only there (Keychain, bash 3.2, override_stat, BSD script); the docs say the host everywhere else
 - [Phase 09.1]: Plan 14: the phase's changes sit on three local one-kind branches (chore/vocabulary-code, chore/claude-md-vocabulary, chore/planning-phase-09.1) cut from origin/main by cherry-picking; none pushed, waiting for the user's go
+- [Phase 10]: The old KEY=value registry format is known only to sbx/migrate_registry.py; every other command reads NAME.json
+- [Phase 10]: Launchers are two-line sh files running uv with --no-project, so the host never writes a .venv into the shared repo
 
 ### Pending Todos
 
@@ -498,9 +501,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-19T07:28:15.329Z
-Stopped at: Phase 10 context gathered
-Resume file: .planning/phases/10-host-side-to-python/10-CONTEXT.md
+Last session: 2026-11-20T01:40:24.549Z
+Stopped at: Completed 10-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 

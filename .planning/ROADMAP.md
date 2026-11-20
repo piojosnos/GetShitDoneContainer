@@ -290,11 +290,11 @@ Plans:
   5. No bash host script, bash host test or fake docker is left in the repo, and `./host-test.sh` passes on the host.
   6. The host tests are one shared harness run for each agent: the checks common to both agents are written once, and only a few small checks differ between Claude and Cursor.
 
-**Plans**: 11 plans
+**Plans**: 1/11 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 10-01-PLAN.md: tracer; `sbx-list` and the new `sbx-migrate-registry` run through uv launchers on the JSON registry, Docker as a parameter; read-only host check on a copy of the real registry (wave 1, checkpoint)
+- [x] 10-01-PLAN.md: tracer; `sbx-list` and the new `sbx-migrate-registry` run through uv launchers on the JSON registry, Docker as a parameter; read-only host check on a copy of the real registry (wave 1, checkpoint)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 10-02-PLAN.md: `sbx-add` with the overlap check that resolves both paths, and `sbx-start`, `sbx-stop`, `sbx-shell` in Python (wave 2)
@@ -380,7 +380,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 7. Separate test images | v2.0 | 3/3 | Complete    | 2026-11-14 |
 | 8. In-image self-check | v2.0 | 13/13 | Complete    | 2026-11-15 |
 | 9. sbx-init replaces the start hooks | v2.0 | 14/14 | Complete    | 2026-11-17 |
-| 10. Host side to Python | v2.0 | 0/11 | Planned | - |
+| 10. Host side to Python | v2.0 | 1/11 | In Progress|  |
 | 10.1. Cursor skills and best practices | v2.0 | 0/TBD | Not started | - |
 | 10.1.1. Shared agent checks | v2.0 | 0/TBD | Not started | - |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
