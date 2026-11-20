@@ -21,6 +21,7 @@ LAUNCHER_BAD_ARGUMENTS_MAP = {
     "sbx-migrate-registry": ["extra"],
     "sbx-start": [],
     "sbx-stop": [],
+    "sbx-shell": [],
 }
 _LAUNCHER_SHEBANG = "#!/bin/sh"
 _ROOT_LAUNCHER_NAME_LIST = ["build.sh", "clean.sh", "host-test.sh"]
