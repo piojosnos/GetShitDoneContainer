@@ -35,6 +35,7 @@ LAUNCHER_BAD_ARGUMENTS_MAP = {
     "sbx-rm": [],
     "sbx-fix-modes": [],
     "build.sh": None,
+    "host-test.sh": ["--bogus"],
 }
 _LAUNCHER_SHEBANG = "#!/bin/sh"
 _ROOT_LAUNCHER_NAME_LIST = ["build.sh", "clean.sh", "host-test.sh"]
@@ -275,6 +276,11 @@ def test_every_command_refuses_the_latest_tag_before_it_reads_the_registry_or_ca
 
 
 def test_the_tag_map_holds_every_command_the_launchers_run():
-    assert sorted(TAG_COMMAND_MAP) == sorted(
-        name for name in LAUNCHER_BAD_ARGUMENTS_MAP if name != "sbx-migrate-registry"
-    )
+    no_tag_command_list = ["sbx-migrate-registry", "host-test.sh"]
+    expected_name_list = []
+
+    for name in LAUNCHER_BAD_ARGUMENTS_MAP:
+        if name not in no_tag_command_list:
+            expected_name_list.append(name)
+
+    assert sorted(TAG_COMMAND_MAP) == sorted(expected_name_list)
