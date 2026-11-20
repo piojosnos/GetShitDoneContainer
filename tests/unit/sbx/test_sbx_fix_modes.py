@@ -203,6 +203,55 @@ def test_a_symlink_and_an_untracked_file_are_skipped(project_dir, run_fix_modes,
     assert "set 0 host modes and 0 sandbox modes" in out
 
 
+def _add_index_entry(repo: Path, git_mode: str, relative_path: str) -> None:
+    blob = subprocess.run(
+        ["git", "-C", str(repo), "hash-object", "-w", "--stdin"],
+        input=b"outside\n",
+        check=True,
+        capture_output=True,
+    ).stdout.decode().strip()
+
+    _git(repo, "update-index", "--add", "--cacheinfo", f"{git_mode},{blob},{relative_path}")
+
+
+def test_a_file_reached_through_a_symlinked_directory_outside_the_project_is_left_alone(
+    project_dir, run_fix_modes, xattr, tmp_path
+):
+    outside_dir = tmp_path / "outside"
+    outside_dir.mkdir()
+    outside_file = outside_dir / "key.sh"
+    outside_file.write_text("outside\n")
+    outside_file.chmod(0o600)
+    xattr.value_map[str(outside_file)] = "1001:1001:0100600"
+    (project_dir / "evil").symlink_to(outside_dir)
+    _add_index_entry(project_dir, "100755", "evil/key.sh")
+
+    exit_code, out, err = run_fix_modes(["fixed"], xattr)
+
+    assert exit_code == 0, err
+    assert _mode_of(outside_file) == 0o600
+    assert xattr.value_map[str(outside_file)] == "1001:1001:0100600"
+    assert not any(str(outside_file) in call or str(outside_dir) in call for call in xattr.call_list)
+    assert f"sbx-fix-modes: skipped evil/key.sh; it resolves outside {project_dir}\n" in out
+
+
+def test_a_file_reached_through_a_relative_symlink_to_a_parent_directory_is_left_alone(
+    project_dir, run_fix_modes, xattr, tmp_path
+):
+    outside_file = tmp_path / "modes dir" / "state" / "token.sh"
+    outside_file.write_text("outside\n")
+    outside_file.chmod(0o600)
+    (project_dir / "up").symlink_to("../state")
+    _add_index_entry(project_dir, "100755", "up/token.sh")
+
+    exit_code, out, err = run_fix_modes(["fixed"], xattr)
+
+    assert exit_code == 0, err
+    assert _mode_of(outside_file) == 0o600
+    assert not any(str(outside_file) in call for call in xattr.call_list)
+    assert "skipped up/token.sh" in out
+
+
 def test_a_tracked_file_missing_from_the_work_tree_is_skipped(project_dir, run_fix_modes, xattr):
     (project_dir / "doc.md").unlink()
 
