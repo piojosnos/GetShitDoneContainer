@@ -41,7 +41,7 @@ Milestone v2.0 Simple tooling. Decisions behind them: `.planning/research/v2-sim
 - [ ] **HOST-01**: `bin/sbx-*`, `build.sh` and `host-test.sh` are Python run through `uv` (`brew install uv` is the only prerequisite on a macOS host); command names stay.
 - [ ] **HOST-02**: The registry is one JSON file per sandbox, `~/.config/sbx/sandboxes/NAME.json`, with `path` and `agent`.
 - [ ] **HOST-03**: The directory-overlap check resolves both paths and compares them.
-- [ ] **HOST-04**: A pytest suite runs one persistence group (planted files survive one `sbx-upgrade`), one refusal group, and smoke tests for add, start, stop, shell, list and rm; a group stops at its first failure and names the step.
+- [ ] **HOST-04**: A pytest suite runs these scenarios for each agent: persistence across one `sbx-upgrade`, a failed upgrade that changes nothing, refusal, smoke (add, start, stop, shell, list, rm and git on a repo made on the host), isolation, first run and relink, init and selfcheck pass, init gives root-owned state back, and images match `versions.env`; a scenario stops at its first failed step and names it.
 - [x] **HOST-05**: The bash host scripts, the bash host tests and the last of the fake docker are gone.
 
 ### CI

@@ -283,11 +283,11 @@ Plans:
 **Depends on**: Phase 9
 **Requirements**: HOST-01, HOST-02, HOST-03, HOST-04, HOST-05
 **Success Criteria** (what must be TRUE):
-  1. On a macOS host with only `brew install uv` added, every `bin/sbx-*` command, `build.sh` and `./host-test.sh` run under the same names as before, as Python run through `uv`.
+  1. On a macOS host with only `brew install uv` added, every `bin/sbx-*` command, `build.sh` and `./host-test.sh` run under the same names as before; each is a two-line launcher into Python run through `uv`.
   2. `sbx-add` writes `~/.config/sbx/sandboxes/NAME.json` with `path` and `agent`, and every other command reads the sandbox from that file.
   3. `sbx-add` refuses a directory that is, holds or sits inside another sandbox's directory, also when it is given through a symlink or a `..` path, because both paths are resolved before they are compared.
-  4. On the host, the pytest suite runs one persistence group (planted files survive one `sbx-upgrade`), one refusal group and smoke tests for add, start, stop, shell, list and rm; a failing group stops at its first failure and names the step.
-  5. No bash host script, bash host test or fake docker is left in the repo, and `./host-test.sh` passes on the host.
+  4. On the host, the pytest suite runs these scenarios for Claude and for Cursor: persistence across one `sbx-upgrade`, a failed upgrade that changes nothing, refusal, smoke (add, start, stop, shell, list, rm and git on a repo made on the host), isolation, first run and relink, init and selfcheck pass, init gives root-owned state back, and images match `versions.env`; a scenario stops at its first failed step and names it.
+  5. No host logic is in bash (launchers only): no bash host script, bash host test or fake docker is left, and `./host-test.sh` passes on the host.
   6. The host tests are one shared harness run for each agent: the checks common to both agents are written once, and only a few small checks differ between Claude and Cursor.
 
 **Plans**: 9/11 plans executed
