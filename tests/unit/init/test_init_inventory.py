@@ -14,6 +14,7 @@ import pytest
 
 import init_runner
 import paths
+from agent_specs import AGENT_SPEC_BY_NAME_MAP
 from init_helpers import REPO_DIR
 
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -72,6 +73,11 @@ def dockerfile_text(dir_name: str) -> str:
 @pytest.mark.parametrize("agent_name", ["claude", "cursor"])
 def test_the_merged_steps_of_an_image_run_in_the_fixed_order(tmp_path, agent_name):
     assert collected_name_list(tmp_path, agent_name) == STEP_ORDER_BY_AGENT_MAP[agent_name]
+
+
+@pytest.mark.parametrize("agent_name", ["claude", "cursor"])
+def test_each_image_runs_the_step_count_the_host_run_expects(tmp_path, agent_name):
+    assert len(collected_name_list(tmp_path, agent_name)) == AGENT_SPEC_BY_NAME_MAP[agent_name].init_step_count
 
 
 @pytest.mark.parametrize("agent_name", ["claude", "cursor"])
