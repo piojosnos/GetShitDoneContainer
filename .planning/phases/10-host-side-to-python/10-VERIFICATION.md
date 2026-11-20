@@ -1,7 +1,7 @@
 ---
 phase: 10-host-side-to-python
 verified: 2026-11-20T12:00:00Z
-status: human_needed
+status: passed
 score: 6/6 must-haves verified
 covered_files:
   - .planning/phases/10-host-side-to-python/10-01-PLAN.md
@@ -153,3 +153,7 @@ No gaps. All six success criteria and all five requirement IDs are met in the co
 
 _Verified: 2026-11-20_
 _Verifier: Claude (gsd-verifier)_
+
+## Human verification result
+
+Host re-run of `./host-test.sh` at 48dafc1 (2026-11-20): 559 passed, 1 skipped; 16 scenarios PASSED for each of claude and cursor; last line `host-test.sh: every test passed`. Status set to passed.
