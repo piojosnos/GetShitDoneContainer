@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 10
 current_phase_name: Host side to Python
 status: executing
-stopped_at: Completed 10-01-PLAN.md
-last_updated: "2026-11-20T01:40:24.695Z"
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-11-20T01:47:41.049Z"
 last_activity: 2026-11-20
 last_activity_desc: Phase 10 execution started
-state_head: 318d528734c7d08fd1a6eebc72d13b9d5e538765
+state_head: d97840d60e0d4241de775e038615dfadcc0764c3
 progress:
   total_phases: 11
   completed_phases: 4
   total_plans: 66
-  completed_plans: 56
+  completed_plans: 57
   percent: 36
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 10 (Host side to Python) — EXECUTING
-Plan: 2 of 11
+Plan: 3 of 11
 Status: Ready to execute
 Last activity: 2026-11-20 — Phase 10 execution started
 
@@ -216,6 +216,7 @@ Last activity: 2026-11-20 — Phase 10 execution started
 | Phase 09.1 P13 | 10min | 2 tasks | 1 files |
 | Phase 09.1 P14 | n/a (spans a host run) | 3 tasks | 0 files |
 | Phase 10 P01 | 45min | 3 tasks | 19 files |
+| Phase 10 P02 | 25min | 3 tasks | 26 files |
 
 ## Accumulated Context
 
@@ -427,6 +428,8 @@ Recent decisions affecting current work:
 - [Phase 09.1]: Plan 14: the phase's changes sit on three local one-kind branches (chore/vocabulary-code, chore/claude-md-vocabulary, chore/planning-phase-09.1) cut from origin/main by cherry-picking; none pushed, waiting for the user's go
 - [Phase 10]: The old KEY=value registry format is known only to sbx/migrate_registry.py; every other command reads NAME.json
 - [Phase 10]: Launchers are two-line sh files running uv with --no-project, so the host never writes a .venv into the shared repo
+- [Phase 10]: sbx-stop keeps the bash behavior: it checks no directory and does not ask Docker first, so a moved sandbox can still be stopped
+- [Phase 10]: paths_overlap resolves both paths itself and fails closed; compose_command drops every COMPOSE_ key of the caller
 
 ### Pending Todos
 
@@ -501,8 +504,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-20T01:40:24.549Z
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-11-20T01:47:40.901Z
+Stopped at: Completed 10-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
