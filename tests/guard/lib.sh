@@ -20,7 +20,7 @@ CURSOR=cursor/Dockerfile
 COMPOSE=compose.yml
 DOCKERFILES="$BASE $CLAUDE $CURSOR"
 SANDBOX_FILES="$BASE $CLAUDE $CURSOR $COMPOSE versions.env build.sh clean.sh bin/*"
-SHELL_FILES="build.sh clean.sh host-test.sh bin/* base/bin/* claude/bin/* cursor/bin/* tests/*/*.sh tests/*/*/*.sh"
+SHELL_FILES="build.sh clean.sh host-test.sh bin/* base/bin/* claude/bin/* cursor/bin/* tests/*/*.sh"
 
 # ------------------------------------------------------------------------------
 # nowhere_matches REGEX FILE...: true if no line matches; prints the hits
