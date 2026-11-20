@@ -17,7 +17,7 @@ from functools import partial
 from pathlib import Path
 
 from sbx.cli import REPO_DIR, SbxError, UsageError, print_notice, run_command
-from sbx.docker import Docker, require_docker, run_compose, run_docker, sandbox_is_running, warn_sessions_close
+from sbx.docker import Docker, container_state_map, require_docker, run_compose, run_docker, sandbox_is_running, warn_sessions_close
 from sbx.names import check_name, container_name, image_tag
 from sbx.registry import Entry, config_dir, entry_file, read_entry, registry_dir
 
@@ -136,10 +136,25 @@ def _remove_container(docker: Docker, entry: Entry, tag: str, repo_dir: Path, en
 # A broken entry: the container by name
 # ------------------------------------------------------------------------------
 # Compose needs the directory the entry lacks, so plain docker stops and removes
-# the one container with that exact name; volumes stay. Only with --unregister,
-# because the entry goes too. Docker must answer, or a stopped Docker would read
-# as no container and the entry would go while the container stays.
+# the one container with that exact name; volumes stay. Only a container with the
+# sbx.name label goes: a same-named container without it is not a sandbox and
+# stays. Only with --unregister, because the entry goes too. Docker must answer,
+# or a stopped Docker would read as no container and the entry would go while the
+# container stays.
 # ------------------------------------------------------------------------------
+
+def _require_sandbox_label(docker: Docker, name: str) -> None:
+    state_map = container_state_map(docker)
+
+    if state_map is None:
+        raise SbxError("could not list the sandbox containers; nothing was removed and the registry entry stays")
+
+    if container_name(name) not in state_map:
+        raise SbxError(
+            f"the container {container_name(name)} has no sbx.name label, so it is not a sandbox container; "
+            "nothing was removed and the registry entry stays"
+        )
+
 
 def _remove_broken_sandbox(
     docker: Docker,
@@ -163,6 +178,8 @@ def _remove_broken_sandbox(
 
     if docker(["container", "inspect", container_name(name)], None, True).returncode != 0:
         return
+
+    _require_sandbox_label(docker, name)
 
     print(f"{COMMAND_NAME}: the entry {file} is broken; removing the container {container_name(name)} by name")
 

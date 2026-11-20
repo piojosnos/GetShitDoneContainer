@@ -95,6 +95,10 @@ def _down_call_list(recorder):
     return down_list
 
 
+def _set_labelled(recorder):
+    recorder.answer(["ps", "-a", "--filter", "label=sbx.name"], DockerResult(0, "sbx-sbx1 running\n"))
+
+
 def _set_running(recorder):
     recorder.answer(RUNNING_PREFIX, DockerResult(0, "true\n"))
 
@@ -347,13 +351,16 @@ def test_a_broken_entry_without_unregister_is_refused_with_the_hint_and_kept(run
 def test_a_broken_entry_with_unregister_stops_and_removes_the_container_by_name_and_deletes_the_entry(
     run_rm, broken_entry_file, recorder
 ):
+    _set_labelled(recorder)
+
     exit_code, out, err = run_rm(["sbx1", "--unregister"])
 
     assert exit_code == 0, err
-    assert [call[0] for call in recorder.call_list] == ["info", "container", "container", "stop", "rm"]
+    assert [call[0] for call in recorder.call_list] == ["info", "container", "ps", "container", "stop", "rm"]
     assert recorder.call_list[1] == ["container", "inspect", "sbx-sbx1"]
-    assert recorder.call_list[3] == ["stop", "sbx-sbx1"]
-    assert recorder.call_list[4] == ["rm", "sbx-sbx1"]
+    assert recorder.call_list[2][:4] == ["ps", "-a", "--filter", "label=sbx.name"]
+    assert recorder.call_list[4] == ["stop", "sbx-sbx1"]
+    assert recorder.call_list[5] == ["rm", "sbx-sbx1"]
     assert _down_call_list(recorder) == []
     assert not broken_entry_file.exists()
     assert out.splitlines() == [
@@ -414,6 +421,7 @@ def test_a_broken_entry_with_docker_not_answering_is_kept(run_rm, broken_entry_f
 
 
 def test_a_running_container_of_a_broken_entry_needs_yes_or_a_terminal(run_rm, broken_entry_file, recorder):
+    _set_labelled(recorder)
     _set_running(recorder)
 
     exit_code, _, err = run_rm(["sbx1", "--unregister"])
@@ -425,6 +433,7 @@ def test_a_running_container_of_a_broken_entry_needs_yes_or_a_terminal(run_rm, b
 
 
 def test_a_running_container_of_a_broken_entry_goes_with_yes(run_rm, broken_entry_file, recorder):
+    _set_labelled(recorder)
     _set_running(recorder)
 
     exit_code, out, _ = run_rm(["sbx1", "--unregister", "--yes"])
@@ -436,6 +445,7 @@ def test_a_running_container_of_a_broken_entry_goes_with_yes(run_rm, broken_entr
 
 
 def test_a_failed_stop_keeps_the_entry(run_rm, broken_entry_file, recorder):
+    _set_labelled(recorder)
     recorder.answer(["stop"], DockerResult(1, ""))
 
     exit_code, _, err = run_rm(["sbx1", "--unregister"])
@@ -447,6 +457,7 @@ def test_a_failed_stop_keeps_the_entry(run_rm, broken_entry_file, recorder):
 
 
 def test_a_failed_rm_keeps_the_entry(run_rm, broken_entry_file, recorder):
+    _set_labelled(recorder)
     recorder.answer(["rm"], DockerResult(1, ""))
 
     exit_code, _, err = run_rm(["sbx1", "--unregister"])
