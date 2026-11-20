@@ -90,20 +90,21 @@ def _child_environ(environ: Mapping[str, str]) -> dict[str, str]:
 # readable while the run is still going.
 # ------------------------------------------------------------------------------
 
-def _emit(text: str, log_handle: TextIO) -> None:
-    sys.stdout.write(text)
-    sys.stdout.flush()
+def _emit(text: str, output: TextIO, log_handle: TextIO) -> None:
+    output.write(text)
+    output.flush()
     log_handle.write(text)
     log_handle.flush()
 
 
-def _emit_line(text: str, log_handle: TextIO) -> None:
-    _emit(f"{text}\n", log_handle)
+def _emit_line(text: str, output: TextIO, log_handle: TextIO) -> None:
+    _emit(f"{text}\n", output, log_handle)
 
 
 def run_and_log(
     argument_list: list[str],
     environ: Mapping[str, str],
+    output: TextIO,
     log_handle: TextIO,
     popen: Callable[..., subprocess.Popen] = subprocess.Popen,
     cwd: Path | None = None,
@@ -121,7 +122,7 @@ def run_and_log(
 
     try:
         for line in process.stdout:
-            _emit(line, log_handle)
+            _emit(line, output, log_handle)
     except KeyboardInterrupt:
         # The child got the same signal; wait for it to run its cleanup.
         process.wait()
@@ -182,19 +183,19 @@ def _docker_text(docker: Docker, argument_list: list[str]) -> str:
     return result.stdout.strip()
 
 
-def _write_context(docker: Docker, repo_dir: Path, log_handle: TextIO) -> None:
+def _write_context(docker: Docker, repo_dir: Path, output: TextIO, log_handle: TextIO) -> None:
     branch = _git_text(repo_dir, ["rev-parse", "--abbrev-ref", "HEAD"]) or "unknown"
     commit = _git_text(repo_dir, ["rev-parse", "--short", "HEAD"]) or "unknown"
 
-    _emit_line(datetime.now().astimezone().strftime("%a %b %d %H:%M:%S %Z %Y"), log_handle)
-    _emit_line(f"branch {branch}, commit {commit}", log_handle)
-    _emit_line(_image_line(), log_handle)
+    _emit_line(datetime.now().astimezone().strftime("%a %b %d %H:%M:%S %Z %Y"), output, log_handle)
+    _emit_line(f"branch {branch}, commit {commit}", output, log_handle)
+    _emit_line(_image_line(), output, log_handle)
 
     for status_line in _git_text(repo_dir, ["status", "--short"]).splitlines():
-        _emit_line(status_line, log_handle)
+        _emit_line(status_line, output, log_handle)
 
-    _emit_line(_docker_text(docker, ["--version"]), log_handle)
-    _emit_line(_docker_text(docker, ["compose", "version"]), log_handle)
+    _emit_line(_docker_text(docker, ["--version"]), output, log_handle)
+    _emit_line(_docker_text(docker, ["compose", "version"]), output, log_handle)
 
 
 # ------------------------------------------------------------------------------
@@ -215,28 +216,37 @@ def _parse_keep(argument_list: list[str]) -> bool:
 # The run
 # ------------------------------------------------------------------------------
 
-def _run(keep: bool, environ: Mapping[str, str], docker: Docker, repo_dir: Path, log_handle: TextIO) -> int:
+def _run(
+    keep: bool,
+    environ: Mapping[str, str],
+    docker: Docker,
+    repo_dir: Path,
+    output: TextIO,
+    log_handle: TextIO,
+) -> int:
     log_path = repo_dir / LOG_NAME
 
     if not _compose_is_v2(docker):
-        _emit_line(_COMPOSE_MESSAGE, log_handle)
+        _emit_line(_COMPOSE_MESSAGE, output, log_handle)
 
         return _REFUSAL_EXIT_CODE
 
-    _write_context(docker, repo_dir, log_handle)
+    _write_context(docker, repo_dir, output, log_handle)
 
     code = run_and_log(
         [sys.executable, *pytest_argument_list(keep)],
         _child_environ(environ),
+        output,
         log_handle,
         cwd=repo_dir,
     )
 
     if code == 0:
-        _emit_line(f"{COMMAND_NAME}: every test passed; log: {log_path}", log_handle)
+        _emit_line(f"{COMMAND_NAME}: every test passed; log: {log_path}", output, log_handle)
     else:
         _emit_line(
             f"{COMMAND_NAME}: pytest exited {code}; the failures are listed above; log: {log_path}",
+            output,
             log_handle,
         )
 
@@ -245,6 +255,7 @@ def _run(keep: bool, environ: Mapping[str, str], docker: Docker, repo_dir: Path,
 
 def main(
     argument_list: list[str],
+    output: TextIO,
     environ: Mapping[str, str] = os.environ,
     docker: Docker = run_docker,
     repo_dir: Path = REPO_DIR,
@@ -257,7 +268,7 @@ def main(
         return _USAGE_EXIT_CODE
 
     with open(repo_dir / LOG_NAME, "w", encoding="utf-8") as log_handle:
-        return _run(keep, environ, docker, repo_dir, log_handle)
+        return _run(keep, environ, docker, repo_dir, output, log_handle)
 
 
 # ------------------------------------------------------------------------------
@@ -265,4 +276,4 @@ def main(
 # ------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(main(sys.argv[1:], sys.stdout))

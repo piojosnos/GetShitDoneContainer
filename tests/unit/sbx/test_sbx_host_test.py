@@ -100,7 +100,7 @@ def test_keep_is_appended_and_no_option_stops_at_the_first_failure():
 def test_main_refuses_an_argument_other_than_keep_with_a_usage_line(argument_list, tmp_path, capsys):
     recorder = DockerRecorder()
 
-    code = host_test.main(argument_list, {}, docker=recorder, repo_dir=tmp_path)
+    code = host_test.main(argument_list, io.StringIO(), {}, docker=recorder, repo_dir=tmp_path)
 
     assert code == 2
     assert capsys.readouterr().err == "Usage: host-test.sh [--keep]\n"
@@ -108,78 +108,87 @@ def test_main_refuses_an_argument_other_than_keep_with_a_usage_line(argument_lis
     assert not (tmp_path / "host-test.log").exists()
 
 
-def test_main_stops_at_compose_v1_and_starts_no_child(tmp_path, capsys):
+def test_main_stops_at_compose_v1_and_starts_no_child(tmp_path):
     recorder = compose_recorder("1.29.2")
+    output = io.StringIO()
 
-    code = host_test.main([], {}, docker=recorder, repo_dir=tmp_path)
+    code = host_test.main([], output, {}, docker=recorder, repo_dir=tmp_path)
 
     assert code == 1
-    assert capsys.readouterr().out == COMPOSE_MESSAGE + "\n"
+    assert output.getvalue() == COMPOSE_MESSAGE + "\n"
     assert (tmp_path / "host-test.log").read_text() == COMPOSE_MESSAGE + "\n"
     assert recorder.call_list == [["compose", "version", "--short"]]
 
 
-def test_main_stops_when_docker_does_not_answer(tmp_path, capsys):
+def test_main_stops_when_docker_does_not_answer(tmp_path):
     recorder = DockerRecorder()
     recorder.answer(["compose"], DockerResult(127, ""))
+    output = io.StringIO()
 
-    code = host_test.main([], {}, docker=recorder, repo_dir=tmp_path)
+    code = host_test.main([], output, {}, docker=recorder, repo_dir=tmp_path)
 
     assert code == 1
-    assert COMPOSE_MESSAGE in capsys.readouterr().out
+    assert COMPOSE_MESSAGE in output.getvalue()
 
 
 # ------------------------------------------------------------------------------
 # The live log
 # ------------------------------------------------------------------------------
 
-def test_run_and_log_returns_the_child_code_and_logs_every_line_in_order(capsys):
+def test_run_and_log_returns_the_child_code_and_sends_every_line_in_order_to_both_streams():
+    output = io.StringIO()
     log_handle = io.StringIO()
 
     code = host_test.run_and_log(
         [sys.executable, "-c", "print('one'); print('two'); raise SystemExit(3)"],
         dict(os.environ),
+        output,
         log_handle,
     )
 
     assert code == 3
     assert log_handle.getvalue() == "one\ntwo\n"
-    assert capsys.readouterr().out == "one\ntwo\n"
+    assert output.getvalue() == "one\ntwo\n"
 
 
 def test_run_and_log_merges_the_error_stream_of_the_child():
+    output = io.StringIO()
     log_handle = io.StringIO()
 
     code = host_test.run_and_log(
         [sys.executable, "-c", "import sys; print('out', flush=True); print('err', file=sys.stderr)"],
         dict(os.environ),
+        output,
         log_handle,
     )
 
     assert code == 0
     assert sorted(log_handle.getvalue().splitlines()) == ["err", "out"]
+    assert sorted(output.getvalue().splitlines()) == ["err", "out"]
 
 
-def test_run_and_log_leaves_the_real_terminal_empty(capfd):
-    log_handle = io.StringIO()
+def test_run_and_log_leaves_the_real_terminal_empty_and_fills_the_injected_stream(capfd):
+    output = io.StringIO()
 
     host_test.run_and_log(
         [sys.executable, "-c", "import sys; print('out', flush=True); print('err', file=sys.stderr)"],
         dict(os.environ),
-        log_handle,
+        output,
+        io.StringIO(),
     )
 
     captured = capfd.readouterr()
 
     assert captured.out == ""
     assert captured.err == ""
+    assert sorted(output.getvalue().splitlines()) == ["err", "out"]
 
 
 # ------------------------------------------------------------------------------
 # The whole run on a small repo
 # ------------------------------------------------------------------------------
 
-def test_main_runs_the_suites_in_order_with_the_test_tag_and_keep_and_ends_with_the_pass_line(tmp_path, capsys):
+def test_main_runs_the_suites_in_order_with_the_test_tag_and_keep_and_ends_with_the_pass_line(tmp_path):
     make_repo(
         tmp_path,
         "import os\n\ndef test_sbx_suite():\n    assert os.environ['SBX_IMAGE_TAG'] == 'test'\n",
@@ -189,10 +198,12 @@ def test_main_runs_the_suites_in_order_with_the_test_tag_and_keep_and_ends_with_
     environ = dict(os.environ)
     environ["SBX_IMAGE_TAG"] = "other"
 
-    code = host_test.main(["--keep"], environ, docker=compose_recorder("2.40.0"), repo_dir=tmp_path)
+    output = io.StringIO()
+
+    code = host_test.main(["--keep"], output, environ, docker=compose_recorder("2.40.0"), repo_dir=tmp_path)
 
     log_text = (tmp_path / "host-test.log").read_text()
-    out_text = capsys.readouterr().out
+    out_text = output.getvalue()
 
     assert code == 0
     assert log_text == out_text
@@ -202,7 +213,7 @@ def test_main_runs_the_suites_in_order_with_the_test_tag_and_keep_and_ends_with_
     assert log_text.rstrip("\n").endswith(f"host-test.sh: every test passed; log: {tmp_path / 'host-test.log'}")
 
 
-def test_main_runs_every_suite_after_a_failure_and_returns_the_pytest_code(tmp_path, capsys):
+def test_main_runs_every_suite_after_a_failure_and_returns_the_pytest_code(tmp_path):
     make_repo(
         tmp_path,
         "def test_sbx_suite():\n    assert False\n",
@@ -210,7 +221,7 @@ def test_main_runs_every_suite_after_a_failure_and_returns_the_pytest_code(tmp_p
         "def test_guard_suite():\n    pass\n",
     )
 
-    code = host_test.main([], dict(os.environ), docker=compose_recorder("2.40.0"), repo_dir=tmp_path)
+    code = host_test.main([], io.StringIO(), dict(os.environ), docker=compose_recorder("2.40.0"), repo_dir=tmp_path)
 
     log_text = (tmp_path / "host-test.log").read_text()
 
@@ -223,7 +234,7 @@ def test_main_runs_every_suite_after_a_failure_and_returns_the_pytest_code(tmp_p
     )
 
 
-def test_main_leaves_the_real_terminal_empty_when_the_child_fails(tmp_path, capfd):
+def test_main_leaves_the_real_terminal_empty_when_the_child_fails_and_fills_the_injected_stream(tmp_path, capfd):
     make_repo(
         tmp_path,
         "def test_sbx_suite():\n    assert False\n",
@@ -231,12 +242,15 @@ def test_main_leaves_the_real_terminal_empty_when_the_child_fails(tmp_path, capf
         "def test_guard_suite():\n    pass\n",
     )
 
-    host_test.main([], dict(os.environ), docker=compose_recorder("2.40.0"), repo_dir=tmp_path)
+    output = io.StringIO()
+
+    host_test.main([], output, dict(os.environ), docker=compose_recorder("2.40.0"), repo_dir=tmp_path)
 
     captured = capfd.readouterr()
 
     assert captured.out == ""
     assert captured.err == ""
+    assert "test_sbx_suite FAILED" in output.getvalue()
 
 
 # ------------------------------------------------------------------------------

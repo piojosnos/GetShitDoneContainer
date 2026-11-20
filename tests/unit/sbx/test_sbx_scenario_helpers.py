@@ -6,6 +6,7 @@
 # needs Docker.
 # ------------------------------------------------------------------------------
 
+import io
 import subprocess
 import sys
 import time
@@ -139,13 +140,15 @@ def test_run_sbx_finds_the_command_on_the_path_of_the_environment_it_is_given(tm
 # run_streamed
 # ------------------------------------------------------------------------------
 
-def test_run_streamed_echoes_and_logs_every_line_merged_and_returns_the_code(tmp_path, capsys):
+def test_run_streamed_echoes_and_logs_every_line_merged_and_returns_the_code(tmp_path):
     log_file = tmp_path / "run.log"
+    output = io.StringIO()
 
     result = run_streamed(
         [sys.executable, "-c", "import sys; print('one', flush=True); print('two', file=sys.stderr); sys.exit(2)"],
         30,
         None,
+        output,
         log_file,
     )
 
@@ -153,22 +156,25 @@ def test_run_streamed_echoes_and_logs_every_line_merged_and_returns_the_code(tmp
     assert result.timed_out is False
     assert sorted(result.stdout.splitlines()) == ["one", "two"]
     assert sorted(log_file.read_text().splitlines()) == ["one", "two"]
-    assert sorted(capsys.readouterr().out.splitlines()) == ["one", "two"]
+    assert sorted(output.getvalue().splitlines()) == ["one", "two"]
 
 
-def test_run_streamed_leaves_the_real_terminal_empty(tmp_path, capfd):
-    run_streamed([sys.executable, "-c", "print('one')"], 30, None, tmp_path / "run.log")
+def test_run_streamed_leaves_the_real_terminal_empty_and_fills_the_injected_stream(tmp_path, capfd):
+    output = io.StringIO()
+
+    run_streamed([sys.executable, "-c", "print('one')"], 30, None, output, tmp_path / "run.log")
 
     captured = capfd.readouterr()
 
     assert captured.out == ""
     assert captured.err == ""
+    assert output.getvalue() == "one\n"
 
 
 def test_run_streamed_stops_the_group_on_a_timeout(tmp_path):
     started = time.monotonic()
 
-    result = run_streamed(["sh", "-c", "sleep 30 & echo $!; wait"], 1, None, tmp_path / "run.log")
+    result = run_streamed(["sh", "-c", "sleep 30 & echo $!; wait"], 1, None, io.StringIO(), tmp_path / "run.log")
 
     elapsed = time.monotonic() - started
     sleep_pid = int(result.stdout.split()[0])

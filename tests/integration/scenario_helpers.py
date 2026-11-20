@@ -12,11 +12,11 @@ import json
 import os
 import signal
 import subprocess
-import sys
 import threading
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TextIO
 
 from agent_specs import AgentSpec
 
@@ -152,16 +152,17 @@ def run_timeout(
 
 
 # ------------------------------------------------------------------------------
-# run_streamed ARGUMENT_LIST SECONDS ENVIRON LOG_FILE: a long command, live
+# run_streamed ARGUMENT_LIST SECONDS ENVIRON OUTPUT LOG_FILE: a long command
 # ------------------------------------------------------------------------------
-# stdout and stderr are merged; every line is echoed and appended to LOG_FILE as
-# it comes, so a long build shows progress. A timer stops the group on a timeout.
+# stdout and stderr are merged; every line goes live to OUTPUT and LOG_FILE, so a
+# long build shows progress. A timer stops the group on a timeout.
 # ------------------------------------------------------------------------------
 
 def run_streamed(
     argument_list: list[str],
     seconds: float,
     environ: Mapping[str, str] | None,
+    output: TextIO,
     log_file: Path,
 ) -> CommandResult:
     try:
@@ -196,8 +197,8 @@ def run_streamed(
     with open(log_file, "a", encoding="utf-8") as log_handle:
         for line in process.stdout:
             line_list.append(line)
-            sys.stdout.write(line)
-            sys.stdout.flush()
+            output.write(line)
+            output.flush()
             log_handle.write(line)
             log_handle.flush()
 

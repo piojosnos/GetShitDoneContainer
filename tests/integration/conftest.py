@@ -9,6 +9,7 @@
 
 import os
 import shutil
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -211,7 +212,7 @@ def test_images(run_dir: Path, hosttest_env: dict[str, str]) -> None:
 
     log_file = run_dir / "logs" / "build-images.log"
     progress(f"building the test images; log: {log_file}")
-    result = run_streamed([str(REPO_DIR / "build.sh")], 3600, hosttest_env, log_file)
+    result = run_streamed([str(REPO_DIR / "build.sh")], 3600, hosttest_env, sys.stdout, log_file)
 
     if result.returncode != 0:
         pytest.fail(f"build.sh exited {result.returncode}; log: {log_file}", pytrace=False)
