@@ -120,6 +120,10 @@ def relative_name_list(path_list: list[Path]) -> list[str]:
     return name_list
 
 
+def line_list(path: Path) -> list[str]:
+    return path.read_text(encoding="utf-8", errors="replace").splitlines()
+
+
 # ------------------------------------------------------------------------------
 # nowhere_matches PATTERN PATH_LIST: the lines that match, as hits; none is a pass
 # ------------------------------------------------------------------------------
