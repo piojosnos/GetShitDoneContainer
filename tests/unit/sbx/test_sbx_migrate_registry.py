@@ -8,6 +8,7 @@ import json
 
 import pytest
 
+from sbx.migrate_registry import main
 from sbx.names import NAME_RULE_TEXT
 from sbx_helpers import environ_for, write_json_entry
 
@@ -15,8 +16,6 @@ COUNT_TEXT = "the old files are left in place and can be deleted once each sandb
 
 
 def run_migrate(config_dir, argument_list=None, extra_map=None):
-    from sbx.migrate_registry import main
-
     return main(argument_list or [], environ_for(config_dir, extra_map))
 
 

@@ -72,6 +72,8 @@ def _load_object(file: Path) -> dict:
         text = file.read_text(encoding="utf-8")
     except OSError:
         raise SbxError(f"cannot read {file}") from None
+    except UnicodeDecodeError:
+        raise SbxError(f"the entry {file} is not a JSON object") from None
 
     try:
         data = json.loads(text)
@@ -106,6 +108,27 @@ def read_entry(registry: Path, name: str) -> Entry:
         )
 
     return Entry(name, path, agent)
+
+
+# ------------------------------------------------------------------------------
+# Writing
+# ------------------------------------------------------------------------------
+# The file is created exclusively, so an existing entry is never overwritten and
+# a second sbx-add of one name at the same time is refused. The path is stored as
+# given; nothing here resolves it.
+# ------------------------------------------------------------------------------
+
+def write_entry(registry: Path, entry: Entry) -> None:
+    file = entry_file(registry, entry.name)
+    text = json.dumps({"path": entry.path, "agent": entry.agent}, indent=2) + "\n"
+
+    try:
+        registry.mkdir(parents=True, exist_ok=True)
+
+        with open(file, "x", encoding="utf-8") as handle:
+            handle.write(text)
+    except OSError:
+        raise SbxError(f"could not write {file}; nothing was registered") from None
 
 
 # ------------------------------------------------------------------------------
