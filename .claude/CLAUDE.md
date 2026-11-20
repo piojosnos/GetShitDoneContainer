@@ -30,8 +30,8 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 
 ## Languages
 
-- Bash 3.2+ (POSIX compatible): Shell scripts for the agent wrappers, build orchestration, host commands, test harnesses; runs on macOS and Linux
-- Python 3.12+: Selfcheck framework for validating container setup; tests via pytest
+- Python 3.12+: The host commands, `build.sh`, `clean.sh` and `host-test.sh` logic in `sbx/` (standard library only), run through uv; the selfcheck and init frameworks in the image; every test suite via pytest
+- Shell: the two-line `/bin/sh` launchers of the host commands (they hold no logic); in the image, the agent wrappers and the `sbx-*` commands in `base/bin/`
 - YAML: Docker Compose service definitions and Dockerfile linting configuration
 - Dockerfile: Multi-stage container image definitions for base, Claude agent, and Cursor agent images
 - JavaScript/Node.js: Runtime for CLI tools installed via npm; no source code (executables only)
@@ -41,16 +41,16 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - Docker Engine and Docker Compose: Container orchestration and service definition
 - Ubuntu 24.04: Base Linux distribution for all container images; specified by SHA-256 pinned digest in `versions.env`
 - npm: JavaScript package manager bundled with Node.js; manages GSD Core, Claude Code, and ccusage CLI tools
-- uv: Python package manager and runtime manager; v0.12.21; installed in base image via container copy from official image
+- uv: Python package manager and runtime manager; on the host the only prerequisite besides Docker Desktop (`brew install uv`; it fetches Python 3.12 on first use) and what runs every host launcher; v0.12.21 in the base image, copied from the official image
 - Lockfile: `versions.env` contains all tool version pins; no package-lock.json or similar
 
 ## Frameworks
 
-- pytest 9.2.0: Unit testing framework for Python selfcheck modules and integration tests
-- uv run pytest: Test runner; configured in `pyproject.toml` with no cache provider
+- pytest 9.2.0: Test framework for every suite (`tests/unit/sbx`, `tests/unit/init`, `tests/unit/selfcheck`, `tests/guard`, `tests/integration`)
+- uv run pytest: Test runner in the dev sandbox; configured in `pyproject.toml` with no cache provider. On the host, `./host-test.sh` runs `tests/unit/sbx`, `tests/integration` and `tests/guard` through uv; a bare `uv run` on the host is never used, because the repo `.venv` belongs to the dev sandbox
 - Docker multi-stage builds: Base image (`sbx-base`) layered with agent-specific configurations (`sbx-claude`, `sbx-cursor`)
 - Dockerfile with BuildKit cache mounts: Optional certificate injection during build via bind mounts
-- shell linting with shellcheck v0.11.0: Guard tests validate shell script syntax
+- shell linting with shellcheck v0.11.0: Guard tests validate the launchers and the image's shell commands
 - Dockerfile linting with hadolint v2.15.1: Guard tests validate Dockerfile correctness
 
 ## Key Dependencies
@@ -86,8 +86,11 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - `pyproject.toml`: Python project metadata; requires Python 3.12+; pytest configured with testpaths, pythonpath (includes selfcheck modules), and no cache provider
 - `.dockerignore`: Files excluded from Docker build context
 - `.hadolint.yaml`: Hadolint configuration
-- `.shellcheckrc`: Shellcheck configuration for bash linting
-- `build.sh`: Main build orchestration; reads `versions.env`, collects pins, optionally injects extra CA certificates, builds three images in sequence
+- `.shellcheckrc`: Shellcheck configuration for the host launchers and the image's shell commands
+- `sbx/`: The host Python modules, one per command (`add.py`, `start.py`, `upgrade.py`, ...) plus shared ones (`registry.py`, `names.py`, `docker.py`, `cli.py`); standard library only
+- `bin/`, `build.sh`, `clean.sh`, `host-test.sh`: Two-line launchers; each `exec`s `uv run` on the module of the same name in `sbx/`
+- `build.sh` (`sbx/build.py`): Main build orchestration; reads `versions.env` as text, collects pins, optionally injects extra CA certificates, builds three images in sequence
+- `~/.config/sbx/sandboxes/NAME.json`: The registry entry of a sandbox, JSON with `path` and `agent`, outside every mount; parsed as data, never run
 - `Dockerfile` (base): Shared base layer; installs system packages, downloads and verifies all tools, sets up `sandbox` user (UID 1000), creates mount point
 - `Dockerfile` (claude): Claude-specific layers; installs Claude Code and ccusage; links home directories to persistent state directories
 - `Dockerfile` (cursor): Cursor-specific layers; installs cursor-agent CLI; links home directories to persistent state directories
@@ -99,8 +102,8 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 ## Platform Requirements
 
 - macOS or Linux host with Docker Desktop or Docker Engine
-- BSD sed and grep (macOS); shell scripts tested on both BSD and GNU variants
-- Bash 3.2+ (POSIX compatible)
+- Host: Docker Desktop and uv; nothing else is installed there
+- BSD tools on macOS; the launchers use only `/bin/sh`, and the host logic is Python 3.12 run by uv
 - Docker image run target: any Docker-capable host with Docker Compose
 - CPU architecture support: x86_64 (amd64) and arm64 (detected at build time; handled per tool)
 - Minimum memory: 4GB (not enforced; recommended)
@@ -122,8 +125,8 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 
 ## Naming Patterns
 
-- Shell programs: lowercase with hyphens (`build.sh`, `sbx-add`, `host-test.sh`)
-- Shell libraries: lowercase with hyphens ending in `-lib.sh` (`sbx-lib.sh`)
+- Host launchers: lowercase with hyphens (`build.sh`, `sbx-add`, `host-test.sh`); each runs the module of the same name in `sbx/`
+- Host modules: lowercase with underscores in `sbx/` (`registry.py`, `host_test.py`, `hosttest_names.py`)
 - Python modules: lowercase with underscores (`check_result.py`, `image_roots.py`)
 - Dockerfiles: named `Dockerfile` (agent-specific files in agent directories: `claude/Dockerfile`, `cursor/Dockerfile`)
 - Configuration: lowercase with underscores or hyphens (`.shellcheckrc`, `.hadolint.yaml`, `versions.env`)
@@ -136,8 +139,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - Public functions get type hints on parameters and return
 - Environment variables and exports: UPPERCASE with underscores (`SBX_NAME`, `SBX_CONFIG_DIR`, `DOCKER_HOST`)
 - Local variables: lowercase with underscores (`workspace`, `step`, `configDir`, `groupOutput`)
-- Global state marked explicitly: `FAILS=0`, `BUILD_RC`, `SBX_RC` (uppercase; results of last operation)
-- Indexed: `knownAgentList`, `knownImageTagList` (bare list of space-separated values)
+- Collections carry their shape as a suffix: `KNOWN_AGENT_LIST`, `run_dir_list`, `verdict_by_name_map`
 - Module-level constants: UPPERCASE with underscores (`ELF_MACHINE_BY_UNAME_MAP`, `_HOME_ROOT`, `_ELF_MAGIC`)
 - Local variables: lowercase with underscores
 - Type hints on public function parameters and returns
@@ -201,9 +203,9 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - Under `set -e`, a function called with `||` runs without `set -e`; make it return on its own failures: `mkdir -p "$dir" || return 1`
 - Fail closed: an input the script cannot use (missing config, invalid name) stops with an error (never skip silently)
 - Exit codes: 0 for success, 1 for failure, 2 for usage error
-- Error messages print to stderr with label: `sbx_error MESSAGE` sends to stderr with script name prefixed
+- A host command raises `SbxError` (or `UsageError` for a wrong argument); `run_command` in `sbx/cli.py` prints `COMMAND: message` or one `Usage:` line to stderr and returns 1 or 2
 - A failing `sbx-init` step returns `failed(problem, hint)`; the runner prints `FAIL: NAME: problem` and a `fix:` line under it, then stops. The commands in `base/bin/` print `[sbx] ERROR: ...` to stderr
-- Guards and tests: failures reported as `FAIL: name` on stdout, counted and summarized
+- Guards and tests: pytest reports the failures; a failed integration step is named by a `STEP FAILED: ...` note under the assertion
 - A check function returns a `CheckResult` object with `passed` bool, `detail` string (on success), and `hint` string (on failure)
 - Check helpers like `tool_result` take injectable parameters (environment map, home root) for testability
 - Errors reported via `failed(problem_text, hint_text)` or `passed(detail_text)` helper functions
@@ -214,8 +216,8 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 
 - `echo` for informational output (visible to user)
 - `echo "..." >&2` for errors (to stderr)
-- Prefixed messages: `"$scriptName: $message"` via helper `sbx_error`
-- Guard and test output: `PASS: name` or `FAIL: name` to stdout
+- Host command messages are prefixed with the command name (`print_notice` in `sbx/cli.py`)
+- Guard and test output: pytest `-v` lines; `./host-test.sh` keeps them in `host-test.log` as they come
 - Terse output; avoid logging at debug level in shipped scripts
 - `logging` module for real logging (when needed; this codebase uses minimal logging)
 - `print()` only for CLI output that is the real result, not diagnostics
@@ -252,7 +254,8 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - Program exit is explicit: `exit 0` on success or `exit 1` / `exit 2` on failure
 - Library exit is implicit: functions return non-zero on failure
 - Globals exported only when needed for subprocesses: `export SBX_CONFIG_DIR`
-- Modules contain business logic; launcher stays thin and calls into modules
+- Modules contain business logic; a launcher stays thin and calls into modules. A host module defines `main()` and ends with a `Main / Entry Point` block, so its launcher and its tests call the same function
+- Host modules in `sbx/` import only the standard library
 - Shared setup (fixtures, helpers) in conftest.py; test files hold assertions
 - Check functions injected with dependencies (environment maps, paths) for testability
 - One module, one topic; split large modules by responsibility
@@ -275,17 +278,11 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 
 ## Testing
 
-- A test is a function that returns 0 (pass) or 1 (fail)
-- Helper `nowhere_matches REGEX FILE...` returns 0 if no line matches, prints hits
-- Helper `report_lines PREFIX` prints each stdin line after PREFIX, returns 1 if any line found
-- Test output: `PASS: name` on success, `FAIL: name` on failure, both to stdout
-- Exit 0 when all pass, 1 if any failed
-- Helper `expect NAME COMMAND...` runs the command; prints `PASS: name` on success, `FAIL: name` on failure; increments FAILS
-- Helper `equals A B` returns 0 if equal
-- Helper `has_text FILE TEXT` returns 0 if FILE contains TEXT
-- Helper `lacks_text FILE TEXT` returns 0 if FILE exists, is readable, and does NOT contain TEXT
-- Test output: count and summarize: `All cases pass.` or `N case(s) failed.`
-- Exit 0 when all pass, 1 if any failed
+- Every suite is pytest: `tests/unit/sbx` and `tests/guard` run in the dev sandbox and in `./host-test.sh`; `tests/unit/init` and `tests/unit/selfcheck` run in the dev sandbox only; `tests/integration` runs only through `./host-test.sh` on the host, with Docker
+- An integration test is a scenario: one test function, its steps are `with step("..."):` blocks in code order, the first failed step ends it and is named, scenarios never depend on each other, and every scenario runs for both agents through `AgentSpec`
+- The `sandbox` fixture brings the shared test sandbox to "running, init done" before each scenario
+- Shared helpers: `step()`, `run_sbx` and `docker_exec` in `tests/integration/scenario_helpers.py`; per-agent data in `tests/integration/agent_specs.py`; `DockerRecorder` and the registry writers in `tests/unit/sbx/sbx_helpers.py`; the file helpers of the guard (`nowhere_matches`) in `tests/guard/guard_helpers.py`
+- No shell file and no stand-in for a tool is tracked under `tests/`
 - Fixtures in conftest.py for shared setup; test functions use them
 - Test names follow `test_<what>` pattern
 - Assertions use `assert` keyword; pytest introspects and reports failures
@@ -294,8 +291,8 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 
 ## Portability
 
-- Target: macOS (BSD bash 3.2, BSD tools)
-- Tests run on Linux (GNU bash, GNU tools) before commit
+- Target: macOS (BSD tools); host logic is Python run by uv, so only the launchers and the image's shell commands meet BSD and GNU differences
+- Tests run on Linux (the dev sandbox) before commit; `./host-test.sh` runs them on the host
 - Avoid GNU-only options and bash 4 features: no `grep -P`, `readlink -f`, `date -d`, `mapfile`
 - In-place edit: `sed "s/old/new/" file > file.tmp && mv file.tmp file`, not `sed -i`
 - If `-i` unavoidable: `sed -i.bak` works on both GNU and BSD
@@ -320,8 +317,8 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 
 | Component | Responsibility | File |
 |-----------|----------------|------|
-| Host Scripts | Register sandboxes, manage lifecycle (start, stop, upgrade); invoke Docker Compose | `bin/sbx-add`, `bin/sbx-start`, etc. |
-| Registry | Store sandbox metadata (host path, agent type) outside every mount | `~/.config/sbx/sandboxes/<name>` |
+| Host Commands | Register sandboxes, manage lifecycle (start, stop, upgrade); invoke Docker Compose | Python modules in `sbx/` behind the two-line launchers `bin/sbx-add`, `bin/sbx-start`, etc., `build.sh`, `clean.sh`, `host-test.sh` |
+| Registry | Store sandbox metadata (path, agent) outside every mount | `~/.config/sbx/sandboxes/<name>.json` |
 | Compose Template | Define container service, mount point, image, command (`sleep infinity`) | `compose.yml` |
 | Base Image | OS packages, toolchains, GSD, shared commands, selfcheck framework | `base/Dockerfile` |
 | Agent Images | Agent-specific CLI, agent wrappers, init steps, checks | `claude/Dockerfile`, `cursor/Dockerfile` |
@@ -358,7 +355,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - Used by: Developer and GSD execution
 - Key Flow: `sleep infinity`, `sbx-init` in the sandbox shell, agent wrapper, agent CLI
 - Purpose: Track registered sandboxes and provide CLI for sandbox operations
-- Location: Registry in `~/.config/sbx/sandboxes/`; scripts in `bin/`
+- Location: Registry in `~/.config/sbx/sandboxes/`; launchers in `bin/`, modules in `sbx/`
 - Contains: Per-sandbox metadata (directory path, agent type)
 - Depends on: Installed Docker Desktop, `compose.yml`, agent images
 - Used by: Developer running `sbx-*` commands
@@ -376,7 +373,7 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 ## Key Abstractions
 
 - Purpose: Isolates one project and one agent session
-- Examples: `~/.config/sbx/sandboxes/demo` (registry), `/Users/you/sbx-demo/` (sandbox directory), `sbx-demo` (container)
+- Examples: `~/.config/sbx/sandboxes/demo.json` (registry), `/Users/you/sbx-demo/` (sandbox directory), `sbx-demo` (container)
 - Pattern: Registry entry + sandbox directory + container instance; name rules prevent collisions
 - Purpose: Binds the sandbox directory into the container without hiding image contents
 - Examples: `$SBX_DIR` on a macOS host; `/home/sandbox/workspace` in container
@@ -391,17 +388,19 @@ A Docker-based sandbox for running AI coding agents (Claude Code and Cursor toda
 - Examples: Check tool versions, mount point, ownership, environment variables
 - Pattern: Python modules in `base/selfcheck/checks/` and agent-specific `*/selfcheck/` define `CHECK_LIST`; runner collects and runs them
 - Purpose: Persist sandbox metadata outside the project directory
-- Examples: `SBX_DIR=/Users/you/sbx-demo`, `SBX_AGENT=claude`
-- Pattern: One file per sandbox in `~/.config/sbx/sandboxes/<name>`; sourced by host scripts
+- Examples: `"path": "/Users/you/sbx-demo"`, `"agent": "claude"`
+- Pattern: One JSON file per sandbox in `~/.config/sbx/sandboxes/<name>.json`; parsed as data by the host modules, never run
 
 ## Entry Points
 
+- Host launchers (`bin/sbx-*`, `build.sh`, `clean.sh`, `host-test.sh`): run a module of `sbx/` through uv
 - `sbx-add`: Registers a new sandbox; validates name and paths; creates directories; writes registry entry
 - `sbx-start`: Starts a sandbox (docker compose up) without rebuilding images
 - `sbx-upgrade`: Rebuilds images and starts the sandbox
 - `sbx-shell`: Execs a bash shell into the running container at the project directory
 - `sbx-list`: Lists all registered sandboxes
 - `sbx-stop`, `sbx-rm`: Stop and remove containers
+- `sbx-migrate-registry`: One-off; writes `NAME.json` next to each old two-line registry file
 - Container start: the command is `sleep infinity`; there is no entrypoint, so nothing is set up until the user runs `sbx-init`
 - `sbx-init`: `base/init/sbx-init` runs the init steps in file-name order, then writes the marker `/home/sandbox/.sbx-init-done`
 - Agent CLI: `claude` or `cursor-agent` (not managed by sbx; the agent runs as a subprocess)
