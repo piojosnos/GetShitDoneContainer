@@ -13,7 +13,9 @@ from dataclasses import dataclass
 # AgentSpec
 # ------------------------------------------------------------------------------
 # session_dir is formatted with the sandbox name; None when the agent keeps no
-# session files that a scenario plants.
+# session files that a scenario plants. settings_file and instructions_file are
+# the user's own files in the config directory that the GSD sync must leave as
+# they are; None when the agent has no such file.
 # ------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
@@ -22,6 +24,8 @@ class AgentSpec:
     config_dir_name: str
     login_file: str
     session_dir: str | None
+    settings_file: str | None
+    instructions_file: str | None
     wrapper: str
     binary: str
     version_pin: str
@@ -40,6 +44,8 @@ CLAUDE_SPEC = AgentSpec(
     config_dir_name="claude",
     login_file=".credentials.json",
     session_dir="projects/-home-sandbox-workspace-{name}",
+    settings_file="settings.json",
+    instructions_file="CLAUDE.md",
     wrapper="sbx-claude",
     binary="claude",
     version_pin="CLAUDE_CODE_VERSION",
@@ -54,6 +60,8 @@ CURSOR_SPEC = AgentSpec(
     config_dir_name="cursor",
     login_file="auth.json",
     session_dir=None,
+    settings_file=None,
+    instructions_file=None,
     wrapper="sbx-cursor",
     binary="cursor-agent",
     version_pin="CURSOR_AGENT_VERSION",

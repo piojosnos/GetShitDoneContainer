@@ -9,6 +9,7 @@
 # binary, version pin, links step, step count, rules link) comes from AgentSpec.
 # ------------------------------------------------------------------------------
 
+import json
 import os
 import time
 from pathlib import Path
@@ -41,6 +42,7 @@ _KEPT_SKILL = "sbx-fixture-one"
 _DROPPED_SKILL = "sbx-fixture-two"
 _SUPPORT_DIR = REPO_DIR / "tests" / "integration" / "support" / "best-practices"
 _INIT_SECONDS = 600
+_SETTINGS_KEY = "relinkSentinel"
 _CONTAINER_GIT_OPTIONS = "-c user.name=sbx-hosttest -c user.email=sbx-hosttest@example.invalid -c commit.gpgsign=false"
 _HOST_GIT_ENVIRON_UPDATE = {
     "GIT_CONFIG_GLOBAL": "/dev/null",
@@ -159,6 +161,39 @@ def _link_problem_list(container: str, agent: AgentSpec, skill_name_list: list[s
             problem_list.append(f"the link of skill {skill_name} is {skill_link!r}, expected {expected_link!r}")
 
     return problem_list
+
+
+# ------------------------------------------------------------------------------
+# The user's settings key
+# ------------------------------------------------------------------------------
+# settings.json may already hold what the GSD sync wrote, so the key is added to
+# the existing object and only the key is checked afterwards.
+# ------------------------------------------------------------------------------
+
+def _plant_settings_key(settings_file: Path, value: str) -> None:
+    settings = {}
+
+    if settings_file.is_file():
+        settings = json.loads(settings_file.read_text(encoding="utf-8"))
+
+    settings[_SETTINGS_KEY] = value
+    settings_file.parent.mkdir(parents=True, exist_ok=True)
+    settings_file.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
+
+
+def _settings_key_problem(settings_file: Path, value: str) -> str | None:
+    if not settings_file.is_file():
+        return f"{settings_file} is gone after sbx-init"
+
+    try:
+        settings = json.loads(settings_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        return f"{settings_file} is no longer JSON after sbx-init: {e}"
+
+    if not isinstance(settings, dict) or settings.get(_SETTINGS_KEY) != value:
+        return f"the key {_SETTINGS_KEY} of {settings_file} is missing or changed after sbx-init"
+
+    return None
 
 
 # ------------------------------------------------------------------------------
@@ -424,6 +459,12 @@ def test_relink_after_a_pull(
             planted_text_map[session_dir / "relink-session.jsonl"] = f"{sentinel_text}\n"
             planted_text_map[session_dir / "memory" / "relink-memory.md"] = f"{sentinel_text}\n"
 
+        if agent.instructions_file is not None:
+            planted_text_map[state_config_dir / agent.instructions_file] = f"{sentinel_text}\n"
+
+        if agent.settings_file is not None:
+            _plant_settings_key(state_config_dir / agent.settings_file, sentinel_text)
+
         for planted_path, planted_text in planted_text_map.items():
             planted_path.parent.mkdir(parents=True, exist_ok=True)
             planted_path.write_text(planted_text, encoding="utf-8")
@@ -459,7 +500,13 @@ def test_relink_after_a_pull(
         for planted_path in planted_path_list:
             if not planted_path.is_file():
                 kept_problem_list.append(f"{planted_path} is gone after sbx-init")
-            elif planted_path.read_text(encoding="utf-8") != f"{sentinel_text}\n":
+            elif planted_path.read_bytes() != f"{sentinel_text}\n".encode("utf-8"):
                 kept_problem_list.append(f"{planted_path} changed after sbx-init")
+
+        if agent.settings_file is not None:
+            settings_problem = _settings_key_problem(state_config_dir / agent.settings_file, sentinel_text)
+
+            if settings_problem is not None:
+                kept_problem_list.append(settings_problem)
 
         assert not kept_problem_list, "\n".join(kept_problem_list)
