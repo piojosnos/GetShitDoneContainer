@@ -18,7 +18,6 @@ import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from functools import partial
-from pathlib import Path
 
 from sbx.cli import SbxError, UsageError, run_command
 from sbx.names import check_name, image_tag
