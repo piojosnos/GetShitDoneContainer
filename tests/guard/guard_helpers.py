@@ -15,7 +15,7 @@ REPO_DIR = Path(__file__).resolve().parents[2]
 
 _LINTER_IMAGE = "sbx-base:test"
 _LAUNCHER_SHEBANG = "#!/bin/sh"
-_ROOT_SCRIPT_NAME_LIST = ["build.sh", "clean.sh", "host-test.sh"]
+ROOT_SCRIPT_NAME_LIST = ["build.sh", "clean.sh", "host-test.sh"]
 
 
 # ------------------------------------------------------------------------------
@@ -48,7 +48,7 @@ def compose_file() -> Path:
 def launcher_list() -> list[Path]:
     launcher_file_list = _glob_list("bin/*")
 
-    for name in _ROOT_SCRIPT_NAME_LIST:
+    for name in ROOT_SCRIPT_NAME_LIST:
         path = REPO_DIR / name
 
         if path.is_file() and _first_line(path) == _LAUNCHER_SHEBANG:
@@ -64,7 +64,7 @@ def image_script_list() -> list[Path]:
 def shell_file_list() -> list[Path]:
     shell_list = []
 
-    for name in _ROOT_SCRIPT_NAME_LIST:
+    for name in ROOT_SCRIPT_NAME_LIST:
         shell_list += _glob_list(name)
 
     shell_list += _glob_list("bin/*")

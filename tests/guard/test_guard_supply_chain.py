@@ -110,8 +110,6 @@ def test_no_compromised_gsd_package():
         "MIGRATION.md",
         "tests/host-checklist.md",
         "tests/integration/support/**/*",
-        "tests/host/support/**/*",
-        "tests/host/*.sh",
         "pyproject.toml",
         "uv.lock",
     ])

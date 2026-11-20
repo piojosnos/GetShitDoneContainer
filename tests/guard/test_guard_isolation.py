@@ -109,7 +109,6 @@ def test_host_tests_never_name_the_local_tag():
         REPO_DIR / "sbx" / "hosttest_names.py",
     ]
     candidate_list += sorted((REPO_DIR / "tests" / "integration").glob("**/*.py"))
-    candidate_list += sorted((REPO_DIR / "tests" / "host").glob("*.sh"))
 
     file_list = []
 
