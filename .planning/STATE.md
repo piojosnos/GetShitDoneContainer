@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
-current_phase: 10
-current_phase_name: Host side to Python
+current_phase: "10.1"
+current_phase_name: Full skills and best-practices support in Cursor
 status: planning
-stopped_at: Phase 09.1 complete, ready to plan Phase 10
-last_updated: "2026-11-18T07:24:52.594Z"
-last_activity: 2026-11-18
-last_activity_desc: Phase 09.1 complete, transitioned to Phase 10
-state_head: e3dd6017fcd8e2ce853c935038073a810cec67c8
+stopped_at: Phase 10 complete, ready to plan Phase 10.1
+last_updated: "2026-11-20T07:32:00.876Z"
+last_activity: 2026-11-20
+last_activity_desc: Phase 10 complete, transitioned to Phase 10.1
+state_head: 48dafc1ad410a71b1c3a4e20c7aa56b7a4f08bd3
 progress:
   total_phases: 11
-  completed_phases: 4
-  total_plans: 55
-  completed_plans: 55
-  percent: 44
+  completed_phases: 5
+  total_plans: 66
+  completed_plans: 66
+  percent: 56
 ---
 
 # Project State
@@ -25,19 +25,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 09.1 — Align vocabulary across code and docs
+**Current focus:** Phase 10 — Host side to Python
 
 ## Current Position
 
-Phase: 10 — Host side to Python
+Phase: 10.1 — Full skills and best-practices support in Cursor
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-11-18 — Phase 09.1 complete, transitioned to Phase 10
+Last activity: 2026-11-20 — Phase 10 complete, transitioned to Phase 10.1
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 144
+- Total plans completed: 155
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -64,6 +64,7 @@ Last activity: 2026-11-18 — Phase 09.1 complete, transitioned to Phase 10
 | 08 | 13 | - | - |
 | 9 | 14 | - | - |
 | 09.1 | 14 | - | - |
+| 10 | 11 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -215,6 +216,17 @@ Last activity: 2026-11-18 — Phase 09.1 complete, transitioned to Phase 10
 | Phase 09.1 P12 | 10min | 2 tasks | 6 files |
 | Phase 09.1 P13 | 10min | 2 tasks | 1 files |
 | Phase 09.1 P14 | n/a (spans a host run) | 3 tasks | 0 files |
+| Phase 10 P01 | 45min | 3 tasks | 19 files |
+| Phase 10 P02 | 25min | 3 tasks | 26 files |
+| Phase 10 P03 | 15min | 3 tasks | 25 files |
+| Phase 10 P04 | 10min | 3 tasks | 13 files |
+| Phase 10 P05 | 35min | 3 tasks | 16 files |
+| Phase 10 P06 | 25min | 3 tasks | 4 files |
+| Phase 10 P07 | 40min | 3 tasks | 7 files |
+| Phase 10 P08 | 35min | 2 tasks | 5 files |
+| Phase 10 P09 | 40min | 3 tasks | 37 files |
+| Phase 10 P10 | 45min | 3 tasks | 16 files |
+| Phase 10 P11 | 95min | 3 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -424,6 +436,21 @@ Recent decisions affecting current work:
 - [Phase 09.1]: Python agent config directory is AGENT_CONFIG_DIR; ownership checks are image-root-owned, claude-image-root-owned, cursor-image-root-owned
 - [Phase 09.1]: Plan 11: macOS is named only for facts that hold only there (Keychain, bash 3.2, override_stat, BSD script); the docs say the host everywhere else
 - [Phase 09.1]: Plan 14: the phase's changes sit on three local one-kind branches (chore/vocabulary-code, chore/claude-md-vocabulary, chore/planning-phase-09.1) cut from origin/main by cherry-picking; none pushed, waiting for the user's go
+- [Phase 10]: The old KEY=value registry format is known only to sbx/migrate_registry.py; every other command reads NAME.json
+- [Phase 10]: Launchers are two-line sh files running uv with --no-project, so the host never writes a .venv into the shared repo
+- [Phase 10]: sbx-stop keeps the bash behavior: it checks no directory and does not ask Docker first, so a moved sandbox can still be stopped
+- [Phase 10]: paths_overlap resolves both paths itself and fails closed; compose_command drops every COMPOSE_ key of the caller
+- [Phase 10]: build reads versions.env as NAME=value text and never runs it; each pin is a bare build argument with its value in the Docker environment
+- [Phase 10]: A command that calls another takes it as a parameter (sbx-upgrade: build_function); only sbx/rm.py deletes an entry or removes a container
+- [Phase 10]: 10-04: the guard is 21 pytest rules; the linters fall back to docker run of sbx-base:test and write no stand-in; the launcher rule reads the exec bit from git
+- [Phase 10]: 10-05: the output stream is an injected parameter of run_and_log, main and run_streamed; only the entry point and the build fixture pass sys.stdout
+- [Phase 10]: 10-06: failed upgrade runs through run_streamed (merged stream) so the warning-before-failure order is checkable
+- [Phase 10]: 10-06: refusal scenarios fail on a made container only; a leftover network is removed by the finalizer
+- [Phase 10]: Shared scenario helpers (throwaway_sandbox, register_sandbox, describe_result, container_is_running, container_id_of) live in scenario_helpers.py with unit tests that run the real sbx-add launcher
+- [Phase 10]: The sbx-shell scenario drives the shell through pty.openpty and writes its script once a bash runs in the container; the exit status through uv is proven only by the host run
+- [Phase 10]: Plan 08: pure text and pin parsers stay private in their scenario files and are covered by one unit test file that imports them
+- [Phase 10]: 10-09: old-check map reviewed; user amended rows A (relink settings key and CLAUDE.md) and C (running-sandbox upgrade on real Docker); B and D kept; tests/host deleted
+- [Phase 10]: 10-10: MIGRATION.md keeps one registry section; the real-move steps sit in a Move it subsection before Try it on a copy first
 
 ### Pending Todos
 
@@ -498,8 +525,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-18T07:11:35.339Z
-Stopped at: Phase 09.1 complete, ready to plan Phase 10
+Last session: 2026-11-20T06:43:35.082Z
+Stopped at: Phase 10 complete, ready to plan Phase 10.1
 Resume file: None
 
 ## Operator Next Steps

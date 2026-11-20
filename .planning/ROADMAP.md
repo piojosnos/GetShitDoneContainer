@@ -40,7 +40,7 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
 - [x] **Phase 8: In-image self-check**: `sbx-selfcheck` in the image checks the sandbox, replaces most host probes and doubles as the doctor (completed 2026-11-15)
 - [x] **Phase 9: sbx-init replaces the start hooks**: the user runs `sbx-init` to sync GSD and link the bundle; a container start runs no hooks (completed 2026-11-17)
 - [x] **Phase 09.1: Align vocabulary** (INSERTED): code, tests and docs use one set of terms; best-practices, never bundle (completed 2026-11-18)
-- [ ] **Phase 10: Host side to Python**: the host commands and host tests are Python run through `uv`, with one JSON registry file per sandbox
+- [x] **Phase 10: Host side to Python**: the host commands and host tests are Python run through `uv`, with one JSON registry file per sandbox (completed 2026-11-20)
 - [ ] **Phase 10.1: Full skills and best-practices support in Cursor** (INSERTED): the best-practices repo's rules and skills work in Cursor as they do in Claude
 - [ ] **Phase 10.1.1: Shared agent checks** (INSERTED): the Claude and Cursor selfcheck twins become one shared list of agent checks before the third agent arrives
 - [ ] **Phase 10.2: OpenCode agent image** (INSERTED): a third agent image with full skills and best-practices support; may split into more phases
@@ -283,14 +283,48 @@ Plans:
 **Depends on**: Phase 9
 **Requirements**: HOST-01, HOST-02, HOST-03, HOST-04, HOST-05
 **Success Criteria** (what must be TRUE):
-  1. On a macOS host with only `brew install uv` added, every `bin/sbx-*` command, `build.sh` and `./host-test.sh` run under the same names as before, as Python run through `uv`.
+  1. On a macOS host with only `brew install uv` added, every `bin/sbx-*` command, `build.sh` and `./host-test.sh` run under the same names as before; each is a two-line launcher into Python run through `uv`.
   2. `sbx-add` writes `~/.config/sbx/sandboxes/NAME.json` with `path` and `agent`, and every other command reads the sandbox from that file.
   3. `sbx-add` refuses a directory that is, holds or sits inside another sandbox's directory, also when it is given through a symlink or a `..` path, because both paths are resolved before they are compared.
-  4. On the host, the pytest suite runs one persistence group (planted files survive one `sbx-upgrade`), one refusal group and smoke tests for add, start, stop, shell, list and rm; a failing group stops at its first failure and names the step.
-  5. No bash host script, bash host test or fake docker is left in the repo, and `./host-test.sh` passes on the host.
+  4. On the host, the pytest suite runs these scenarios for Claude and for Cursor: persistence across one `sbx-upgrade`, a failed upgrade that changes nothing, refusal, smoke (add, start, stop, shell, list, rm and git on a repo made on the host), isolation, first run and relink, init and selfcheck pass, init gives root-owned state back, and images match `versions.env`; a scenario stops at its first failed step and names it.
+  5. No host logic is in bash (launchers only): no bash host script, bash host test or fake docker is left, and `./host-test.sh` passes on the host.
   6. The host tests are one shared harness run for each agent: the checks common to both agents are written once, and only a few small checks differ between Claude and Cursor.
 
-**Plans**: TBD
+**Plans**: 11/11 plans complete
+
+Plans:
+**Wave 1**
+- [x] 10-01-PLAN.md: tracer; `sbx-list` and the new `sbx-migrate-registry` run through uv launchers on the JSON registry, Docker as a parameter; read-only host check on a copy of the real registry (wave 1, checkpoint)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 10-02-PLAN.md: `sbx-add` with the overlap check that resolves both paths, and `sbx-start`, `sbx-stop`, `sbx-shell` in Python (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 10-03-PLAN.md: `build.sh`, `sbx-upgrade`, `sbx-rm`, `sbx-fix-modes` in Python; `bin/sbx-lib.sh` and the bash unit harness go (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 10-04-PLAN.md: the guard in pytest (20 rules plus the launcher rule); the bash guard goes (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 10-05-PLAN.md: tracer; the integration harness, `./host-test.sh` in Python with a live log, the init and selfcheck scenario for both agents; host run (wave 5, checkpoint)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 10-06-PLAN.md: scenarios: persistence across one `sbx-upgrade`, failed upgrade, the two plain-Compose refusals, isolation (wave 6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 10-07-PLAN.md: smoke scenarios: lifecycle, list, rm, shell through a pseudo-terminal, git on a host-made repo (wave 7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 10-08-PLAN.md: scenarios: first run and relink, owner fix, images match `versions.env`; the pin digest test (wave 8)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [x] 10-09-PLAN.md: `clean.sh` in Python; review of the old-check map; `tests/host/` goes; guard rule against host logic in shell (wave 9, checkpoint)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [x] 10-10-PLAN.md: README, MIGRATION, ZSCALER, test docs, glossary; `.claude/CLAUDE.md` stack notes; the D-19 amendment of the criteria and HOST-04 (wave 10)
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [x] 10-11-PLAN.md: dev-sandbox phase gate, local PR branches, then the host run of `./host-test.sh` (wave 11, checkpoint)
 
 ### Phase 10.1: Full skills and best-practices support in Cursor (INSERTED)
 
@@ -346,7 +380,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 7. Separate test images | v2.0 | 3/3 | Complete    | 2026-11-14 |
 | 8. In-image self-check | v2.0 | 13/13 | Complete    | 2026-11-15 |
 | 9. sbx-init replaces the start hooks | v2.0 | 14/14 | Complete    | 2026-11-17 |
-| 10. Host side to Python | v2.0 | 0/TBD | Not started | - |
+| 10. Host side to Python | v2.0 | 11/11 | Complete    | 2026-11-20 |
 | 10.1. Cursor skills and best practices | v2.0 | 0/TBD | Not started | - |
 | 10.1.1. Shared agent checks | v2.0 | 0/TBD | Not started | - |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
