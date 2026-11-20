@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 10
 current_phase_name: Host side to Python
 status: executing
-stopped_at: Completed 10-03-PLAN.md
-last_updated: "2026-11-20T01:57:22.406Z"
+stopped_at: Completed 10-04-PLAN.md
+last_updated: "2026-11-20T02:02:39.475Z"
 last_activity: 2026-11-20
 last_activity_desc: Phase 10 execution started
-state_head: f7ebfbc813930abfdeb74e195c89c494fbcb35d6
+state_head: 8c144e0ae49da05ef748ec80ae4762ceaacedcda
 progress:
   total_phases: 11
   completed_phases: 4
   total_plans: 66
-  completed_plans: 58
+  completed_plans: 59
   percent: 36
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 10 (Host side to Python) — EXECUTING
-Plan: 4 of 11
+Plan: 5 of 11
 Status: Ready to execute
 Last activity: 2026-11-20 — Phase 10 execution started
 
@@ -218,6 +218,7 @@ Last activity: 2026-11-20 — Phase 10 execution started
 | Phase 10 P01 | 45min | 3 tasks | 19 files |
 | Phase 10 P02 | 25min | 3 tasks | 26 files |
 | Phase 10 P03 | 15min | 3 tasks | 25 files |
+| Phase 10 P04 | 10min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -433,6 +434,7 @@ Recent decisions affecting current work:
 - [Phase 10]: paths_overlap resolves both paths itself and fails closed; compose_command drops every COMPOSE_ key of the caller
 - [Phase 10]: build reads versions.env as NAME=value text and never runs it; each pin is a bare build argument with its value in the Docker environment
 - [Phase 10]: A command that calls another takes it as a parameter (sbx-upgrade: build_function); only sbx/rm.py deletes an entry or removes a container
+- [Phase 10]: 10-04: the guard is 21 pytest rules; the linters fall back to docker run of sbx-base:test and write no stand-in; the launcher rule reads the exec bit from git
 
 ### Pending Todos
 
@@ -507,8 +509,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-20T01:57:15.652Z
-Stopped at: Completed 10-03-PLAN.md
+Last session: 2026-11-20T02:02:34.760Z
+Stopped at: Completed 10-04-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
