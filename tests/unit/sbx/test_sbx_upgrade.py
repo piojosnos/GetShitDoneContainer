@@ -2,8 +2,9 @@
 # Tests of sbx-upgrade
 # ------------------------------------------------------------------------------
 # Real registry files and directories under tmp_path. Docker is the recorder and
-# the build is a stub function, so the order of the build, the warning and the
-# compose calls is proven without Docker.
+# the build is a stub function, so the refusals, the failures and the options are
+# proven without Docker. The warning, the recreate and the closing lines are proven
+# on real Docker in tests/integration.
 # ------------------------------------------------------------------------------
 
 import inspect
@@ -16,7 +17,6 @@ from sbx import upgrade as upgrade_module
 from sbx.docker import DockerResult
 from sbx_helpers import REPO_DIR, environ_for, write_json_entry
 
-RUNNING_PREFIX = ["container", "inspect", "--format", "{{.State.Running}}"]
 RULE_TEXT = "breaks the sandbox name rule"
 VERSIONS_PREFIX = ["exec", "sbx-sbx1", "cat", "/etc/sbx/tool-versions"]
 
@@ -26,8 +26,8 @@ VERSIONS_PREFIX = ["exec", "sbx-sbx1", "cat", "/etc/sbx/tool-versions"]
 # ------------------------------------------------------------------------------
 
 class BuildStub:
-    # Stands in for the build function: notes what it got, prints a line so the
-    # order against the warning shows in the output, and answers a fixed code.
+    # Stands in for the build function: notes what it got, prints a line so a test
+    # sees whether it ran, and answers a fixed code.
     def __init__(self, recorder, exit_code: int = 0) -> None:
         self.recorder = recorder
         self.exit_code = exit_code
@@ -159,22 +159,6 @@ def test_a_tag_other_than_local_or_test_is_refused_first(run_upgrade, sandbox_di
 # The warning and the build
 # ------------------------------------------------------------------------------
 
-def test_a_running_sandbox_is_warned_before_the_build(run_upgrade, sandbox_dir, build_stub, recorder):
-    recorder.answer(RUNNING_PREFIX, DockerResult(0, "true\n"))
-
-    exit_code, out, _ = run_upgrade(["sbx1"])
-
-    assert exit_code == 0
-
-    line_list = out.splitlines()
-
-    assert line_list[0] == (
-        "sbx-upgrade: sbx-sbx1 is running; after the build, recreating it "
-        "will close its open shells and Claude sessions"
-    )
-    assert line_list[1] == "BUILD RAN"
-
-
 def test_a_stopped_sandbox_is_not_warned(run_upgrade, sandbox_dir, build_stub, recorder):
     exit_code, out, _ = run_upgrade(["sbx1"])
 
@@ -217,23 +201,6 @@ def test_the_default_build_function_is_the_build_module_main():
 # The recreate and the closing lines
 # ------------------------------------------------------------------------------
 
-def test_the_recreate_runs_up_with_force_recreate_and_wait(run_upgrade, sandbox_dir, build_stub, recorder):
-    exit_code, _, _ = run_upgrade(["sbx1"])
-
-    assert exit_code == 0
-    assert _compose_call_list(recorder) == [
-        [
-            "compose", "--env-file", "/dev/null", "-p", "sbx-sbx1", "-f", f"{REPO_DIR}/compose.yml",
-            "up", "-d", "--force-recreate", "--wait",
-        ]
-    ]
-
-    compose_environ = recorder.environ_list[recorder.call_list.index(_compose_call_list(recorder)[0])]
-
-    assert compose_environ["SBX_DIR"] == str(sandbox_dir)
-    assert compose_environ["SBX_AGENT"] == "cursor"
-
-
 def test_a_failing_up_after_the_build_names_the_logs(run_upgrade, sandbox_dir, build_stub, recorder):
     recorder.answer(["compose"], DockerResult(1, ""))
 
@@ -242,21 +209,6 @@ def test_a_failing_up_after_the_build_names_the_logs(run_upgrade, sandbox_dir, b
     assert exit_code == 1
     assert err == "sbx-upgrade: docker compose up failed after the build; docker logs sbx-sbx1 shows why\n"
     assert "runs on the new images" not in out
-
-
-def test_the_run_ends_with_the_marker_line_the_images_line_and_the_tool_versions(
-    run_upgrade, sandbox_dir, build_stub, recorder
-):
-    exit_code, out, err = run_upgrade(["sbx1"])
-
-    assert exit_code == 0
-    assert err == ""
-    assert out.splitlines()[-2:] == [
-        "sbx-upgrade: the recreate removed the init marker; run sbx-init in the sandbox shell before the agent",
-        "sbx-upgrade: sbx-sbx1 runs on the new images",
-    ]
-    assert recorder.call_list[-1] == VERSIONS_PREFIX
-    assert recorder.capture_list[-1] is False
 
 
 def test_a_failing_tool_versions_read_is_named(run_upgrade, sandbox_dir, build_stub, recorder):
