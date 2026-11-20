@@ -160,6 +160,21 @@ def test_run_and_log_merges_the_error_stream_of_the_child():
     assert sorted(log_handle.getvalue().splitlines()) == ["err", "out"]
 
 
+def test_run_and_log_leaves_the_real_terminal_empty(capfd):
+    log_handle = io.StringIO()
+
+    host_test.run_and_log(
+        [sys.executable, "-c", "import sys; print('out', flush=True); print('err', file=sys.stderr)"],
+        dict(os.environ),
+        log_handle,
+    )
+
+    captured = capfd.readouterr()
+
+    assert captured.out == ""
+    assert captured.err == ""
+
+
 # ------------------------------------------------------------------------------
 # The whole run on a small repo
 # ------------------------------------------------------------------------------
@@ -206,6 +221,22 @@ def test_main_runs_every_suite_after_a_failure_and_returns_the_pytest_code(tmp_p
     assert log_text.rstrip("\n").endswith(
         f"host-test.sh: pytest exited 1; the failures are listed above; log: {tmp_path / 'host-test.log'}"
     )
+
+
+def test_main_leaves_the_real_terminal_empty_when_the_child_fails(tmp_path, capfd):
+    make_repo(
+        tmp_path,
+        "def test_sbx_suite():\n    assert False\n",
+        "def test_integration_suite():\n    pass\n",
+        "def test_guard_suite():\n    pass\n",
+    )
+
+    host_test.main([], dict(os.environ), docker=compose_recorder("2.40.0"), repo_dir=tmp_path)
+
+    captured = capfd.readouterr()
+
+    assert captured.out == ""
+    assert captured.err == ""
 
 
 # ------------------------------------------------------------------------------

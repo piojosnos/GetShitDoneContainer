@@ -156,6 +156,15 @@ def test_run_streamed_echoes_and_logs_every_line_merged_and_returns_the_code(tmp
     assert sorted(capsys.readouterr().out.splitlines()) == ["one", "two"]
 
 
+def test_run_streamed_leaves_the_real_terminal_empty(tmp_path, capfd):
+    run_streamed([sys.executable, "-c", "print('one')"], 30, None, tmp_path / "run.log")
+
+    captured = capfd.readouterr()
+
+    assert captured.out == ""
+    assert captured.err == ""
+
+
 def test_run_streamed_stops_the_group_on_a_timeout(tmp_path):
     started = time.monotonic()
 
