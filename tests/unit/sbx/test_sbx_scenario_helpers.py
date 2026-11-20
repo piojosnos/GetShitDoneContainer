@@ -2,11 +2,13 @@
 # Tests of the helpers the integration scenarios share
 # ------------------------------------------------------------------------------
 # The step note, the timeout that stops a whole process group, the live runner,
-# the selfcheck reader and the throwaway root certificate. None of the cases
-# needs Docker.
+# the failure text, the container questions, the throwaway sandboxes, the selfcheck
+# reader and the throwaway root certificate. None of the cases needs Docker.
 # ------------------------------------------------------------------------------
 
 import io
+import json
+import os
 import subprocess
 import sys
 import time
@@ -14,16 +16,24 @@ from pathlib import Path
 
 import pytest
 
+from agent_specs import CLAUDE_SPEC, CURSOR_SPEC
 from scenario_helpers import (
+    REPO_DIR,
+    CommandResult,
     certificate_fingerprint,
     certificate_is_valid,
+    container_id_of,
+    container_is_running,
     container_map_from_text,
+    describe_result,
     make_root_certificate,
+    register_sandbox,
     run_sbx,
     run_streamed,
     run_timeout,
     selfcheck_problem_list,
     step,
+    throwaway_sandbox,
 )
 
 
@@ -197,6 +207,104 @@ def test_the_container_map_holds_every_sbx_container_but_the_excluded_one():
     )
 
     assert container_map_from_text(text, "sbx-two") == {"sbx-one": ("id1", "2026-11-20T01:00:00Z")}
+
+
+# ------------------------------------------------------------------------------
+# describe_result and the container questions
+# ------------------------------------------------------------------------------
+
+def test_a_result_is_described_with_its_code_and_both_streams():
+    result = CommandResult(3, "out1\n", "err1\n", False)
+
+    assert describe_result(result) == "exit 3\nstdout: out1\nstderr: err1"
+
+
+def test_a_timed_out_result_says_so():
+    result = CommandResult(-9, "", "", True)
+
+    assert describe_result(result).startswith("exit -9 (timed out)")
+
+
+def test_a_container_docker_does_not_know_is_not_running_and_has_no_id():
+    assert not container_is_running("sbx-no-such-container-1")
+    assert container_id_of("sbx-no-such-container-1") == ""
+
+
+# ------------------------------------------------------------------------------
+# Throwaway sandboxes
+# ------------------------------------------------------------------------------
+
+def command_environ(config_dir: Path) -> dict[str, str]:
+    environ = {}
+
+    for key, value in os.environ.items():
+        if key.startswith("SBX_") or key.startswith("COMPOSE_"):
+            continue
+
+        environ[key] = value
+
+    environ["PATH"] = f"{REPO_DIR / 'bin'}{os.pathsep}{os.environ.get('PATH', '')}"
+    environ["SBX_CONFIG_DIR"] = str(config_dir)
+    environ["SBX_IMAGE_TAG"] = "test"
+
+    return environ
+
+
+def test_a_throwaway_sandbox_is_named_by_story_and_agent_and_its_directory_has_a_space(tmp_path):
+    sandbox1 = throwaway_sandbox("life", CLAUDE_SPEC, tmp_path)
+    sandbox2 = throwaway_sandbox("life", CURSOR_SPEC, tmp_path)
+
+    assert sandbox1.name == "hosttest-life-claude"
+    assert sandbox1.container == "sbx-hosttest-life-claude"
+    assert sandbox1.sandbox_dir == tmp_path / "life claude"
+    assert sandbox1.project_dir == tmp_path / "life claude" / "hosttest-life-claude"
+    assert sandbox1.state_dir == tmp_path / "life claude" / "state"
+    assert sandbox1.entry_file == tmp_path / "cfg" / "sandboxes" / "hosttest-life-claude.json"
+    assert sandbox2.name == "hosttest-life-cursor"
+    assert sandbox2.sandbox_dir != sandbox1.sandbox_dir
+
+
+def test_register_sandbox_runs_the_real_sbx_add_and_puts_the_name_on_the_cleanup_list_once(tmp_path):
+    config1 = tmp_path / "cfg"
+    environ1 = command_environ(config1)
+    sandbox1 = throwaway_sandbox("life", CURSOR_SPEC, tmp_path)
+    cleanup_list = []
+
+    first = register_sandbox(sandbox1, environ1, cleanup_list)
+
+    assert first.returncode == 0, describe_result(first)
+    assert json.loads(sandbox1.entry_file.read_text()) == {"path": str(sandbox1.sandbox_dir), "agent": "cursor"}
+    assert sandbox1.project_dir.is_dir()
+    assert sandbox1.state_dir.is_dir()
+    assert cleanup_list == ["hosttest-life-cursor"]
+
+
+def test_register_sandbox_adds_nothing_to_the_cleanup_list_when_sbx_add_refuses(tmp_path):
+    environ1 = command_environ(tmp_path / "cfg")
+    sandbox1 = throwaway_sandbox("life", CLAUDE_SPEC, tmp_path)
+    cleanup_list = []
+
+    register_sandbox(sandbox1, environ1, cleanup_list)
+    cleanup_list.clear()
+
+    second = register_sandbox(sandbox1, environ1, cleanup_list)
+
+    assert second.returncode == 1
+    assert "is already registered" in second.stderr
+    assert cleanup_list == []
+
+
+def test_register_sandbox_keeps_one_cleanup_entry_when_the_sandbox_is_added_again(tmp_path):
+    environ1 = command_environ(tmp_path / "cfg")
+    sandbox1 = throwaway_sandbox("life", CLAUDE_SPEC, tmp_path)
+    cleanup_list = []
+
+    register_sandbox(sandbox1, environ1, cleanup_list)
+    sandbox1.entry_file.unlink()
+    again = register_sandbox(sandbox1, environ1, cleanup_list)
+
+    assert again.returncode == 0, describe_result(again)
+    assert cleanup_list == ["hosttest-life-claude"]
 
 
 # ------------------------------------------------------------------------------

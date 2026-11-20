@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import TextIO
 
 from agent_specs import AgentSpec
+from sbx.hosttest_names import TEST_SANDBOX_PREFIX
 
 REPO_DIR = Path(__file__).resolve().parents[2]
 
@@ -255,6 +256,79 @@ def inspect_container(container: str) -> dict | None:
         return None
 
     return inspected_list[0]
+
+
+# ------------------------------------------------------------------------------
+# describe_result RESULT: the exit code and both streams, for a failure message
+# ------------------------------------------------------------------------------
+
+def describe_result(result: CommandResult) -> str:
+    text = f"exit {result.returncode}"
+
+    if result.timed_out:
+        text += " (timed out)"
+
+    return f"{text}\nstdout: {result.stdout.strip()}\nstderr: {result.stderr.strip()}"
+
+
+# ------------------------------------------------------------------------------
+# container_is_running CONTAINER, container_id_of CONTAINER
+# ------------------------------------------------------------------------------
+# A container Docker does not know is not running and has the empty id, so a
+# scenario compares ids without a special case for a missing container.
+# ------------------------------------------------------------------------------
+
+def container_is_running(container: str) -> bool:
+    inspected = inspect_container(container)
+
+    return inspected is not None and inspected.get("State", {}).get("Running") is True
+
+
+def container_id_of(container: str) -> str:
+    inspected = inspect_container(container)
+
+    if inspected is None:
+        return ""
+
+    return str(inspected.get("Id", ""))
+
+
+# ------------------------------------------------------------------------------
+# Throwaway sandboxes
+# ------------------------------------------------------------------------------
+# A scenario that stops, removes or registers a sandbox twice works on a sandbox
+# of its own, named hosttest-STORY-AGENT, so the shared sandbox stays as it is.
+# The directory name holds a space on purpose. register_sandbox runs the real
+# sbx-add and puts the name on the cleanup list as soon as the add worked, so a
+# failure later in the scenario still ends with sbx-rm of the sandbox.
+# ------------------------------------------------------------------------------
+
+def throwaway_sandbox(story: str, agent: AgentSpec, run_dir: Path) -> RunSandbox:
+    name = f"{TEST_SANDBOX_PREFIX}{story}-{agent.name}"
+    sandbox_dir = run_dir / f"{story} {agent.name}"
+
+    return RunSandbox(
+        name=name,
+        agent=agent,
+        sandbox_dir=sandbox_dir,
+        project_dir=sandbox_dir / name,
+        state_dir=sandbox_dir / "state",
+        container=f"sbx-{name}",
+        entry_file=run_dir / "cfg" / "sandboxes" / f"{name}.json",
+    )
+
+
+def register_sandbox(
+    sandbox: RunSandbox,
+    environ: Mapping[str, str],
+    sandbox_cleanup: list[str],
+) -> CommandResult:
+    result = run_sbx("sbx-add", [sandbox.name, str(sandbox.sandbox_dir), sandbox.agent.name], environ)
+
+    if result.returncode == 0 and sandbox.name not in sandbox_cleanup:
+        sandbox_cleanup.append(sandbox.name)
+
+    return result
 
 
 # ------------------------------------------------------------------------------
