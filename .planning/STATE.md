@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 10
 current_phase_name: Host side to Python
 status: executing
-stopped_at: Completed 10-09-PLAN.md
-last_updated: "2026-11-20T06:14:08.227Z"
+stopped_at: Completed 10-10-PLAN.md
+last_updated: "2026-11-20T06:21:44.983Z"
 last_activity: 2026-11-20
 last_activity_desc: Phase 10 execution started
-state_head: 0031f7dfe86bd1be2f2a03f2ab46e1e14b357622
+state_head: 56f6b1b8007a60610bc9ed8ace1b24133f4ddfd3
 progress:
   total_phases: 11
   completed_phases: 4
   total_plans: 66
-  completed_plans: 64
+  completed_plans: 65
   percent: 36
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 10 (Host side to Python) — EXECUTING
-Plan: 10 of 11
+Plan: 11 of 11
 Status: Ready to execute
 Last activity: 2026-11-20 — Phase 10 execution started
 
@@ -224,6 +224,7 @@ Last activity: 2026-11-20 — Phase 10 execution started
 | Phase 10 P07 | 40min | 3 tasks | 7 files |
 | Phase 10 P08 | 35min | 2 tasks | 5 files |
 | Phase 10 P09 | 40min | 3 tasks | 37 files |
+| Phase 10 P10 | 45min | 3 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -447,6 +448,7 @@ Recent decisions affecting current work:
 - [Phase 10]: The sbx-shell scenario drives the shell through pty.openpty and writes its script once a bash runs in the container; the exit status through uv is proven only by the host run
 - [Phase 10]: Plan 08: pure text and pin parsers stay private in their scenario files and are covered by one unit test file that imports them
 - [Phase 10]: 10-09: old-check map reviewed; user amended rows A (relink settings key and CLAUDE.md) and C (running-sandbox upgrade on real Docker); B and D kept; tests/host deleted
+- [Phase 10]: 10-10: MIGRATION.md keeps one registry section; the real-move steps sit in a Move it subsection before Try it on a copy first
 
 ### Pending Todos
 
@@ -521,8 +523,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-20T06:14:08.103Z
-Stopped at: Completed 10-09-PLAN.md
+Last session: 2026-11-20T06:21:44.859Z
+Stopped at: Completed 10-10-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
