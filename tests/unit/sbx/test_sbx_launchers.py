@@ -22,6 +22,8 @@ LAUNCHER_BAD_ARGUMENTS_MAP = {
     "sbx-start": [],
     "sbx-stop": [],
     "sbx-shell": [],
+    "sbx-upgrade": [],
+    "sbx-rm": [],
     "build.sh": None,
 }
 _LAUNCHER_SHEBANG = "#!/bin/sh"
