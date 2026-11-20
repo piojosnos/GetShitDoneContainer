@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 10
 current_phase_name: Host side to Python
 status: executing
-stopped_at: Completed 10-07-PLAN.md
-last_updated: "2026-11-20T02:53:35.963Z"
+stopped_at: Completed 10-08-PLAN.md
+last_updated: "2026-11-20T03:00:15.077Z"
 last_activity: 2026-11-20
 last_activity_desc: Phase 10 execution started
-state_head: 6aa8ddc0518896575de16b3ec121031763167418
+state_head: 6c7785650f6ad607af6a21543de467639a688cbe
 progress:
   total_phases: 11
   completed_phases: 4
   total_plans: 66
-  completed_plans: 62
+  completed_plans: 63
   percent: 36
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 10 (Host side to Python) — EXECUTING
-Plan: 8 of 11
+Plan: 9 of 11
 Status: Ready to execute
 Last activity: 2026-11-20 — Phase 10 execution started
 
@@ -222,6 +222,7 @@ Last activity: 2026-11-20 — Phase 10 execution started
 | Phase 10 P05 | 35min | 3 tasks | 16 files |
 | Phase 10 P06 | 25min | 3 tasks | 4 files |
 | Phase 10 P07 | 40min | 3 tasks | 7 files |
+| Phase 10 P08 | 35min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -443,6 +444,7 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-06: refusal scenarios fail on a made container only; a leftover network is removed by the finalizer
 - [Phase 10]: Shared scenario helpers (throwaway_sandbox, register_sandbox, describe_result, container_is_running, container_id_of) live in scenario_helpers.py with unit tests that run the real sbx-add launcher
 - [Phase 10]: The sbx-shell scenario drives the shell through pty.openpty and writes its script once a bash runs in the container; the exit status through uv is proven only by the host run
+- [Phase 10]: Plan 08: pure text and pin parsers stay private in their scenario files and are covered by one unit test file that imports them
 
 ### Pending Todos
 
@@ -517,8 +519,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-20T02:53:35.840Z
-Stopped at: Completed 10-07-PLAN.md
+Last session: 2026-11-20T03:00:14.957Z
+Stopped at: Completed 10-08-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
