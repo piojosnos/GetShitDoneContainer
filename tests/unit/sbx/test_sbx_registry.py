@@ -14,7 +14,7 @@ from sbx.cli import SbxError
 from sbx.registry import Entry, config_dir as resolve_config_dir, entry_file, list_entry_names, read_entry, registry_dir
 from sbx_helpers import write_json_entry
 
-ROUND_TRIP_PATH_LIST = ["/x/with space/dir", "/x/it's", '/x/say "hi"', "/x/café", "/x/../y", "/x/dir/"]
+ROUND_TRIP_PATH_LIST = ["/x/with space/dir", "/x/it's", '/x/say "hi"', "/x/caf\u00e9", "/x/../y", "/x/dir/"]
 BROKEN_CONTENT_LIST = [
     ("", "the entry {file} is not a JSON object"),
     ("not json", "the entry {file} is not a JSON object"),

@@ -37,7 +37,7 @@ def test_a_host_path_with_a_bad_text_is_refused_with_its_wording(raw_path, text)
 
 @pytest.mark.parametrize(
     ("raw_path", "expected_path"),
-    [("/a/b///", "/a/b"), ("/", "/"), ("///", "/"), ("/a b/c", "/a b/c"), ("/café", "/café")],
+    [("/a/b///", "/a/b"), ("/", "/"), ("///", "/"), ("/a b/c", "/a b/c"), ("/caf\u00e9", "/caf\u00e9")],
 )
 def test_a_good_host_path_loses_only_its_trailing_slashes(raw_path, expected_path):
     assert check_host_path(raw_path) == expected_path

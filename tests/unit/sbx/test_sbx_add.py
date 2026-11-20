@@ -91,7 +91,7 @@ def test_claude_as_the_third_argument_is_the_same_as_none(run_add, registry, tmp
 
 
 def test_a_path_with_a_space_and_a_non_ascii_letter_is_stored_as_given(run_add, registry, tmp_path):
-    path = f"{tmp_path}/one dir/café"
+    path = f"{tmp_path}/one dir/caf\u00e9"
 
     exit_code, _, _ = run_add(["sbx1", path])
 
@@ -178,7 +178,7 @@ def test_a_tag_other_than_local_or_test_is_refused_before_anything_is_made(run_a
 
 @pytest.mark.parametrize(
     "name",
-    ["MyProject", "my_project", "../x", "", "abcdefghijklmnopqrstuvwxyzabcdef", "ok\nbad", "café", "1abc"],
+    ["MyProject", "my_project", "../x", "", "abcdefghijklmnopqrstuvwxyzabcdef", "ok\nbad", "caf\u00e9", "1abc"],
 )
 def test_a_name_that_breaks_the_rule_is_refused_and_nothing_is_made(run_add, registry, tmp_path, name):
     exit_code, _, err = run_add([name, str(tmp_path / "x1")])

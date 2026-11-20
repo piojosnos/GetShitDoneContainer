@@ -18,7 +18,7 @@ BROKEN_NAME_LIST = [
     "a" * 32,
     "a\nb",
     "a\n",
-    "café",
+    "caf\u00e9",
     "1abc",
     "-a",
     "a b",
