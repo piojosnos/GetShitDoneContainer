@@ -374,6 +374,34 @@ def test_a_broken_entry_whose_container_is_gone_only_clears_the_entry(run_rm, br
     assert "removing the container" not in out
 
 
+def test_a_broken_entry_whose_container_carries_no_sandbox_label_is_refused_and_kept(
+    run_rm, broken_entry_file, recorder
+):
+    recorder.answer(["ps", "-a", "--filter", "label=sbx.name"], DockerResult(0, "sbx-other stopped\n"))
+
+    exit_code, out, err = run_rm(["sbx1", "--unregister", "--yes"])
+
+    assert exit_code == 1
+    assert err == (
+        "sbx-rm: the container sbx-sbx1 has no sbx.name label, so it is not a sandbox container; "
+        "nothing was removed and the registry entry stays\n"
+    )
+    assert "removing the container" not in out
+    assert not any(call[0] in ("stop", "rm") for call in recorder.call_list)
+    assert broken_entry_file.is_file()
+
+
+def test_a_broken_entry_with_docker_unable_to_list_labelled_containers_is_kept(run_rm, broken_entry_file, recorder):
+    recorder.answer(["ps", "-a", "--filter", "label=sbx.name"], DockerResult(1, ""))
+
+    exit_code, _, err = run_rm(["sbx1", "--unregister", "--yes"])
+
+    assert exit_code == 1
+    assert err == "sbx-rm: could not list the sandbox containers; nothing was removed and the registry entry stays\n"
+    assert not any(call[0] in ("stop", "rm") for call in recorder.call_list)
+    assert broken_entry_file.is_file()
+
+
 def test_a_broken_entry_with_docker_not_answering_is_kept(run_rm, broken_entry_file, recorder):
     recorder.answer(["info"], DockerResult(1, ""))
 
