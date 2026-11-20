@@ -22,6 +22,7 @@ LAUNCHER_BAD_ARGUMENTS_MAP = {
     "sbx-start": [],
     "sbx-stop": [],
     "sbx-shell": [],
+    "build.sh": None,
 }
 _LAUNCHER_SHEBANG = "#!/bin/sh"
 _ROOT_LAUNCHER_NAME_LIST = ["build.sh", "clean.sh", "host-test.sh"]
@@ -77,6 +78,9 @@ def test_the_launcher_list_is_not_empty():
 @pytest.mark.parametrize("launcher", LAUNCHER_LIST, ids=[file.name for file in LAUNCHER_LIST])
 def test_a_launcher_refuses_a_wrong_argument_count_with_a_usage_line(launcher, tmp_path):
     assert launcher.name in LAUNCHER_BAD_ARGUMENTS_MAP
+
+    if LAUNCHER_BAD_ARGUMENTS_MAP[launcher.name] is None:
+        pytest.skip(f"{launcher.name} takes any argument")
 
     result = subprocess.run(
         [str(launcher), *LAUNCHER_BAD_ARGUMENTS_MAP[launcher.name]],
@@ -143,3 +147,22 @@ def test_the_add_launcher_stores_a_path_with_a_space_and_a_non_ascii_letter_as_g
     assert result.returncode == 0
     assert json.loads((registry / "sbx1.json").read_text(encoding="utf-8")) == {"path": path, "agent": "claude"}
     assert (tmp_path / "one dir" / "caf\u00e9" / "sbx1").is_dir()
+
+
+def test_the_build_launcher_refuses_a_tag_other_than_local_or_test_from_another_directory(tmp_path):
+    environ = _launcher_environ(tmp_path / "config1")
+    environ["SBX_IMAGE_TAG"] = "latest"
+
+    result = subprocess.run(
+        [str(REPO_DIR / "build.sh")],
+        cwd=tmp_path,
+        env=environ,
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert result.stderr == "build.sh: SBX_IMAGE_TAG must be local or test, not 'latest'\n"

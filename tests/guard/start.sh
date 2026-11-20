@@ -71,43 +71,16 @@ agents_stay_off_the_path() {
 # ------------------------------------------------------------------------------
 # compose.yml falls back to claude and local when a variable is unset, so a lost
 # hand-off would start a Cursor sandbox on the Claude image, or a test sandbox
-# on the images the user's sandboxes run. An agent build without the base of its
-# own tag would sit on the local base. build.sh reads the agent list and the tag
-# check from bin/sbx-lib.sh, so a new agent or tag is one edit there.
+# on the images the user's sandboxes run. This rule keeps the image line of
+# compose.yml. The hand-offs of the agent and the tag to Compose and the build of
+# one image per agent on the base of its own tag are unit tests in tests/unit/sbx/
+# (test_sbx_compose.py and test_sbx_build.py).
 # ------------------------------------------------------------------------------
 compose_image_follows_agent_and_tag() {
   local ok=0
-  local baseArgCount
 
   if ! grep -Fq 'image: "sbx-${SBX_AGENT:-claude}:${SBX_IMAGE_TAG:-local}"' $COMPOSE; then
     echo "    $COMPOSE does not take its image from \"sbx-\${SBX_AGENT:-claude}:\${SBX_IMAGE_TAG:-local}\""
-    ok=1
-  fi
-
-  if ! grep -Fq 'SBX_AGENT="$entryAgent" docker compose' bin/sbx-lib.sh; then
-    echo "    bin/sbx-lib.sh does not pass SBX_AGENT=\"\$entryAgent\" to docker compose"
-    ok=1
-  fi
-
-  if ! grep -Fq 'SBX_IMAGE_TAG="$imageTag"' bin/sbx-lib.sh; then
-    echo "    bin/sbx-lib.sh does not pass SBX_IMAGE_TAG=\"\$imageTag\" to docker compose"
-    ok=1
-  fi
-
-  if ! grep -Fq 'for agent in $knownAgentList; do' build.sh; then
-    echo "    build.sh does not build one image per agent in knownAgentList"
-    ok=1
-  fi
-
-  baseArgCount=$(grep -Ev '^[[:space:]]*#' build.sh | grep -cF -- '--build-arg "BASE_IMAGE=sbx-base:$imageTag"')
-
-  if [ "$baseArgCount" -ne 1 ]; then
-    echo "    build.sh does not pass the base of its own tag to the agent builds"
-    ok=1
-  fi
-
-  if grep -Eq '^(knownImageTagList|knownAgentList)=|^check_image_tag\(\)' build.sh; then
-    echo "    build.sh defines its own agent list or tag check instead of reading bin/sbx-lib.sh"
     ok=1
   fi
 
