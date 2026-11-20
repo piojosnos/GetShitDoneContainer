@@ -6,6 +6,7 @@
 # a user runs it from PATH. None of the cases needs Docker.
 # ------------------------------------------------------------------------------
 
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -16,6 +17,7 @@ from sbx_helpers import REPO_DIR
 
 LAUNCHER_BAD_ARGUMENTS_MAP = {
     "sbx-list": ["extra"],
+    "sbx-migrate-registry": ["extra"],
 }
 _LAUNCHER_SHEBANG = "#!/bin/sh"
 _ROOT_LAUNCHER_NAME_LIST = ["build.sh", "clean.sh", "host-test.sh"]
@@ -95,3 +97,25 @@ def test_a_launcher_is_two_lines_that_run_one_module_through_uv_without_the_proj
     assert line_list[1].startswith("exec uv run --directory ")
     assert " --no-project " in line_list[1] or " --isolated --frozen " in line_list[1]
     assert line_list[1].endswith(' "$@"')
+
+
+def test_the_migrate_launcher_converts_an_old_entry_from_another_directory(tmp_path):
+    registry = tmp_path / "config1" / "sandboxes"
+    registry.mkdir(parents=True)
+    old_file = registry / "sbx1"
+    old_file.write_text("SBX_DIR=/x/one dir\nSBX_AGENT=cursor\n")
+    before = old_file.read_bytes()
+
+    result = subprocess.run(
+        [str(REPO_DIR / "bin" / "sbx-migrate-registry")],
+        cwd=tmp_path,
+        env=_launcher_environ(tmp_path / "config1"),
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert json.loads((registry / "sbx1.json").read_text()) == {"path": "/x/one dir", "agent": "cursor"}
+    assert old_file.read_bytes() == before
