@@ -13,7 +13,16 @@ from pathlib import Path
 
 import pytest
 
-from sbx_helpers import REPO_DIR
+from sbx import add as add_module
+from sbx import build as build_module
+from sbx import fix_modes as fix_modes_module
+from sbx import list_sandboxes as list_module
+from sbx import rm as rm_module
+from sbx import shell as shell_module
+from sbx import start as start_module
+from sbx import stop as stop_module
+from sbx import upgrade as upgrade_module
+from sbx_helpers import REPO_DIR, DockerRecorder
 
 LAUNCHER_BAD_ARGUMENTS_MAP = {
     "sbx-add": ["only-one"],
@@ -24,6 +33,7 @@ LAUNCHER_BAD_ARGUMENTS_MAP = {
     "sbx-shell": [],
     "sbx-upgrade": [],
     "sbx-rm": [],
+    "sbx-fix-modes": [],
     "build.sh": None,
 }
 _LAUNCHER_SHEBANG = "#!/bin/sh"
@@ -168,3 +178,103 @@ def test_the_build_launcher_refuses_a_tag_other_than_local_or_test_from_another_
     assert result.returncode == 1
     assert result.stdout == ""
     assert result.stderr == "build.sh: SBX_IMAGE_TAG must be local or test, not 'latest'\n"
+
+
+# ------------------------------------------------------------------------------
+# Every command refuses another image tag before it does anything
+# ------------------------------------------------------------------------------
+# The main of each command runs in process with the recorder and an unknown tag.
+# Each must exit 1 with the tag text, reach no Docker, read no registry entry
+# and make no file or directory.
+# ------------------------------------------------------------------------------
+
+def _run_add(environ, recorder, work_dir):
+    return add_module.main(["name1", str(work_dir / "new dir" / "one")], environ)
+
+
+def _run_list(environ, recorder, work_dir):
+    return list_module.main([], environ, docker=recorder)
+
+
+def _run_start(environ, recorder, work_dir):
+    return start_module.main(["name1"], environ, docker=recorder)
+
+
+def _run_stop(environ, recorder, work_dir):
+    return stop_module.main(["name1"], environ, docker=recorder)
+
+
+def _run_shell(environ, recorder, work_dir):
+    return shell_module.main(["name1"], environ, docker=recorder, exec_function=_refuse_exec)
+
+
+def _run_upgrade(environ, recorder, work_dir):
+    return upgrade_module.main(["name1"], environ, docker=recorder, build_function=_refuse_build)
+
+
+def _run_rm(environ, recorder, work_dir):
+    return rm_module.main(["name1"], environ, docker=recorder)
+
+
+def _run_fix_modes(environ, recorder, work_dir):
+    return fix_modes_module.main(["name1"], environ)
+
+
+def _run_build(environ, recorder, work_dir):
+    return build_module.main([], environ, docker=recorder)
+
+
+def _refuse_exec(file, argument_list, environ):
+    raise AssertionError("exec was called")
+
+
+def _refuse_build(option_list, environ, docker, repo_dir):
+    raise AssertionError("the build was called")
+
+
+TAG_COMMAND_MAP = {
+    "sbx-add": _run_add,
+    "sbx-list": _run_list,
+    "sbx-start": _run_start,
+    "sbx-stop": _run_stop,
+    "sbx-shell": _run_shell,
+    "sbx-upgrade": _run_upgrade,
+    "sbx-rm": _run_rm,
+    "sbx-fix-modes": _run_fix_modes,
+    "build.sh": _run_build,
+}
+
+
+def _tree_snapshot(root: Path) -> list[str]:
+    path_list = []
+
+    for path in root.rglob("*"):
+        path_list.append(str(path))
+
+    return sorted(path_list)
+
+
+@pytest.mark.parametrize("command_name", list(TAG_COMMAND_MAP))
+def test_every_command_refuses_the_latest_tag_before_it_reads_the_registry_or_calls_docker(
+    command_name, tmp_path, capsys
+):
+    recorder = DockerRecorder()
+    work_dir = tmp_path / "work"
+    work_dir.mkdir()
+    environ = {"SBX_CONFIG_DIR": str(work_dir / "config1"), "SBX_IMAGE_TAG": "latest", "PATH": os.environ["PATH"]}
+    before = _tree_snapshot(tmp_path)
+
+    exit_code = TAG_COMMAND_MAP[command_name](environ, recorder, work_dir)
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert captured.out == ""
+    assert captured.err == f"{command_name}: SBX_IMAGE_TAG must be local or test, not 'latest'\n"
+    assert recorder.call_list == []
+    assert _tree_snapshot(tmp_path) == before
+
+
+def test_the_tag_map_holds_every_command_the_launchers_run():
+    assert sorted(TAG_COMMAND_MAP) == sorted(
+        name for name in LAUNCHER_BAD_ARGUMENTS_MAP if name != "sbx-migrate-registry"
+    )
