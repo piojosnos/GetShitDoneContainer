@@ -18,15 +18,16 @@ One Docker container per project. It sees exactly one directory of the host, `$S
 
 | Step | Where | Command | What it does |
 |---|---|---|---|
-| 1 | Host | `git clone https://github.com/piojosnos/GetShitDoneContainer.git "$HOME/sbx-tools/GetShitDoneContainer"` | The tools clone. |
-| 2 | Host | `echo 'export PATH="$HOME/sbx-tools/GetShitDoneContainer/bin:$PATH"' >> ~/.zshrc` | Puts its `bin/` on PATH. Open a new terminal. |
-| 3 | Host | `sbx-add demo /Users/you/sbx-demo` | Registers the sandbox and creates its directories. A third argument, `cursor`, makes a Cursor sandbox. |
-| 4 | Host | `sbx-upgrade demo` | Builds the images and starts it. |
-| 5 | Host | `sbx-shell demo` | Opens bash in the project directory. |
-| 6 | Sandbox | `sbx-init` | Sets the sandbox up: state directories, GSD, best-practices links. It says to clone first when there is no clone. |
-| 7 | Sandbox | `sbx-gh-login` | gh and git login. |
-| 8 | Sandbox | `sbx-best-practices-clone` | The best-practices clone. It runs `sbx-init` again, which links it. |
-| 9 | Sandbox | `sbx-claude` | Claude. Log in once. A Cursor sandbox runs `sbx-cursor` instead; log in once with `sbx-cursor login`. |
+| 1 | Host | `brew install uv` | Once. uv runs the Python code of every command (see "Commands"). |
+| 2 | Host | `git clone https://github.com/piojosnos/GetShitDoneContainer.git "$HOME/sbx-tools/GetShitDoneContainer"` | The tools clone. |
+| 3 | Host | `echo 'export PATH="$HOME/sbx-tools/GetShitDoneContainer/bin:$PATH"' >> ~/.zshrc` | Puts its `bin/` on PATH. Open a new terminal. |
+| 4 | Host | `sbx-add demo /Users/you/sbx-demo` | Registers the sandbox and creates its directories. A third argument, `cursor`, makes a Cursor sandbox. |
+| 5 | Host | `sbx-upgrade demo` | Builds the images and starts it. |
+| 6 | Host | `sbx-shell demo` | Opens bash in the project directory. |
+| 7 | Sandbox | `sbx-init` | Sets the sandbox up: state directories, GSD, best-practices links. It says to clone first when there is no clone. |
+| 8 | Sandbox | `sbx-gh-login` | gh and git login. |
+| 9 | Sandbox | `sbx-best-practices-clone` | The best-practices clone. It runs `sbx-init` again, which links it. |
+| 10 | Sandbox | `sbx-claude` | Claude. Log in once. A Cursor sandbox runs `sbx-cursor` instead; log in once with `sbx-cursor login`. |
 
 Each step is explained below in "Commands", "Register a sandbox", "Set up a sandbox: sbx-init" and "Best-practices clone".
 
@@ -42,7 +43,8 @@ Each step is explained below in "Commands", "Register a sandbox", "Set up a sand
 
 ## Requirements
 
-- Docker Desktop on the host, with Compose v2. Run `docker compose version` and note the version for the host checklist.
+- Docker Desktop on the host, with Compose v2. `./host-test.sh` stops when Compose is older and writes the versions it found to `host-test.log`.
+- uv on the host (`brew install uv`). Nothing else is installed there: uv fetches Python 3.12 on its first run, and every command, `build.sh`, `clean.sh` and `host-test.sh` runs through it (see "Commands"). Behind a company proxy, set `UV_SYSTEM_CERTS=true` for that first run (see [`ZSCALER.md`](ZSCALER.md)).
 - `SBX_NAME` follows the sandbox name rule: a lowercase letter, then lowercase letters, digits or hyphens, 31 characters at most (`^[a-z][a-z0-9-]{0,30}$`). `my-project` works; `MyProject`, `my_project` and `my.project` are refused.
 - `state` and `best-practices` are taken, because they are the sandbox's own directories.
 
@@ -70,6 +72,7 @@ A proxy such as Zscaler opens HTTPS and signs it again with its own root certifi
 | 3 | Host | `sbx-upgrade NAME` | Builds with the root and recreates the sandbox. A banner of `*` lines before and after names the file, subject and fingerprint. |
 
 - A shell without the variable builds images without the root, and behind the proxy that build stops with `curl: (60)`. Keep the `export` in `~/.zshrc`.
+- The host's own uv needs the same trust once: the first command that runs through uv fetches Python 3.12, so set `UV_SYSTEM_CERTS=true` for that first run. uv then trusts the macOS Keychain, which already holds the root.
 - The first build with a root, or after it changes or goes away, rebuilds every layer after the apt step once.
 
 What trusts the root, and how:
@@ -105,14 +108,16 @@ Check a new build by hand: run these in a sandbox shell. Each prints a status co
 
 ## Commands
 
-Eight commands in `bin/` register, start, enter, list, stop, remove and upgrade a sandbox by name, and set its file modes from git. Put the tools clone's `bin/` on your PATH once, in `~/.zshrc`:
+Nine commands in `bin/` register, start, enter, list, stop, remove and upgrade a sandbox by name, set its file modes from git, and move an old registry. Put the tools clone's `bin/` on your PATH once, in `~/.zshrc`:
 
 ```bash
 export PATH="$HOME/sbx-tools/GetShitDoneContainer/bin:$PATH"
 ```
 
+- The host needs uv once (`brew install uv`). Each command in `bin/`, and `build.sh`, `clean.sh` and `host-test.sh` in the repo root, is a two-line launcher: a `#!/bin/sh` line and one `exec uv run` line that runs a Python module of `sbx/` (standard library only). uv makes its own environment, so nothing is installed and the repo's `.venv` is never touched.
+- Never run a bare `uv run` in the tools clone. The `.venv` it would make belongs to the dev sandbox; on the host the suites run only through `./host-test.sh`.
 - Never copy the scripts or put a copy inside a sandbox directory. They find `compose.yml` and `build.sh` from their own directory.
-- Every command but `sbx-list` takes the name; `sbx-rm` also takes `--unregister` and `--yes`. On a macOS host they run with the stock bash 3.2, and they accept a directory with spaces.
+- Every command but `sbx-list` and `sbx-migrate-registry` takes the name; `sbx-rm` also takes `--unregister` and `--yes`. They accept a directory with spaces.
 
 | Command | What it does |
 |---|---|
@@ -124,6 +129,7 @@ export PATH="$HOME/sbx-tools/GetShitDoneContainer/bin:$PATH"
 | `sbx-rm NAME [--unregister] [--yes]` | Runs `docker compose down`: the container and its network go; volumes, images and the sandbox directory stay. |
 | `sbx-upgrade NAME [BUILD_OPTION...]` | Builds every image with `./build.sh`, which reads `SBX_CA_CERT` from your shell, then recreates this sandbox. The recreate wipes the init marker, so it says to run `sbx-init` in the sandbox shell. Prints the tool versions last. |
 | `sbx-fix-modes NAME` | Sets every file git tracks in the project directory to 644 or 755, as git committed, on the host and in the sandbox. Prints how many it changed. |
+| `sbx-migrate-registry` | One-off. Writes `NAME.json` next to each old two-line registry file and leaves the old files in place (see [`MIGRATION.md`](MIGRATION.md), "Move the registry to JSON"). It goes in a later release. |
 
 In the sandbox: `sbx-init`, `sbx-gh-login`, `sbx-best-practices-clone` and `sbx-selfcheck` (both agents), `sbx-claude` (Claude) and `sbx-cursor` (Cursor); see "Set up a sandbox: sbx-init", "Best-practices clone" and "Check a sandbox".
 
@@ -135,19 +141,22 @@ In the sandbox: `sbx-init`, `sbx-gh-login`, `sbx-best-practices-clone` and `sbx-
 - The directory checks compare directories, not spelling: a symlink, `/tmp` against `/private/tmp` or another letter case (on a macOS host) is still the same directory.
 - Registering a directory you used before, or one you unregistered with `sbx-rm --unregister`, keeps its login and history.
 
-The registry is one file per sandbox, `~/.config/sbx/sandboxes/NAME`, with two lines:
+The registry is one JSON file per sandbox, `~/.config/sbx/sandboxes/NAME.json`, with two keys:
 
-```text
-SBX_DIR=/Users/you/sbx-demo
-SBX_AGENT=claude
+```json
+{
+  "path": "/Users/you/sbx-demo",
+  "agent": "claude"
+}
 ```
 
-- `SBX_AGENT` is `claude` or `cursor`.
-- It lives outside every sandbox directory on purpose, so no agent can change which directory a start mounts. The commands read it as text and never run it. `SBX_CONFIG_DIR` moves it; only the tests set that.
+- `path` is the sandbox directory, absolute. `agent` is `claude` or `cursor`.
+- It lives outside every sandbox directory on purpose, so no agent can change which directory a start mounts. The commands read it as data and never run it. `SBX_CONFIG_DIR` moves it; only the tests set that.
+- An old registry of two-line `NAME` files (`SBX_DIR=...`, `SBX_AGENT=...`) is moved once with `sbx-migrate-registry`; see "Move the registry to JSON" in [`MIGRATION.md`](MIGRATION.md).
 
 To change the agent of a sandbox, no command does it. Either:
 
-- edit the `SBX_AGENT=` line of its registry entry, then run `sbx-start NAME`, which recreates it on the other image; or
+- edit the `agent` value of its registry entry, then run `sbx-start NAME`, which recreates it on the other image; or
 - run `sbx-rm NAME --unregister`, then `sbx-add NAME HOST_PATH [claude|cursor]` with the same directory and the other agent.
 
 The files stay either way. The login of the other agent starts empty, in its own `state/` directory.
@@ -256,7 +265,7 @@ sbx-init: stopped at claude-best-practices-links
 - `running` is running. Every other Docker state (exited, created, paused, and so on) reads `stopped`. A sandbox Docker has no container for reads `no container`.
 - `running, older image` means the container runs on an older build of its agent image, for example after `sbx-upgrade` of another sandbox. Its next `sbx-start` recreates it on the current image, after the sessions warning. A line under the table says so.
 - An entry the commands cannot read shows `broken entry` and the entry file's path. `sbx-start NAME` prints what is wrong; `sbx-rm NAME --unregister` clears it (see "Remove a sandbox").
-- A last block lists containers with the `sbx.name` label but no registry entry, such as the host-test sandbox `sbx-hosttest` or a sandbox whose entry was deleted by hand. `sbx-add NAME HOST_PATH` registers one again.
+- A last block lists containers with the `sbx.name` label but no registry entry, such as a test sandbox of `./host-test.sh` (`sbx-hosttest-claude`) or a sandbox whose entry was deleted by hand. `sbx-add NAME HOST_PATH` registers one again.
 
 ## Remove a sandbox
 
@@ -266,7 +275,7 @@ sbx-init: stopped at claude-best-practices-links
 - Compose stops a running container with a 10 s grace, then kills it. Close Claude and the shells before you answer `y`.
 - A stopped sandbox, or one with no container, is removed with no question. Running it twice is fine.
 - Nothing in `$SBX_DIR` is read, written or deleted; the directory may even have been moved away.
-- `--unregister` also deletes the registry entry `~/.config/sbx/sandboxes/NAME`, only after the down worked. When the down fails, the entry stays and `sbx-rm` can run again.
+- `--unregister` also deletes the registry entry `~/.config/sbx/sandboxes/NAME.json`, only after the down worked. When the down fails, the entry stays and `sbx-rm` can run again.
 - To bring a sandbox back, run `sbx-add demo /Users/you/sbx-demo` with the same directory, then `sbx-start demo`. The login, history and caches come back from `state/`.
 - A `broken entry` gives Compose no directory. Without `--unregister` it is refused. With it, `sbx-rm` stops and removes the container `sbx-demo` by its exact name with plain `docker`, after the same question, and deletes the entry.
 - The network `sbx-demo_default` stays; `docker network rm sbx-demo_default` removes it. Volumes stay.
@@ -435,20 +444,24 @@ Rules. They hold whatever the timing: an agent working while host-side git or an
 
 ## Verify a new build
 
-Run `./host-test.sh` on the host after building, or after a change under `base/`, `claude/`, `cursor/` or `compose.yml`. It keeps its output in `host-test.log` and uses its own test sandbox, `sbx-hosttest`. It also builds and checks its own images, `sbx-base:test`, `sbx-claude:test` and `sbx-cursor:test`, so it never replaces the `:local` images your sandboxes run. They stay after the run, so the next run reuses their build cache.
+Run `./host-test.sh` on the host after building, or after a change under `base/`, `claude/`, `cursor/`, `compose.yml` or `sbx/`. It runs the pytest suites `tests/unit/sbx`, `tests/integration` and `tests/guard` through uv, and writes everything to `host-test.log` as it comes. It uses two test sandboxes, `hosttest-claude` and `hosttest-cursor` (containers `sbx-hosttest-claude` and `sbx-hosttest-cursor`), and builds and checks its own images, `sbx-base:test`, `sbx-claude:test` and `sbx-cursor:test`, so it never replaces the `:local` images your sandboxes run. They stay after the run, so the next run reuses their build cache.
+
+Each integration scenario runs once for Claude and once for Cursor. A scenario stops at its first failed step and the report names that step.
 
 | Question | Proven by | Run |
 |---|---|---|
-| Login survives a rebuild | H-09 and H-29 (a planted fake credentials file and session file survive a rebuild and `sbx-upgrade`) | `./host-test.sh` |
-| Versions match the pins | H-34 (`sbx-selfcheck` compares every tool and the tool versions line with `versions.env`, in a Claude and a Cursor test sandbox), H-25 (the image's `versions.env` equals the repo's), the pin digests step | `./host-test.sh` |
-| The home is not hidden | H-34 (`.bashrc` and `.local` in `/home/sandbox`, and every tool resolves into the image, not under `/home`) | `./host-test.sh` |
-| An extra root certificate is trusted | H-34 (`sbx-selfcheck` compares the fingerprint `build.sh` recorded for a throwaway root with the system store and Java `cacerts` of both test sandboxes) | `./host-test.sh` |
+| Login survives a rebuild | The persistence scenario: a planted fake credentials file, session file, memory, history line, cache files and project file survive one `sbx-upgrade`, and no volume exists | `./host-test.sh` |
+| A failed upgrade changes nothing | The failed upgrade scenario: a bogus build option fails and the container stays the same | `./host-test.sh` |
+| Versions match the pins | The images match versions.env scenario (the image's `versions.env` equals the repo's), the init and selfcheck scenario (`sbx-selfcheck` compares every tool and the tool versions line with `versions.env`), and the pin digests test (every digest pin still resolves in its registry) | `./host-test.sh` |
+| The home is not hidden | The init and selfcheck scenario (`.bashrc` and `.local` in `/home/sandbox`, and every tool resolves into the image, not under `/home`) | `./host-test.sh` |
+| An extra root certificate is trusted | The init and selfcheck scenario (`sbx-selfcheck` compares the fingerprint `build.sh` recorded for a throwaway root with the system store and Java `cacerts`, and fails when a check says no root was requested) | `./host-test.sh` |
+| A bypassed guard is refused | The refusal scenarios: plain `docker compose` with a missing sandbox directory, and with an uppercase name | `./host-test.sh` |
 | Works behind a company proxy | The checklist in "Behind a company HTTPS proxy", by hand | Set `SBX_CA_CERT`, run `sbx-upgrade NAME`, then the checklist in a sandbox shell |
 
-- The host checks run a Claude sandbox, and H-34 also starts a Cursor test sandbox and runs `sbx-selfcheck` in it. A Cursor login and prompt are still checked by hand: add a Cursor sandbox, log in, send one prompt, then run `sbx-upgrade` and check the login is still there.
-- `./host-test.sh` makes a throwaway root certificate once, keeps it in `$TMPDIR/sbx-hosttest-root-ca/` with its key deleted, and reuses it, so the test images keep their build cache. With your own `SBX_CA_CERT` set, the test images trust both roots.
-- What each host check proves, and how to read a failure, is in [`tests/host-checklist.md`](tests/host-checklist.md).
-- Every suite is listed in [`tests/README.md`](tests/README.md).
+- The integration scenarios also cover add, start, stop, shell, list and rm, git on a repository made on the host, isolation of the running container, the first run with the clone and the relink after a pull, and `sbx-init` giving root-owned state back. The suites and the scenario rule are in [`tests/README.md`](tests/README.md).
+- A Cursor login and prompt are still checked by hand: add a Cursor sandbox, log in, send one prompt, then run `sbx-upgrade` and check the login is still there. How to read `host-test.log` is in [`tests/host-checklist.md`](tests/host-checklist.md).
+- `./host-test.sh` makes a throwaway root certificate once, keeps it in `$TMPDIR/sbx-test-root-ca/` with its key deleted, and reuses it, so the test images keep their build cache. With your own `SBX_CA_CERT` set, the test images trust both roots.
+- `--keep` leaves the test sandboxes and the run directory after the run, to look around after a failure.
 
 ## Free disk space
 
@@ -459,7 +472,7 @@ Rebuilds and host-test runs pile up images, build cache and run directories. Fro
 ./clean.sh --yes    # removes them
 ```
 
-- Removed: the test sandbox `sbx-hosttest` and its network, every host-test run directory (`sbx-hosttest-*` in the macOS temp directory), the test root certificate `sbx-hosttest-root-ca` (the next run makes it again), the Docker build cache, and every image no container uses.
+- Removed: the test containers `sbx-hosttest-claude` and `sbx-hosttest-cursor` (and an older `sbx-hosttest`) that mount a host-test run directory, with their networks; every host-test run directory (`sbx-hosttest-*` in the macOS temp directory); the test root certificate directory `$TMPDIR/sbx-test-root-ca` (the next run makes it again) and the older `sbx-hosttest-root-ca`; the Docker build cache; and every image no container uses.
 - Kept: every other container, running or stopped, the images those containers use, all volumes, and every sandbox directory and its `state/`.
 - `sbx-base`, `sbx-claude` and `sbx-cursor` go too when no container uses them, under both tags, `:local` and `:test`. `./build.sh` rebuilds the `:local` ones and `./host-test.sh` the `:test` ones; the first build after a clean takes a few minutes.
 - A build that fails with `No space left on device` usually means the Docker Desktop disk is full: run `./clean.sh --yes`, or raise the disk limit in Docker Desktop, Settings, Resources.
@@ -547,7 +560,7 @@ docker run --rm sbx-claude:local /opt/sbx/agents/bin/claude --version
 | `sbx-best-practices-clone` says it cannot clone | Run `sbx-gh-login` first; the repo is private. |
 | A skill you pulled is missing in Claude | Run `sbx-init`, then restart Claude. |
 | A sandbox migrated from the old layout loads the same rules twice | Follow "After the checks" in [`MIGRATION.md`](MIGRATION.md). |
-| Host check H-10 showed Docker creating the missing directory | Report it. An `env_file` sentinel at the root of `SBX_DIR` would make Compose itself refuse a missing directory; it is not planned while H-10 passes. |
+| The missing directory scenario (`tests/integration/test_refusal.py`) showed Docker creating the missing directory | Report it. An `env_file` sentinel at the root of `SBX_DIR` would make Compose itself refuse a missing directory; it is not planned while that scenario passes. |
 
 ## License
 

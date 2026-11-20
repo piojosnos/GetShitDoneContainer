@@ -23,6 +23,20 @@ Expect: no output.
 git switch main && git pull --ff-only
 ```
 
+The host commands run through uv. Install it once, then make the first uv run with `UV_SYSTEM_CERTS=true`. That run fetches Python 3.12 through the proxy, and the variable makes uv trust the macOS Keychain, which already holds the Zscaler root:
+
+```bash
+brew install uv
+```
+
+```bash
+UV_SYSTEM_CERTS=true sbx-list
+```
+
+Expect: a table of your sandboxes, or `no sandboxes registered`, and no certificate error. uv keeps the Python it fetched, so later runs need no variable.
+
+- A sandbox registered before the JSON registry shows nothing yet; follow "Move the registry to JSON" in [`MIGRATION.md`](MIGRATION.md) first.
+
 ## 3. Export the Zscaler root and set the variable
 
 ```bash
@@ -139,6 +153,7 @@ None may print `curl: (60)`, `UNABLE_TO_VERIFY_LEAF_SIGNATURE`, `CERTIFICATE_VER
 
 | Symptom | Fix |
 |---|---|
+| uv fails with a certificate error on its first run | Run it once with `UV_SYSTEM_CERTS=true` (step 2). |
 | `curl: (60)` during the build | The variable is missing in that terminal. Run `echo "$SBX_CA_CERT"`; open a new terminal if it is empty. |
 | `build.sh: SBX_CA_CERT ...` | The rest of the line says what is wrong. It must be an absolute path to a readable PEM file. Nothing was built. |
 | `the build failed; sbx-NAME was left as it was` | Read the build output above it. The sandbox still runs on the old image. |

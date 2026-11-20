@@ -206,8 +206,47 @@ docker exec -it "cc_gsd_$PROJECT" /bin/bash
 
 - A registry entry moves from a two-line `NAME` file (`SBX_DIR=...`, `SBX_AGENT=...`) to `NAME.json`.
 - `sbx-migrate-registry` writes `NAME.json` next to each old file. It never changes or deletes an old file, and a rerun leaves an existing `NAME.json` as it is.
-- The commands now run through uv. Install it once: `brew install uv`. The first run fetches Python 3.12.
+- It is one-off. Until it has run, the commands see no sandboxes, because they read only `NAME.json`. It goes in a later release, once every host has moved.
+- The commands now run through uv, which fetches Python 3.12 on its first run.
 - Behind a TLS proxy such as Zscaler, set `UV_SYSTEM_CERTS=true` first, so uv trusts the macOS keychain (see [`ZSCALER.md`](ZSCALER.md)).
+
+### Move it
+
+Run these on the host. No sandbox directory, container or image changes; only the registry does.
+
+1. Install uv once:
+
+   ```bash
+   brew install uv
+   ```
+
+2. Pull the tools clone, so it has `bin/sbx-migrate-registry`:
+
+   ```bash
+   git -C "$HOME/sbx-tools/GetShitDoneContainer" pull
+   ```
+
+3. Write the JSON entries. It prints one line per old file and a count; the old files stay:
+
+   ```bash
+   sbx-migrate-registry
+   ```
+
+4. Check that every sandbox is there, with its status and directory:
+
+   ```bash
+   sbx-list
+   ```
+
+5. Start each sandbox, then delete its old file. `NAME` is the sandbox name, one file at a time:
+
+   ```bash
+   sbx-start NAME
+   rm ~/.config/sbx/sandboxes/NAME
+   ```
+
+- A `not converted: REASON` line names an entry to fix by hand; the command then exits 1. Run it again after the fix; it leaves each `NAME.json` that exists as it is.
+- Keep an old file until its sandbox has started from `NAME.json`. The old file is your way back to an older tools clone.
 
 ### Try it on a copy first
 
