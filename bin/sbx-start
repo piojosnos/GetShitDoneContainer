@@ -1,25 +1,2 @@
-#!/usr/bin/env bash
-# ------------------------------------------------------------------------------
-# Starts a registered sandbox by name
-# ------------------------------------------------------------------------------
-# Usage: sbx-start NAME
-# The directories are checked first, so a wrong entry never reaches Docker. A
-# running sandbox on an older image is recreated on the current one, after a
-# warning.
-# ------------------------------------------------------------------------------
-
-set -eu
-
-. "$(dirname "$0")/sbx-lib.sh"
-
-# ------------------------------------------------------------------------------
-# Main / Entry Point
-# ------------------------------------------------------------------------------
-[ "$#" -eq 1 ] || sbx_usage 'NAME'
-sbx_init
-check_name "$1"
-read_registry_entry "$1"
-bring_up_sandbox "$1"
-echo "sbx-start: sbx-$1 is running"
-echo "sbx-start: open a shell with: sbx-shell $1"
-echo "sbx-start: in a new or recreated container, run sbx-init there before the agent"
+#!/bin/sh
+exec uv run --directory "$(dirname "$0")/.." --no-project --python 3.12 --quiet python -m sbx.start "$@"

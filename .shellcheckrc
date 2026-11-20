@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# shellcheck settings for every script the guard checks
+# shellcheck settings for the host launchers and the image's shell commands
 # ------------------------------------------------------------------------------
 # Each file is checked on its own, so sourced paths and library globals look
 # unknown or unused. A tilde inside a message string is text, not a path.

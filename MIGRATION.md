@@ -202,6 +202,103 @@ docker exec -it "cc_gsd_$PROJECT" /bin/bash
 - Stopping its container ends the Claude session inside it. Commit or note your work first.
 - Afterwards the copy at `$NEW/$NAME` is the agent's working copy, and the tools clone stays the only copy whose `bin/` the host runs.
 
+## Move the registry to JSON
+
+- A registry entry moves from a two-line `NAME` file (`SBX_DIR=...`, `SBX_AGENT=...`) to `NAME.json`.
+- `sbx-migrate-registry` writes `NAME.json` next to each old file. It never changes or deletes an old file, and a rerun leaves an existing `NAME.json` as it is.
+- It is one-off. Until it has run, the commands see no sandboxes, because they read only `NAME.json`. It goes in a later release, once every host has moved.
+- The commands now run through uv, which fetches Python 3.12 on its first run.
+- Behind a TLS proxy such as Zscaler, set `UV_SYSTEM_CERTS=true` first, so uv trusts the macOS keychain (see [`ZSCALER.md`](ZSCALER.md)).
+
+### Move it
+
+Run these on the host. No sandbox directory, container or image changes; only the registry does.
+
+1. Install uv once:
+
+   ```bash
+   brew install uv
+   ```
+
+2. Pull the tools clone, so it has `bin/sbx-migrate-registry`:
+
+   ```bash
+   git -C "$HOME/sbx-tools/GetShitDoneContainer" pull
+   ```
+
+3. Write the JSON entries. It prints one line per old file and a count; the old files stay:
+
+   ```bash
+   sbx-migrate-registry
+   ```
+
+4. Check that every sandbox is there, with its status and directory:
+
+   ```bash
+   sbx-list
+   ```
+
+5. Start each sandbox, then delete its old file. `NAME` is the sandbox name, one file at a time:
+
+   ```bash
+   sbx-start NAME
+   rm ~/.config/sbx/sandboxes/NAME
+   ```
+
+- A `not converted: REASON` line names an entry to fix by hand; the command then exits 1. Run it again after the fix; it leaves each `NAME.json` that exists as it is.
+- Keep an old file until its sandbox has started from `NAME.json`. The old file is your way back to an older tools clone.
+
+### Try it on a copy first
+
+This touches only a copy of the registry. No container, image or real entry changes. Run it from the repo root of the tools clone, after pulling the version that has `bin/sbx-migrate-registry`.
+
+1. Check uv and start a log:
+
+   ```bash
+   command -v uv || brew install uv
+   uv --version | tee ../registry-try.log
+   ```
+
+2. Copy the registry:
+
+   ```bash
+   tryDir=$(mktemp -d) && cp -R ~/.config/sbx/sandboxes "$tryDir/" && echo "$tryDir" | tee -a ../registry-try.log
+   ```
+
+3. Run the migration twice, with the same line each time:
+
+   ```bash
+   SBX_CONFIG_DIR="$tryDir" bin/sbx-migrate-registry 2>&1 | tee -a ../registry-try.log
+   ```
+
+4. List the copy with the new command, then the real registry with the command on your PATH:
+
+   ```bash
+   SBX_CONFIG_DIR="$tryDir" bin/sbx-list 2>&1 | tee -a ../registry-try.log
+   sbx-list 2>&1 | tee -a ../registry-try.log
+   command -v sbx-list | tee -a ../registry-try.log
+   ```
+
+5. Check the copy and the repo:
+
+   ```bash
+   ls "$tryDir/sandboxes" | tee -a ../registry-try.log
+   git status --short | tee -a ../registry-try.log
+   ```
+
+What a pass looks like in `registry-try.log`:
+
+| Step | Expected |
+|---|---|
+| 1 | uv prints a version. |
+| 3, first run | One `wrote NAME.json (path ..., agent ...)` line per entry, then `N converted, 0 already done, 0 not converted`. |
+| 3, second run | Only `NAME.json exists; left as it is` lines, then `0 converted, N already done, 0 not converted`. |
+| 4 | Both tables show the same names, statuses and directories. A row the old command calls `broken entry` but the new one reads is fine when `command -v sbx-list` points at an older copy (for example one that predates the Cursor agent). |
+| 5 | Each old file sits next to its `NAME.json`; `git status` shows no `.venv` line. |
+
+- A `not converted: REASON` line names an entry to fix by hand. The command then exits 1.
+- Delete the copy afterwards: `rm -r "$tryDir"`.
+
 ## Renamed commands and variables
 
 A rebuild renames these, and the old names stop working (there is no alias). A running container keeps the old names until it is recreated, so run `sbx-upgrade NAME` for each sandbox.

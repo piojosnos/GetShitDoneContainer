@@ -1,4 +1,6 @@
-# Python tests of this repo. Run them in the dev sandbox with: uv run pytest
+# Python tests of this repo. The dev sandbox runs them with: uv run pytest
+# On the host the suites run only through ./host-test.sh: a bare uv run there
+# would make a .venv in the repo the dev sandbox shares.
 
 [project]
 name = "sbx"
@@ -10,6 +12,6 @@ dependencies = []
 dev = ["pytest==9.2.0"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests/unit/selfcheck", "tests/unit/init"]
-pythonpath = ["base/selfcheck", "base/init", "claude/selfcheck/lib", "cursor/selfcheck/lib"]
+testpaths = ["tests/unit/selfcheck", "tests/unit/init", "tests/unit/sbx", "tests/guard"]
+pythonpath = [".", "base/selfcheck", "base/init", "claude/selfcheck/lib", "cursor/selfcheck/lib", "tests/integration"]
 addopts = "-p no:cacheprovider"

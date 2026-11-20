@@ -1,17 +1,17 @@
 # ------------------------------------------------------------------------------
 # Tests of the check inventory
 # ------------------------------------------------------------------------------
-# They tie the check lists to the counts H-34 expects and keep every name unique
-# and well formed. The lists load through the runner's own loader, and every
-# check file name starts with a three-digit order prefix.
+# They tie the check lists to the counts the integration scenarios expect and
+# keep every name unique and well formed. The lists load through the runner's
+# own loader, and every check file name starts with a three-digit order prefix.
 # ------------------------------------------------------------------------------
 
 import re
 import shutil
-from pathlib import Path
 
 import check_result
 import runner
+from agent_specs import AGENT_SPEC_BY_NAME_MAP
 from helpers import SHARED_CHECKS_DIR, agent_checks_dir
 
 
@@ -26,16 +26,6 @@ CLAUDE_CHECK_COUNT = 13
 CURSOR_CHECK_COUNT = 11
 
 
-def expected_count(repo_dir: Path, constant_name: str) -> int:
-    host_test_file = repo_dir / "tests" / "host" / "h34-selfcheck.sh"
-
-    for line in host_test_file.read_text().splitlines():
-        if line.startswith(constant_name + "="):
-            return int(line.partition("=")[2].strip())
-
-    raise AssertionError(f"{constant_name} is not set in {host_test_file}")
-
-
 # ------------------------------------------------------------------------------
 # Inventory
 # ------------------------------------------------------------------------------
@@ -46,12 +36,12 @@ def test_the_lists_hold_the_declared_check_counts(shared_check_list, agent_check
     assert len(agent_check_list_of("cursor")) == CURSOR_CHECK_COUNT
 
 
-def test_the_shared_list_plus_each_agent_list_equals_the_count_h34_expects(shared_check_list, agent_check_list_of, repo_dir):
+def test_the_shared_list_plus_each_agent_list_equals_the_count_the_agent_spec_expects(shared_check_list, agent_check_list_of):
     claude_total = len(shared_check_list) + len(agent_check_list_of("claude"))
     cursor_total = len(shared_check_list) + len(agent_check_list_of("cursor"))
 
-    assert claude_total == expected_count(repo_dir, "expectedClaudeCount")
-    assert cursor_total == expected_count(repo_dir, "expectedCursorCount")
+    assert claude_total == AGENT_SPEC_BY_NAME_MAP["claude"].selfcheck_count
+    assert cursor_total == AGENT_SPEC_BY_NAME_MAP["cursor"].selfcheck_count
 
 
 def test_no_name_repeats_within_one_image(shared_check_list, agent_check_list_of):
