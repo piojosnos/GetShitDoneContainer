@@ -23,7 +23,7 @@ services:
     environment:
       SBX_NAME: "${SBX_NAME}"
     # No capability is needed: non-root, all writes go to the mounted directory.
-    # If a host check fails only on cap_drop, remove it; keep no-new-privileges.
+    # If an integration scenario fails only on cap_drop, remove it; keep no-new-privileges.
     security_opt:
       - no-new-privileges:true
     cap_drop:

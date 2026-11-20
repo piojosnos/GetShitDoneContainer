@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# The names the host test run uses: run directories, test sandboxes, test root
+# The names the host run uses: run directories, test sandboxes, test root
 # ------------------------------------------------------------------------------
 # One place for the host run, the integration fixtures and the clean command, so
 # a name never drifts between the code that makes a thing and the code that

@@ -2,7 +2,7 @@
 # Guard rules on isolation: no socket or privilege, data kept, test images
 # ------------------------------------------------------------------------------
 # Mounts and effective privileges of a running sandbox are checked on the host
-# by the isolation host check, which reads the running container.
+# by the isolation scenario, which reads the running container.
 # ------------------------------------------------------------------------------
 
 import re
@@ -35,7 +35,7 @@ _SKILL_DENY_ENTRY = "Edit(//home/sandbox/workspace/state/claude/skills/**)"
 # Rule no_docker_socket_or_privileges: no Docker socket, no sudo, no extra privilege
 # ------------------------------------------------------------------------------
 # Compose refuses privileged, cap_add, devices, host namespaces, group_add and
-# unconfined profiles; the isolation host check reads the running container.
+# unconfined profiles; the isolation scenario reads the running container.
 # ------------------------------------------------------------------------------
 
 def test_no_docker_socket_or_privileges():
@@ -54,7 +54,7 @@ def test_no_docker_socket_or_privileges():
 # the Docker verbs rm, rmi, down, prune and kill and of --volumes; every launcher
 # in bin/ other than sbx-rm is free of the same words, so no other command deletes
 # data or takes a sandbox down. What sbx-rm itself removes is proven on real
-# Docker by the rm host check.
+# Docker by the rm scenario.
 # ------------------------------------------------------------------------------
 
 def test_host_scripts_keep_sandbox_data():
@@ -97,7 +97,7 @@ def test_managed_settings_deny_skill_edits():
 # ------------------------------------------------------------------------------
 # Rule host_tests_never_name_the_local_tag: a test run never uses your sandbox images
 # ------------------------------------------------------------------------------
-# The host test run and the host checks take their images from SBX_IMAGE_TAG,
+# The host run and the integration scenarios take their images from SBX_IMAGE_TAG,
 # which they always set to test. A local tag named in one of them, even in a
 # comment, is the first step to a run that replaces the images your sandboxes use.
 # ------------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 ---
 name: sbx-fixture-two
-description: A second fixture skill for the host checks; it does nothing.
+description: A second fixture skill for the integration scenarios; it does nothing.
 ---
 
 # Fixture skill two
