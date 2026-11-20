@@ -160,6 +160,20 @@ def _fix_sandbox_mode(path: str, git_mode: str, xattr_function: XattrFunction) -
 
 
 # ------------------------------------------------------------------------------
+# Containment
+# ------------------------------------------------------------------------------
+# The sandbox can write the index and plant symlinks, so an index path may lead
+# out of the project directory through a symlinked directory. Only a path whose
+# real location is inside the real project directory is touched.
+# ------------------------------------------------------------------------------
+
+def _is_inside(project_real: str, path: str) -> bool:
+    path_real = os.path.realpath(path)
+
+    return os.path.commonpath([project_real, path_real]) == project_real
+
+
+# ------------------------------------------------------------------------------
 # The command
 # ------------------------------------------------------------------------------
 
@@ -183,6 +197,7 @@ def _fix_modes(
     if xattr_function is None:
         xattr_function = _find_xattr_function(environ)
 
+    project_real = os.path.realpath(project_dir)
     host_count = 0
     sandbox_count = 0
 
@@ -193,6 +208,11 @@ def _fix_modes(
             continue
 
         if os.path.islink(path) or not os.path.isfile(path):
+            continue
+
+        if not _is_inside(project_real, path):
+            print(f"{COMMAND_NAME}: skipped {relative_path}; it resolves outside {project_dir}")
+
             continue
 
         if _fix_host_mode(path, git_mode):
