@@ -17,13 +17,16 @@ REPO_DIR = Path(__file__).resolve().parents[3]
 # ------------------------------------------------------------------------------
 # Docker stand-in
 # ------------------------------------------------------------------------------
-# It has the signature of run_docker. It notes each argument list and answers
-# from the longest prefix it was told about, else with success and no output.
+# It has the signature of run_docker. It notes each argument list, environment
+# and capture flag, and answers from the longest prefix it was told about, else
+# with success and no output.
 # ------------------------------------------------------------------------------
 
 class DockerRecorder:
     def __init__(self) -> None:
         self.call_list: list[list[str]] = []
+        self.environ_list: list[Mapping[str, str] | None] = []
+        self.capture_list: list[bool] = []
         self._answer_map: dict[tuple[str, ...], DockerResult] = {}
 
     def answer(self, prefix_list: list[str], result: DockerResult) -> None:
@@ -36,6 +39,8 @@ class DockerRecorder:
         capture: bool = True,
     ) -> DockerResult:
         self.call_list.append(list(argument_list))
+        self.environ_list.append(environ)
+        self.capture_list.append(capture)
         best_prefix: tuple[str, ...] | None = None
 
         for prefix in self._answer_map:
