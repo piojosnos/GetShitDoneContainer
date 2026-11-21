@@ -3,19 +3,19 @@ gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
 current_phase: "10.1"
-current_phase_name: Full skills and best-practices support in Cursor
+current_phase_name: Practices generator
 status: planning
-stopped_at: Phase 10 complete, ready to plan Phase 10.1
-last_updated: "2026-11-20T07:32:00.876Z"
+stopped_at: Phase 10.1 context gathered
+last_updated: "2026-11-21T01:38:35.880Z"
 last_activity: 2026-11-20
 last_activity_desc: Phase 10 complete, transitioned to Phase 10.1
-state_head: 48dafc1ad410a71b1c3a4e20c7aa56b7a4f08bd3
+state_head: 0c44b8f1fb8908e2828e1aed910494cc2f59df71
 progress:
-  total_phases: 11
+  total_phases: 12
   completed_phases: 5
   total_plans: 66
   completed_plans: 66
-  percent: 56
+  percent: 42
 ---
 
 # Project State
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 
 ## Current Position
 
-Phase: 10.1 — Full skills and best-practices support in Cursor
+Phase: 10.1 (Practices generator)
 Plan: Not started
 Status: Ready to plan
 Last activity: 2026-11-20 — Phase 10 complete, transitioned to Phase 10.1
@@ -500,6 +500,7 @@ None yet.
 - Phase 10.1 inserted after Phase 10: Full skills and best-practices support in Cursor
 - Phase 10.2 inserted after Phase 10.1: OpenCode agent image with full skills and best-practices support; may split into more phases
 - Phase 9.1 inserted after Phase 9: Align vocabulary: one set of terms (best-practices, not bundle) across code, tests and docs
+- Phase 10.1 split at discuss time: 10.1 becomes the practices generator (best-practices repo); new 10.1.1 links the generated practices into the sandboxes; the shared agent checks move from 10.1.1 to 10.1.2
 
 ## Deferred Items
 
@@ -525,9 +526,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-20T06:43:35.082Z
-Stopped at: Phase 10 complete, ready to plan Phase 10.1
-Resume file: None
+Last session: 2026-11-21T01:38:35.669Z
+Stopped at: Phase 10.1 context gathered
+Resume file: .planning/phases/10.1-practices-generator/10.1-CONTEXT.md
 
 ## Operator Next Steps
 
