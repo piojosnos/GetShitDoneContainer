@@ -332,14 +332,14 @@ Plans:
 **Goal:** The best-practices repo holds agent-neutral masters (`rules/`, `skills/`) and a small Python generator that reads them into a model and renders it through one Jinja template set per agent into committed output under `generated/claude/` and `generated/cursor/`. A drift check proves the output matches the masters, and an `update-practice` skill and the rewritten `best-practices.md` rule make an agent edit the masters and regenerate, never the output. Work happens in the best-practices repo only; sandboxes change nothing yet.
 **Requirements**: TBD
 **Depends on:** Phase 10
-**Plans:** 1/5 plans executed
+**Plans:** 2/5 plans executed
 
 Plans:
 **Wave 1**
 - [x] 10.1-01-PLAN.md: package check (jinja2, pyyaml, pytest pins), then the tracer: rule masters to committed Claude and Cursor output through the reader, profiles and templates, with the drift check (wave 1, checkpoint)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 10.1-02-PLAN.md: the strict rule dialect in the reader; golden Claude and Cursor rule output, YAML round trip, literal Jinja (wave 2)
+- [x] 10.1-02-PLAN.md: the strict rule dialect in the reader; golden Claude and Cursor rule output, YAML round trip, literal Jinja (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 10.1-03-PLAN.md: skills end to end with extra files; stable layout, safe rewrite and a drift check that catches every difference (wave 3)
@@ -405,7 +405,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 8. In-image self-check | v2.0 | 13/13 | Complete    | 2026-11-15 |
 | 9. sbx-init replaces the start hooks | v2.0 | 14/14 | Complete    | 2026-11-17 |
 | 10. Host side to Python | v2.0 | 11/11 | Complete    | 2026-11-20 |
-| 10.1. Practices generator | v2.0 | 1/5 | In Progress|  |
+| 10.1. Practices generator | v2.0 | 2/5 | In Progress|  |
 | 10.1.1. Agents link the generated practices | v2.0 | 0/TBD | Not started | - |
 | 10.1.2. Shared agent checks | v2.0 | 0/TBD | Not started | - |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
