@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: "10.1"
 current_phase_name: Practices generator
 status: executing
-stopped_at: Completed 10.1-02-PLAN.md
-last_updated: "2026-11-24T00:40:07.136Z"
+stopped_at: Completed 10.1-03-PLAN.md
+last_updated: "2026-11-24T00:44:22.865Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 10.1 execution started
-state_head: 8ccd4b3f50b89b00ccf14847229d067add6b267b
+state_head: 65421575e171e4a4d9da49689caa66abc1b3a3f3
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 71
-  completed_plans: 68
+  completed_plans: 69
   percent: 42
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 10.1 (Practices generator) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-11-24 — Phase 10.1 execution started
 
@@ -229,6 +229,7 @@ Last activity: 2026-11-24 — Phase 10.1 execution started
 | Phase 10 P11 | 95min | 3 tasks | 0 files |
 | Phase 10.1 P01 | 12min | 2 tasks | 47 files |
 | Phase 10.1 P02 | 8min | 2 tasks | 4 files |
+| Phase 10.1 P03 | 10 min | 2 tasks | 18 files |
 
 ## Accumulated Context
 
@@ -455,6 +456,8 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-10: MIGRATION.md keeps one registry section; the real-move steps sit in a Move it subsection before Try it on a copy first
 - [Phase 10.1]: Cursor rule globs are written unquoted, comma and space joined; the generated header follows the frontmatter
 - [Phase 10.1]: Rule masters allow only a paths list of comma-free globs; links and non-md files in rules/ fail the run
+- [Phase 10.1]: A skill master with any frontmatter key other than name and description is refused; a missing skills/ folder stops the run like rules/
+- [Phase 10.1]: find_drift returns one entry per file, a changed text file's entry holds its unified diff, so the differing-file count stays a file count
 
 ### Pending Todos
 
@@ -530,8 +533,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-24T00:40:06.995Z
-Stopped at: Completed 10.1-02-PLAN.md
+Last session: 2026-11-24T00:44:22.719Z
+Stopped at: Completed 10.1-03-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
