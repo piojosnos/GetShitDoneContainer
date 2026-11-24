@@ -332,7 +332,7 @@ Plans:
 **Goal:** The best-practices repo holds agent-neutral masters (`rules/`, `skills/`) and a small Python generator that reads them into a model and renders it through one Jinja template set per agent into committed output under `generated/claude/` and `generated/cursor/`. A drift check proves the output matches the masters, and an `update-practice` skill and the rewritten `best-practices.md` rule make an agent edit the masters and regenerate, never the output. Work happens in the best-practices repo only; sandboxes change nothing yet.
 **Requirements**: TBD
 **Depends on:** Phase 10
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans executed
 
 Plans:
 **Wave 1**
@@ -348,7 +348,7 @@ Plans:
 - [x] 10.1-04-PLAN.md: agent-neutral masters and the rewritten practices rule; the `update-practice` skill, the README and the real-repo output tests (wave 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 10.1-05-PLAN.md: phase gate and sandbox-repo fence; push go for `feat/practices-generator`, then push and PR against `main` only with it (wave 5, checkpoint)
+- [x] 10.1-05-PLAN.md: phase gate and sandbox-repo fence; push go for `feat/practices-generator`, then push and PR against `main` only with it (wave 5, checkpoint)
 
 ### Phase 10.1.1: Agents link the generated practices (INSERTED)
 
@@ -405,7 +405,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 8. In-image self-check | v2.0 | 13/13 | Complete    | 2026-11-15 |
 | 9. sbx-init replaces the start hooks | v2.0 | 14/14 | Complete    | 2026-11-17 |
 | 10. Host side to Python | v2.0 | 11/11 | Complete    | 2026-11-20 |
-| 10.1. Practices generator | v2.0 | 4/5 | In Progress|  |
+| 10.1. Practices generator | v2.0 | 5/5 | In Progress|  |
 | 10.1.1. Agents link the generated practices | v2.0 | 0/TBD | Not started | - |
 | 10.1.2. Shared agent checks | v2.0 | 0/TBD | Not started | - |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
