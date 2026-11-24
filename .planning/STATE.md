@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
-current_phase: "10.1"
-current_phase_name: Practices generator
-status: verifying
-stopped_at: Completed 10.1-04-PLAN.md
-last_updated: "2026-11-24T02:53:17.727Z"
+current_phase: 10.1.1
+current_phase_name: Agents link the generated practices
+status: planning
+stopped_at: Phase 10.1 complete, ready to plan Phase 10.1.1
+last_updated: "2026-11-24T02:59:36.615Z"
 last_activity: 2026-11-24
-last_activity_desc: Phase 10.1 execution started
-state_head: 6cc45f8b68e2e8d9493b4ce33229ed5756a111c3
+last_activity_desc: Phase 10.1 complete, transitioned to Phase 10.1.1
+state_head: 8d9082cdcbc022858016d6c1088c9d9b508e0401
 progress:
   total_phases: 12
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 71
   completed_plans: 71
-  percent: 42
+  percent: 60
 ---
 
 # Project State
@@ -29,15 +29,15 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 
 ## Current Position
 
-Phase: 10.1 (Practices generator) — EXECUTING
-Plan: 5 of 5
-Status: Phase complete — ready for verification
-Last activity: 2026-11-24 — Phase 10.1 execution started
+Phase: 10.1.1 — Agents link the generated practices
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-11-24 — Phase 10.1 complete, transitioned to Phase 10.1.1
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 155
+- Total plans completed: 160
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -65,6 +65,7 @@ Last activity: 2026-11-24 — Phase 10.1 execution started
 | 9 | 14 | - | - |
 | 09.1 | 14 | - | - |
 | 10 | 11 | - | - |
+| 10.1 | 5 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -536,7 +537,7 @@ Items acknowledged and deferred at milestone close, most recent first:
 ## Session Continuity
 
 Last session: 2026-11-24T01:40:51.249Z
-Stopped at: Completed 10.1-04-PLAN.md
+Stopped at: Phase 10.1 complete, ready to plan Phase 10.1.1
 Resume file: None
 
 ## Operator Next Steps

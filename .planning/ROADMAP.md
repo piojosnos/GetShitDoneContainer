@@ -41,7 +41,7 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
 - [x] **Phase 9: sbx-init replaces the start hooks**: the user runs `sbx-init` to sync GSD and link the bundle; a container start runs no hooks (completed 2026-11-17)
 - [x] **Phase 09.1: Align vocabulary** (INSERTED): code, tests and docs use one set of terms; best-practices, never bundle (completed 2026-11-18)
 - [x] **Phase 10: Host side to Python**: the host commands and host tests are Python run through `uv`, with one JSON registry file per sandbox (completed 2026-11-20)
-- [ ] **Phase 10.1: Practices generator** (INSERTED): the best-practices repo turns its agent-neutral masters into committed, per-agent output for Claude and Cursor
+- [x] **Phase 10.1: Practices generator** (INSERTED): the best-practices repo turns its agent-neutral masters into committed, per-agent output for Claude and Cursor (completed 2026-11-24)
 - [ ] **Phase 10.1.1: Agents link the generated practices** (INSERTED): Claude and Cursor sandboxes link their agent's generated practices, and the selfcheck proves it
 - [ ] **Phase 10.1.2: Shared agent checks** (INSERTED): the Claude and Cursor selfcheck twins become one shared list of agent checks before the third agent arrives
 - [ ] **Phase 10.2: OpenCode agent image** (INSERTED): a third agent image with full skills and best-practices support; may split into more phases
@@ -332,7 +332,7 @@ Plans:
 **Goal:** The best-practices repo holds agent-neutral masters (`rules/`, `skills/`) and a small Python generator that reads them into a model and renders it through one Jinja template set per agent into committed output under `generated/claude/` and `generated/cursor/`. A drift check proves the output matches the masters, and an `update-practice` skill and the rewritten `best-practices.md` rule make an agent edit the masters and regenerate, never the output. Work happens in the best-practices repo only; sandboxes change nothing yet.
 **Requirements**: TBD
 **Depends on:** Phase 10
-**Plans:** 5/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 **Wave 1**
@@ -405,7 +405,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 8. In-image self-check | v2.0 | 13/13 | Complete    | 2026-11-15 |
 | 9. sbx-init replaces the start hooks | v2.0 | 14/14 | Complete    | 2026-11-17 |
 | 10. Host side to Python | v2.0 | 11/11 | Complete    | 2026-11-20 |
-| 10.1. Practices generator | v2.0 | 5/5 | In Progress|  |
+| 10.1. Practices generator | v2.0 | 5/5 | Complete    | 2026-11-24 |
 | 10.1.1. Agents link the generated practices | v2.0 | 0/TBD | Not started | - |
 | 10.1.2. Shared agent checks | v2.0 | 0/TBD | Not started | - |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
