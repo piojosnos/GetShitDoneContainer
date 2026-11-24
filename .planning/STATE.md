@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
-current_phase: "10.1"
-current_phase_name: Full skills and best-practices support in Cursor
+current_phase: 10.1.1
+current_phase_name: Agents link the generated practices
 status: planning
-stopped_at: Phase 10 complete, ready to plan Phase 10.1
-last_updated: "2026-11-20T07:32:00.876Z"
-last_activity: 2026-11-20
-last_activity_desc: Phase 10 complete, transitioned to Phase 10.1
-state_head: 48dafc1ad410a71b1c3a4e20c7aa56b7a4f08bd3
+stopped_at: Phase 10.1 complete, ready to plan Phase 10.1.1
+last_updated: "2026-11-24T02:59:36.615Z"
+last_activity: 2026-11-24
+last_activity_desc: Phase 10.1 complete, transitioned to Phase 10.1.1
+state_head: 8d9082cdcbc022858016d6c1088c9d9b508e0401
 progress:
-  total_phases: 11
-  completed_phases: 5
-  total_plans: 66
-  completed_plans: 66
-  percent: 56
+  total_phases: 12
+  completed_phases: 6
+  total_plans: 71
+  completed_plans: 71
+  percent: 60
 ---
 
 # Project State
@@ -25,19 +25,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 10 — Host side to Python
+**Current focus:** Phase 10.1 — Practices generator
 
 ## Current Position
 
-Phase: 10.1 — Full skills and best-practices support in Cursor
+Phase: 10.1.1 — Agents link the generated practices
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-11-20 — Phase 10 complete, transitioned to Phase 10.1
+Last activity: 2026-11-24 — Phase 10.1 complete, transitioned to Phase 10.1.1
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 155
+- Total plans completed: 160
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -65,6 +65,7 @@ Last activity: 2026-11-20 — Phase 10 complete, transitioned to Phase 10.1
 | 9 | 14 | - | - |
 | 09.1 | 14 | - | - |
 | 10 | 11 | - | - |
+| 10.1 | 5 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -227,6 +228,10 @@ Last activity: 2026-11-20 — Phase 10 complete, transitioned to Phase 10.1
 | Phase 10 P09 | 40min | 3 tasks | 37 files |
 | Phase 10 P10 | 45min | 3 tasks | 16 files |
 | Phase 10 P11 | 95min | 3 tasks | 0 files |
+| Phase 10.1 P01 | 12min | 2 tasks | 47 files |
+| Phase 10.1 P02 | 8min | 2 tasks | 4 files |
+| Phase 10.1 P03 | 10 min | 2 tasks | 18 files |
+| Phase 10.1 P04 | not captured | 2 tasks | 33 files |
 
 ## Accumulated Context
 
@@ -451,6 +456,11 @@ Recent decisions affecting current work:
 - [Phase 10]: Plan 08: pure text and pin parsers stay private in their scenario files and are covered by one unit test file that imports them
 - [Phase 10]: 10-09: old-check map reviewed; user amended rows A (relink settings key and CLAUDE.md) and C (running-sandbox upgrade on real Docker); B and D kept; tests/host deleted
 - [Phase 10]: 10-10: MIGRATION.md keeps one registry section; the real-move steps sit in a Move it subsection before Try it on a copy first
+- [Phase 10.1]: Cursor rule globs are written unquoted, comma and space joined; the generated header follows the frontmatter
+- [Phase 10.1]: Rule masters allow only a paths list of comma-free globs; links and non-md files in rules/ fail the run
+- [Phase 10.1]: A skill master with any frontmatter key other than name and description is refused; a missing skills/ folder stops the run like rules/
+- [Phase 10.1]: find_drift returns one entry per file, a changed text file's entry holds its unified diff, so the differing-file count stays a file count
+- [Phase 10.1]: disable-model-invocation is an optional boolean skill key, passed through to both agents; other values and unknown keys are refused
 
 ### Pending Todos
 
@@ -500,6 +510,7 @@ None yet.
 - Phase 10.1 inserted after Phase 10: Full skills and best-practices support in Cursor
 - Phase 10.2 inserted after Phase 10.1: OpenCode agent image with full skills and best-practices support; may split into more phases
 - Phase 9.1 inserted after Phase 9: Align vocabulary: one set of terms (best-practices, not bundle) across code, tests and docs
+- Phase 10.1 split at discuss time: 10.1 becomes the practices generator (best-practices repo); new 10.1.1 links the generated practices into the sandboxes; the shared agent checks move from 10.1.1 to 10.1.2
 
 ## Deferred Items
 
@@ -525,8 +536,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-20T06:43:35.082Z
-Stopped at: Phase 10 complete, ready to plan Phase 10.1
+Last session: 2026-11-24T01:40:51.249Z
+Stopped at: Phase 10.1 complete, ready to plan Phase 10.1.1
 Resume file: None
 
 ## Operator Next Steps

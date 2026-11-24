@@ -41,8 +41,9 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
 - [x] **Phase 9: sbx-init replaces the start hooks**: the user runs `sbx-init` to sync GSD and link the bundle; a container start runs no hooks (completed 2026-11-17)
 - [x] **Phase 09.1: Align vocabulary** (INSERTED): code, tests and docs use one set of terms; best-practices, never bundle (completed 2026-11-18)
 - [x] **Phase 10: Host side to Python**: the host commands and host tests are Python run through `uv`, with one JSON registry file per sandbox (completed 2026-11-20)
-- [ ] **Phase 10.1: Full skills and best-practices support in Cursor** (INSERTED): the best-practices repo's rules and skills work in Cursor as they do in Claude
-- [ ] **Phase 10.1.1: Shared agent checks** (INSERTED): the Claude and Cursor selfcheck twins become one shared list of agent checks before the third agent arrives
+- [x] **Phase 10.1: Practices generator** (INSERTED): the best-practices repo turns its agent-neutral masters into committed, per-agent output for Claude and Cursor (completed 2026-11-24)
+- [ ] **Phase 10.1.1: Agents link the generated practices** (INSERTED): Claude and Cursor sandboxes link their agent's generated practices, and the selfcheck proves it
+- [ ] **Phase 10.1.2: Shared agent checks** (INSERTED): the Claude and Cursor selfcheck twins become one shared list of agent checks before the third agent arrives
 - [ ] **Phase 10.2: OpenCode agent image** (INSERTED): a third agent image with full skills and best-practices support; may split into more phases
 - [ ] **Phase 11: CI widened**: GitHub runs the guard, builds the test images and runs the Linux-runnable checks on every PR push
 
@@ -326,31 +327,54 @@ Plans:
 **Wave 11** *(blocked on Wave 10 completion)*
 - [x] 10-11-PLAN.md: dev-sandbox phase gate, local PR branches, then the host run of `./host-test.sh` (wave 11, checkpoint)
 
-### Phase 10.1: Full skills and best-practices support in Cursor (INSERTED)
+### Phase 10.1: Practices generator (INSERTED)
 
-**Goal:** Cursor sandboxes get the same skills and best-practices support as Claude sandboxes: the best-practices repo's rules and skills reach Cursor in the form it reads, and the selfcheck proves they are there. Scope and split into one or more phases are decided at discuss time.
+**Goal:** The best-practices repo holds agent-neutral masters (`rules/`, `skills/`) and a small Python generator that reads them into a model and renders it through one Jinja template set per agent into committed output under `generated/claude/` and `generated/cursor/`. A drift check proves the output matches the masters, and an `update-practice` skill and the rewritten `best-practices.md` rule make an agent edit the masters and regenerate, never the output. Work happens in the best-practices repo only; sandboxes change nothing yet.
 **Requirements**: TBD
 **Depends on:** Phase 10
-**Plans:** 0 plans
+**Plans:** 5/5 plans complete
 
 Plans:
-- [ ] TBD (run /gsd-discuss-phase 10.1 to scope it)
+**Wave 1**
+- [x] 10.1-01-PLAN.md: package check (jinja2, pyyaml, pytest pins), then the tracer: rule masters to committed Claude and Cursor output through the reader, profiles and templates, with the drift check (wave 1, checkpoint)
 
-### Phase 10.1.1: Shared agent checks before the third agent (INSERTED)
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 10.1-02-PLAN.md: the strict rule dialect in the reader; golden Claude and Cursor rule output, YAML round trip, literal Jinja (wave 2)
 
-**Goal:** The selfcheck files that Claude and Cursor repeat with only a different agent config directory, root list or flag become one shared list of agent checks, built from a small per-agent description. Each agent keeps only its truly specific checks, so the OpenCode image starts from the shared list instead of a third copy. Output stays the same; the check counts in H-34 do not change.
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 10.1-03-PLAN.md: skills end to end with extra files; stable layout, safe rewrite and a drift check that catches every difference (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 10.1-04-PLAN.md: agent-neutral masters and the rewritten practices rule; the `update-practice` skill, the README and the real-repo output tests (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 10.1-05-PLAN.md: phase gate and sandbox-repo fence; push go for `feat/practices-generator`, then push and PR against `main` only with it (wave 5, checkpoint)
+
+### Phase 10.1.1: Agents link the generated practices (INSERTED)
+
+**Goal:** The linker becomes agent-neutral: it links what `generated/<agent>/` holds into that agent's config directory (the rules folder whole, one link per skill), so Cursor gets rules for the first time and Claude moves its links from the masters to `generated/claude/` on the next `sbx-init`. The selfcheck and the integration scenario prove the links for both agents, and an attended Mac step shows Cursor lists the rules and skills.
 **Requirements**: TBD
 **Depends on:** Phase 10.1
 **Plans:** 0 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 10.1.1 to break down)
+- [ ] TBD (run /gsd-discuss-phase 10.1.1; decisions so far are in the 10.1 CONTEXT.md)
+
+### Phase 10.1.2: Shared agent checks before the third agent (INSERTED)
+
+**Goal:** The selfcheck files that Claude and Cursor repeat with only a different agent config directory, root list or flag become one shared list of agent checks, built from a small per-agent description. Each agent keeps only its truly specific checks, so the OpenCode image starts from the shared list instead of a third copy. Output stays the same; the check counts in H-34 do not change.
+**Requirements**: TBD
+**Depends on:** Phase 10.1.1
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 10.1.2 to break down)
 
 ### Phase 10.2: OpenCode agent image with full skills and best-practices support (INSERTED)
 
-**Goal:** An OpenCode agent image next to Claude and Cursor, with the same skills and best-practices support from the start, and its own selfcheck files. This may become more than one phase; that is decided at discuss time.
+**Goal:** An OpenCode agent image next to Claude and Cursor, with the same skills and best-practices support from the start, and its own selfcheck files. Its practices come from new OpenCode templates in the best-practices repo, rendered into `generated/opencode/`. This may become more than one phase; that is decided at discuss time.
 **Requirements**: TBD
-**Depends on:** Phase 10.1.1
+**Depends on:** Phase 10.1.2
 **Plans:** 0 plans
 
 Plans:
@@ -381,8 +405,9 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 8. In-image self-check | v2.0 | 13/13 | Complete    | 2026-11-15 |
 | 9. sbx-init replaces the start hooks | v2.0 | 14/14 | Complete    | 2026-11-17 |
 | 10. Host side to Python | v2.0 | 11/11 | Complete    | 2026-11-20 |
-| 10.1. Cursor skills and best practices | v2.0 | 0/TBD | Not started | - |
-| 10.1.1. Shared agent checks | v2.0 | 0/TBD | Not started | - |
+| 10.1. Practices generator | v2.0 | 5/5 | Complete    | 2026-11-24 |
+| 10.1.1. Agents link the generated practices | v2.0 | 0/TBD | Not started | - |
+| 10.1.2. Shared agent checks | v2.0 | 0/TBD | Not started | - |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
 | 11. CI widened | v2.0 | 0/TBD | Not started | - |
 
