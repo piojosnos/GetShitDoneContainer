@@ -217,7 +217,8 @@ COPY --chmod=755 base/bin/ /usr/local/bin/
 # Written once here, so a shell never waits for java or mvn. The agent images
 # add their own fields in front.
 # ------------------------------------------------------------------------------
-RUN printf 'gsd %s | node %s | jdk %s | mvn %s | python %s\n' \
+RUN mkdir -p /etc/sbx \
+    && printf 'gsd %s | node %s | jdk %s | mvn %s | python %s\n' \
        "${GSD_CORE_VERSION}" \
        "${NODE_VERSION}" \
        "$(java -version 2>&1 | sed -n '1s/.*"\(.*\)".*/\1/p')" \
