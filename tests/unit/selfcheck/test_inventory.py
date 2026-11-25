@@ -156,14 +156,14 @@ def test_the_claude_check_names_are_the_thirteen_in_order(agent_check_list_of, c
         "tool-ccusage",
         "claude-env",
         "claude-home-links",
-        "claude-no-home-copy",
         "claude-credentials",
         "claude-gsd-synced",
         "claude-best-practices-links",
-        "claude-managed-settings",
         "claude-image-root-owned",
         "claude-image-paths-protected",
         "claude-versions-line",
+        "claude-no-home-copy",
+        "claude-managed-settings",
     ]
 
 

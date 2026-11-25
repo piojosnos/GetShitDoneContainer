@@ -1,21 +1,16 @@
 # ------------------------------------------------------------------------------
-# Check: the synced GSD is the pinned version
+# Checks: the checks every agent has, built from the Claude agent description
 # ------------------------------------------------------------------------------
 # The image copies this file to /etc/sbx/selfcheck.d/claude/; the runner loads it
 # after the shared checks.
 # ------------------------------------------------------------------------------
 
-from agent_config import gsd_synced_result
-from check_result import Check, CheckResult
-from claude_shared import AGENT_CONFIG_DIR
+from agent_checks import agent_check_list
+from claude_shared import AGENT
 
 
 # ------------------------------------------------------------------------------
 # Check entries
 # ------------------------------------------------------------------------------
 
-def _check_claude_gsd_synced() -> CheckResult:
-    return gsd_synced_result(AGENT_CONFIG_DIR)
-
-
-CHECK_LIST = [Check("claude-gsd-synced", _check_claude_gsd_synced)]
+CHECK_LIST = agent_check_list(AGENT)
