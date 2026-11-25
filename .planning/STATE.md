@@ -3,18 +3,18 @@ gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
 current_phase: 10.1.2
-current_phase_name: shared-agent-checks-before-the-third-agent
+current_phase_name: Shared agent checks before the third agent
 status: executing
-stopped_at: Phase 10.1.2 context gathered
-last_updated: "2026-11-25T19:50:38.008Z"
-last_activity: 2026-11-24
-last_activity_desc: Phase 10.1 complete, transitioned to Phase 10.1.1
-state_head: 1cb501c6173893bd115bc3771e22bab602634f75
+stopped_at: Completed 10.1.2-01-PLAN.md
+last_updated: "2026-11-25T19:55:37.624Z"
+last_activity: 2026-11-25
+last_activity_desc: Phase 10.1.2 execution started
+state_head: 86ab4d551763df97091aabbb616c850ea9f78a34
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 80
-  completed_plans: 71
+  completed_plans: 72
   percent: 50
 ---
 
@@ -25,14 +25,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 10.1 — Practices generator
+**Current focus:** Phase 10.1.2 — Shared agent checks before the third agent
 
 ## Current Position
 
-Phase: 10.1.2 (shared-agent-checks-before-the-third-agent) — READY TO EXECUTE
-Plan: Not started
+Phase: 10.1.2 (Shared agent checks before the third agent) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-11-24 — Phase 10.1 complete, transitioned to Phase 10.1.1
+Last activity: 2026-11-25 — Phase 10.1.2 execution started
 
 ## Performance Metrics
 
@@ -232,6 +232,7 @@ Last activity: 2026-11-24 — Phase 10.1 complete, transitioned to Phase 10.1.1
 | Phase 10.1 P02 | 8min | 2 tasks | 4 files |
 | Phase 10.1 P03 | 10 min | 2 tasks | 18 files |
 | Phase 10.1 P04 | not captured | 2 tasks | 33 files |
+| Phase 10.1.2 P01 | 25min | 2 tasks | 39 files |
 
 ## Accumulated Context
 
@@ -461,6 +462,7 @@ Recent decisions affecting current work:
 - [Phase 10.1]: A skill master with any frontmatter key other than name and description is refused; a missing skills/ folder stops the run like rules/
 - [Phase 10.1]: find_drift returns one entry per file, a changed text file's entry holds its unified diff, so the differing-file count stays a file count
 - [Phase 10.1]: disable-model-invocation is an optional boolean skill key, passed through to both agents; other values and unknown keys are refused
+- [Phase 10.1.2]: Plan 01: AgentDescription plus agent_check_list builder replace the per-agent selfcheck twins; builder imports nothing from base/init
 
 ### Pending Todos
 
@@ -536,9 +538,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-25T18:06:51.042Z
-Stopped at: Phase 10.1.2 context gathered
-Resume file: .planning/phases/10.1.2-shared-agent-checks-before-the-third-agent/10.1.2-CONTEXT.md
+Last session: 2026-11-25T19:55:37.468Z
+Stopped at: Completed 10.1.2-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
