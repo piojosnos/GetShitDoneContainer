@@ -190,6 +190,32 @@ def test_best_practices_links_result_ignores_a_user_skill_and_a_link_elsewhere_t
     assert result.passed
 
 
+def test_the_old_links_into_the_masters_fail_the_check_until_init_relinks(tmp_path):
+    config1, clone1 = make_best_practices_tree(tmp_path, ["skill-a"], "agent1")
+    (clone1 / "rules").mkdir()
+    (clone1 / "skills" / "skill-a").mkdir(parents=True)
+    (clone1 / "skills" / "gone-b").mkdir()
+    (config1 / "rules").unlink()
+    (config1 / "skills" / "skill-a").unlink()
+    os.symlink("../../best-practices/rules", config1 / "rules")
+    os.symlink("../../../best-practices/skills/skill-a", config1 / "skills" / "skill-a")
+    os.symlink("../../../best-practices/skills/gone-b", config1 / "skills" / "gone-b")
+
+    result = best_practices_links.best_practices_links_result(config1, clone1, "agent1")
+
+    assert not result.passed
+    assert (
+        f"{config1 / 'rules'} links to '../../best-practices/rules', "
+        f"expected '{RULES_LINK_TEXT_TEMPLATE.format(agent='agent1')}'"
+    ) in result.detail
+    assert (
+        f"{config1 / 'skills' / 'skill-a'} links to '../../../best-practices/skills/skill-a', "
+        f"expected '{SKILL_LINK_TEXT_TEMPLATE.format(agent='agent1', name='skill-a')}'"
+    ) in result.detail
+    assert f"{config1 / 'skills' / 'gone-b'} links into the clone, which has no skill gone-b" in result.detail
+    assert result.hint == hints.init_hint()
+
+
 # ------------------------------------------------------------------------------
 # Clone failures and the passed detail
 # ------------------------------------------------------------------------------
