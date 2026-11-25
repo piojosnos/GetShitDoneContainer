@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
-current_phase: 10.1.1
-current_phase_name: Agents link the generated practices
+current_phase: 10.2
+current_phase_name: OpenCode agent image
 status: planning
-stopped_at: Phase 10.1.1 context gathered
-last_updated: "2026-11-24T21:38:39.486Z"
-last_activity: 2026-11-24
-last_activity_desc: Phase 10.1 complete, transitioned to Phase 10.1.1
-state_head: 00aecb801ea800d9e6b47f8319734d7558aab82e
+stopped_at: Phase 10.1.2 complete, ready to plan Phase 10.2
+last_updated: "2026-11-25T20:25:53.157Z"
+last_activity: 2026-11-25
+last_activity_desc: Phase 10.1.2 complete, transitioned to Phase 10.2
+state_head: 3197a1e11e2a9fd5c098d2f36e1e199e48f5c898
 progress:
   total_phases: 12
-  completed_phases: 6
-  total_plans: 71
-  completed_plans: 71
-  percent: 50
+  completed_phases: 7
+  total_plans: 80
+  completed_plans: 75
+  percent: 70
 ---
 
 # Project State
@@ -25,19 +25,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-11-12)
 
 **Core value:** Rebuilding the image must reliably deliver new or updated tools into a project sandbox without losing the agent's login, settings, or history, and without the host mount hiding anything the image provides.
-**Current focus:** Phase 10.1 — Practices generator
+**Current focus:** Phase 10.1.2 — Shared agent checks before the third agent
 
 ## Current Position
 
-Phase: 10.1.1 — Agents link the generated practices
+Phase: 10.2 — OpenCode agent image
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-11-24 — Phase 10.1 complete, transitioned to Phase 10.1.1
+Last activity: 2026-11-25 — Phase 10.1.2 complete, transitioned to Phase 10.2
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 160
+- Total plans completed: 164
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -66,6 +66,7 @@ Last activity: 2026-11-24 — Phase 10.1 complete, transitioned to Phase 10.1.1
 | 09.1 | 14 | - | - |
 | 10 | 11 | - | - |
 | 10.1 | 5 | - | - |
+| 10.1.2 | 4 | - | - |
 
 **Recent Trend:**
 - Last 5 plans: -
@@ -232,6 +233,9 @@ Last activity: 2026-11-24 — Phase 10.1 complete, transitioned to Phase 10.1.1
 | Phase 10.1 P02 | 8min | 2 tasks | 4 files |
 | Phase 10.1 P03 | 10 min | 2 tasks | 18 files |
 | Phase 10.1 P04 | not captured | 2 tasks | 33 files |
+| Phase 10.1.2 P01 | 25min | 2 tasks | 39 files |
+| Phase 10.1.2 P02 | 15min | 2 tasks | 9 files |
+| Phase 10.1.2 P03 | 10min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -461,6 +465,9 @@ Recent decisions affecting current work:
 - [Phase 10.1]: A skill master with any frontmatter key other than name and description is refused; a missing skills/ folder stops the run like rules/
 - [Phase 10.1]: find_drift returns one entry per file, a changed text file's entry holds its unified diff, so the differing-file count stays a file count
 - [Phase 10.1]: disable-model-invocation is an optional boolean skill key, passed through to both agents; other values and unknown keys are refused
+- [Phase 10.1.2]: Plan 01: AgentDescription plus agent_check_list builder replace the per-agent selfcheck twins; builder imports nothing from base/init
+- [Phase 10.1.2]: Two step builders (GSD sync, best-practices links) in base/init/agent_steps.py; two thin step files per agent keep the shared 800 step between them
+- [Phase 10.1.2]: Glossary keeps 'shared checks' for the base image's checks; the agent builders are shared between agents, not between images
 
 ### Pending Todos
 
@@ -536,9 +543,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-24T21:38:39.323Z
-Stopped at: Phase 10.1.1 context gathered
-Resume file: .planning/phases/10.1.1-agents-link-the-generated-practices/10.1.1-CONTEXT.md
+Last session: 2026-11-25T19:59:50.848Z
+Stopped at: Phase 10.1.2 complete, ready to plan Phase 10.2
+Resume file: None
 
 ## Operator Next Steps
 

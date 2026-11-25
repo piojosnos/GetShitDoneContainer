@@ -43,7 +43,7 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
 - [x] **Phase 10: Host side to Python**: the host commands and host tests are Python run through `uv`, with one JSON registry file per sandbox (completed 2026-11-20)
 - [x] **Phase 10.1: Practices generator** (INSERTED): the best-practices repo turns its agent-neutral masters into committed, per-agent output for Claude and Cursor (completed 2026-11-24)
 - [ ] **Phase 10.1.1: Agents link the generated practices** (INSERTED): Claude and Cursor sandboxes link their agent's generated practices, and the selfcheck proves it
-- [ ] **Phase 10.1.2: Shared agent checks** (INSERTED): the Claude and Cursor selfcheck twins become one shared list of agent checks before the third agent arrives
+- [x] **Phase 10.1.2: Shared agent checks** (INSERTED): the Claude and Cursor selfcheck twins become one shared list of agent checks before the third agent arrives (completed 2026-11-25)
 - [ ] **Phase 10.2: OpenCode agent image** (INSERTED): a third agent image with full skills and best-practices support; may split into more phases
 - [ ] **Phase 11: CI widened**: GitHub runs the guard, builds the test images and runs the Linux-runnable checks on every PR push
 
@@ -365,10 +365,20 @@ Plans:
 **Goal:** The selfcheck files that Claude and Cursor repeat with only a different agent config directory, root list or flag become one shared list of agent checks, built from a small per-agent description. Each agent keeps only its truly specific checks, so the OpenCode image starts from the shared list instead of a third copy. Output stays the same; the check counts in H-34 do not change.
 **Requirements**: TBD
 **Depends on:** Phase 10.1.1
-**Plans:** 0 plans
+**Plans:** 4/4 plans complete
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 10.1.2 to break down)
+**Wave 1**
+- [x] 10.1.2-01-PLAN.md: tracer; `AgentDescription`, `agent_check_list` and one `030_agent_checks.py` per agent replace the 16 selfcheck twin files, Claude first, then Cursor; output unchanged (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 10.1.2-02-PLAN.md: `gsd_sync_step_list` and `best_practices_links_step_list` behind two one-line step files per agent; init order unchanged (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 10.1.2-03-PLAN.md: README selfcheck paragraph, GLOSSARY row, tests README catches (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 10.1.2-04-PLAN.md: dev-sandbox phase gate, local PR branches, then the host run of `./host-test.sh` (wave 4, checkpoint)
 
 ### Phase 10.2: OpenCode agent image with full skills and best-practices support (INSERTED)
 
@@ -407,7 +417,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 10. Host side to Python | v2.0 | 11/11 | Complete    | 2026-11-20 |
 | 10.1. Practices generator | v2.0 | 5/5 | Complete    | 2026-11-24 |
 | 10.1.1. Agents link the generated practices | v2.0 | 0/TBD | Not started | - |
-| 10.1.2. Shared agent checks | v2.0 | 0/TBD | Not started | - |
+| 10.1.2. Shared agent checks | v2.0 | 4/4 | Complete    | 2026-11-25 |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
 | 11. CI widened | v2.0 | 0/TBD | Not started | - |
 
