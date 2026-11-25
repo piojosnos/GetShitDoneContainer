@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The sbx-init runner: loads the step files, runs them in order and prints
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Prints one OK or FAIL line per step, and a fix line under each FAIL. The image
 # puts this file in /usr/local/lib/sbx-init/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import fcntl
 import signal
@@ -18,9 +18,9 @@ from hints import rebuild_hint
 from step_files import StepFileKind, load_failure_check, load_list, load_module, run_one, write_outcome
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 SHARED_STEPS_DIR = Path(__file__).resolve().parent / "steps"
 _FILE_KIND = StepFileKind(
@@ -41,16 +41,18 @@ _INTERRUPTED_TEXT = "sbx-init: interrupted; run sbx-init again"
 _STOP_SIGNAL_LIST = [signal.SIGHUP, signal.SIGTERM]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Loading the steps
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Shared and agent step files sort together by file name, so the shared 800 step
 # runs between an agent's 050 and 900; sbx-selfcheck runs shared checks first.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def load_step_module(module_path: Path) -> ModuleType:
     return load_module(module_path, _FILE_KIND.module_prefix)
 
+
+# --------------------------------------------------------------------------------
 
 def _step_file_list(shared_steps_dir: Path, agent_steps_dir: Path) -> list[tuple[str, int, Path]]:
     step_file_list = []
@@ -69,6 +71,8 @@ def _step_file_list(shared_steps_dir: Path, agent_steps_dir: Path) -> list[tuple
     return step_file_list
 
 
+# --------------------------------------------------------------------------------
+
 def _has_agent_file(step_file_list: list[tuple[str, int, Path]]) -> bool:
     for _, group, _ in step_file_list:
         if group == _AGENT_GROUP:
@@ -76,6 +80,8 @@ def _has_agent_file(step_file_list: list[tuple[str, int, Path]]) -> bool:
 
     return False
 
+
+# --------------------------------------------------------------------------------
 
 def collect_steps(shared_steps_dir: Path, agent_steps_dir: Path) -> list[Check]:
     step_file_list = _step_file_list(shared_steps_dir, agent_steps_dir)
@@ -97,14 +103,16 @@ def collect_steps(shared_steps_dir: Path, agent_steps_dir: Path) -> list[Check]:
     return step_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Running and printing
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _write_line(line: str, output: TextIO) -> None:
     output.write(line + "\n")
     output.flush()
 
+
+# --------------------------------------------------------------------------------
 
 def _stop_at(name: str, result: CheckResult, output: TextIO) -> int:
     write_outcome(name, result, _FILE_KIND, output)
@@ -112,6 +120,8 @@ def _stop_at(name: str, result: CheckResult, output: TextIO) -> int:
 
     return 1
 
+
+# --------------------------------------------------------------------------------
 
 def _run_steps(step_list: list[Check], output: TextIO) -> tuple[int, str]:
     passed_count = 0
@@ -128,9 +138,9 @@ def _run_steps(step_list: list[Check], output: TextIO) -> tuple[int, str]:
     return passed_count, ""
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Lock and marker
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _take_lock(lock_file: Path, flock_function: Callable[[TextIO, int], None] = fcntl.flock) -> TextIO | None:
     handle = open(lock_file, "a+")
@@ -149,9 +159,13 @@ def _take_lock(lock_file: Path, flock_function: Callable[[TextIO, int], None] = 
     return handle
 
 
+# --------------------------------------------------------------------------------
+
 def _dir_writable_hint(file: Path) -> str:
     return f"check that {file.parent} is writable; " + rebuild_hint()
 
+
+# --------------------------------------------------------------------------------
 
 def _marker_failure(action_text: str, marker_file: Path, error: OSError) -> CheckResult:
     return failed(
@@ -159,6 +173,8 @@ def _marker_failure(action_text: str, marker_file: Path, error: OSError) -> Chec
         _dir_writable_hint(marker_file),
     )
 
+
+# --------------------------------------------------------------------------------
 
 def _run_locked(shared_steps_dir: Path, agent_steps_dir: Path, marker_file: Path, output: TextIO) -> int:
     try:
@@ -183,6 +199,8 @@ def _run_locked(shared_steps_dir: Path, agent_steps_dir: Path, marker_file: Path
     return 0
 
 
+# --------------------------------------------------------------------------------
+
 def run_init(shared_steps_dir: Path, agent_steps_dir: Path, marker_file: Path, lock_file: Path, output: TextIO) -> int:
     try:
         lock_handle = _take_lock(lock_file)
@@ -206,18 +224,20 @@ def run_init(shared_steps_dir: Path, agent_steps_dir: Path, marker_file: Path, l
         lock_handle.close()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Interruptions
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A closed terminal (SIGHUP) or a stop (SIGTERM) would end Python without running
 # any finally block, so both raise KeyboardInterrupt like Ctrl-C; the GSD step
 # then stops its installer, and the lock closes last.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _raise_on_stop_signals() -> None:
     for signal_number in _STOP_SIGNAL_LIST:
         signal.signal(signal_number, signal.default_int_handler)
 
+
+# --------------------------------------------------------------------------------
 
 def _report_interrupted() -> None:
     try:
@@ -226,9 +246,9 @@ def _report_interrupted() -> None:
         pass
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The launcher's entry
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def main(argument_list: list[str]) -> int:
     if argument_list:

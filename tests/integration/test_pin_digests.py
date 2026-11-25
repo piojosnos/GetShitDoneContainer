@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Test: every digest pin in versions.env still resolves in its registry
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The one integration test that is not per agent: it reads versions.env and starts
 # no sandbox. A tag the registry no longer resolves is a problem. A tag that now
 # points at another digest is only news: the pin still pulls the image it names, so
 # the test prints an INFO line and passes.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import re
 
@@ -18,9 +18,9 @@ _PIN_NAME_PATTERN = re.compile(r"[A-Z_]+")
 _PIN_VALUE_PATTERN = re.compile(r"([^ ]+)@(sha256:[0-9a-f]{64})")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The pins and the registry's answer
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _pinned_image_map(pin_map: dict[str, str]) -> dict[str, tuple[str, str]]:
     pinned_image_map = {}
@@ -37,6 +37,8 @@ def _pinned_image_map(pin_map: dict[str, str]) -> dict[str, tuple[str, str]]:
     return pinned_image_map
 
 
+# --------------------------------------------------------------------------------
+
 def _digest_from_inspect(inspect_text: str) -> str:
     for line in inspect_text.splitlines():
         if line.startswith("Digest:"):
@@ -44,6 +46,8 @@ def _digest_from_inspect(inspect_text: str) -> str:
 
     return ""
 
+
+# --------------------------------------------------------------------------------
 
 def _pin_result_line(pin_name: str, image: str, wanted_digest: str, found_digest: str) -> str:
     if not found_digest:
@@ -58,11 +62,11 @@ def _pin_result_line(pin_name: str, image: str, wanted_digest: str, found_digest
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_every_pinned_digest_resolves
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # every NAME=image@sha256 pin -> the registry still resolves its tag
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_every_pinned_digest_resolves():
     problem_list = []

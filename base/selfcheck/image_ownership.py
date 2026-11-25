@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Root-owned image files
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Everything under the roots of an image belongs to root and cannot be changed by
 # group or others. Directories, the sbx commands and the launchers are executable.
 # The image puts this file in /usr/local/lib/sbx-selfcheck/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import stat
@@ -20,12 +20,12 @@ _EXECUTABLE_BITS = 0o111
 _GROUP_OTHER_WRITE_BITS = 0o022
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The rules for one entry
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A link is checked for its owner only: its own mode means nothing, and the file
 # it points to is walked in its own right.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class ImageRules:
@@ -35,12 +35,16 @@ class ImageRules:
     launcher_file_list: list[Path] = field(default_factory=lambda: list(LAUNCHER_FILE_LIST))
 
 
+# --------------------------------------------------------------------------------
+
 def _must_be_executable(path: Path, entry_stat: os.stat_result, rules: ImageRules) -> bool:
     if stat.S_ISDIR(entry_stat.st_mode) or path in rules.launcher_file_list:
         return True
 
     return path.parent == rules.command_dir and path.name.startswith(COMMAND_PREFIX)
 
+
+# --------------------------------------------------------------------------------
 
 def _entry_problem_list(path: Path, entry_stat: os.stat_result, rules: ImageRules) -> list[str]:
     problem_list = []
@@ -64,9 +68,9 @@ def _entry_problem_list(path: Path, entry_stat: os.stat_result, rules: ImageRule
     return problem_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The image ownership result
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _walk_problem_text(walk_problem: WalkProblem) -> str:
     if walk_problem.kind == ProblemKind.MISSING_ROOT:
@@ -74,6 +78,8 @@ def _walk_problem_text(walk_problem: WalkProblem) -> str:
 
     return f"{walk_problem.path} cannot be opened"
 
+
+# --------------------------------------------------------------------------------
 
 def image_ownership_problem_list(root_list: list[Path], rules: ImageRules = ImageRules()) -> list[str]:
     problem_list = []
@@ -88,6 +94,8 @@ def image_ownership_problem_list(root_list: list[Path], rules: ImageRules = Imag
 
     return problem_list
 
+
+# --------------------------------------------------------------------------------
 
 def image_ownership_result(root_list: list[Path], rules: ImageRules = ImageRules()) -> CheckResult:
     problem_list = image_ownership_problem_list(root_list, rules)

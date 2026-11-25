@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Step files: load a numbered file's list, run one entry and print its lines
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-init and sbx-selfcheck share this code; a StepFileKind holds the words that
 # differ between them. The image puts this file in /usr/local/lib/sbx-selfcheck/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import importlib.util
 from dataclasses import dataclass
@@ -17,9 +17,9 @@ from hints import rebuild_hint
 _FIX_LINE_INDENT = "      "
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # What differs between the runners
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class StepFileKind:
@@ -30,9 +30,9 @@ class StepFileKind:
     pass_word: str
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Loading a step file
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def load_module(module_path: Path, module_prefix: str) -> ModuleType:
     module_name = module_prefix + module_path.parent.name + "_" + module_path.stem
@@ -47,12 +47,16 @@ def load_module(module_path: Path, module_prefix: str) -> ModuleType:
     return module
 
 
+# --------------------------------------------------------------------------------
+
 def load_failure_check(name: str, detail: str) -> Check:
     def report_load_failure() -> CheckResult:
         return failed(detail, rebuild_hint())
 
     return Check(name, report_load_failure)
 
+
+# --------------------------------------------------------------------------------
 
 def _is_check_list(value: object) -> bool:
     if not isinstance(value, list):
@@ -64,6 +68,8 @@ def _is_check_list(value: object) -> bool:
 
     return True
 
+
+# --------------------------------------------------------------------------------
 
 def load_list(module_path: Path, kind: StepFileKind) -> list[Check]:
     name = "load-" + module_path.parent.name + "-" + module_path.stem.replace("_", "-")
@@ -89,9 +95,9 @@ def load_list(module_path: Path, kind: StepFileKind) -> list[Check]:
     return list(check_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Running one entry and printing it
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def run_one(check: Check, kind: StepFileKind) -> CheckResult:
     bug_hint = "this is a bug in " + kind.owner_text + " or a broken image; " + rebuild_hint()
@@ -107,6 +113,8 @@ def run_one(check: Check, kind: StepFileKind) -> CheckResult:
     return result
 
 
+# --------------------------------------------------------------------------------
+
 def outcome_lines(name: str, result: CheckResult, kind: StepFileKind) -> list[str]:
     detail = one_line(result.detail)
 
@@ -115,6 +123,8 @@ def outcome_lines(name: str, result: CheckResult, kind: StepFileKind) -> list[st
 
     return [f"FAIL: {name}: {detail}", f"{_FIX_LINE_INDENT}fix: {one_line(result.hint)}"]
 
+
+# --------------------------------------------------------------------------------
 
 def write_outcome(name: str, result: CheckResult, kind: StepFileKind, output: TextIO) -> None:
     for line in outcome_lines(name, result, kind):

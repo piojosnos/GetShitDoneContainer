@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tools on PATH
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A tool must come from the image, not from a copy under /home, must be built for
 # the machine it runs on and must report its pinned version. The image puts this
 # file in /usr/local/lib/sbx-selfcheck/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import platform
@@ -24,9 +24,9 @@ _ELF_MAGIC = b"\x7fELF"
 _ELF_MACHINE_OFFSET = 18
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The machine a binary is built for
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _elf_machine(path: Path) -> int | None:
     with path.open("rb") as binary_file:
@@ -38,6 +38,8 @@ def _elf_machine(path: Path) -> int | None:
     return int.from_bytes(header[_ELF_MACHINE_OFFSET:_ELF_MACHINE_OFFSET + 2], "little")
 
 
+# --------------------------------------------------------------------------------
+
 def _native_machine_problem(real_path: str, command_name: str) -> str:
     expected_machine = ELF_MACHINE_BY_UNAME_MAP.get(platform.machine())
     actual_machine = _elf_machine(Path(real_path))
@@ -48,13 +50,15 @@ def _native_machine_problem(real_path: str, command_name: str) -> str:
     return f"{command_name} is built for ELF machine 0x{actual_machine:02X}, not {platform.machine()}"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The version a tool reports
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _version_matches(line: str, expected_text: str) -> bool:
     return line == expected_text or line.startswith(expected_text + " ")
 
+
+# --------------------------------------------------------------------------------
 
 def _version_problem(
     command_name: str,
@@ -76,9 +80,9 @@ def _version_problem(
     return "", line
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The tool result
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def tool_result(
     command_name: str,
@@ -119,15 +123,15 @@ def tool_result(
     return passed(f"{real_path}, {line}")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The agents directory on PATH
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The image keeps each agent in its own directory, off the PATH, and its agent
 # wrapper puts the directory first when it starts the agent. A check that runs the
 # agent does the same; a check that looks for a stray copy takes the directory out
 # first, because sbx-selfcheck can run inside an agent session whose PATH the agent
 # wrapper extended.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def agent_path_environment(agent_bin_dir: Path, environment_map: Mapping[str, str] = os.environ) -> dict[str, str]:
     agent_environment_map = dict(environment_map)
@@ -141,6 +145,8 @@ def agent_path_environment(agent_bin_dir: Path, environment_map: Mapping[str, st
 
     return agent_environment_map
 
+
+# --------------------------------------------------------------------------------
 
 def off_path_result(
     command_name: str,

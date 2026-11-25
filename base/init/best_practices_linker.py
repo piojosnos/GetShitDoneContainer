@@ -1,13 +1,13 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Links from an agent config directory into the best-practices clone
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A link of init's own is one whose target lies anywhere under the clone's directory;
 # init replaces it and removes it when the clone drops the skill. Anything else in the
 # way (a directory, a file, a copy, a link elsewhere) is left as it is and reported.
 # The only removal in this file is Path.unlink on an own link. The step does not
 # check that a link resolves; sbx-selfcheck does. The image puts this file in
 # /usr/local/lib/sbx-init/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 from pathlib import Path
 
@@ -22,9 +22,9 @@ from best_practices_links import (
 from check_result import CheckResult, capped_problem_detail, failed, passed
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The linking
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def link_best_practices(config_dir: Path, best_practices_dir: Path, agent_name: str) -> CheckResult:
     clone_problem = clone_failure(best_practices_dir, agent_name)
@@ -53,9 +53,9 @@ def link_best_practices(config_dir: Path, best_practices_dir: Path, agent_name: 
     return _result(config_dir, best_practices_dir, agent_name, len(skill_name_list), clash_list, problem_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Placing links
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _place_link(
     entry: Path,
@@ -83,6 +83,8 @@ def _place_link(
     clash_list.append(entry)
 
 
+# --------------------------------------------------------------------------------
+
 def _link_skills(
     skills_dir: Path,
     best_practices_dir: Path,
@@ -96,9 +98,9 @@ def _link_skills(
         _place_link(skills_dir / skill_name, link_text, best_practices_dir, clash_list, problem_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Removing links the clone no longer backs
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _remove_stale_links(
     skills_dir: Path,
@@ -123,9 +125,9 @@ def _remove_stale_links(
             problem_list.append(f"{entry}: {e.strerror}")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The result
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _result(
     config_dir: Path,
@@ -146,6 +148,8 @@ def _result(
 
     return passed(linked_detail(best_practices_dir, agent_name, skill_count))
 
+
+# --------------------------------------------------------------------------------
 
 def _clash_result(clash_list: list[Path]) -> CheckResult:
     sentence_list = []

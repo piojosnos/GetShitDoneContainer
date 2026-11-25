@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the sbx-init launcher
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The launcher runs from a copy of the image layout in a temp directory, with the
 # paths it reads pointed into that directory. Nothing here touches /home/sandbox or
 # /etc/sbx. One test interrupts a real run while a stand-in installer sleeps.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import fcntl
 import os
@@ -54,9 +54,9 @@ INIT_LOCK_FILE = Path({lock_file!r})
 """
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Fixtures
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def layout1(tmp_path) -> dict[str, Path]:
@@ -100,6 +100,8 @@ def layout1(tmp_path) -> dict[str, Path]:
     return layout
 
 
+# --------------------------------------------------------------------------------
+
 def run_launcher(layout: dict[str, Path], argument_list: list[str], state_dirs_text: str = "") -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, "-I", str(layout["launcher"])] + argument_list,
@@ -111,9 +113,9 @@ def run_launcher(layout: dict[str, Path], argument_list: list[str], state_dirs_t
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Usage error and the end-to-end run
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_an_argument_exits_two_with_the_usage_line_and_touches_no_file(layout1):
     completed = run_launcher(layout1, ["extra"])
@@ -125,6 +127,8 @@ def test_an_argument_exits_two_with_the_usage_line_and_touches_no_file(layout1):
     assert not layout1["lock"].exists()
     assert not layout1["state"].exists()
 
+
+# --------------------------------------------------------------------------------
 
 def test_one_run_makes_the_state_dirs_runs_the_agent_step_gives_state_back_and_writes_the_marker(layout1):
     completed = run_launcher(layout1, [], "cache/npm claude")
@@ -144,9 +148,9 @@ def test_one_run_makes_the_state_dirs_runs_the_agent_step_gives_state_back_and_w
         assert (state1 / name).is_dir()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Interruption
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def wait_for_text_file(text_file: Path, deadline_seconds: float) -> str:
     deadline = time.monotonic() + deadline_seconds
@@ -160,12 +164,16 @@ def wait_for_text_file(text_file: Path, deadline_seconds: float) -> str:
     raise AssertionError(f"{text_file} was not written within {deadline_seconds} s")
 
 
+# --------------------------------------------------------------------------------
+
 def kill_group_quietly(group_id: int) -> None:
     try:
         os.killpg(group_id, signal.SIGKILL)
     except (ProcessLookupError, PermissionError):
         pass
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
     "signal_number",

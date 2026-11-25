@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The versions line of an image
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # /etc/sbx/tool-versions holds the line a shell prints. The base fields come
 # from the pins; an agent image puts its own fields in front. The image puts this
 # file in /usr/local/lib/sbx-selfcheck/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import platform
 from pathlib import Path
@@ -15,9 +15,9 @@ from paths import TOOL_VERSIONS_FILE, VERSIONS_FILE
 from pins import jdk_version, missing_pin_result, pin_value
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The expected line
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def expected_base_versions_text(versions_file: Path = VERSIONS_FILE, python_version: str | None = None) -> str:
     if python_version is None:
@@ -43,9 +43,9 @@ def expected_base_versions_text(versions_file: Path = VERSIONS_FILE, python_vers
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The line of an agent image
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def versions_line_result(
     prefix_text: str,

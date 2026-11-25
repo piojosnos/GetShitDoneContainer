@@ -1,8 +1,8 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Checks: the versions line a shell prints
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The image puts this file in /usr/local/lib/sbx-selfcheck/checks/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 from pathlib import Path
@@ -19,9 +19,9 @@ _QUIET_SHELL_FLAG_LIST = ["-c", "-lc"]
 _FIRST_LINES_LIMIT = 3
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Versions line text
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _first_lines(text: str) -> str:
     line_list = []
@@ -32,6 +32,8 @@ def _first_lines(text: str) -> str:
 
     return " / ".join(line_list[:_FIRST_LINES_LIMIT])
 
+
+# --------------------------------------------------------------------------------
 
 def versions_record_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
     if not versions_file.is_file():
@@ -50,9 +52,9 @@ def versions_record_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
     return passed(f"{len(value_by_name_map)} pins in {versions_file}")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Versions line file
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def versions_line_file_result(
     versions_line_file: Path = TOOL_VERSIONS_FILE,
@@ -80,9 +82,9 @@ def versions_line_file_result(
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Versions line of an interactive shell
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _history_free_environment(environment_map: Mapping[str, str] = os.environ) -> dict[str, str]:
     history_free_environment_map = dict(environment_map)
@@ -90,6 +92,8 @@ def _history_free_environment(environment_map: Mapping[str, str] = os.environ) -
 
     return history_free_environment_map
 
+
+# --------------------------------------------------------------------------------
 
 def interactive_versions_line_result(
     versions_line_file: Path = TOOL_VERSIONS_FILE,
@@ -110,9 +114,9 @@ def interactive_versions_line_result(
     return passed(f"an interactive shell prints {versions_line_file} once")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Versions line of a quiet shell
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def quiet_shells_result(environment_map: Mapping[str, str] = os.environ) -> CheckResult:
     problem_list = []
@@ -125,17 +129,21 @@ def quiet_shells_result(environment_map: Mapping[str, str] = os.environ) -> Chec
 
     return problem_list_result(problem_list, rebuild_hint(), "bash -c true and bash -lc true print nothing")
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Check entries
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _check_versions_line_file() -> CheckResult:
     return versions_line_file_result()
 
 
+# --------------------------------------------------------------------------------
+
 def _check_versions_line_interactive() -> CheckResult:
     return interactive_versions_line_result()
 
+
+# --------------------------------------------------------------------------------
 
 def _check_versions_line_quiet() -> CheckResult:
     return quiet_shells_result()

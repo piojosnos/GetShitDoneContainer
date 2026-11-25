@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the GSD sync step
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A stand-in installer on a temp PATH runs for real in its own session; one test
 # runs the image's installer itself when it is there.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import shutil
@@ -14,7 +14,7 @@ import pytest
 
 import hints
 from gsd_sync import gsd_sync_result
-from init_helpers import REPO_DIR, environment_with, load_step, process_is_gone, write_stand_in
+from init_helpers import REPO_DIR, environment_with, process_is_gone, write_stand_in
 
 STAND_IN_NAME = "gsd-core-stand-in"
 RECORDING_BODY = """printf '%s\\n' "$@" > "$STAND_IN_ARGS_FILE"
@@ -33,9 +33,9 @@ sleep 30
 """
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def stand_in_environment(tmp_path: Path, body: str, exit_code: int = 0) -> dict[str, str]:
     bin_dir = tmp_path / "bin1"
@@ -50,9 +50,13 @@ def stand_in_environment(tmp_path: Path, body: str, exit_code: int = 0) -> dict[
     return environment_map
 
 
+# --------------------------------------------------------------------------------
+
 def log_file_list(log_dir: Path) -> list[Path]:
     return sorted(log_dir.glob("sbx-init-gsd-*.log"))
 
+
+# --------------------------------------------------------------------------------
 
 def pinned_gsd_version() -> str:
     for line in (REPO_DIR / "versions.env").read_text().splitlines():
@@ -62,9 +66,9 @@ def pinned_gsd_version() -> str:
     raise AssertionError("versions.env has no GSD_CORE_VERSION")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The installer call
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_installer_gets_the_agent_option_global_and_the_config_dir(tmp_path):
     environment_map = stand_in_environment(tmp_path, RECORDING_BODY)
@@ -76,6 +80,8 @@ def test_the_installer_gets_the_agent_option_global_and_the_config_dir(tmp_path)
     assert argument_list == ["--claude", "--global", "--config-dir", str(config1)]
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_installer_reads_an_already_closed_stdin(tmp_path):
     environment_map = stand_in_environment(tmp_path, RECORDING_BODY)
 
@@ -84,9 +90,9 @@ def test_the_installer_reads_an_already_closed_stdin(tmp_path):
     assert (tmp_path / "stdin1.txt").read_text().strip() == "end of file"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Outcomes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_exit_zero_passes_names_the_dir_and_leaves_no_log(tmp_path):
     environment_map = stand_in_environment(tmp_path, RECORDING_BODY)
@@ -100,6 +106,8 @@ def test_exit_zero_passes_names_the_dir_and_leaves_no_log(tmp_path):
     assert str(config1) in result.detail
     assert log_file_list(log_dir1) == []
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_non_zero_exit_fails_with_the_code_the_last_line_and_the_kept_log(tmp_path):
     environment_map = stand_in_environment(tmp_path, RECORDING_BODY, exit_code=3)
@@ -120,6 +128,8 @@ def test_a_non_zero_exit_fails_with_the_code_the_last_line_and_the_kept_log(tmp_
     assert "sbx-init again" in result.hint
     assert "line one" in kept_list[0].read_text()
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_time_limit_stops_the_installer_and_everything_it_started(tmp_path):
     environment_map = stand_in_environment(tmp_path, SLEEPING_BODY)
@@ -144,6 +154,8 @@ def test_the_time_limit_stops_the_installer_and_everything_it_started(tmp_path):
     assert process_is_gone(grandchild_id)
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_dir_that_cannot_be_made_fails_and_the_installer_never_runs(tmp_path):
     environment_map = stand_in_environment(tmp_path, RECORDING_BODY)
     blocker1 = tmp_path / "blocker1"
@@ -158,6 +170,8 @@ def test_a_dir_that_cannot_be_made_fails_and_the_installer_never_runs(tmp_path):
     assert result.hint == hints.state_writable_hint()
     assert not (tmp_path / "args1.txt").exists()
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.skipif(os.geteuid() == 0, reason="root can make a directory under a read-only parent")
 def test_a_config_dir_under_a_read_only_parent_fails_and_the_installer_never_runs(tmp_path):
@@ -177,6 +191,8 @@ def test_a_config_dir_under_a_read_only_parent_fails_and_the_installer_never_run
     assert str(parent1 / "config1") in result.detail
     assert not (tmp_path / "args1.txt").exists()
 
+
+# --------------------------------------------------------------------------------
 
 def test_an_installer_that_is_not_on_path_fails_with_the_rebuild_hint(tmp_path):
     empty1 = tmp_path / "empty1"
@@ -198,32 +214,9 @@ def test_an_installer_that_is_not_on_path_fails_with_the_rebuild_hint(tmp_path):
     assert log_file_list(log_dir1) == []
 
 
-# ------------------------------------------------------------------------------
-# Step files
-# ------------------------------------------------------------------------------
-
-@pytest.mark.parametrize(
-    ("agent_name", "step_name", "option"),
-    [("claude", "claude-gsd-sync", "--claude"), ("cursor", "cursor-gsd-sync", "--cursor")],
-)
-def test_an_agent_step_file_holds_one_step_that_syncs_its_own_agent(tmp_path, agent_name, step_name, option):
-    step_module = load_step(REPO_DIR / agent_name / "init" / "050_gsd_sync.py")
-    call_list = []
-
-    def record_call(config_dir, agent_option):
-        call_list.append((config_dir, agent_option))
-
-        return "recorded"
-
-    assert [step.name for step in step_module.STEP_LIST] == [step_name]
-    assert step_module.STEP_LIST[0].function(record_call) == "recorded"
-    assert call_list == [(step_module.AGENT_CONFIG_DIR, option)]
-    assert step_module.AGENT_CONFIG_DIR.name == agent_name
-
-
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The image's own installer
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.skipif(shutil.which("gsd-core") is None, reason="gsd-core is not installed in this environment")
 def test_the_image_installer_syncs_the_pinned_version_offline(tmp_path):

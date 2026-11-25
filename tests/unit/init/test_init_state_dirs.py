@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the state directories step
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The step makes the base directories and the ones SBX_STATE_DIRS adds, keeps what
 # exists and refuses names that leave the state directory.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 
@@ -17,9 +17,9 @@ state_dirs_step = load_step(REPO_DIR / "base" / "init" / "steps" / "010_state_di
 state_dirs_check = load_step(REPO_DIR / "base" / "selfcheck" / "checks" / "030_state_dirs.py")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Making the directories
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("state_dirs_text", ["", "   "])
 def test_an_unset_or_empty_list_makes_only_the_base_dirs_and_passes(tmp_path, state_dirs_text):
@@ -33,6 +33,8 @@ def test_an_unset_or_empty_list_makes_only_the_base_dirs_and_passes(tmp_path, st
     assert sorted(path.name for path in state1.iterdir()) == ["gh", "git", "shell"]
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_listed_dirs_are_made_with_their_parents(tmp_path):
     state1 = tmp_path / "state1"
     state1.mkdir()
@@ -43,6 +45,8 @@ def test_the_listed_dirs_are_made_with_their_parents(tmp_path):
     assert (state1 / "cache" / "npm").is_dir()
     assert (state1 / "claude").is_dir()
 
+
+# --------------------------------------------------------------------------------
 
 def test_existing_dirs_are_kept_and_count_as_made(tmp_path):
     state1 = tmp_path / "state1"
@@ -55,6 +59,8 @@ def test_existing_dirs_are_kept_and_count_as_made(tmp_path):
     assert (state1 / "gh" / "file1").read_text() == "text1"
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_name_listed_twice_is_made_once_and_listed_once(tmp_path):
     state1 = tmp_path / "state1"
     state1.mkdir()
@@ -64,6 +70,8 @@ def test_a_name_listed_twice_is_made_once_and_listed_once(tmp_path):
     assert result.passed
     assert result.detail == f"shell, gh, git, claude exist under {state1}"
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_init_step_and_the_check_make_and_verify_the_same_base_list(tmp_path):
     state1 = tmp_path / "state1"
@@ -75,9 +83,9 @@ def test_the_init_step_and_the_check_make_and_verify_the_same_base_list(tmp_path
     assert state_dirs_check.state_dirs_result(state1, "claude").passed
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Refusals and failures
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_regular_file_where_a_state_dir_belongs_fails_naming_it(tmp_path):
     state1 = tmp_path / "state1"
@@ -91,6 +99,8 @@ def test_a_regular_file_where_a_state_dir_belongs_fails_naming_it(tmp_path):
     assert (state1 / "gh").read_text() == "text1"
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("name", ["/abs1", "a/../b", ".."])
 def test_an_absolute_name_or_one_with_a_dot_dot_part_fails_before_any_dir_is_made(tmp_path, name):
     state1 = tmp_path / "state1"
@@ -103,6 +113,8 @@ def test_an_absolute_name_or_one_with_a_dot_dot_part_fails_before_any_dir_is_mad
     assert list(state1.iterdir()) == []
     assert not (tmp_path / "b").exists()
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.skipif(os.getuid() == 0, reason="root can write to a read-only directory")
 def test_a_read_only_state_dir_fails_with_the_writable_fix(tmp_path):
@@ -118,6 +130,8 @@ def test_a_read_only_state_dir_fails_with_the_writable_fix(tmp_path):
     assert not result.passed
     assert result.hint == hints.state_writable_hint()
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_check_fix_line_points_at_sbx_init(tmp_path):
     result = state_dirs_check.state_dirs_result(tmp_path / "state1", "")

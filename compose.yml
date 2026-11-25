@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # One sbx sandbox: one container, one directory mounted from the host
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Usage: SBX_NAME=demo SBX_DIR=/Users/you/sbx-demo docker compose up -d --wait
 # README.md explains the variables and the sandbox name rule.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 name: "sbx-${SBX_NAME:?SBX_NAME is required (starts with a lowercase letter, then lowercase letters, digits or hyphens, 31 characters at most)}"
 
 services:

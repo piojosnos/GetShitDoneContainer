@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-list: the registered sandboxes with their status and directory
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # One docker ps call gives every status, so the list matches docker ps -a. It
 # only reads: no container, registry entry or directory is changed.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import sys
@@ -17,9 +17,9 @@ from sbx.names import agent_image, check_name, container_name, image_tag
 from sbx.registry import config_dir, entry_file, list_entry_names, read_entry, registry_dir
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 COMMAND_NAME = "sbx-list"
 _BROKEN_STATUS = "broken entry"
@@ -36,12 +36,12 @@ _LEFTOVER_LABEL = (
 _CONTAINER_PREFIX = "sbx-"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Status words
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Paused, restarting, exited, created, dead and removing all read stopped. The
 # match is the whole container name, so sbx-demo-two is never the sandbox demo.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _status_word(state: str) -> str:
     if state == "running":
@@ -49,6 +49,8 @@ def _status_word(state: str) -> str:
 
     return "stopped"
 
+
+# --------------------------------------------------------------------------------
 
 def _status_of(name: str, state_map: dict[str, str]) -> str:
     state = state_map.get(container_name(name))
@@ -59,15 +61,17 @@ def _status_of(name: str, state_map: dict[str, str]) -> str:
     return _status_word(state)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The table
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A broken entry is a row; sbx-start NAME prints the reason.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _format_row(name: str, status: str, path: str) -> str:
     return f"{name:<31} {status:<20} {path}"
 
+
+# --------------------------------------------------------------------------------
 
 def _row_of(registry: Path, name: str, tag: str, state_map: dict[str, str], docker: Docker) -> tuple[str, bool]:
     try:
@@ -83,6 +87,8 @@ def _row_of(registry: Path, name: str, tag: str, state_map: dict[str, str], dock
 
     return _format_row(name, status, entry.path), False
 
+
+# --------------------------------------------------------------------------------
 
 def _print_table(registry: Path, tag: str, state_map: dict[str, str], docker: Docker) -> bool:
     name_list = list_entry_names(registry)
@@ -106,11 +112,11 @@ def _print_table(registry: Path, tag: str, state_map: dict[str, str], docker: Do
     return older_image_found
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Containers that have no registry entry
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # For example the host-test sandbox, or one whose entry was deleted by hand.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _has_entry(registry: Path, container: str) -> bool:
     if not container.startswith(_CONTAINER_PREFIX):
@@ -118,6 +124,8 @@ def _has_entry(registry: Path, container: str) -> bool:
 
     return entry_file(registry, container[len(_CONTAINER_PREFIX):]).is_file()
 
+
+# --------------------------------------------------------------------------------
 
 def _print_leftovers(registry: Path, state_map: dict[str, str]) -> None:
     leftover_count = 0
@@ -134,9 +142,9 @@ def _print_leftovers(registry: Path, state_map: dict[str, str]) -> None:
         print(f"  {container:<35} {_status_word(state_map[container])}")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The command
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _list_sandboxes(argument_list: list[str], environ: Mapping[str, str], docker: Docker) -> None:
     if argument_list:
@@ -157,13 +165,15 @@ def _list_sandboxes(argument_list: list[str], environ: Mapping[str, str], docker
     _print_leftovers(registry, state_map)
 
 
+# --------------------------------------------------------------------------------
+
 def main(argument_list: list[str], environ: Mapping[str, str] = os.environ, docker: Docker = run_docker) -> int:
     return run_command(COMMAND_NAME, partial(_list_sandboxes, argument_list, environ, docker))
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Main / Entry Point
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

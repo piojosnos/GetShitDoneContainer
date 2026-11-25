@@ -1,8 +1,8 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the agent config result
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Real files inside tmp_path. A planted login token must not show in a result.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 from pathlib import Path
 
@@ -10,9 +10,9 @@ import agent_config
 import hints
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants and helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 GSD_PIN1 = "1.15.0"
 
@@ -27,15 +27,17 @@ def write_gsd_pin(dir_path: Path, version: str = GSD_PIN1) -> Path:
     return versions_file
 
 
+# --------------------------------------------------------------------------------
+
 def write_synced_version(config_dir: Path, version: str) -> None:
     version_file = config_dir / "gsd-core" / "VERSION"
     version_file.parent.mkdir(parents=True, exist_ok=True)
     version_file.write_text(version + "\n")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Login file and GSD sync
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_login_file_result_passes_for_a_non_empty_file_and_never_shows_its_text(tmp_path):
     login_file1 = tmp_path / "login1.json"
@@ -47,6 +49,8 @@ def test_login_file_result_passes_for_a_non_empty_file_and_never_shows_its_text(
     assert str(login_file1) in result.detail
     assert TOKEN_TEXT1 not in result.detail + result.hint
 
+
+# --------------------------------------------------------------------------------
 
 def test_login_file_result_fails_with_the_hint_for_an_empty_or_missing_file(tmp_path):
     empty_file1 = tmp_path / "empty1.json"
@@ -61,6 +65,8 @@ def test_login_file_result_fails_with_the_hint_for_an_empty_or_missing_file(tmp_
     assert missing_result.hint == "hint1"
 
 
+# --------------------------------------------------------------------------------
+
 def test_login_file_result_never_opens_the_file(tmp_path):
     login_dir1 = tmp_path / "login1.json"
     login_dir1.mkdir()
@@ -72,6 +78,8 @@ def test_login_file_result_never_opens_the_file(tmp_path):
     assert TOKEN_TEXT1 not in result.detail + result.hint
 
 
+# --------------------------------------------------------------------------------
+
 def test_gsd_synced_result_passes_when_the_synced_version_is_the_pin(tmp_path):
     config1 = tmp_path / "config1"
     write_synced_version(config1, GSD_PIN1)
@@ -81,6 +89,8 @@ def test_gsd_synced_result_passes_when_the_synced_version_is_the_pin(tmp_path):
     assert result.passed
     assert GSD_PIN1 in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_gsd_synced_result_fails_for_another_version_and_for_a_missing_file(tmp_path):
     versions1 = write_gsd_pin(tmp_path)
@@ -98,6 +108,8 @@ def test_gsd_synced_result_fails_for_another_version_and_for_a_missing_file(tmp_
     assert not missing_result.passed
     assert missing_result.hint == hints.init_hint()
 
+
+# --------------------------------------------------------------------------------
 
 def test_gsd_synced_result_fails_when_the_pin_is_missing(tmp_path):
     versions1 = tmp_path / "versions1.env"

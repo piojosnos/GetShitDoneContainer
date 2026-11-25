@@ -1,14 +1,14 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-fix-modes: sets the mode of every tracked file to what git committed, on the
 # host and in the sandbox
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Docker Desktop keeps the mode the sandbox sees in the extended attribute
 # user.containers.override_stat (uid:gid:mode) of the host file. A chmod in the
 # sandbox changes only that attribute, so the two sides drift apart. This sets the
 # host mode and the attribute's mode to 644 or 755 from the git index, so the
 # host, the sandbox and git agree. A file without the attribute gets the host mode
 # only.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import shutil
@@ -24,22 +24,22 @@ from sbx.names import check_name, image_tag
 from sbx.registry import config_dir, read_entry, registry_dir
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 COMMAND_NAME = "sbx-fix-modes"
 _OVERRIDE_NAME = "user.containers.override_stat"
 _MODE_BY_GIT_MODE_MAP = {"100644": 0o644, "100755": 0o755}
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The xattr command
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The attribute is read and written through a function that takes the arguments of
 # the xattr command and answers its exit code and output. Left out, main looks
 # xattr up on the PATH when it runs; a test passes its own function.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class XattrResult:
@@ -64,6 +64,8 @@ def _run_xattr(xattr_path: str, argument_list: list[str]) -> XattrResult:
     return XattrResult(result.returncode, result.stdout)
 
 
+# --------------------------------------------------------------------------------
+
 def _find_xattr_function(environ: Mapping[str, str]) -> XattrFunction | None:
     xattr_path = shutil.which("xattr", path=environ.get("PATH"))
 
@@ -73,12 +75,12 @@ def _find_xattr_function(environ: Mapping[str, str]) -> XattrFunction | None:
     return partial(_run_xattr, xattr_path)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Git
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # One ls-files run lists the index; its records are parsed here, so a path with a
 # space or a line break in it is read whole.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _check_top_of_repository(project_dir: str) -> None:
     result = subprocess.run(
@@ -93,6 +95,8 @@ def _check_top_of_repository(project_dir: str) -> None:
     if result.returncode != 0 or result.stdout.strip() != "":
         raise SbxError(f"{project_dir} is not the top directory of a git repository")
 
+
+# --------------------------------------------------------------------------------
 
 def _read_index(project_dir: str) -> list[tuple[str, str]]:
     result = subprocess.run(
@@ -119,12 +123,12 @@ def _read_index(project_dir: str) -> list[tuple[str, str]]:
     return record_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # One file
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The host mode comes first: macOS refuses to write an attribute on a read-only
 # file. Each function says whether it changed something.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _fix_host_mode(path: str, git_mode: str) -> bool:
     wanted_mode = _MODE_BY_GIT_MODE_MAP[git_mode]
@@ -139,6 +143,8 @@ def _fix_host_mode(path: str, git_mode: str) -> bool:
 
     return True
 
+
+# --------------------------------------------------------------------------------
 
 def _fix_sandbox_mode(path: str, git_mode: str, xattr_function: XattrFunction) -> bool:
     result = xattr_function(["-p", _OVERRIDE_NAME, path])
@@ -158,13 +164,13 @@ def _fix_sandbox_mode(path: str, git_mode: str, xattr_function: XattrFunction) -
     return True
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Containment
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The sandbox can write the index and plant symlinks, so an index path may lead
 # out of the project directory through a symlinked directory. Only a path whose
 # real location is inside the real project directory is touched.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _is_inside(project_real: str, path: str) -> bool:
     path_real = os.path.realpath(path)
@@ -172,9 +178,9 @@ def _is_inside(project_real: str, path: str) -> bool:
     return os.path.commonpath([project_real, path_real]) == project_real
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The command
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _fix_modes(
     argument_list: list[str], environ: Mapping[str, str], xattr_function: XattrFunction | None
@@ -226,6 +232,8 @@ def _fix_modes(
         print(f"{COMMAND_NAME}: xattr is not installed, so the sandbox modes were not looked at")
 
 
+# --------------------------------------------------------------------------------
+
 def main(
     argument_list: list[str],
     environ: Mapping[str, str] = os.environ,
@@ -234,9 +242,9 @@ def main(
     return run_command(COMMAND_NAME, partial(_fix_modes, argument_list, environ, xattr_function))
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Main / Entry Point
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

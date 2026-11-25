@@ -1,12 +1,12 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Scenarios: plain docker compose, run by a caller who bypasses the sbx- commands
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The name rule and the directory check of the commands are unit tested; these
 # two prove the guards in compose.yml itself. The environment holds only the
 # caller's PATH, HOME and Docker variables plus the four SBX_ values, so nothing
 # of the test environment helps the attempt. Whatever the attempt made (a
 # container or a network) is removed again when the scenario ends.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import re
@@ -23,9 +23,9 @@ _MISSING_DIR_PATTERN = re.compile(r"does not exist|no such file|bind source", re
 _PASSED_THROUGH_NAME_LIST = ["PATH", "HOME"]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The attempt
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _caller_environ(sbx_name: str, sbx_dir: Path, agent_name: str) -> dict[str, str]:
     environ = {}
@@ -42,9 +42,13 @@ def _caller_environ(sbx_name: str, sbx_dir: Path, agent_name: str) -> dict[str, 
     return environ
 
 
+# --------------------------------------------------------------------------------
+
 def _project_name(agent_name: str) -> str:
     return f"sbx-hosttest-refusal-{agent_name}"
 
+
+# --------------------------------------------------------------------------------
 
 def _container_name_list() -> list[str]:
     listing = run_timeout(["docker", "ps", "-a", "--format", "{{.Names}}"], 60)
@@ -52,10 +56,14 @@ def _container_name_list() -> list[str]:
     return listing.stdout.split()
 
 
+# --------------------------------------------------------------------------------
+
 def _remove_attempt(container: str, project: str) -> None:
     run_timeout(["docker", "rm", "-f", container], 120)
     run_timeout(["docker", "network", "rm", f"{project}_default"], 60)
 
+
+# --------------------------------------------------------------------------------
 
 def _compose_up(project: str, environ: dict[str, str]) -> CommandResult:
     return run_timeout(
@@ -68,11 +76,11 @@ def _compose_up(project: str, environ: dict[str, str]) -> CommandResult:
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_missing_sandbox_directory_is_refused
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # compose up on a directory that does not exist -> refused, nothing created
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_missing_sandbox_directory_is_refused(
     agent: AgentSpec,
@@ -104,11 +112,11 @@ def test_missing_sandbox_directory_is_refused(
         assert container not in _container_name_list(), f"the refused attempt made the container {container}"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_uppercase_name_is_refused
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # compose up with an uppercase SBX_NAME -> refused before any container
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_uppercase_name_is_refused(
     agent: AgentSpec,

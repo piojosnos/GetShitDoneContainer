@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Guard rule on the host launchers: two lines into an existing module, mode 755
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A launcher holds no logic: it only hands off to one Python module through uv, so
 # no other program or branch can hide in it. The exec bit is read from git, not
 # from the disk, because an edit from the dev sandbox can drop it on the host.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import re
 import subprocess
@@ -36,6 +36,8 @@ def _git_mode(name: str) -> str:
 
     return fields[0]
 
+
+# --------------------------------------------------------------------------------
 
 def _launcher_problem_list(path) -> list[str]:
     name = relative_name(path)
@@ -73,9 +75,9 @@ def _launcher_problem_list(path) -> list[str]:
     return problem_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule every_launcher_is_two_lines_into_an_existing_module
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_every_launcher_is_two_lines_into_an_existing_module():
     path_list = launcher_list()
@@ -90,13 +92,13 @@ def test_every_launcher_is_two_lines_into_an_existing_module():
     assert not problem_list, "\n".join(problem_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule no_host_logic_in_shell
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # "Host script" means a shell file the host runs that holds logic. The agent
 # wrappers and the image commands run in the image and stay shell; the launchers
 # hold no logic. No shell file and no stand-in for a tool is tracked under tests/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _tracked_name_list(directory: str) -> list[str]:
     completed = subprocess.run(
@@ -109,6 +111,8 @@ def _tracked_name_list(directory: str) -> list[str]:
 
     return completed.stdout.splitlines()
 
+
+# --------------------------------------------------------------------------------
 
 def _root_script_problem_list(launcher_name_list: list[str]) -> list[str]:
     problem_list = []
@@ -126,6 +130,8 @@ def _root_script_problem_list(launcher_name_list: list[str]) -> list[str]:
     return problem_list
 
 
+# --------------------------------------------------------------------------------
+
 def _tests_shell_problem_list() -> list[str]:
     problem_list = []
 
@@ -138,6 +144,8 @@ def _tests_shell_problem_list() -> list[str]:
 
     return problem_list
 
+
+# --------------------------------------------------------------------------------
 
 def test_no_host_logic_in_shell():
     launcher_name_list = relative_name_list(launcher_list())

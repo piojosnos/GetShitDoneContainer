@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Fixtures of the integration scenarios: run directory, images, test sandboxes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The scenarios run the real sbx commands against real Docker. Every command gets
 # a test registry in the run directory and SBX_IMAGE_TAG=test, so the registry and
 # the images of your own sandboxes are never touched. Nothing here calls Docker
 # when the file is imported or the tests are collected.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import shutil
@@ -56,9 +56,9 @@ _GIT_FIXTURE_ENVIRON_UPDATE = {
 }
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Options
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
@@ -69,13 +69,15 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
+# --------------------------------------------------------------------------------
+
 def _keep(request: pytest.FixtureRequest) -> bool:
     return bool(request.config.getoption("--keep"))
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Small helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _describe(result: CommandResult) -> str:
     text = f"exit {result.returncode}"
@@ -86,10 +88,14 @@ def _describe(result: CommandResult) -> str:
     return f"{text}\nstdout: {result.stdout.strip()}\nstderr: {result.stderr.strip()}"
 
 
+# --------------------------------------------------------------------------------
+
 def _require_success(result: CommandResult, what: str) -> None:
     if result.returncode != 0 or result.timed_out:
         pytest.fail(f"{what} failed: {_describe(result)}", pytrace=False)
 
+
+# --------------------------------------------------------------------------------
 
 def _git_environ() -> dict[str, str]:
     environ = dict(os.environ)
@@ -98,12 +104,12 @@ def _git_environ() -> dict[str, str]:
     return environ
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # run_dir: the directory one run keeps everything in
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Made under the temp base (which Docker Desktop shares), resolved, with logs/ and
 # cfg/ (the test registry). Removed at the end unless --keep.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.fixture(scope="session")
 def run_dir(request: pytest.FixtureRequest):
@@ -126,13 +132,13 @@ def run_dir(request: pytest.FixtureRequest):
     shutil.rmtree(run_path, ignore_errors=True)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # root_ca_file: the certificate file the test images are built to trust
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The throwaway root is made once and reused while valid; its key is deleted at
 # once. build-ca.pem holds your own SBX_CA_CERT first when set, then the test root.
 # The file sits outside the run directory, which a sandbox mounts.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.fixture(scope="session")
 def root_ca_file(run_dir: Path) -> Path:
@@ -167,12 +173,12 @@ def root_ca_file(run_dir: Path) -> Path:
     return build_file
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # hosttest_env: the environment every command of a scenario runs with
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # No SBX_ or COMPOSE_ value of the caller gets through. The decoy values prove
 # the commands take everything from the registry and ignore the ambient shell.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.fixture(scope="session")
 def hosttest_env(run_dir: Path, root_ca_file: Path) -> dict[str, str]:
@@ -196,12 +202,12 @@ def hosttest_env(run_dir: Path, root_ca_file: Path) -> dict[str, str]:
     return environ
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_images: builds the test images once per run
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # build.sh with SBX_IMAGE_TAG=test, so the images your sandboxes run are not
 # touched. A build warning about a default argument in a FROM line is a failure.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.fixture(scope="session")
 def test_images(run_dir: Path, hosttest_env: dict[str, str]) -> None:
@@ -221,12 +227,12 @@ def test_images(run_dir: Path, hosttest_env: dict[str, str]) -> None:
         pytest.fail(f"the build warned InvalidDefaultArgInFrom; log: {log_file}", pytrace=False)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # best_practices_origin: a local bare repo holding the fixture rules and skills
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A seed directory gets one commit on main and the bare repo is cloned from it.
 # Host git config and identity are never used.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.fixture(scope="session")
 def best_practices_origin(run_dir: Path) -> Path:
@@ -252,12 +258,12 @@ def best_practices_origin(run_dir: Path) -> Path:
     return origin_dir
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sandbox_cleanup: the names of the sandboxes the run started
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A fixture appends a name as soon as the sandbox is registered. At the end each
 # one goes through sbx-rm, unless --keep, and any test container left is named.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.fixture(scope="session")
 def sandbox_cleanup(request: pytest.FixtureRequest, run_dir: Path, hosttest_env: dict[str, str]):
@@ -282,22 +288,22 @@ def sandbox_cleanup(request: pytest.FixtureRequest, run_dir: Path, hosttest_env:
         progress(f"test containers still there: {' '.join(left.stdout.split())}")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # agent: the scenario runs once per agent
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.fixture(scope="session", params=AGENT_SPEC_LIST, ids=[spec.name for spec in AGENT_SPEC_LIST])
 def agent(request: pytest.FixtureRequest) -> AgentSpec:
     return request.param
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Leftover test containers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A container of an interrupted run is removed only when its label and its
 # workspace mount prove a test run; any other container of that name stops the
 # fixture, naming it.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _workspace_mount_source(inspected: dict) -> str:
     for mount in inspected.get("Mounts", []):
@@ -306,6 +312,8 @@ def _workspace_mount_source(inspected: dict) -> str:
 
     return ""
 
+
+# --------------------------------------------------------------------------------
 
 def _remove_leftover_container(name: str, container: str) -> None:
     inspected = inspect_container(container)
@@ -328,13 +336,13 @@ def _remove_leftover_container(name: str, container: str) -> None:
     run_timeout(["docker", "network", "rm", f"{container}_default"], 60)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # shared_sandbox: one test sandbox per agent, made with the real commands
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # add -> clone best-practices -> start -> sbx-init
 # The directory name holds a space on purpose. A scenario gets the sandbox back
 # in a known state from the sandbox fixture.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.fixture(scope="session")
 def shared_sandbox(
@@ -381,14 +389,14 @@ def shared_sandbox(
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sandbox: the shared sandbox back in a known state, for one scenario
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # running, init done
 # A scenario that stopped, recreated or upgraded the sandbox leaves nothing for
 # the next one to repair: this starts it again and runs sbx-init when the marker
 # is gone.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def sandbox(shared_sandbox: RunSandbox, hosttest_env: dict[str, str]) -> RunSandbox:

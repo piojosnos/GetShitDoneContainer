@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Runs an agent from the agents directory once sbx-init has passed in this container
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Usage: sbx-run-agent AGENT_WRAPPER AGENT [agent arguments]
 # Each agent wrapper execs this script with its own name and its agent's command.
 # The refusal names the agent wrapper, so the user sees the command they typed.
@@ -10,15 +10,15 @@
 # everything it starts find the agents. The calling shell's PATH stays as it is.
 # SBX_INIT_MARKER and SBX_AGENT_BIN_DIR override the marker file and the agents
 # directory for tests; they are not a security boundary.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 set -eu
 
 initMarker=${SBX_INIT_MARKER:-/home/sandbox/.sbx-init-done}
 agentBinDir=${SBX_AGENT_BIN_DIR:-/opt/sbx/agents/bin}
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Main / Entry Point
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 if [ "$#" -lt 2 ]; then
   echo "Usage: sbx-run-agent AGENT_WRAPPER AGENT [agent arguments]" >&2
   exit 2

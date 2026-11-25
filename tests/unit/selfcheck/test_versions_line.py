@@ -1,8 +1,8 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the versions line checks
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A stand-in bash and real files stand for the image's shell and line file.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 
@@ -12,9 +12,9 @@ from helpers import environment_with, load_shared_check, write_stand_in
 versions_line = load_shared_check("240_versions_line")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Versions line
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_versions_line_file_passes_for_one_line_ending_with_the_base_text(versions1, line1):
     line1.write_text("claude 1 | " + versions_text.expected_base_versions_text(versions1) + "\n")
@@ -22,11 +22,15 @@ def test_versions_line_file_passes_for_one_line_ending_with_the_base_text(versio
     assert versions_line.versions_line_file_result(line1, versions1).passed
 
 
+# --------------------------------------------------------------------------------
+
 def test_versions_line_file_also_passes_for_the_base_text_alone(versions1, line1):
     line1.write_text(versions_text.expected_base_versions_text(versions1) + "\n")
 
     assert versions_line.versions_line_file_result(line1, versions1).passed
 
+
+# --------------------------------------------------------------------------------
 
 def test_versions_line_file_fails_for_two_lines_a_wrong_field_or_no_file(tmp_path, versions1, line1):
     base_text = versions_text.expected_base_versions_text(versions1)
@@ -40,6 +44,8 @@ def test_versions_line_file_fails_for_two_lines_a_wrong_field_or_no_file(tmp_pat
     assert not versions_line.versions_line_file_result(tmp_path / "missing1", versions1).passed
 
 
+# --------------------------------------------------------------------------------
+
 def test_versions_line_file_reports_a_missing_pin(tmp_path, line1):
     empty_versions = tmp_path / "empty1.env"
     empty_versions.write_text("")
@@ -47,6 +53,8 @@ def test_versions_line_file_reports_a_missing_pin(tmp_path, line1):
 
     assert versions_line.versions_line_file_result(line1, empty_versions).detail.startswith("GSD_CORE_VERSION is not in ")
 
+
+# --------------------------------------------------------------------------------
 
 def test_interactive_shell_passes_when_it_prints_the_file_once_and_only_on_stdout(tmp_path, bin1, line1):
     line1.write_text("line one of the file\n")
@@ -56,6 +64,8 @@ def test_interactive_shell_passes_when_it_prints_the_file_once_and_only_on_stdou
 
     assert result.passed
 
+
+# --------------------------------------------------------------------------------
 
 def test_interactive_shell_fails_when_it_prints_the_line_twice(bin1, line1):
     line1.write_text("line one of the file\n")
@@ -68,12 +78,16 @@ def test_interactive_shell_fails_when_it_prints_the_line_twice(bin1, line1):
     assert "sbx-upgrade" in result.hint
 
 
+# --------------------------------------------------------------------------------
+
 def test_interactive_shell_fails_when_it_prints_nothing(bin1, line1):
     line1.write_text("line one of the file\n")
     write_stand_in(bin1, "bash", "true")
 
     assert not versions_line.interactive_versions_line_result(line1, environment_with(bin1)).passed
 
+
+# --------------------------------------------------------------------------------
 
 def test_interactive_shell_fails_when_the_versions_file_is_missing(tmp_path, bin1):
     write_stand_in(bin1, "bash", "true")
@@ -83,6 +97,8 @@ def test_interactive_shell_fails_when_the_versions_file_is_missing(tmp_path, bin
     assert not result.passed
     assert "missing1" in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_interactive_shell_runs_with_the_history_file_pointed_at_dev_null(tmp_path, bin1, line1):
     line1.write_text("line one of the file\n")
@@ -95,6 +111,8 @@ def test_interactive_shell_runs_with_the_history_file_pointed_at_dev_null(tmp_pa
 
     assert seen1.read_text() == "/dev/null"
 
+
+# --------------------------------------------------------------------------------
 
 def test_interactive_shell_does_not_touch_the_history_file_of_a_real_bash(tmp_path, line1):
     line1.write_text("line one of the file\n")
@@ -115,11 +133,15 @@ def test_interactive_shell_does_not_touch_the_history_file_of_a_real_bash(tmp_pa
     assert sorted(remaining_name_list) == ["history1"]
 
 
+# --------------------------------------------------------------------------------
+
 def test_quiet_shells_pass_when_both_flags_print_nothing(bin1):
     write_stand_in(bin1, "bash", "true")
 
     assert versions_line.quiet_shells_result(environment_with(bin1)).passed
 
+
+# --------------------------------------------------------------------------------
 
 def test_quiet_shells_name_the_flag_and_the_line_of_a_noisy_login_shell(bin1):
     write_stand_in(bin1, "bash", 'if [ "$1" = "-lc" ]; then echo "noise1"; fi')
@@ -131,6 +153,8 @@ def test_quiet_shells_name_the_flag_and_the_line_of_a_noisy_login_shell(bin1):
     assert "bash -c" not in result.detail
     assert "sbx-upgrade" in result.hint
 
+
+# --------------------------------------------------------------------------------
 
 def test_quiet_shells_fail_for_output_on_stderr_too(bin1):
     write_stand_in(bin1, "bash", 'if [ "$1" = "-c" ]; then echo "noise2" >&2; fi')

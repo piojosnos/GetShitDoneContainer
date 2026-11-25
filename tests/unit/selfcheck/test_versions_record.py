@@ -1,15 +1,15 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the versions record check
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 from helpers import load_shared_check
 
 versions_record = load_shared_check("230_versions_record")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Versions record
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_versions_record_passes_when_every_shared_pin_has_a_value(versions1):
     result = versions_record.versions_record_result(versions1)
@@ -17,6 +17,8 @@ def test_versions_record_passes_when_every_shared_pin_has_a_value(versions1):
     assert result.passed
     assert str(versions1) in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_versions_record_names_the_pins_that_are_missing_or_empty(tmp_path, versions1):
     versions2 = tmp_path / "versions2.env"
@@ -30,12 +32,16 @@ def test_versions_record_names_the_pins_that_are_missing_or_empty(tmp_path, vers
     assert "MAVEN_VERSION" not in result.detail
 
 
+# --------------------------------------------------------------------------------
+
 def test_versions_record_fails_when_the_file_is_missing(tmp_path):
     result = versions_record.versions_record_result(tmp_path / "missing1.env")
 
     assert not result.passed
     assert "missing1.env" in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_versions_record_does_not_run_what_the_file_holds(tmp_path, versions1):
     marker1 = tmp_path / "marker1"

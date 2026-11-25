@@ -1,8 +1,8 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the plain tool checks
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Real tools on the PATH of the dev sandbox.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import shutil
@@ -15,9 +15,9 @@ from helpers import load_shared_check
 tools_plain = load_shared_check("140_tools_plain")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants and helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def tool_check(name: str) -> Check:
     for check in tools_plain.CHECK_LIST:
@@ -27,9 +27,9 @@ def tool_check(name: str) -> Check:
     raise AssertionError(f"no tool check for {name}")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Plain tools
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_every_plain_tool_has_a_check_named_after_it():
     name_list = []
@@ -43,6 +43,8 @@ def test_every_plain_tool_has_a_check_named_after_it():
     ]
 
 
+# --------------------------------------------------------------------------------
+
 def test_tool_bash_resolves_to_the_image_outside_the_home():
     result = tool_check("bash").function()
     expected_path = os.path.realpath(shutil.which("bash"))
@@ -51,6 +53,8 @@ def test_tool_bash_resolves_to_the_image_outside_the_home():
     assert result.detail == expected_path
     assert not result.detail.startswith("/home/")
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.skipif(shutil.which("keytool") is None, reason="keytool is not installed here")
 def test_tool_keytool_resolves_to_the_jdk_outside_the_home():

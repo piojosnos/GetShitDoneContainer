@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Protected paths
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Nothing under a protected path may be writable by the sandbox user or be a
 # mount point. The image puts this file in /usr/local/lib/sbx-selfcheck/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 from pathlib import Path
@@ -15,9 +15,9 @@ from paths import is_under, path_is_present
 from tree_walk import walk_tree
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Problems under one path
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _writable_entry_problem_list(path: Path) -> list[str]:
     problem_list = []
@@ -33,6 +33,8 @@ def _writable_entry_problem_list(path: Path) -> list[str]:
     return problem_list
 
 
+# --------------------------------------------------------------------------------
+
 def _mount_point_problem_list(path: Path, mount_point_found_set: set[str]) -> list[str]:
     problem_list = []
 
@@ -42,6 +44,8 @@ def _mount_point_problem_list(path: Path, mount_point_found_set: set[str]) -> li
 
     return problem_list
 
+
+# --------------------------------------------------------------------------------
 
 def _protected_paths_problem_list(path_list: list[Path], mount_point_found_set: set[str]) -> list[str]:
     problem_list = []
@@ -57,9 +61,9 @@ def _protected_paths_problem_list(path_list: list[Path], mount_point_found_set: 
     return problem_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The protected paths result
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def protected_paths_result(path_list: list[Path], mountinfo_file: Path = MOUNTINFO_FILE) -> CheckResult:
     problem_list = _protected_paths_problem_list(path_list, read_mount_point_set(mountinfo_file))

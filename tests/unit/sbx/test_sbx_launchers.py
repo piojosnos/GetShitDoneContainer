@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the host launchers: shape, mode and the refusal of a wrong argument
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A host launcher is a #!/bin/sh file of two lines that runs one Python module
 # through uv. Each one is run as a process from a directory outside the repo, as
 # a user runs it from PATH. None of the cases needs Docker.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import json
 import os
@@ -42,14 +42,16 @@ _LAUNCHER_SHEBANG = "#!/bin/sh"
 _ROOT_LAUNCHER_NAME_LIST = ["build.sh", "clean.sh", "host-test.sh"]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Finding the launchers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _first_line(file: Path) -> str:
     with open(file, encoding="utf-8", errors="replace") as handle:
         return handle.readline().rstrip("\n")
 
+
+# --------------------------------------------------------------------------------
 
 def find_launcher_list() -> list[Path]:
     candidate_list = []
@@ -81,13 +83,15 @@ def _launcher_environ(config: Path) -> dict[str, str]:
     return environ
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Cases
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_launcher_list_is_not_empty():
     assert LAUNCHER_LIST != []
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("launcher", LAUNCHER_LIST, ids=[file.name for file in LAUNCHER_LIST])
 def test_a_launcher_refuses_a_wrong_argument_count_with_a_usage_line(launcher, tmp_path):
@@ -110,6 +114,8 @@ def test_a_launcher_refuses_a_wrong_argument_count_with_a_usage_line(launcher, t
     assert result.stderr.splitlines()[0].startswith(f"Usage: {launcher.name}")
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("launcher", LAUNCHER_LIST, ids=[file.name for file in LAUNCHER_LIST])
 def test_a_launcher_is_two_lines_that_run_one_module_through_uv_without_the_project(launcher):
     line_list = launcher.read_text(encoding="utf-8").splitlines()
@@ -120,6 +126,8 @@ def test_a_launcher_is_two_lines_that_run_one_module_through_uv_without_the_proj
     assert " --no-project " in line_list[1] or " --isolated --frozen " in line_list[1]
     assert line_list[1].endswith(' "$@"')
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_migrate_launcher_converts_an_old_entry_from_another_directory(tmp_path):
     registry = tmp_path / "config1" / "sandboxes"
@@ -143,6 +151,8 @@ def test_the_migrate_launcher_converts_an_old_entry_from_another_directory(tmp_p
     assert old_file.read_bytes() == before
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_add_launcher_stores_a_path_with_a_space_and_a_non_ascii_letter_as_given(tmp_path):
     registry = tmp_path / "config1" / "sandboxes"
     registry.mkdir(parents=True)
@@ -163,6 +173,8 @@ def test_the_add_launcher_stores_a_path_with_a_space_and_a_non_ascii_letter_as_g
     assert (tmp_path / "one dir" / "caf\u00e9" / "sbx1").is_dir()
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_build_launcher_refuses_a_tag_other_than_local_or_test_from_another_directory(tmp_path):
     environ = _launcher_environ(tmp_path / "config1")
     environ["SBX_IMAGE_TAG"] = "latest"
@@ -182,53 +194,73 @@ def test_the_build_launcher_refuses_a_tag_other_than_local_or_test_from_another_
     assert result.stderr == "build.sh: SBX_IMAGE_TAG must be local or test, not 'latest'\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Every command refuses another image tag before it does anything
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The main of each command runs in process with the recorder and an unknown tag.
 # Each must exit 1 with the tag text, reach no Docker, read no registry entry
 # and make no file or directory.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _run_add(environ, recorder, work_dir):
     return add_module.main(["name1", str(work_dir / "new dir" / "one")], environ)
 
 
+# --------------------------------------------------------------------------------
+
 def _run_list(environ, recorder, work_dir):
     return list_module.main([], environ, docker=recorder)
 
+
+# --------------------------------------------------------------------------------
 
 def _run_start(environ, recorder, work_dir):
     return start_module.main(["name1"], environ, docker=recorder)
 
 
+# --------------------------------------------------------------------------------
+
 def _run_stop(environ, recorder, work_dir):
     return stop_module.main(["name1"], environ, docker=recorder)
 
+
+# --------------------------------------------------------------------------------
 
 def _run_shell(environ, recorder, work_dir):
     return shell_module.main(["name1"], environ, docker=recorder, exec_function=_refuse_exec)
 
 
+# --------------------------------------------------------------------------------
+
 def _run_upgrade(environ, recorder, work_dir):
     return upgrade_module.main(["name1"], environ, docker=recorder, build_function=_refuse_build)
 
+
+# --------------------------------------------------------------------------------
 
 def _run_rm(environ, recorder, work_dir):
     return rm_module.main(["name1"], environ, docker=recorder)
 
 
+# --------------------------------------------------------------------------------
+
 def _run_fix_modes(environ, recorder, work_dir):
     return fix_modes_module.main(["name1"], environ)
 
+
+# --------------------------------------------------------------------------------
 
 def _run_build(environ, recorder, work_dir):
     return build_module.main([], environ, docker=recorder)
 
 
+# --------------------------------------------------------------------------------
+
 def _refuse_exec(file, argument_list, environ):
     raise AssertionError("exec was called")
 
+
+# --------------------------------------------------------------------------------
 
 def _refuse_build(option_list, environ, docker, repo_dir):
     raise AssertionError("the build was called")
@@ -256,6 +288,8 @@ def _tree_snapshot(root: Path) -> list[str]:
     return sorted(path_list)
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("command_name", list(TAG_COMMAND_MAP))
 def test_every_command_refuses_the_latest_tag_before_it_reads_the_registry_or_calls_docker(
     command_name, tmp_path, capsys
@@ -275,6 +309,8 @@ def test_every_command_refuses_the_latest_tag_before_it_reads_the_registry_or_ca
     assert recorder.call_list == []
     assert _tree_snapshot(tmp_path) == before
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_tag_map_holds_every_command_the_launchers_run():
     no_tag_command_list = ["sbx-migrate-registry", "clean.sh", "host-test.sh"]

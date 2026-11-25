@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Scenario: sbx-list shows each sandbox with the status docker ps -a shows
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rows are compared as the exact text sbx-list prints, so a wrong column width, a
 # stale status or a false older-image mark fails. Only the lines of the test
 # sandboxes are read: the host also runs your own sandboxes, which this scenario
 # never touches; the test registry holds the test sandboxes only.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 from pathlib import Path
 
@@ -23,28 +23,30 @@ from scenario_helpers import (
 _NO_SANDBOXES_LINE = "sbx-list: no sandboxes registered; register one with: sbx-add NAME HOST_PATH"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The text sbx-list prints
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Written out here and not imported, so the scenario is an independent reading of
 # the format: the name in 31 columns, the status in 20, then the directory; and a
 # container without a registry entry indented by two, in 35 columns.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _row(name: str, status: str, path: Path) -> str:
     return f"{name:<31} {status:<20} {path}"
 
 
+# --------------------------------------------------------------------------------
+
 def _leftover_line(container: str, status: str) -> str:
     return f"  {container:<35} {status}"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # What docker ps -a says
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The empty text means Docker has no such container. A failed docker ps is a
 # failure of its own, never read as no container.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _docker_state(container: str) -> str:
     listing = run_timeout(["docker", "ps", "-a", "--format", "{{.Names}} {{.State}}"], 60)
@@ -60,6 +62,8 @@ def _docker_state(container: str) -> str:
     return ""
 
 
+# --------------------------------------------------------------------------------
+
 def _list_lines(environ: dict[str, str]) -> list[str]:
     listing = run_sbx("sbx-list", [], environ)
 
@@ -67,6 +71,8 @@ def _list_lines(environ: dict[str, str]) -> list[str]:
 
     return listing.stdout.splitlines()
 
+
+# --------------------------------------------------------------------------------
 
 def _row_problem(line_list: list[str], sandbox: RunSandbox, status: str, expected_docker_state: str) -> str | None:
     row = _row(sandbox.name, status, sandbox.sandbox_dir)
@@ -87,11 +93,11 @@ def _row_problem(line_list: list[str], sandbox: RunSandbox, status: str, expecte
     return None
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_list_shows_the_docker_state
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # empty registry -> add -> start -> stop: each row matches docker ps -a
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_list_shows_the_docker_state(
     agent: AgentSpec,

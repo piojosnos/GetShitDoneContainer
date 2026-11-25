@@ -1,8 +1,8 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the git identity check
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # They run the real git against config files inside tmp_path.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import subprocess
 
@@ -11,9 +11,9 @@ from helpers import git_environment, load_shared_check
 git_identity = load_shared_check("100_git_identity")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Git identity
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_git_identity_fails_for_an_empty_config_and_then_passes_without_printing_values(tmp_path):
     global1 = tmp_path / "global1"
@@ -36,6 +36,8 @@ def test_git_identity_fails_for_an_empty_config_and_then_passes_without_printing
     assert "name1@example.invalid" not in set_result.detail + set_result.hint
     assert "name1" not in set_result.detail.replace("user.name", "")
 
+
+# --------------------------------------------------------------------------------
 
 def test_git_identity_names_only_the_empty_one(tmp_path):
     global1 = tmp_path / "global1"
