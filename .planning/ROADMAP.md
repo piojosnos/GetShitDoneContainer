@@ -368,9 +368,16 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
+**Wave 1**
 - [ ] 10.1.2-01-PLAN.md: tracer; `AgentDescription`, `agent_check_list` and one `030_agent_checks.py` per agent replace the 16 selfcheck twin files, Claude first, then Cursor; output unchanged (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 10.1.2-02-PLAN.md: `gsd_sync_step_list` and `best_practices_links_step_list` behind two one-line step files per agent; init order unchanged (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 10.1.2-03-PLAN.md: README selfcheck paragraph, GLOSSARY row, tests README catches (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 10.1.2-04-PLAN.md: dev-sandbox phase gate, local PR branches, then the host run of `./host-test.sh` (wave 4, checkpoint)
 
 ### Phase 10.2: OpenCode agent image with full skills and best-practices support (INSERTED)

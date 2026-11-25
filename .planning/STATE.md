@@ -2,18 +2,18 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 milestone_name: Simple tooling
-current_phase: 10.1.1
-current_phase_name: Agents link the generated practices
-status: planning
+current_phase: 10.1.2
+current_phase_name: shared-agent-checks-before-the-third-agent
+status: executing
 stopped_at: Phase 10.1.2 context gathered
-last_updated: "2026-11-25T18:06:51.241Z"
+last_updated: "2026-11-25T19:50:38.008Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 10.1 complete, transitioned to Phase 10.1.1
-state_head: 7d9730e01fe2e4d605c791c3af1630193d3567f2
+state_head: 1cb501c6173893bd115bc3771e22bab602634f75
 progress:
   total_phases: 12
   completed_phases: 6
-  total_plans: 76
+  total_plans: 80
   completed_plans: 71
   percent: 50
 ---
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 
 ## Current Position
 
-Phase: 10.1.1 — Agents link the generated practices
+Phase: 10.1.2 (shared-agent-checks-before-the-third-agent) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
+Status: Ready to execute
 Last activity: 2026-11-24 — Phase 10.1 complete, transitioned to Phase 10.1.1
 
 ## Performance Metrics
