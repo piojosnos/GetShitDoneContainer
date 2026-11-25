@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # host-test.sh: the host run of every test suite, with a log kept as it comes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Usage: ./host-test.sh [--keep]   (exit 0 = every test passed)
 # --keep leaves the test sandboxes and the run directory to look around after a
 # failure. The run builds and checks the test images (tag test); it never builds,
 # runs or removes the images your sandboxes run.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import re
@@ -21,13 +21,13 @@ from sbx.docker import Docker, run_docker
 from sbx.names import KNOWN_AGENT_LIST, agent_image, base_image
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The integration suite runs before the guard: the guard's linter rules run from
 # sbx-base:test, which the integration session builds. The sbx unit tests come
 # first because they need no Docker and are the fastest to fail.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 COMMAND_NAME = "host-test.sh"
 LOG_NAME = "host-test.log"
@@ -43,12 +43,12 @@ _REFUSAL_EXIT_CODE = 1
 _INTERRUPTED_EXIT_CODE = 130
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Docker Compose version
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Compose 2.x and the later 5.x pass, as does a v prefix; 1.x, empty text and
 # anything that is not a version fail.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def compose_version_ok(version_text: str) -> bool:
     found = _COMPOSE_VERSION_PATTERN.match(version_text.strip())
@@ -59,12 +59,12 @@ def compose_version_ok(version_text: str) -> bool:
     return int(found.group(1)) >= _MINIMUM_COMPOSE_MAJOR
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The pytest child
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Every scenario runs, so the summary lists every failure; the run is never
 # told to stop at the first one.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def pytest_argument_list(keep: bool) -> list[str]:
     argument_list = ["-m", "pytest", "-v", "-s", "-p", "no:cacheprovider", *SUITE_PATH_LIST]
@@ -75,6 +75,8 @@ def pytest_argument_list(keep: bool) -> list[str]:
     return argument_list
 
 
+# --------------------------------------------------------------------------------
+
 def _child_environ(environ: Mapping[str, str]) -> dict[str, str]:
     child_environ = dict(environ)
     child_environ["SBX_IMAGE_TAG"] = _TEST_TAG
@@ -83,12 +85,12 @@ def _child_environ(environ: Mapping[str, str]) -> dict[str, str]:
     return child_environ
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Output: the terminal and the log, one line at a time
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Each line is flushed to both, so a long build shows progress and the log is
 # readable while the run is still going.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _emit(text: str, output: TextIO, log_handle: TextIO) -> None:
     output.write(text)
@@ -97,9 +99,13 @@ def _emit(text: str, output: TextIO, log_handle: TextIO) -> None:
     log_handle.flush()
 
 
+# --------------------------------------------------------------------------------
+
 def _emit_line(text: str, output: TextIO, log_handle: TextIO) -> None:
     _emit(f"{text}\n", output, log_handle)
 
+
+# --------------------------------------------------------------------------------
 
 def run_and_log(
     argument_list: list[str],
@@ -132,9 +138,9 @@ def run_and_log(
     return process.wait()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Preflight and context
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _compose_is_v2(docker: Docker) -> bool:
     result = docker(["compose", "version", "--short"], None, True)
@@ -144,6 +150,8 @@ def _compose_is_v2(docker: Docker) -> bool:
 
     return compose_version_ok(result.stdout)
 
+
+# --------------------------------------------------------------------------------
 
 def _git_text(repo_dir: Path, argument_list: list[str]) -> str:
     try:
@@ -165,6 +173,8 @@ def _git_text(repo_dir: Path, argument_list: list[str]) -> str:
     return completed.stdout.strip()
 
 
+# --------------------------------------------------------------------------------
+
 def _image_line() -> str:
     image_list = [base_image(_TEST_TAG)]
 
@@ -174,6 +184,8 @@ def _image_line() -> str:
     return f"images: {', '.join(image_list)}"
 
 
+# --------------------------------------------------------------------------------
+
 def _docker_text(docker: Docker, argument_list: list[str]) -> str:
     result = docker(argument_list, None, True)
 
@@ -182,6 +194,8 @@ def _docker_text(docker: Docker, argument_list: list[str]) -> str:
 
     return result.stdout.strip()
 
+
+# --------------------------------------------------------------------------------
 
 def _write_context(docker: Docker, repo_dir: Path, output: TextIO, log_handle: TextIO) -> None:
     branch = _git_text(repo_dir, ["rev-parse", "--abbrev-ref", "HEAD"]) or "unknown"
@@ -198,9 +212,9 @@ def _write_context(docker: Docker, repo_dir: Path, output: TextIO, log_handle: T
     _emit_line(_docker_text(docker, ["compose", "version"]), output, log_handle)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Arguments
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _parse_keep(argument_list: list[str]) -> bool:
     if argument_list == []:
@@ -212,9 +226,9 @@ def _parse_keep(argument_list: list[str]) -> bool:
     raise UsageError(_USAGE_TEXT)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The run
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _run(
     keep: bool,
@@ -253,6 +267,8 @@ def _run(
     return code
 
 
+# --------------------------------------------------------------------------------
+
 def main(
     argument_list: list[str],
     output: TextIO,
@@ -271,9 +287,9 @@ def main(
         return _run(keep, environ, docker, repo_dir, output, log_handle)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Main / Entry Point
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:], sys.stdout))

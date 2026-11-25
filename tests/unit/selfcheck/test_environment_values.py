@@ -1,13 +1,13 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the environment values result
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import environment_values
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Environment values
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_environment_values_result_passes_for_a_matching_mapping():
     result = environment_values.environment_values_result(
@@ -18,6 +18,8 @@ def test_environment_values_result_passes_for_a_matching_mapping():
     assert result.passed
     assert result.detail == "VAR1=value1, VAR2=value2"
 
+
+# --------------------------------------------------------------------------------
 
 def test_environment_values_result_names_each_wrong_or_missing_variable():
     result = environment_values.environment_values_result(

@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Scenario: add, start and stop a sandbox by name
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The commands a user types first, run the way a user runs them: found through
 # PATH, on a throwaway sandbox whose directory has a space. The ambient
 # COMPOSE_PROJECT_NAME of the test environment is a decoy; the commands must
 # ignore it and take everything from the registry.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import json
 import os
@@ -43,9 +43,9 @@ _STOP_SECONDS_LIMIT = 10
 _PROJECT_LABEL = "com.docker.compose.project"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Checks on the container
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _labels_and_entrypoint_problem_list(container: str, expected_project: str) -> list[str]:
     inspected = inspect_container(container)
@@ -71,6 +71,8 @@ def _labels_and_entrypoint_problem_list(container: str, expected_project: str) -
     return problem_list
 
 
+# --------------------------------------------------------------------------------
+
 def _unchanged_file_problem_list(expected_map: dict) -> list[str]:
     problem_list = []
 
@@ -88,11 +90,11 @@ def _unchanged_file_problem_list(expected_map: dict) -> list[str]:
     return problem_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_add_start_stop_start
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-add -> sbx-stop before start -> sbx-start -> sbx-stop -> sbx-start reuses the container
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_add_start_stop_start(
     agent: AgentSpec,

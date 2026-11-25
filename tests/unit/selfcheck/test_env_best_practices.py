@@ -1,6 +1,6 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the best-practices environment check
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import paths
 from helpers import load_shared_check
@@ -8,9 +8,9 @@ from helpers import load_shared_check
 env_best_practices = load_shared_check("120_env_best_practices")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Best-practices environment
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_best_practices_env_passes_when_the_url_matches_the_pin_and_the_dir_is_the_clone(tmp_path):
     versions1 = tmp_path / "versions1"
@@ -19,6 +19,8 @@ def test_best_practices_env_passes_when_the_url_matches_the_pin_and_the_dir_is_t
 
     assert env_best_practices.best_practices_env_result(versions1, environment1).passed
 
+
+# --------------------------------------------------------------------------------
 
 def test_best_practices_env_fails_naming_the_wrong_one(tmp_path):
     versions1 = tmp_path / "versions1"
@@ -31,6 +33,8 @@ def test_best_practices_env_fails_naming_the_wrong_one(tmp_path):
     assert "BEST_PRACTICES_REPO_URL" in result.detail
     assert "SBX_BEST_PRACTICES_DIR" not in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_best_practices_env_fails_through_the_missing_pin_when_the_pin_is_absent(tmp_path):
     versions1 = tmp_path / "versions1"

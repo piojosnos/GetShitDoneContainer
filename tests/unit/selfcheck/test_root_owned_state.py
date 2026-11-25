@@ -1,8 +1,8 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the root-owned state check
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The check runs on real files, real permissions and links inside tmp_path.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 from pathlib import Path
@@ -15,9 +15,9 @@ from helpers import load_shared_check, run_lines, write_file
 root_owned_state = load_shared_check("040_root_owned_state")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants and helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 NAMED_ENVIRONMENT = {"SBX_NAME": "name1"}
 
@@ -35,14 +35,16 @@ def state_tree(tmp_path):
     return state1
 
 
+# --------------------------------------------------------------------------------
+
 def make_fourteen_path_tree(state1: Path) -> None:
     for number in range(13):
         write_file(state1 / "sub1" / f"file{number:02d}")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Root-owned state
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_root_owned_state_passes_on_a_tree_owned_by_another_uid(state_tree):
     result = root_owned_state.root_owned_state_result(state_tree, os.getuid() + 1)
@@ -50,6 +52,8 @@ def test_root_owned_state_passes_on_a_tree_owned_by_another_uid(state_tree):
     assert result.passed
     assert result.detail == "no root-owned path under state/"
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_root_owned_path_in_a_gsd_core_dir_fails_the_check(tmp_path):
     state1 = tmp_path / "state1"
@@ -60,6 +64,8 @@ def test_a_root_owned_path_in_a_gsd_core_dir_fails_the_check(tmp_path):
     assert not result.passed
     assert "sub1/gsd-core/file1" in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_paths_in_the_skipped_cache_dirs_are_not_listed(tmp_path):
     state1 = tmp_path / "state1"
@@ -72,6 +78,8 @@ def test_paths_in_the_skipped_cache_dirs_are_not_listed(tmp_path):
     assert "cache/npm" not in result.detail
     assert "m2" not in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_root_owned_state_fails_with_the_total_and_at_most_ten_paths(tmp_path):
     state1 = tmp_path / "state1"
@@ -89,6 +97,8 @@ def test_root_owned_state_fails_with_the_total_and_at_most_ten_paths(tmp_path):
         f"--volumes-from sbx-name1 sbx-base:local -R 1000:1000 {state1}"
     )
 
+
+# --------------------------------------------------------------------------------
 
 def test_root_owned_state_prints_the_host_owner_fix_under_its_fail_line(tmp_path, agents1):
     state1 = tmp_path / "state1"
@@ -108,6 +118,8 @@ def test_root_owned_state_prints_the_host_owner_fix_under_its_fail_line(tmp_path
     )
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 directory")
 def test_root_owned_state_names_an_unreadable_dir_with_the_host_fix(tmp_path, restorable_mode):
     state1 = tmp_path / "state1"
@@ -123,6 +135,8 @@ def test_root_owned_state_names_an_unreadable_dir_with_the_host_fix(tmp_path, re
     assert result.hint.startswith("give the paths back to the sandbox user")
     assert str(state1) in result.hint
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 444 directory")
 def test_root_owned_state_prints_the_owner_fix_for_a_dir_it_cannot_search(tmp_path, restorable_mode, agents1):

@@ -1,6 +1,6 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Guard rules on the image build: what a build without options still needs
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 from pathlib import Path
 
@@ -9,13 +9,13 @@ from guard_helpers import REPO_DIR, line_list
 _SBX_ETC_DIR = "/etc/sbx"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule etc_sbx_exists_before_its_first_write: no optional step makes it
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The steps of the optional root certificate create /etc/sbx only when a
 # certificate is given. A later step that writes there must find a folder that
 # an unconditional step created, or a build without a certificate fails.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_etc_sbx_exists_before_its_first_write():
     created = False
@@ -34,9 +34,9 @@ def test_etc_sbx_exists_before_its_first_write():
     assert not problem_list, "\n".join(problem_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # TDL
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _final_stage_instruction_list(path: Path) -> list[tuple[int, str]]:
     instruction_list = []
@@ -65,7 +65,7 @@ def _final_stage_instruction_list(path: Path) -> list[tuple[int, str]]:
     return instruction_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _is_conditional_run(instruction: str) -> bool:
     if not instruction.startswith("RUN "):
@@ -79,7 +79,7 @@ def _is_conditional_run(instruction: str) -> bool:
     return bool(word_list) and word_list[0] == "if"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _command_list(instruction: str) -> list[str]:
     command_list = []
@@ -95,13 +95,13 @@ def _command_list(instruction: str) -> list[str]:
     return command_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _writes_into_etc_sbx(command: str) -> bool:
     return f"> {_SBX_ETC_DIR}/" in command
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _creates_etc_sbx(command: str) -> bool:
     word_list = command.split()

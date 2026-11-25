@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Checks: claude is the pinned version and stays off the PATH
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The agent lives in the agents directory, off the PATH; its agent wrapper puts the
 # directory first. The image copies this file to /etc/sbx/selfcheck.d/claude/; the
 # runner loads it after the shared checks.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 from pathlib import Path
@@ -16,9 +16,9 @@ from pins import pin_map_or_missing
 from tools import agent_path_environment, off_path_result, tool_result
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Claude version and PATH
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def claude_version_result(
     expected_version: str,
@@ -33,6 +33,8 @@ def claude_version_result(
     )
 
 
+# --------------------------------------------------------------------------------
+
 def claude_off_path_result(
     agent_bin_dir: Path = AGENT_BIN_DIR,
     environment_map: Mapping[str, str] = os.environ,
@@ -40,9 +42,9 @@ def claude_off_path_result(
     return off_path_result("claude", agent_bin_dir, environment_map)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Check entries
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _check_tool_claude() -> CheckResult:
     pin_map, missing_result = pin_map_or_missing(["CLAUDE_CODE_VERSION"])
@@ -52,6 +54,8 @@ def _check_tool_claude() -> CheckResult:
 
     return claude_version_result(pin_map["CLAUDE_CODE_VERSION"])
 
+
+# --------------------------------------------------------------------------------
 
 def _check_claude_off_path() -> CheckResult:
     return claude_off_path_result()

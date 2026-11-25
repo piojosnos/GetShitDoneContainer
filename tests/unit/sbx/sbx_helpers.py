@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Plain helpers the sbx unit tests share
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The repo directory, a recorder that stands in for the Docker function, the
 # environment a command gets and a writer of registry files.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import json
 from collections.abc import Mapping
@@ -14,13 +14,13 @@ from sbx.docker import DockerResult
 REPO_DIR = Path(__file__).resolve().parents[3]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Docker stand-in
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # It has the signature of run_docker. It notes each argument list, environment
 # and capture flag, and answers from the longest prefix it was told about, else
 # with success and no output.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 class DockerRecorder:
     def __init__(self) -> None:
@@ -29,8 +29,12 @@ class DockerRecorder:
         self.capture_list: list[bool] = []
         self._answer_map: dict[tuple[str, ...], DockerResult] = {}
 
+    # --------------------------------------------------------------------------------
+
     def answer(self, prefix_list: list[str], result: DockerResult) -> None:
         self._answer_map[tuple(prefix_list)] = result
+
+    # --------------------------------------------------------------------------------
 
     def __call__(
         self,
@@ -56,9 +60,9 @@ class DockerRecorder:
         return self._answer_map[best_prefix]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Environment and registry files
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def environ_for(config: Path, extra_map: dict[str, str] | None = None) -> dict[str, str]:
     environ = {"SBX_CONFIG_DIR": str(config)}
@@ -68,6 +72,8 @@ def environ_for(config: Path, extra_map: dict[str, str] | None = None) -> dict[s
 
     return environ
 
+
+# --------------------------------------------------------------------------------
 
 def write_json_entry(registry: Path, name: str, path: str, agent: str) -> Path:
     registry.mkdir(parents=True, exist_ok=True)

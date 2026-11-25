@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of sbx-add: the entry, the directories, every refusal and every overlap
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Real directories, symlinks and registry files under tmp_path. sbx-add calls no
 # Docker, so there is no Docker parameter to pass.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import json
 
@@ -24,6 +24,8 @@ def repo_dir(tmp_path):
     return tools_dir
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def run_add(config_dir, repo_dir, capsys):
     def run(argument_list, extra_map=None):
@@ -35,9 +37,13 @@ def run_add(config_dir, repo_dir, capsys):
     return run
 
 
+# --------------------------------------------------------------------------------
+
 def _entry_of(registry, name):
     return json.loads((registry / f"{name}.json").read_text(encoding="utf-8"))
 
+
+# --------------------------------------------------------------------------------
 
 def _registry_names(registry):
     name_list = []
@@ -48,9 +54,9 @@ def _registry_names(registry):
     return sorted(name_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Registering
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_sandbox_is_registered_and_its_directories_are_made(run_add, registry, tmp_path):
     path = tmp_path / "sbx one"
@@ -69,12 +75,16 @@ def test_a_sandbox_is_registered_and_its_directories_are_made(run_add, registry,
     ]
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_trailing_slash_is_not_stored(run_add, registry, tmp_path):
     exit_code, _, _ = run_add(["sbx1", f"{tmp_path}/sbx two//"])
 
     assert exit_code == 0
     assert _entry_of(registry, "sbx1")["path"] == f"{tmp_path}/sbx two"
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_third_argument_picks_the_agent(run_add, registry, tmp_path):
     exit_code, out, _ = run_add(["sbx1", str(tmp_path / "x1"), "cursor"])
@@ -84,11 +94,15 @@ def test_the_third_argument_picks_the_agent(run_add, registry, tmp_path):
     assert "(agent cursor)" in out
 
 
+# --------------------------------------------------------------------------------
+
 def test_claude_as_the_third_argument_is_the_same_as_none(run_add, registry, tmp_path):
     run_add(["sbx1", str(tmp_path / "x1"), "claude"])
 
     assert _entry_of(registry, "sbx1")["agent"] == "claude"
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_path_with_a_space_and_a_non_ascii_letter_is_stored_as_given(run_add, registry, tmp_path):
     path = f"{tmp_path}/one dir/caf\u00e9"
@@ -98,6 +112,8 @@ def test_a_path_with_a_space_and_a_non_ascii_letter_is_stored_as_given(run_add, 
     assert exit_code == 0
     assert _entry_of(registry, "sbx1")["path"] == path
 
+
+# --------------------------------------------------------------------------------
 
 def test_an_existing_directory_and_its_files_are_kept(run_add, tmp_path):
     keep_file = tmp_path / "sbx3" / "state" / "keep.txt"
@@ -110,6 +126,8 @@ def test_an_existing_directory_and_its_files_are_kept(run_add, tmp_path):
     assert keep_file.read_text() == "keep"
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_entry_goes_under_home_when_the_config_directory_is_unset(tmp_path, repo_dir, capsys):
     home_dir = tmp_path / "home1"
     home_dir.mkdir()
@@ -120,6 +138,8 @@ def test_the_entry_goes_under_home_when_the_config_directory_is_unset(tmp_path, 
     assert (home_dir / ".config" / "sbx" / "sandboxes" / "sbx1.json").is_file()
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_relative_config_directory_is_refused_and_nothing_is_made(run_add, tmp_path):
     exit_code, _, err = run_add(["sbx1", str(tmp_path / "x1")], {"SBX_CONFIG_DIR": "cfg"})
 
@@ -128,9 +148,9 @@ def test_a_relative_config_directory_is_refused_and_nothing_is_made(run_add, tmp
     assert not (tmp_path / "x1").exists()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Usage
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
     "argument_list",
@@ -145,6 +165,8 @@ def test_a_wrong_argument_count_or_agent_prints_the_usage_and_makes_nothing(run_
     assert _registry_names(registry) == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_an_unknown_agent_is_a_usage_error_before_any_other_refusal(run_add, tmp_path):
     exit_code, _, err = run_add(["Bad_Name", "rel/x", "opencode"])
 
@@ -152,9 +174,9 @@ def test_an_unknown_agent_is_a_usage_error_before_any_other_refusal(run_add, tmp
     assert err == USAGE_TEXT + "\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The image tag and the name
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_test_tag_prints_its_notice_and_registers(run_add, registry, tmp_path):
     exit_code, _, err = run_add(["sbx1", str(tmp_path / "x1")], {"SBX_IMAGE_TAG": "test"})
@@ -167,6 +189,8 @@ def test_the_test_tag_prints_its_notice_and_registers(run_add, registry, tmp_pat
     assert (registry / "sbx1.json").is_file()
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_tag_other_than_local_or_test_is_refused_before_anything_is_made(run_add, registry, tmp_path):
     exit_code, _, err = run_add(["sbx1", str(tmp_path / "x1")], {"SBX_IMAGE_TAG": "latest"})
 
@@ -175,6 +199,8 @@ def test_a_tag_other_than_local_or_test_is_refused_before_anything_is_made(run_a
     assert not (tmp_path / "x1").exists()
     assert _registry_names(registry) == []
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
     "name",
@@ -189,6 +215,8 @@ def test_a_name_that_breaks_the_rule_is_refused_and_nothing_is_made(run_add, reg
     assert _registry_names(registry) == []
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("name", ["state", "best-practices"])
 def test_a_reserved_name_is_refused(run_add, registry, tmp_path, name):
     exit_code, _, err = run_add([name, str(tmp_path / "x1")])
@@ -198,9 +226,9 @@ def test_a_reserved_name_is_refused(run_add, registry, tmp_path, name):
     assert _registry_names(registry) == []
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A name that is already registered
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_second_add_of_a_registered_name_leaves_the_file_bytes_unchanged(run_add, registry, tmp_path):
     run_add(["sbx1", str(tmp_path / "x1")])
@@ -215,6 +243,8 @@ def test_a_second_add_of_a_registered_name_leaves_the_file_bytes_unchanged(run_a
     assert not (tmp_path / "x2").exists()
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_registered_check_comes_before_the_host_path_check(run_add, registry, tmp_path):
     run_add(["sbx1", str(tmp_path / "x1")])
 
@@ -224,9 +254,9 @@ def test_the_registered_check_comes_before_the_host_path_check(run_add, registry
     assert "is already registered" in err
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The host path text
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
     ("path", "text"),
@@ -250,6 +280,8 @@ def test_a_bad_host_path_is_refused_with_the_bash_wording_and_nothing_is_made(
     assert _registry_names(registry) == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_text_check_runs_before_any_overlap_check(run_add, config_dir, tmp_path):
     exit_code, _, err = run_add(["sbx1", f"{config_dir}/../x"])
 
@@ -258,9 +290,9 @@ def test_the_text_check_runs_before_any_overlap_check(run_add, config_dir, tmp_p
     assert "overlaps" not in err
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The registry directory and the tools clone
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_root_directory_is_refused_because_it_holds_the_registry(run_add, config_dir, registry):
     exit_code, _, err = run_add(["sbx1", "/"])
@@ -273,12 +305,16 @@ def test_the_root_directory_is_refused_because_it_holds_the_registry(run_add, co
     assert _registry_names(registry) == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_directory_that_holds_the_registry_is_refused(run_add, tmp_path, registry):
     exit_code, _, err = run_add(["sbx1", str(tmp_path)])
 
     assert exit_code == 1
     assert "overlaps the registry directory" in err
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_directory_inside_the_registry_directory_is_refused_and_not_made(run_add, config_dir, registry):
     exit_code, _, err = run_add(["sbx1", f"{config_dir}/inside"])
@@ -287,6 +323,8 @@ def test_a_directory_inside_the_registry_directory_is_refused_and_not_made(run_a
     assert "overlaps the registry directory" in err
     assert not (config_dir / "inside").exists()
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_symlink_to_the_registry_directory_is_refused(run_add, config_dir, tmp_path, registry):
     (tmp_path / "link1").symlink_to(config_dir)
@@ -297,6 +335,8 @@ def test_a_symlink_to_the_registry_directory_is_refused(run_add, config_dir, tmp
     assert "overlaps the registry directory" in err
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_registry_directory_not_made_yet_is_compared_without_letter_case(run_add, tmp_path):
     exit_code, _, err = run_add(
         ["sbx1", f"{tmp_path}/CFG-NOTYET/inside"],
@@ -306,6 +346,8 @@ def test_a_registry_directory_not_made_yet_is_compared_without_letter_case(run_a
     assert exit_code == 1
     assert "overlaps the registry directory" in err
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("relative_path", ["", "inside"])
 def test_the_tools_clone_and_a_directory_inside_it_are_refused_and_nothing_is_made(
@@ -325,6 +367,8 @@ def test_the_tools_clone_and_a_directory_inside_it_are_refused_and_nothing_is_ma
     assert _registry_names(registry) == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_directory_that_holds_the_tools_clone_through_a_symlink_is_refused(run_add, repo_dir, tmp_path):
     (tmp_path / "link1").symlink_to(repo_dir)
 
@@ -335,15 +379,17 @@ def test_a_directory_that_holds_the_tools_clone_through_a_symlink_is_refused(run
     assert not (repo_dir / "inside").exists()
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_directory_that_only_shares_a_text_prefix_with_the_tools_clone_is_accepted(run_add, tmp_path):
     exit_code, _, _ = run_add(["sbx1", str(tmp_path / "tools1-other")])
 
     assert exit_code == 0
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Other sandboxes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def sandbox_demo(run_add, tmp_path):
@@ -352,6 +398,8 @@ def sandbox_demo(run_add, tmp_path):
 
     return path
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_directory_of_another_sandbox_is_refused(run_add, registry, sandbox_demo):
     exit_code, _, err = run_add(["sbx2", str(sandbox_demo)])
@@ -364,6 +412,8 @@ def test_the_directory_of_another_sandbox_is_refused(run_add, registry, sandbox_
     assert _registry_names(registry) == ["demo.json"]
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_path_inside_another_sandbox_directory_is_refused_and_not_made(run_add, sandbox_demo):
     exit_code, _, err = run_add(["sbx2", str(sandbox_demo / "inner")])
 
@@ -371,6 +421,8 @@ def test_a_path_inside_another_sandbox_directory_is_refused_and_not_made(run_add
     assert "overlaps the directory of sandbox demo" in err
     assert not (sandbox_demo / "inner").exists()
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_path_that_holds_another_sandbox_directory_is_refused(run_add, tmp_path):
     run_add(["deep", str(tmp_path / "a" / "b" / "c")])
@@ -382,6 +434,8 @@ def test_a_path_that_holds_another_sandbox_directory_is_refused(run_add, tmp_pat
     assert not (tmp_path / "a" / "state").exists()
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_symlink_to_another_sandbox_directory_is_refused(run_add, tmp_path, sandbox_demo):
     (tmp_path / "link to one").symlink_to(sandbox_demo)
 
@@ -390,6 +444,8 @@ def test_a_symlink_to_another_sandbox_directory_is_refused(run_add, tmp_path, sa
     assert exit_code == 1
     assert "overlaps the directory of sandbox demo" in err
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_directory_inside_a_symlink_to_another_sandbox_directory_is_refused(run_add, tmp_path, sandbox_demo):
     (tmp_path / "link to one").symlink_to(sandbox_demo)
@@ -401,11 +457,15 @@ def test_a_directory_inside_a_symlink_to_another_sandbox_directory_is_refused(ru
     assert not (sandbox_demo / "inner").exists()
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_path_that_only_shares_a_text_prefix_with_another_sandbox_is_accepted(run_add, tmp_path, sandbox_demo):
     exit_code, _, _ = run_add(["sbx2", str(tmp_path / "sbx one-other")])
 
     assert exit_code == 0
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_broken_other_entry_stops_the_add_with_its_own_error(run_add, registry, tmp_path):
     (registry / "broken.json").write_text("not json", encoding="utf-8")
@@ -418,6 +478,8 @@ def test_a_broken_other_entry_stops_the_add_with_its_own_error(run_add, registry
     assert _registry_names(registry) == ["broken.json"]
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_first_refusal_in_byte_order_of_the_other_names_is_the_one_printed(run_add, registry, tmp_path):
     write_json_entry(registry, "b-other", str(tmp_path / "x1"), "claude")
     (registry / "a-broken.json").write_text("[]", encoding="utf-8")
@@ -427,6 +489,8 @@ def test_the_first_refusal_in_byte_order_of_the_other_names_is_the_one_printed(r
     assert exit_code == 1
     assert "a-broken.json is not a JSON object" in err
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_registry_overlap_is_checked_before_the_tools_clone_and_the_sandboxes(
     run_add, config_dir, registry
@@ -439,9 +503,9 @@ def test_the_registry_overlap_is_checked_before_the_tools_clone_and_the_sandboxe
     assert "overlaps the registry directory" in err
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A directory that cannot be made
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_directory_that_cannot_be_made_is_refused_and_no_entry_is_written(run_add, registry, tmp_path):
     blocker = tmp_path / "blocker1"

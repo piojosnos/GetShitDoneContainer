@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the init step inventory
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # They pin the merged step order of each image, the file and step name rules and
 # the Dockerfile lines that copy the steps into the image. The steps load
 # through the runner's own collector.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import re
 import shutil
@@ -38,13 +38,15 @@ BASE_DOCKERFILE_LINE_LIST = [
 ]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def agent_step_file_list(agent_name: str) -> list[Path]:
     return sorted((REPO_DIR / agent_name / "init").glob("*.py"))
 
+
+# --------------------------------------------------------------------------------
 
 def all_step_file_list() -> list[Path]:
     step_file_list = sorted(SHARED_STEPS_DIR.glob("*.py"))
@@ -55,6 +57,8 @@ def all_step_file_list() -> list[Path]:
     return step_file_list
 
 
+# --------------------------------------------------------------------------------
+
 def collected_name_list(tmp_path: Path, agent_name: str) -> list[str]:
     agents1 = tmp_path / "agents1"
     shutil.copytree(REPO_DIR / agent_name / "init", agents1 / agent_name)
@@ -62,23 +66,29 @@ def collected_name_list(tmp_path: Path, agent_name: str) -> list[str]:
     return [step.name for step in init_runner.collect_steps(SHARED_STEPS_DIR, agents1)]
 
 
+# --------------------------------------------------------------------------------
+
 def dockerfile_text(dir_name: str) -> str:
     return (REPO_DIR / dir_name / "Dockerfile").read_text()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Order and names
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("agent_name", ["claude", "cursor"])
 def test_the_merged_steps_of_an_image_run_in_the_fixed_order(tmp_path, agent_name):
     assert collected_name_list(tmp_path, agent_name) == STEP_ORDER_BY_AGENT_MAP[agent_name]
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("agent_name", ["claude", "cursor"])
 def test_each_image_runs_the_step_count_the_host_run_expects(tmp_path, agent_name):
     assert len(collected_name_list(tmp_path, agent_name)) == AGENT_SPEC_BY_NAME_MAP[agent_name].init_step_count
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("agent_name", ["claude", "cursor"])
 def test_no_step_of_an_image_is_a_load_failure(tmp_path, agent_name):
@@ -86,10 +96,14 @@ def test_no_step_of_an_image_is_a_load_failure(tmp_path, agent_name):
         assert not name.startswith("load-")
 
 
+# --------------------------------------------------------------------------------
+
 def test_every_step_file_name_has_a_three_digit_order_prefix():
     for step_file in all_step_file_list():
         assert NAME_FILE_PATTERN.match(step_file.name), step_file
 
+
+# --------------------------------------------------------------------------------
 
 def test_every_step_file_defines_a_step_list():
     for step_file in all_step_file_list():
@@ -103,6 +117,8 @@ def test_every_step_file_defines_a_step_list():
         assert has_step_list, step_file
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("agent_name", ["claude", "cursor"])
 def test_no_three_digit_prefix_repeats_within_one_image(agent_name):
     prefix_list = []
@@ -113,15 +129,17 @@ def test_no_three_digit_prefix_repeats_within_one_image(agent_name):
     assert len(prefix_list) == len(set(prefix_list))
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("agent_name", ["claude", "cursor"])
 def test_every_step_name_is_well_formed(tmp_path, agent_name):
     for name in collected_name_list(tmp_path, agent_name):
         assert NAME_PATTERN.match(name), name
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Where the image keeps the steps
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_base_dockerfile_installs_sbx_init_and_has_no_entrypoint():
     text = dockerfile_text("base")
@@ -133,6 +151,8 @@ def test_the_base_dockerfile_installs_sbx_init_and_has_no_entrypoint():
     assert "ENTRYPOINT" not in text
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_shared_step_file_module_reaches_the_image_and_sbx_init_can_import_it():
     base_text = dockerfile_text("base")
 
@@ -142,12 +162,16 @@ def test_the_shared_step_file_module_reaches_the_image_and_sbx_init_can_import_i
     assert "/usr/local/lib/sbx-selfcheck/*.py" in base_text
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("agent_name", ["claude", "cursor"])
 def test_each_agent_dockerfile_copies_its_own_steps(agent_name):
     text = dockerfile_text(agent_name)
 
     assert f"COPY --chmod=644 {agent_name}/init/*.py {paths.AGENT_STEPS_DIR}/{agent_name}/" in text
 
+
+# --------------------------------------------------------------------------------
 
 def test_compose_keeps_the_container_running_with_tini_and_no_entrypoint():
     text = (REPO_DIR / "compose.yml").read_text()

@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Scenario: sbx-upgrade of a running sandbox
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The one successful upgrade of a sandbox that is running: the warning comes before
 # the build, the container is recreated on the current image, and the run ends with
 # its three closing lines. The recreate removes the init marker; the next scenario's
 # sandbox fixture runs sbx-init again.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import io
 from pathlib import Path
@@ -27,11 +27,11 @@ _TEST_TAG = "test"
 _CLOSING_LINE_COUNT = 3
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The id of an image
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # An image Docker does not know has the empty id, so a caller asserts on it.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _image_id(image: str) -> str:
     result = run_timeout(["docker", "image", "inspect", "--format", "{{.Id}}", image], 60)
@@ -42,11 +42,11 @@ def _image_id(image: str) -> str:
     return result.stdout.strip()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_upgrade_of_a_running_sandbox
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-upgrade NAME on a running sandbox -> warning, build, recreate -> closing lines
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_upgrade_of_a_running_sandbox(sandbox: RunSandbox, hosttest_env: dict[str, str], run_dir: Path):
     container = sandbox.container

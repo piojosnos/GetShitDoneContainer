@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The one directory walk of the checks
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Every check that walks directories goes through walk_tree and keeps its own rule in
 # a hook. The image puts this file in /usr/local/lib/sbx-selfcheck/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import stat
@@ -13,12 +13,12 @@ from pathlib import Path
 from typing import Callable
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Hook and problem types
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A hook gets an entry and its lstat result. It returns False to keep the walk out
 # of that directory; the return value of a file or a link entry is not used.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 EntryHook = Callable[[Path, os.stat_result], bool]
 
@@ -28,18 +28,20 @@ class ProblemKind(Enum):
     UNREADABLE_DIR = "unreadable"
 
 
+# --------------------------------------------------------------------------------
+
 @dataclass(frozen=True)
 class WalkProblem:
     path: Path
     kind: ProblemKind
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The walk
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Links are never followed. A permission error on a directory or on an entry of it
 # is returned as a problem; any other error surfaces.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def walk_tree(root_list: list[Path], on_entry: EntryHook) -> list[WalkProblem]:
     problem_list = []
@@ -49,6 +51,8 @@ def walk_tree(root_list: list[Path], on_entry: EntryHook) -> list[WalkProblem]:
 
     return problem_list
 
+
+# --------------------------------------------------------------------------------
 
 def _walk_root(root: Path, on_entry: EntryHook, problem_list: list[WalkProblem]) -> None:
     try:
@@ -72,6 +76,8 @@ def _walk_root(root: Path, on_entry: EntryHook, problem_list: list[WalkProblem])
     for current_dir, dir_name_list, file_name_list in root.walk(on_error=on_error, follow_symlinks=False):
         dir_name_list[:] = _visit_dir(current_dir, dir_name_list + file_name_list, on_entry, problem_list)
 
+
+# --------------------------------------------------------------------------------
 
 def _visit_dir(
     current_dir: Path,

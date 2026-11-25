@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-migrate-registry: writes NAME.json next to each old KEY=value entry
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A one-off. It is the only code that knows the old format. It leaves every old
 # file as it was, and it never overwrites a NAME.json.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import sys
@@ -17,9 +17,9 @@ from sbx.names import KNOWN_AGENT_LIST, check_name, image_tag, is_known_agent
 from sbx.registry import Entry, config_dir, entry_file, registry_dir, write_entry
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 COMMAND_NAME = "sbx-migrate-registry"
 _DIR_KEY = "SBX_DIR="
@@ -30,12 +30,12 @@ _FAILED = "failed"
 _LEFT_IN_PLACE_TEXT = "the old files are left in place and can be deleted once each sandbox starts"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The old format
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Lines of text; the last SBX_DIR= and the last SBX_AGENT= win. A value is never
 # executed or expanded, so $(command) is only a path that does not exist.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _read_old_entry(file: Path) -> tuple[str, str]:
     text = file.read_text(encoding="utf-8")
@@ -50,6 +50,8 @@ def _read_old_entry(file: Path) -> tuple[str, str]:
 
     return path, agent
 
+
+# --------------------------------------------------------------------------------
 
 def _old_file_list(registry: Path) -> list[Path]:
     if not registry.is_dir():
@@ -66,19 +68,23 @@ def _old_file_list(registry: Path) -> list[Path]:
     return sorted(file_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Converting one file
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _say(name: str, text: str) -> None:
     print(f"{COMMAND_NAME}: {name}: {text}")
 
+
+# --------------------------------------------------------------------------------
 
 def _not_converted(name: str, reason: str) -> str:
     _say(name, f"not converted: {reason}")
 
     return _FAILED
 
+
+# --------------------------------------------------------------------------------
 
 def _problem_of(name: str, path: str, agent: str) -> str:
     try:
@@ -94,6 +100,8 @@ def _problem_of(name: str, path: str, agent: str) -> str:
 
     return ""
 
+
+# --------------------------------------------------------------------------------
 
 def _convert_one(registry: Path, file: Path) -> str:
     name = file.name
@@ -123,9 +131,9 @@ def _convert_one(registry: Path, file: Path) -> str:
     return _CONVERTED
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The command
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _migrate(argument_list: list[str], environ: Mapping[str, str]) -> None:
     if argument_list:
@@ -155,13 +163,15 @@ def _migrate(argument_list: list[str], environ: Mapping[str, str]) -> None:
         raise SbxError(f"{failed_count} not converted; see the lines above")
 
 
+# --------------------------------------------------------------------------------
+
 def main(argument_list: list[str], environ: Mapping[str, str] = os.environ, docker: Docker = run_docker) -> int:
     return run_command(COMMAND_NAME, partial(_migrate, argument_list, environ))
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Main / Entry Point
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

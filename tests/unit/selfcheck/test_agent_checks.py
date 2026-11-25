@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the agent check builder
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A description made of temp paths shows which field reaches which helper. A
 # subprocess loads the real check files with the import path of the launcher.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import shutil
@@ -44,7 +44,7 @@ for check in runner.dir_check_list(Path(sys.argv[2])):
 """
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_builder_makes_the_eight_checks_named_after_the_agent(tmp_path, check_name_list_of):
     expected_name_list = []
@@ -55,7 +55,7 @@ def test_the_builder_makes_the_eight_checks_named_after_the_agent(tmp_path, chec
     assert check_name_list_of(agent_check_list(agent1_description(tmp_path))) == expected_name_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_env_check_reads_the_environment_values_of_the_description_from_the_given_map(tmp_path):
     agent1 = agent1_description(tmp_path)
@@ -67,7 +67,7 @@ def test_the_env_check_reads_the_environment_values_of_the_description_from_the_
     assert "SBX_TEST_VAR1=value1" in result.detail
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_home_links_check_walks_every_home_link_of_the_description(tmp_path):
     agent1 = agent1_description(tmp_path)
@@ -83,7 +83,7 @@ def test_the_home_links_check_walks_every_home_link_of_the_description(tmp_path)
     assert result.detail == f"{link2} is not a link"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_credentials_check_fails_with_the_login_hint_of_the_description(tmp_path):
     agent1 = agent1_description(tmp_path)
@@ -95,7 +95,7 @@ def test_the_credentials_check_fails_with_the_login_hint_of_the_description(tmp_
     assert result.hint == "hint1"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_both_image_checks_walk_the_image_roots_of_the_description(tmp_path):
     agent1 = agent1_description(tmp_path)
@@ -111,7 +111,7 @@ def test_both_image_checks_walk_the_image_roots_of_the_description(tmp_path):
     assert protected_result.detail == f"1 problems: {root1} is missing"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_versions_line_check_reads_the_pins_of_the_description(tmp_path):
     result = check_named(agent_check_list(agent1_description(tmp_path)), "agent1-versions-line").function()
@@ -120,7 +120,7 @@ def test_the_versions_line_check_reads_the_pins_of_the_description(tmp_path):
     assert result.detail.startswith("SBX_TEST_PIN1 is not in")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_gsd_synced_check_reports_on_the_config_dir_of_the_description(tmp_path):
     agent1 = agent1_description(tmp_path)
@@ -130,7 +130,7 @@ def test_the_gsd_synced_check_reports_on_the_config_dir_of_the_description(tmp_p
     assert result == gsd_synced_result(agent1.config_dir)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_links_check_reads_the_config_dir_and_name_of_the_description_in_the_given_clone(tmp_path):
     agent1 = agent1_description(tmp_path)
@@ -146,7 +146,7 @@ def test_the_links_check_reads_the_config_dir_and_name_of_the_description_in_the
     assert linked_result.passed
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("agent_name", ["claude", "cursor"])
 def test_the_agent_check_file_loads_with_the_sbx_selfcheck_import_path(
@@ -162,9 +162,9 @@ def test_the_agent_check_file_loads_with_the_sbx_selfcheck_import_path(
         assert not printed_name.startswith("load-"), printed_name
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # TDL
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def agent1_description(tmp_path: Path) -> AgentDescription:
     config_dir = tmp_path / "state1" / "agent1"
@@ -182,7 +182,7 @@ def agent1_description(tmp_path: Path) -> AgentDescription:
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def make_clone(tmp_path: Path, agent_name: str) -> Path:
     clone_dir = tmp_path / "best-practices"
@@ -195,7 +195,7 @@ def make_clone(tmp_path: Path, agent_name: str) -> Path:
     return clone_dir
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def check_named(check_list: list[Check], name: str) -> Check:
     for check in check_list:
@@ -205,7 +205,7 @@ def check_named(check_list: list[Check], name: str) -> Check:
     raise AssertionError(f"no check named {name} in the list")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def copy_selfcheck_layout(tmp_path: Path, agent_name: str) -> tuple[Path, Path]:
     lib_dir = tmp_path / "lib1" / "sbx-selfcheck"
@@ -226,7 +226,7 @@ def copy_selfcheck_layout(tmp_path: Path, agent_name: str) -> tuple[Path, Path]:
     return lib_dir, agent_dir
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def launcher_path_name_list(lib_dir: Path, agent_dir: Path) -> list[str]:
     completed = subprocess.run(

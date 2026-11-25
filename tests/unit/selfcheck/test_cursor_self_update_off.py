@@ -1,8 +1,8 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the Cursor self-update check
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Real files inside tmp_path.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import json
 
@@ -12,9 +12,9 @@ from helpers import load_agent_check
 self_update_off = load_agent_check("cursor", "050_self_update_off")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Self-update
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_self_update_result_passes_for_the_static_channel_and_names_no_other_key(tmp_path):
     config_file1 = tmp_path / "cli-config1.json"
@@ -26,6 +26,8 @@ def test_self_update_result_passes_for_the_static_channel_and_names_no_other_key
     assert "static" in result.detail
     assert "other1" not in result.detail + result.hint
 
+
+# --------------------------------------------------------------------------------
 
 def test_self_update_result_fails_for_another_channel_bad_text_and_a_missing_file(tmp_path):
     stable1 = tmp_path / "stable1.json"

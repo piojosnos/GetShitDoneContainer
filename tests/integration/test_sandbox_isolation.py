@@ -1,21 +1,23 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Scenario: a running sandbox has no privilege and one bind mount
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Read from docker inspect of the real container, so a change in compose.yml or in
 # Docker's defaults that widens the sandbox shows up here. A failing field is
 # named with its value.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 from scenario_helpers import RunSandbox, inspect_container, one_bind_mount_problem, step
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Field checks
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _is_empty(value: object) -> bool:
     return value is None or value == [] or value == ""
 
+
+# --------------------------------------------------------------------------------
 
 def _privilege_problem_list(host_config: dict) -> list[str]:
     problem_list = []
@@ -55,6 +57,8 @@ def _privilege_problem_list(host_config: dict) -> list[str]:
     return problem_list
 
 
+# --------------------------------------------------------------------------------
+
 def _namespace_problem_list(host_config: dict) -> list[str]:
     problem_list = []
     network_mode = host_config.get("NetworkMode") or ""
@@ -76,11 +80,11 @@ def _namespace_problem_list(host_config: dict) -> list[str]:
     return problem_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_one_bind_mount_and_no_privileges
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # docker inspect -> no privilege, no host namespace, one bind mount
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_one_bind_mount_and_no_privileges(sandbox: RunSandbox):
     host_config: dict = {}

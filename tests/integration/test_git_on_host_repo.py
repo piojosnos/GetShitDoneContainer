@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Scenario: git works in the container on a repository made on the host
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The project directory is the user's own, owned by the host user, so git inside
 # the container must not refuse it as a directory of another owner. The host git
 # call ignores your own git configuration, and the repository the scenario makes
 # is removed again when it ends.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import shutil
@@ -19,11 +19,11 @@ _WORKSPACE_DIR = "/home/sandbox/workspace"
 _GIT_SECONDS = 60
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_git_works_on_a_repo_made_on_the_host
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # git init on the host -> git status in the container -> no dubious ownership
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_git_works_on_a_repo_made_on_the_host(sandbox: RunSandbox, request: pytest.FixtureRequest):
     repo_dir = sandbox.project_dir / _REPO_DIR_NAME

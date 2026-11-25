@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The scan for root-owned state paths
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The image puts this file in /usr/local/lib/sbx-selfcheck/; sbx-init and
 # sbx-selfcheck both use it.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 from pathlib import Path
@@ -18,9 +18,9 @@ UNREADABLE_SUFFIX = " (unreadable)"
 SKIPPED_STATE_DIR_SET = {"cache/npm", "cache/uv", "m2"}
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The scan of the state directory
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _mark_unreadable_dir(reported_list: list[str], relative_dir: Path) -> None:
     if relative_dir.as_posix() in reported_list:
@@ -28,6 +28,8 @@ def _mark_unreadable_dir(reported_list: list[str], relative_dir: Path) -> None:
 
     reported_list.append(relative_dir.as_posix() + UNREADABLE_SUFFIX)
 
+
+# --------------------------------------------------------------------------------
 
 def scan_owned_state(state_dir: Path, owner_uid: int, skipped_relative_set: set[str]) -> list[str]:
     reported_list = []
@@ -50,9 +52,9 @@ def scan_owned_state(state_dir: Path, owner_uid: int, skipped_relative_set: set[
     return sorted(reported_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The host fix
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def owner_fix_hint(state_dir: Path, environment_map: Mapping[str, str] = os.environ) -> str:
     return host_hint(

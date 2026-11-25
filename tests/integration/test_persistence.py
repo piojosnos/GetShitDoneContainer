@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Scenario: a rebuild keeps everything the agent and the user put in a sandbox
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The core promise of the project: sbx-upgrade recreates the container on new
 # images and loses no login, setting, history, cache or file. Every planted file
 # holds a run-unique text and is removed again when the scenario ends; no real
 # credential is ever written and no agent prompt is run.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import subprocess
@@ -36,13 +36,13 @@ _CACHE_LOCATION_LIST = [
 ]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Planting and removing files on the host
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The finalizer is registered before the file is written, so a failure half way
 # leaves nothing behind. A directory the plant had to make is removed again when
 # it is empty.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _missing_parent_list(path: Path) -> list[Path]:
     missing_list = []
@@ -54,6 +54,8 @@ def _missing_parent_list(path: Path) -> list[Path]:
 
     return missing_list
 
+
+# --------------------------------------------------------------------------------
 
 def _plant_file(path: Path, text: str, request: pytest.FixtureRequest) -> None:
     missing_list = _missing_parent_list(path)
@@ -72,6 +74,8 @@ def _plant_file(path: Path, text: str, request: pytest.FixtureRequest) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+# --------------------------------------------------------------------------------
+
 def _remove_on_finalize(path: Path, request: pytest.FixtureRequest) -> None:
     def remove_file() -> None:
         path.unlink(missing_ok=True)
@@ -79,13 +83,13 @@ def _remove_on_finalize(path: Path, request: pytest.FixtureRequest) -> None:
     request.addfinalizer(remove_file)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The history marker
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A shell is held open while the marker is written: the history must reach the
 # file per command, because the stop that follows kills the shell without letting
 # it write on exit.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _remove_history_marker(history_file: Path, marker: str) -> None:
     if not history_file.is_file():
@@ -101,12 +105,16 @@ def _remove_history_marker(history_file: Path, marker: str) -> None:
     history_file.write_text("".join(kept_list), encoding="utf-8", errors="surrogateescape")
 
 
+# --------------------------------------------------------------------------------
+
 def _history_has(history_file: Path, marker: str) -> bool:
     if not history_file.is_file():
         return False
 
     return marker in history_file.read_text(encoding="utf-8", errors="surrogateescape")
 
+
+# --------------------------------------------------------------------------------
 
 def _write_history_marker(
     container: str,
@@ -157,9 +165,9 @@ def _write_history_marker(
     pytest.fail(f"the marker did not reach {history_file} within {_HISTORY_WAIT_SECONDS} s of an open shell")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Checks on the sandbox
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _cache_location_problem_list(container: str) -> list[str]:
     problem_list = []
@@ -173,6 +181,8 @@ def _cache_location_problem_list(container: str) -> list[str]:
 
     return problem_list
 
+
+# --------------------------------------------------------------------------------
 
 def _changed_file_list(planted_map: dict[Path, str]) -> list[str]:
     problem_list = []
@@ -191,17 +201,19 @@ def _changed_file_list(planted_map: dict[Path, str]) -> list[str]:
     return problem_list
 
 
+# --------------------------------------------------------------------------------
+
 def _last_lines(text: str, count: int) -> list[str]:
     line_list = text.strip().splitlines()
 
     return line_list[-count:]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_planted_files_survive_one_upgrade
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # plant project, state, clone, history, caches, fake login -> sbx-stop -> sbx-upgrade -> every file still there
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_planted_files_survive_one_upgrade(
     sandbox: RunSandbox,

@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Checks: cursor-agent is the pinned version and stays off the PATH
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The agent lives in the agents directory, off the PATH; its agent wrapper puts the
 # directory first. The image copies this file to /etc/sbx/selfcheck.d/cursor/; the
 # runner loads it after the shared checks.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import shutil
@@ -20,9 +20,9 @@ from tools import agent_path_environment, off_path_result, tool_result
 _THROWAWAY_HOME_PREFIX = "sbx-selfcheck-cursor-"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Cursor version and PATH
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def cursor_version_result(
     expected_version: str,
@@ -46,6 +46,8 @@ def cursor_version_result(
         shutil.rmtree(throwaway_home, ignore_errors=True)
 
 
+# --------------------------------------------------------------------------------
+
 def cursor_off_path_result(
     agent_bin_dir: Path = AGENT_BIN_DIR,
     environment_map: Mapping[str, str] = os.environ,
@@ -53,9 +55,9 @@ def cursor_off_path_result(
     return off_path_result("cursor-agent", agent_bin_dir, environment_map)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Check entries
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _check_tool_cursor_agent() -> CheckResult:
     pin_map, missing_result = pin_map_or_missing(["CURSOR_AGENT_VERSION"])
@@ -65,6 +67,8 @@ def _check_tool_cursor_agent() -> CheckResult:
 
     return cursor_version_result(pin_map["CURSOR_AGENT_VERSION"])
 
+
+# --------------------------------------------------------------------------------
 
 def _check_cursor_off_path() -> CheckResult:
     return cursor_off_path_result()

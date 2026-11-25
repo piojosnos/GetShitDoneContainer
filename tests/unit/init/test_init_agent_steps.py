@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the agent step builders
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A temp-path description and a recording sync function show which field reaches
 # which call. A subprocess loads the real step files with the import path of the
 # launcher.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import shutil
 import subprocess
@@ -34,7 +34,7 @@ for step in init_runner.collect_steps(Path(sys.argv[1]) / "steps", Path(sys.argv
 """
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_gsd_sync_step_syncs_the_config_dir_with_the_agent_option_of_the_description(tmp_path):
     agent1 = agent1_description(tmp_path)
@@ -52,7 +52,7 @@ def test_the_gsd_sync_step_syncs_the_config_dir_with_the_agent_option_of_the_des
     assert call_list == [(agent1.config_dir, "--agent1")]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_best_practices_links_step_links_the_config_dir_for_the_name_of_the_description(tmp_path):
     agent1 = agent1_description(tmp_path)
@@ -68,7 +68,7 @@ def test_the_best_practices_links_step_links_the_config_dir_for_the_name_of_the_
     assert (agent1.config_dir / "skills" / "skill1").is_symlink()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("agent_name", ["claude", "cursor"])
 def test_the_agent_step_files_load_with_the_sbx_init_import_path(tmp_path, agent_name):
@@ -87,9 +87,9 @@ def test_the_agent_step_files_load_with_the_sbx_init_import_path(tmp_path, agent
         assert not printed_name.startswith("load-"), printed_name
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # TDL
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def agent1_description(tmp_path: Path) -> AgentDescription:
     config_dir = tmp_path / "state1" / "agent1"
@@ -107,7 +107,7 @@ def agent1_description(tmp_path: Path) -> AgentDescription:
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def make_clone(tmp_path: Path, agent_name: str) -> Path:
     clone_dir = tmp_path / "best-practices"
@@ -120,7 +120,7 @@ def make_clone(tmp_path: Path, agent_name: str) -> Path:
     return clone_dir
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def copy_init_layout(tmp_path: Path, agent_name: str) -> tuple[Path, Path, Path]:
     init_dir = tmp_path / "lib1" / "sbx-init"
@@ -148,7 +148,7 @@ def copy_init_layout(tmp_path: Path, agent_name: str) -> tuple[Path, Path, Path]
     return init_dir, selfcheck_dir, tmp_path / "agents1"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def launcher_path_name_list(init_dir: Path, selfcheck_dir: Path, agent_steps_dir: Path) -> list[str]:
     completed = subprocess.run(

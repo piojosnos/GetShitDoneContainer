@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of sbx-list: usage, a Docker failure, the table rows, the notes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # main runs in-process with a Docker recorder and a registry of real files under
 # tmp_path; no case needs Docker.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 from sbx.docker import DockerResult
 from sbx.list_sandboxes import main
@@ -29,13 +29,15 @@ def expected_row(name, status, path):
     return name.ljust(31) + " " + status.ljust(20) + " " + str(path)
 
 
+# --------------------------------------------------------------------------------
+
 def run_list(config_dir, recorder, argument_list=None, extra_map=None):
     return main(argument_list or [], environ_for(config_dir, extra_map), recorder)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Usage and failures
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_an_argument_prints_the_usage_and_exits_2_before_docker(config_dir, registry, recorder, capsys):
     write_json_entry(registry, "sbx1", "/x/sbx1", "claude")
@@ -49,6 +51,8 @@ def test_an_argument_prints_the_usage_and_exits_2_before_docker(config_dir, regi
     assert recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_failed_docker_ps_exits_1_and_prints_no_table(config_dir, registry, recorder, capsys):
     write_json_entry(registry, "sbx1", "/x/sbx1", "claude")
     recorder.answer(PS_PREFIX, DockerResult(1, ""))
@@ -61,6 +65,8 @@ def test_a_failed_docker_ps_exits_1_and_prints_no_table(config_dir, registry, re
     assert captured.out == ""
 
 
+# --------------------------------------------------------------------------------
+
 def test_an_unknown_image_tag_is_refused_before_docker(config_dir, registry, recorder, capsys):
     exit_code = run_list(config_dir, recorder, extra_map={"SBX_IMAGE_TAG": "latest"})
     captured = capsys.readouterr()
@@ -70,9 +76,9 @@ def test_an_unknown_image_tag_is_refused_before_docker(config_dir, registry, rec
     assert recorder.call_list == []
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rows
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_an_empty_registry_prints_the_none_line(config_dir, registry, recorder, capsys):
     exit_code = run_list(config_dir, recorder)
@@ -82,6 +88,8 @@ def test_an_empty_registry_prints_the_none_line(config_dir, registry, recorder, 
     assert captured.out == NO_SANDBOXES_LINE + "\n"
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_missing_registry_prints_the_none_line(config_dir, recorder, capsys):
     exit_code = run_list(config_dir, recorder)
     captured = capsys.readouterr()
@@ -89,6 +97,8 @@ def test_a_missing_registry_prints_the_none_line(config_dir, recorder, capsys):
     assert exit_code == 0
     assert captured.out == NO_SANDBOXES_LINE + "\n"
 
+
+# --------------------------------------------------------------------------------
 
 def test_rows_are_in_byte_order_with_one_status_word_each(config_dir, registry, recorder, capsys):
     write_json_entry(registry, "sbx3", "/x/sbx3", "claude")
@@ -111,6 +121,8 @@ def test_rows_are_in_byte_order_with_one_status_word_each(config_dir, registry, 
     ]
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_longer_name_sorts_after_its_prefix(config_dir, registry, recorder, capsys):
     write_json_entry(registry, "sbx2", "/x/sbx2", "claude")
     write_json_entry(registry, "sbx10", "/x/sbx10", "claude")
@@ -122,6 +134,8 @@ def test_a_longer_name_sorts_after_its_prefix(config_dir, registry, recorder, ca
     assert [row.split()[0] for row in row_list] == ["sbx1", "sbx10", "sbx2"]
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_container_of_another_sandbox_is_not_this_sandbox(config_dir, registry, recorder, capsys):
     write_json_entry(registry, "sbx1", "/x/sbx1", "claude")
     recorder.answer(PS_PREFIX, DockerResult(0, "sbx-sbx1-two running\n"))
@@ -131,6 +145,8 @@ def test_a_container_of_another_sandbox_is_not_this_sandbox(config_dir, registry
 
     assert captured.out.splitlines()[1] == expected_row("sbx1", "no container", "/x/sbx1")
 
+
+# --------------------------------------------------------------------------------
 
 def test_broken_entries_are_rows_that_name_their_file(config_dir, registry, recorder, capsys):
     empty_file = registry / "sbx1.json"
@@ -152,6 +168,8 @@ def test_broken_entries_are_rows_that_name_their_file(config_dir, registry, reco
     ]
 
 
+# --------------------------------------------------------------------------------
+
 def test_an_older_file_without_the_suffix_is_not_listed_or_mentioned(config_dir, registry, recorder, capsys):
     (registry / "sbx1").write_text("SBX_DIR=/x/sbx1\nSBX_AGENT=claude\n")
 
@@ -163,9 +181,9 @@ def test_an_older_file_without_the_suffix_is_not_listed_or_mentioned(config_dir,
     assert captured.err == ""
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Older image and leftovers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_running_sandbox_on_an_older_image_is_marked_and_explained(config_dir, registry, recorder, capsys):
     write_json_entry(registry, "sbx1", "/x/sbx1", "claude")
@@ -186,6 +204,8 @@ def test_a_running_sandbox_on_an_older_image_is_marked_and_explained(config_dir,
     assert ["image", "inspect", "--format", "{{.Id}}", "sbx-claude:local"] in recorder.call_list
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_older_image_check_uses_the_image_of_the_entry_agent_and_tag(config_dir, registry, recorder, capsys):
     write_json_entry(registry, "sbx1", "/x/sbx1", "cursor")
     recorder.answer(PS_PREFIX, DockerResult(0, "sbx-sbx1 running\n"))
@@ -197,6 +217,8 @@ def test_the_older_image_check_uses_the_image_of_the_entry_agent_and_tag(config_
     assert ["image", "inspect", "--format", "{{.Id}}", "sbx-cursor:test"] in recorder.call_list
     assert captured.err.startswith("sbx-list: using the test images because SBX_IMAGE_TAG=test;")
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_labeled_container_without_an_entry_is_listed_as_a_leftover(config_dir, registry, recorder, capsys):
     write_json_entry(registry, "sbx1", "/x/sbx1", "claude")
@@ -215,6 +237,8 @@ def test_a_labeled_container_without_an_entry_is_listed_as_a_leftover(config_dir
         "  " + "sbx-other".ljust(35) + " running",
     ]
 
+
+# --------------------------------------------------------------------------------
 
 def test_leftovers_are_listed_after_the_none_line_too(config_dir, registry, recorder, capsys):
     recorder.answer(PS_PREFIX, DockerResult(0, "sbx-other running\n"))

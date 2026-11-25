@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of sbx-fix-modes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A real git repository under tmp_path and real file modes. The extended attribute
 # is a stand-in function passed as a parameter: it keeps each attribute in a
 # dictionary and, like macOS, refuses to write one on a read-only file.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import stat
@@ -21,14 +21,16 @@ ATTRIBUTE_NAME = "user.containers.override_stat"
 GIT_IDENTITY = ["-c", "user.name=test", "-c", "user.email=test@example.com"]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Stand-ins and helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 class XattrStandIn:
     def __init__(self) -> None:
         self.value_map: dict[str, str] = {}
         self.call_list: list[list[str]] = []
+
+    # --------------------------------------------------------------------------------
 
     def __call__(self, argument_list: list[str]) -> XattrResult:
         self.call_list.append(list(argument_list))
@@ -51,9 +53,13 @@ class XattrStandIn:
         return XattrResult(0, "")
 
 
+# --------------------------------------------------------------------------------
+
 def _git(repo: Path, *argument_list: str) -> None:
     subprocess.run(["git", "-C", str(repo), *GIT_IDENTITY, *argument_list], check=True, capture_output=True)
 
+
+# --------------------------------------------------------------------------------
 
 def _make_repo(repo: Path) -> None:
     repo.mkdir(parents=True)
@@ -74,6 +80,8 @@ def _make_repo(repo: Path) -> None:
     _git(repo, "commit", "-q", "-m", "init")
 
 
+# --------------------------------------------------------------------------------
+
 def _drift(repo: Path, xattr: XattrStandIn) -> None:
     (repo / "run.sh").chmod(0o600)
     (repo / "doc.md").chmod(0o755)
@@ -83,9 +91,13 @@ def _drift(repo: Path, xattr: XattrStandIn) -> None:
     xattr.value_map[str(repo / "ro.sh")] = "1001:1001:0100644"
 
 
+# --------------------------------------------------------------------------------
+
 def _mode_of(file: Path) -> int:
     return stat.S_IMODE(file.stat().st_mode)
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def project_dir(registry, tmp_path) -> Path:
@@ -98,10 +110,14 @@ def project_dir(registry, tmp_path) -> Path:
     return repo
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def xattr() -> XattrStandIn:
     return XattrStandIn()
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def run_fix_modes(config_dir, capsys):
@@ -115,9 +131,9 @@ def run_fix_modes(config_dir, capsys):
     return run
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Refusals
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("argument_list", [[], ["a", "b"]])
 def test_a_wrong_argument_count_prints_the_usage(argument_list, run_fix_modes, xattr):
@@ -129,6 +145,8 @@ def test_a_wrong_argument_count_prints_the_usage(argument_list, run_fix_modes, x
     assert xattr.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_an_unregistered_name_is_refused(run_fix_modes, xattr):
     exit_code, _, err = run_fix_modes(["nosuch"], xattr)
 
@@ -136,12 +154,16 @@ def test_an_unregistered_name_is_refused(run_fix_modes, xattr):
     assert err == "sbx-fix-modes: nosuch is not registered; run: sbx-add nosuch HOST_PATH\n"
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_name_that_breaks_the_rule_is_refused(run_fix_modes, xattr):
     exit_code, _, err = run_fix_modes(["../x"], xattr)
 
     assert exit_code == 1
     assert "breaks the sandbox name rule" in err
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_project_directory_that_is_not_a_git_repository_is_refused(run_fix_modes, registry, tmp_path, xattr):
     sandbox_dir = tmp_path / "no git"
@@ -155,6 +177,8 @@ def test_a_project_directory_that_is_not_a_git_repository_is_refused(run_fix_mod
     assert xattr.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_project_directory_below_the_top_of_a_repository_is_refused(run_fix_modes, registry, tmp_path, xattr):
     top = tmp_path / "top"
     _make_repo(top)
@@ -167,9 +191,9 @@ def test_a_project_directory_below_the_top_of_a_repository_is_refused(run_fix_mo
     assert err == f"sbx-fix-modes: {top}/inner is not the top directory of a git repository\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The host modes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_host_modes_follow_git_and_the_counts_line_is_printed(project_dir, run_fix_modes, xattr):
     _drift(project_dir, xattr)
@@ -184,6 +208,8 @@ def test_the_host_modes_follow_git_and_the_counts_line_is_printed(project_dir, r
     assert _mode_of(project_dir / "plain.sh") == 0o755
     assert out == f"sbx-fix-modes: set 4 host modes and 2 sandbox modes from git in {project_dir}\n"
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_symlink_and_an_untracked_file_are_skipped(project_dir, run_fix_modes, xattr):
     untracked = project_dir / "scratch.txt"
@@ -203,6 +229,8 @@ def test_a_symlink_and_an_untracked_file_are_skipped(project_dir, run_fix_modes,
     assert "set 0 host modes and 0 sandbox modes" in out
 
 
+# --------------------------------------------------------------------------------
+
 def _add_index_entry(repo: Path, git_mode: str, relative_path: str) -> None:
     blob = subprocess.run(
         ["git", "-C", str(repo), "hash-object", "-w", "--stdin"],
@@ -213,6 +241,8 @@ def _add_index_entry(repo: Path, git_mode: str, relative_path: str) -> None:
 
     _git(repo, "update-index", "--add", "--cacheinfo", f"{git_mode},{blob},{relative_path}")
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_file_reached_through_a_symlinked_directory_outside_the_project_is_left_alone(
     project_dir, run_fix_modes, xattr, tmp_path
@@ -235,6 +265,8 @@ def test_a_file_reached_through_a_symlinked_directory_outside_the_project_is_lef
     assert f"sbx-fix-modes: skipped evil/key.sh; it resolves outside {project_dir}\n" in out
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_file_reached_through_a_relative_symlink_to_a_parent_directory_is_left_alone(
     project_dir, run_fix_modes, xattr, tmp_path
 ):
@@ -252,6 +284,8 @@ def test_a_file_reached_through_a_relative_symlink_to_a_parent_directory_is_left
     assert "skipped up/token.sh" in out
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_tracked_file_missing_from_the_work_tree_is_skipped(project_dir, run_fix_modes, xattr):
     (project_dir / "doc.md").unlink()
 
@@ -260,6 +294,8 @@ def test_a_tracked_file_missing_from_the_work_tree_is_skipped(project_dir, run_f
     assert exit_code == 0
     assert "set 0 host modes and 0 sandbox modes" in out
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_second_run_changes_nothing(project_dir, run_fix_modes, xattr):
     _drift(project_dir, xattr)
@@ -271,9 +307,9 @@ def test_a_second_run_changes_nothing(project_dir, run_fix_modes, xattr):
     assert out == f"sbx-fix-modes: set 0 host modes and 0 sandbox modes from git in {project_dir}\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The sandbox mode, in the attribute
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_attribute_takes_the_git_mode_and_keeps_the_owner(project_dir, run_fix_modes, xattr):
     xattr.value_map[str(project_dir / "run.sh")] = "501:20:0100644"
@@ -286,6 +322,8 @@ def test_the_attribute_takes_the_git_mode_and_keeps_the_owner(project_dir, run_f
     assert ["-p", ATTRIBUTE_NAME, str(project_dir / "run.sh")] in xattr.call_list
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_644_file_gets_a_644_attribute(project_dir, run_fix_modes, xattr):
     xattr.value_map[str(project_dir / "doc.md")] = "1001:1001:0100755"
 
@@ -293,6 +331,8 @@ def test_a_644_file_gets_a_644_attribute(project_dir, run_fix_modes, xattr):
 
     assert xattr.value_map[str(project_dir / "doc.md")] == "1001:1001:0100644"
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_file_without_the_attribute_gets_the_host_mode_only_and_no_attribute(project_dir, run_fix_modes, xattr):
     (project_dir / "plain.sh").chmod(0o644)
@@ -305,6 +345,8 @@ def test_a_file_without_the_attribute_gets_the_host_mode_only_and_no_attribute(p
     assert not any(call[0] == "-w" and call[-1] == str(project_dir / "plain.sh") for call in xattr.call_list)
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_read_only_file_gets_its_host_mode_before_the_attribute_write(project_dir, run_fix_modes, xattr):
     (project_dir / "ro.sh").chmod(0o444)
     xattr.value_map[str(project_dir / "ro.sh")] = "1001:1001:0100644"
@@ -314,6 +356,8 @@ def test_a_read_only_file_gets_its_host_mode_before_the_attribute_write(project_
     assert exit_code == 0, err
     assert xattr.value_map[str(project_dir / "ro.sh")] == "1001:1001:0100755"
 
+
+# --------------------------------------------------------------------------------
 
 def test_an_attribute_that_cannot_be_written_stops_the_run_with_the_file_named(project_dir, run_fix_modes):
     def refusing_xattr(argument_list: list[str]) -> XattrResult:
@@ -327,6 +371,8 @@ def test_an_attribute_that_cannot_be_written_stops_the_run_with_the_file_named(p
     assert exit_code == 1
     assert err.startswith("sbx-fix-modes: xattr could not write the mode of ")
 
+
+# --------------------------------------------------------------------------------
 
 def test_without_xattr_the_host_modes_are_set_and_the_skip_is_said(project_dir, run_fix_modes, tmp_path):
     empty_dir = tmp_path / "empty-path"
@@ -342,6 +388,8 @@ def test_without_xattr_the_host_modes_are_set_and_the_skip_is_said(project_dir, 
         "sbx-fix-modes: xattr is not installed, so the sandbox modes were not looked at",
     ]
 
+
+# --------------------------------------------------------------------------------
 
 def test_with_an_injected_xattr_function_the_skip_line_is_not_printed(project_dir, run_fix_modes, xattr):
     _, out, _ = run_fix_modes(["fixed"], xattr)

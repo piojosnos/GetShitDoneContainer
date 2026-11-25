@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Scenario: sbx-init and sbx-selfcheck pass in a test sandbox of each agent
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A fresh sandbox correctly fails the git identity and login checks, so the
 # scenario plants a fake identity and a fake login first. The test images are
 # built with a root certificate, so no check may say none was requested.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import json
 import os
@@ -15,12 +15,12 @@ import pytest
 from scenario_helpers import RunSandbox, docker_exec, selfcheck_problem_list, step
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_init_and_selfcheck_pass: init, then selfcheck, every line a PASS
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # plant git identity and fake login -> sbx-init -> sbx-selfcheck -> every line
 # PASS, count = the agent's
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_init_and_selfcheck_pass(sandbox: RunSandbox, request: pytest.FixtureRequest):
     agent = sandbox.agent

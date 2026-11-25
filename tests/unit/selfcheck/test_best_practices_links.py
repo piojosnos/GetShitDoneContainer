@@ -1,8 +1,8 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the best-practices links result
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Real files and links inside tmp_path.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import shutil
@@ -14,9 +14,9 @@ import best_practices_links
 import hints
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants and helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 RULES_LINK_TEXT_TEMPLATE = "../../best-practices/generated/{agent}/rules"
 
@@ -44,9 +44,9 @@ def make_best_practices_tree(base_dir: Path, skill_name_list: list[str], agent_n
     return config_dir, clone_dir
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Best-practices links
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_best_practices_links_result_passes_on_a_linked_tree_without_any_list_file(tmp_path):
     config1, clone1 = make_best_practices_tree(tmp_path, ["skill-a", "skill-b"], "agent1")
@@ -57,6 +57,8 @@ def test_best_practices_links_result_passes_on_a_linked_tree_without_any_list_fi
     assert "2 skills linked" in result.detail
     assert "rules linked" in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_best_practices_links_result_fails_naming_a_missing_skill_link(tmp_path):
     config1, clone1 = make_best_practices_tree(tmp_path, ["skill-a", "skill-b"], "agent1")
@@ -70,6 +72,8 @@ def test_best_practices_links_result_fails_naming_a_missing_skill_link(tmp_path)
     assert result.hint == hints.init_hint()
 
 
+# --------------------------------------------------------------------------------
+
 def test_best_practices_links_result_fails_for_a_skill_link_with_another_target(tmp_path):
     config1, clone1 = make_best_practices_tree(tmp_path, ["skill-a"], "agent1")
     (config1 / "skills" / "skill-a").unlink()
@@ -81,6 +85,8 @@ def test_best_practices_links_result_fails_for_a_skill_link_with_another_target(
     assert "skill-a" in result.detail
 
 
+# --------------------------------------------------------------------------------
+
 def test_best_practices_links_result_fails_for_a_copy_in_place_of_a_skill_link(tmp_path):
     config1, clone1 = make_best_practices_tree(tmp_path, ["skill-a"], "agent1")
     (config1 / "skills" / "skill-a").unlink()
@@ -91,6 +97,8 @@ def test_best_practices_links_result_fails_for_a_copy_in_place_of_a_skill_link(t
     assert not result.passed
     assert "skill-a" in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_best_practices_links_result_fails_for_a_rules_link_with_another_target(tmp_path):
     config1, clone1 = make_best_practices_tree(tmp_path, ["skill-a"], "agent1")
@@ -104,6 +112,8 @@ def test_best_practices_links_result_fails_for_a_rules_link_with_another_target(
     assert "rules" in result.detail
 
 
+# --------------------------------------------------------------------------------
+
 def test_best_practices_links_result_fails_for_rules_that_is_not_a_link(tmp_path):
     config1, clone1 = make_best_practices_tree(tmp_path, ["skill-a"], "agent1")
     (config1 / "rules").unlink()
@@ -114,6 +124,8 @@ def test_best_practices_links_result_fails_for_rules_that_is_not_a_link(tmp_path
     assert not result.passed
     assert "rules" in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_links_result_says_there_is_no_clone_when_the_clone_dir_is_absent(tmp_path):
     config1 = tmp_path / "state1" / "agent1"
@@ -128,6 +140,8 @@ def test_the_links_result_says_there_is_no_clone_when_the_clone_dir_is_absent(tm
     assert "sbx-best-practices-clone" in result.hint
     assert "move it aside" not in result.hint
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
     ("lacking_name", "state", "lacking_text"),
@@ -157,6 +171,8 @@ def test_the_links_result_names_what_the_clone_lacks(tmp_path, lacking_name, sta
     assert "sbx-best-practices-clone" in result.hint
 
 
+# --------------------------------------------------------------------------------
+
 def test_best_practices_links_result_fails_for_a_skill_link_with_the_right_text_that_misses_the_clone_dir(tmp_path):
     config1 = tmp_path / "state1" / "agent1"
     clone1 = tmp_path / "elsewhere1" / "best-practices"
@@ -175,6 +191,8 @@ def test_best_practices_links_result_fails_for_a_skill_link_with_the_right_text_
     assert result.hint == hints.init_hint()
 
 
+# --------------------------------------------------------------------------------
+
 def test_best_practices_links_result_fails_for_an_own_link_whose_skill_the_clone_dropped(tmp_path):
     config1, clone1 = make_best_practices_tree(tmp_path, ["skill-a"], "agent1")
     os.symlink(SKILL_LINK_TEXT_TEMPLATE.format(agent="agent1", name="dropped-b"), config1 / "skills" / "dropped-b")
@@ -187,6 +205,8 @@ def test_best_practices_links_result_fails_for_an_own_link_whose_skill_the_clone
     assert result.hint == hints.init_hint()
 
 
+# --------------------------------------------------------------------------------
+
 def test_best_practices_links_result_ignores_a_user_skill_and_a_link_elsewhere_that_the_clone_does_not_have(tmp_path):
     config1, clone1 = make_best_practices_tree(tmp_path, ["skill-a"], "agent1")
     (config1 / "skills" / "mine-b").mkdir()
@@ -197,6 +217,8 @@ def test_best_practices_links_result_ignores_a_user_skill_and_a_link_elsewhere_t
 
     assert result.passed
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_old_links_into_the_masters_fail_the_check_until_init_relinks(tmp_path):
     config1, clone1 = make_best_practices_tree(tmp_path, ["skill-a"], "agent1")
@@ -224,9 +246,9 @@ def test_the_old_links_into_the_masters_fail_the_check_until_init_relinks(tmp_pa
     assert result.hint == hints.init_hint()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Clone failures and the passed detail
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_clone_failure_is_none_for_a_clone_with_what_the_agent_needs(tmp_path):
     clone1 = tmp_path / "best-practices"
@@ -236,6 +258,8 @@ def test_clone_failure_is_none_for_a_clone_with_what_the_agent_needs(tmp_path):
 
     assert best_practices_links.clone_failure(clone1, "agent1") is None
 
+
+# --------------------------------------------------------------------------------
 
 def test_linked_detail_counts_skills_and_names_the_generated_dir(tmp_path):
     assert best_practices_links.linked_detail(tmp_path, "agent1", 3) == (

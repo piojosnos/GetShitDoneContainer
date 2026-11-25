@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Guard rules on isolation: no socket or privilege, data kept, test images
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Mounts and effective privileges of a running sandbox are checked on the host
 # by the isolation scenario, which reads the running container.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import re
 
@@ -31,12 +31,12 @@ _SHELL_DELETE_PATTERN = r"\b(rm|rmdir|prune|kill|down)\b|--volumes"
 _SKILL_DENY_ENTRY = "Edit(//home/sandbox/workspace/state/claude/skills/**)"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule no_docker_socket_or_privileges: no Docker socket, no sudo, no extra privilege
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Compose refuses privileged, cap_add, devices, host namespaces, group_add and
 # unconfined profiles; the isolation scenario reads the running container.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_no_docker_socket_or_privileges():
     compose_hit_list = nowhere_matches(
@@ -47,15 +47,15 @@ def test_no_docker_socket_or_privileges():
     assert not compose_hit_list + sudo_hit_list, "\n".join(compose_hit_list + sudo_hit_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule host_scripts_keep_sandbox_data: only the rm command takes a sandbox down
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Every host module other than rm.py and clean.py is free of file deletion and of
 # the Docker verbs rm, rmi, down, prune and kill and of --volumes; every launcher
 # in bin/ other than sbx-rm is free of the same words, so no other command deletes
 # data or takes a sandbox down. What sbx-rm itself removes is proven on real
 # Docker by the rm scenario.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_host_scripts_keep_sandbox_data():
     rm_module = REPO_DIR / "sbx" / "rm.py"
@@ -80,11 +80,11 @@ def test_host_scripts_keep_sandbox_data():
     assert not hit_list, "\n".join(hit_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule managed_settings_deny_skill_edits: managed settings deny Edit on synced skills
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-selfcheck reads the same entry in the image.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_managed_settings_deny_skill_edits():
     settings_text = (REPO_DIR / "claude" / "managed-settings.json").read_text(encoding="utf-8")
@@ -94,13 +94,13 @@ def test_managed_settings_deny_skill_edits():
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule host_tests_never_name_the_local_tag: a test run never uses your sandbox images
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The host run and the integration scenarios take their images from SBX_IMAGE_TAG,
 # which they always set to test. A local tag named in one of them, even in a
 # comment, is the first step to a run that replaces the images your sandboxes use.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_host_tests_never_name_the_local_tag():
     candidate_list = [
@@ -121,13 +121,13 @@ def test_host_tests_never_name_the_local_tag():
     assert not hit_list, "\n".join(hit_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule owner_fix_hint_matches_container_name: the host fix names the compose container
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The fix, shared by sbx-selfcheck and sbx-init, runs a throwaway root container
 # with --volumes-from sbx-NAME. If the container_name in compose.yml changes, the
 # printed command would name a container that does not exist.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_owner_fix_hint_matches_container_name():
     hint_file = REPO_DIR / "base" / "selfcheck" / "root_owned_scan.py"

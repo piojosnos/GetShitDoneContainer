@@ -1,23 +1,23 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The per-agent data the integration scenarios and the inventory tests share
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A scenario runs once per row, and a test of the check and step inventories
 # reads its counts from here, so adding an agent means adding a row. This module
 # imports no Docker code.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 from dataclasses import dataclass
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # AgentSpec
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # session_dir is formatted with the sandbox name; None when the agent keeps no
 # session files that a scenario plants. settings_file and instructions_file are
 # the user's own files in the config directory that the GSD sync must leave as
 # they are; None when the agent has no such file. rules_extension is the extension
 # of the agent's generated rule files.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class AgentSpec:
@@ -36,9 +36,9 @@ class AgentSpec:
     links_step: str
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The rows
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 CLAUDE_SPEC = AgentSpec(
     name="claude",
