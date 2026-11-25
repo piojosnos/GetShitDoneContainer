@@ -42,7 +42,7 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
 - [x] **Phase 09.1: Align vocabulary** (INSERTED): code, tests and docs use one set of terms; best-practices, never bundle (completed 2026-11-18)
 - [x] **Phase 10: Host side to Python**: the host commands and host tests are Python run through `uv`, with one JSON registry file per sandbox (completed 2026-11-20)
 - [x] **Phase 10.1: Practices generator** (INSERTED): the best-practices repo turns its agent-neutral masters into committed, per-agent output for Claude and Cursor (completed 2026-11-24)
-- [ ] **Phase 10.1.1: Agents link the generated practices** (INSERTED): Claude and Cursor sandboxes link their agent's generated practices, and the selfcheck proves it
+- [x] **Phase 10.1.1: Agents link the generated practices** (INSERTED): Claude and Cursor sandboxes link their agent's generated practices, and the selfcheck proves it (completed 2026-11-25)
 - [x] **Phase 10.1.2: Shared agent checks** (INSERTED): the Claude and Cursor selfcheck twins become one shared list of agent checks before the third agent arrives (completed 2026-11-25)
 - [ ] **Phase 10.2: OpenCode agent image** (INSERTED): a third agent image with full skills and best-practices support; may split into more phases
 - [ ] **Phase 11: CI widened**: GitHub runs the guard, builds the test images and runs the Linux-runnable checks on every PR push
@@ -355,7 +355,7 @@ Plans:
 **Goal:** The linker becomes agent-neutral: it links what `generated/<agent>/` holds into that agent's config directory (the rules folder whole, one link per skill), so Cursor gets rules for the first time and Claude moves its links from the masters to `generated/claude/` on the next `sbx-init`. The selfcheck and the integration scenario prove the links for both agents, and an attended Mac step shows Cursor lists the rules and skills.
 **Requirements**: TBD
 **Depends on:** Phase 10.1
-**Plans:** 5/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 
@@ -426,7 +426,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 9. sbx-init replaces the start hooks | v2.0 | 14/14 | Complete    | 2026-11-17 |
 | 10. Host side to Python | v2.0 | 11/11 | Complete    | 2026-11-20 |
 | 10.1. Practices generator | v2.0 | 5/5 | Complete    | 2026-11-24 |
-| 10.1.1. Agents link the generated practices | v2.0 | 5/5 | In Progress|  |
+| 10.1.1. Agents link the generated practices | v2.0 | 5/5 | Complete    | 2026-11-25 |
 | 10.1.2. Shared agent checks | v2.0 | 4/4 | Complete    | 2026-11-25 |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
 | 11. CI widened | v2.0 | 0/TBD | Not started | - |
