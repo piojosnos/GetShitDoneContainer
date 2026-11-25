@@ -43,7 +43,7 @@ Each phase depends on the one before. Docker does not run in the dev sandbox, so
 - [x] **Phase 10: Host side to Python**: the host commands and host tests are Python run through `uv`, with one JSON registry file per sandbox (completed 2026-11-20)
 - [x] **Phase 10.1: Practices generator** (INSERTED): the best-practices repo turns its agent-neutral masters into committed, per-agent output for Claude and Cursor (completed 2026-11-24)
 - [ ] **Phase 10.1.1: Agents link the generated practices** (INSERTED): Claude and Cursor sandboxes link their agent's generated practices, and the selfcheck proves it
-- [ ] **Phase 10.1.2: Shared agent checks** (INSERTED): the Claude and Cursor selfcheck twins become one shared list of agent checks before the third agent arrives
+- [x] **Phase 10.1.2: Shared agent checks** (INSERTED): the Claude and Cursor selfcheck twins become one shared list of agent checks before the third agent arrives (completed 2026-11-25)
 - [ ] **Phase 10.2: OpenCode agent image** (INSERTED): a third agent image with full skills and best-practices support; may split into more phases
 - [ ] **Phase 11: CI widened**: GitHub runs the guard, builds the test images and runs the Linux-runnable checks on every PR push
 
@@ -365,7 +365,7 @@ Plans:
 **Goal:** The selfcheck files that Claude and Cursor repeat with only a different agent config directory, root list or flag become one shared list of agent checks, built from a small per-agent description. Each agent keeps only its truly specific checks, so the OpenCode image starts from the shared list instead of a third copy. Output stays the same; the check counts in H-34 do not change.
 **Requirements**: TBD
 **Depends on:** Phase 10.1.1
-**Plans:** 4/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 **Wave 1**
@@ -417,7 +417,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 10. Host side to Python | v2.0 | 11/11 | Complete    | 2026-11-20 |
 | 10.1. Practices generator | v2.0 | 5/5 | Complete    | 2026-11-24 |
 | 10.1.1. Agents link the generated practices | v2.0 | 0/TBD | Not started | - |
-| 10.1.2. Shared agent checks | v2.0 | 4/4 | In Progress|  |
+| 10.1.2. Shared agent checks | v2.0 | 4/4 | Complete    | 2026-11-25 |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
 | 11. CI widened | v2.0 | 0/TBD | Not started | - |
 
