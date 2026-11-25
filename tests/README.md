@@ -57,7 +57,7 @@ The integration suite is written as scenarios. A test function is one scenario, 
 |---|---|
 | Runs | pytest on the `sbx-init` runner, its steps and libraries (`base/init/`, `claude/init/`, `cursor/init/`), the two agent wrappers `sbx-claude` and `sbx-cursor` with the `sbx-run-agent` script they share, `sbx-best-practices-clone` and `sbx-gh-login`, against real files, git and a real second process holding the lock, in a temp directory |
 | Where | The dev sandbox (Linux, with uv). `./host-test.sh` does not run it |
-| Catches | A step out of order, a lock or marker mistake, a user skill touched, an installer hang, an agent wrapper that starts an agent without init |
+| Catches | A step out of order, a lock or marker mistake, a user skill touched, an installer hang, an agent wrapper that starts an agent without init, an agent step file that does not load with the `sbx-init` import path |
 | Does not catch | Whether the steps work in a real image, which the first run, init and selfcheck and owner fix scenarios cover |
 
 ## tests/unit/sbx/
@@ -77,7 +77,7 @@ The integration suite is written as scenarios. A test function is one scenario, 
 |---|---|
 | Runs | pytest on the runner, its libraries and the check files of `sbx-selfcheck` (`base/selfcheck/`, `base/selfcheck/checks/`, `claude/selfcheck/`, `cursor/selfcheck/` and the agent libraries in their `lib/` directories), one test file per library and per check file, against real files, git, openssl and keytool in a temp directory |
 | Where | The dev sandbox (Linux, with uv). `./host-test.sh` does not run it |
-| Catches | A check line too many or too few, a FAIL without a fix, a broken or missing checks file, the parsers (`versions.env`, `keytool`, the certificate bundle, mountinfo), the best-practices links, the directory walk (one walker for the image ownership, the protected paths and the root-owned state scan), version and fingerprint matching, the certificate checks against the recorded fingerprints, and check counts that drift from `selfcheck_count` in `agent_specs.py` |
+| Catches | A check line too many or too few, a FAIL without a fix, a broken or missing checks file, the parsers (`versions.env`, `keytool`, the certificate bundle, mountinfo), the best-practices links, the directory walk (one walker for the image ownership, the protected paths and the root-owned state scan), version and fingerprint matching, the certificate checks against the recorded fingerprints, and check counts that drift from `selfcheck_count` in `agent_specs.py`, an agent check file that does not load with the `sbx-selfcheck` import path |
 | Does not catch | Whether the checks pass in a real image (the init and selfcheck scenario does) |
 
 ## tests/integration/
