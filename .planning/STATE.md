@@ -5,15 +5,15 @@ milestone_name: Simple tooling
 current_phase: 10.1.1
 current_phase_name: Agents link the generated practices
 status: planning
-stopped_at: Phase 10.1.1 context gathered
-last_updated: "2026-11-24T21:38:39.486Z"
+stopped_at: Phase 10.1.2 context gathered
+last_updated: "2026-11-25T18:06:51.241Z"
 last_activity: 2026-11-24
 last_activity_desc: Phase 10.1 complete, transitioned to Phase 10.1.1
-state_head: 00aecb801ea800d9e6b47f8319734d7558aab82e
+state_head: 7d9730e01fe2e4d605c791c3af1630193d3567f2
 progress:
   total_phases: 12
   completed_phases: 6
-  total_plans: 71
+  total_plans: 76
   completed_plans: 71
   percent: 50
 ---
@@ -536,9 +536,9 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-24T21:38:39.323Z
-Stopped at: Phase 10.1.1 context gathered
-Resume file: .planning/phases/10.1.1-agents-link-the-generated-practices/10.1.1-CONTEXT.md
+Last session: 2026-11-25T18:06:51.042Z
+Stopped at: Phase 10.1.2 context gathered
+Resume file: .planning/phases/10.1.2-shared-agent-checks-before-the-third-agent/10.1.2-CONTEXT.md
 
 ## Operator Next Steps
 
