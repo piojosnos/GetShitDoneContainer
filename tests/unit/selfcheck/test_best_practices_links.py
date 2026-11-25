@@ -5,7 +5,10 @@
 # ------------------------------------------------------------------------------
 
 import os
+import shutil
 from pathlib import Path
+
+import pytest
 
 import best_practices_links
 import hints
@@ -27,6 +30,7 @@ def make_best_practices_tree(base_dir: Path, skill_name_list: list[str], agent_n
     generated_dir = clone_dir / "generated" / agent_name
     (config_dir / "skills").mkdir(parents=True)
     (generated_dir / "rules").mkdir(parents=True)
+    (generated_dir / "rules" / "rule1.md").write_text("generated rule1\n")
     (generated_dir / "skills").mkdir()
     os.symlink(RULES_LINK_TEXT_TEMPLATE.format(agent=agent_name), config_dir / "rules")
 
@@ -150,11 +154,28 @@ def test_the_links_result_names_the_dir_a_clone_dir_lacks(tmp_path):
         assert "sbx-best-practices-clone" in result.hint
 
 
+@pytest.mark.parametrize(("empty_name", "entry_noun"), [("rules", "rule"), ("skills", "skill")])
+def test_the_links_result_names_the_empty_generated_dir_of_a_clone(tmp_path, empty_name, entry_noun):
+    config1, clone1 = make_best_practices_tree(tmp_path, ["skill-a"], "agent1")
+    empty_dir = clone1 / "generated" / "agent1" / empty_name
+    shutil.rmtree(empty_dir)
+    empty_dir.mkdir()
+    (empty_dir / ".hidden1").write_text("hidden\n")
+
+    result = best_practices_links.best_practices_links_result(config1, clone1, "agent1")
+
+    assert not result.passed
+    assert result.detail == f"{clone1} exists but has no {entry_noun} in generated/agent1/{empty_name}/"
+    assert f"git -C {clone1} pull" in result.hint
+    assert "move it aside" in result.hint
+
+
 def test_best_practices_links_result_fails_for_a_skill_link_with_the_right_text_that_misses_the_clone_dir(tmp_path):
     config1 = tmp_path / "state1" / "agent1"
     clone1 = tmp_path / "elsewhere1" / "best-practices"
     (config1 / "skills").mkdir(parents=True)
     (clone1 / "generated" / "agent1" / "rules").mkdir(parents=True)
+    (clone1 / "generated" / "agent1" / "rules" / "rule1.md").write_text("generated rule1\n")
     (clone1 / "generated" / "agent1" / "skills" / "skill-a").mkdir(parents=True)
     os.symlink(SKILL_LINK_TEXT_TEMPLATE.format(agent="agent1", name="skill-a"), config1 / "skills" / "skill-a")
     os.symlink(RULES_LINK_TEXT_TEMPLATE.format(agent="agent1"), config1 / "rules")
@@ -229,6 +250,8 @@ def test_clone_failure_is_none_for_a_clone_with_what_the_agent_needs(tmp_path):
     )
 
     (clone1 / "generated" / "agent1" / "rules").mkdir()
+    (clone1 / "generated" / "agent1" / "rules" / "rule1.md").write_text("generated rule1\n")
+    (clone1 / "generated" / "agent1" / "skills" / "skill-a").mkdir()
 
     assert best_practices_links.clone_failure(clone1, "agent1") is None
 

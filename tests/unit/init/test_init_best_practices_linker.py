@@ -32,6 +32,7 @@ def make_trees(base_dir: Path, skill_name_list: list[str], agent_name: str) -> t
     generated_dir = clone_dir / "generated" / agent_name
     config_dir.mkdir(parents=True)
     (generated_dir / "rules").mkdir(parents=True)
+    (generated_dir / "rules" / "rule1.md").write_text("generated rule1\n")
     (generated_dir / "skills").mkdir()
 
     for skill_name in skill_name_list:
@@ -273,6 +274,26 @@ def test_a_clone_without_a_generated_dir_fails_as_incomplete_and_makes_no_link(t
     assert list(config1.iterdir()) == []
 
 
+@pytest.mark.parametrize(("empty_name", "entry_noun"), [("rules", "rule"), ("skills", "skill")])
+def test_a_clone_with_an_empty_generated_dir_fails_as_incomplete_and_keeps_the_links(tmp_path, empty_name, entry_noun):
+    config1, clone1 = make_trees(tmp_path, ["skill1"], "agent1")
+
+    assert link_best_practices(config1, clone1, "agent1").passed
+
+    empty_dir = clone1 / "generated" / "agent1" / empty_name
+    shutil.rmtree(empty_dir)
+    empty_dir.mkdir()
+    (empty_dir / ".hidden1").write_text("hidden\n")
+
+    result = link_best_practices(config1, clone1, "agent1")
+
+    assert not result.passed
+    assert result.detail == f"{clone1} exists but has no {entry_noun} in generated/agent1/{empty_name}/"
+    assert_incomplete_fix(result.hint, clone1)
+    assert os.readlink(config1 / "skills" / "skill1") == SKILL_LINK_TEXT_TEMPLATE.format(agent="agent1", name="skill1")
+    assert os.readlink(config1 / "rules") == RULES_LINK_TEXT_TEMPLATE.format(agent="agent1")
+
+
 def test_a_clone_with_only_the_masters_fails_with_the_pull_fix_and_makes_no_link(tmp_path):
     config1 = tmp_path / "state1" / "agent1"
     clone1 = tmp_path / "best-practices"
@@ -328,7 +349,7 @@ def test_an_empty_dir_a_file_or_a_dangling_link_at_the_clone_path_is_incomplete_
 
 def test_init_and_the_self_check_give_the_same_text_for_an_incomplete_clone(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"], "agent1")
-    (clone1 / "generated" / "agent1" / "rules").rmdir()
+    shutil.rmtree(clone1 / "generated" / "agent1" / "rules")
 
     init_result = link_best_practices(config1, clone1, "agent1")
     check_result = best_practices_links.best_practices_links_result(config1, clone1, "agent1")

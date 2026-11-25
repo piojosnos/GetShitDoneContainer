@@ -52,7 +52,20 @@ def clone_failure(best_practices_dir: Path, agent_name: str) -> CheckResult | No
         needed_dir = generated_dir(best_practices_dir, agent_name) / needed_name
 
         if not needed_dir.is_dir():
-            return _incomplete_clone_result(best_practices_dir, needed_dir)
+            return _incomplete_clone_result(
+                best_practices_dir,
+                f"{needed_dir.relative_to(best_practices_dir)}/ directory",
+            )
+
+    relative_dir = generated_dir(best_practices_dir, agent_name).relative_to(best_practices_dir)
+
+    # A generated directory with nothing to link is a pull or generator run cut short;
+    # linking from an empty skills directory would remove every own skill link.
+    if not _best_practices_rule_name_list(best_practices_dir, agent_name):
+        return _incomplete_clone_result(best_practices_dir, f"rule in {relative_dir}/rules/")
+
+    if not best_practices_skill_name_list(best_practices_dir, agent_name):
+        return _incomplete_clone_result(best_practices_dir, f"skill in {relative_dir}/skills/")
 
     return None
 
@@ -68,9 +81,9 @@ def _missing_clone_result(best_practices_dir: Path) -> CheckResult:
     )
 
 
-def _incomplete_clone_result(best_practices_dir: Path, needed_dir: Path) -> CheckResult:
+def _incomplete_clone_result(best_practices_dir: Path, lacking_text: str) -> CheckResult:
     return failed(
-        f"{best_practices_dir} exists but has no {needed_dir.relative_to(best_practices_dir)}/ directory",
+        f"{best_practices_dir} exists but has no {lacking_text}",
         f"check that {best_practices_dir} is a clone of the best-practices repo: "
         f"if it is, run git -C {best_practices_dir} pull, "
         "then sbx-init; if not, move it aside, then run sbx-gh-login and sbx-best-practices-clone",
@@ -89,6 +102,20 @@ def best_practices_skill_name_list(best_practices_dir: Path, agent_name: str) ->
             skill_name_list.append(skill_dir.name)
 
     return skill_name_list
+
+
+def _best_practices_rule_name_list(best_practices_dir: Path, agent_name: str) -> list[str]:
+    rules_dir = generated_dir(best_practices_dir, agent_name) / "rules"
+    rule_name_list = []
+
+    if not rules_dir.is_dir():
+        return rule_name_list
+
+    for rule_file in sorted(rules_dir.iterdir()):
+        if rule_file.is_file() and not rule_file.name.startswith("."):
+            rule_name_list.append(rule_file.name)
+
+    return rule_name_list
 
 
 def _rules_link_problem(config_dir: Path, best_practices_dir: Path, agent_name: str) -> str:
