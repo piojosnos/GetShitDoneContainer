@@ -355,7 +355,7 @@ Plans:
 **Goal:** The linker becomes agent-neutral: it links what `generated/<agent>/` holds into that agent's config directory (the rules folder whole, one link per skill), so Cursor gets rules for the first time and Claude moves its links from the masters to `generated/claude/` on the next `sbx-init`. The selfcheck and the integration scenario prove the links for both agents, and an attended Mac step shows Cursor lists the rules and skills.
 **Requirements**: TBD
 **Depends on:** Phase 10.1
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans executed
 
 Plans:
 
@@ -368,7 +368,7 @@ Plans:
 - [x] 10.1.1-04-PLAN.md: README (generated links, migration checklist, Cursor rules, fix text), GLOSSARY terms, the attended step in the host checklist (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 10.1.1-05-PLAN.md: dev-sandbox gate, local PR branches, then `./host-test.sh` and the attended step on the host (wave 3, checkpoint)
+- [x] 10.1.1-05-PLAN.md: dev-sandbox gate, local PR branches, then `./host-test.sh` and the attended step on the host (wave 3, checkpoint)
 
 ### Phase 10.1.2: Shared agent checks before the third agent (INSERTED)
 
@@ -426,7 +426,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 9. sbx-init replaces the start hooks | v2.0 | 14/14 | Complete    | 2026-11-17 |
 | 10. Host side to Python | v2.0 | 11/11 | Complete    | 2026-11-20 |
 | 10.1. Practices generator | v2.0 | 5/5 | Complete    | 2026-11-24 |
-| 10.1.1. Agents link the generated practices | v2.0 | 4/5 | In Progress|  |
+| 10.1.1. Agents link the generated practices | v2.0 | 5/5 | In Progress|  |
 | 10.1.2. Shared agent checks | v2.0 | 4/4 | Complete    | 2026-11-25 |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
 | 11. CI widened | v2.0 | 0/TBD | Not started | - |
