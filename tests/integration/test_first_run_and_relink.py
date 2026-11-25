@@ -6,7 +6,7 @@
 # use is a bare copy of the run's origin, placed inside the throwaway sandbox
 # directory so the container sees it under the workspace path; a push never
 # changes the run's origin. Everything that differs between the agents (wrapper,
-# binary, version pin, links step, step count, rules link) comes from AgentSpec.
+# binary, version pin, links step, step count, rules file extension) comes from AgentSpec.
 # ------------------------------------------------------------------------------
 
 import json
@@ -113,27 +113,29 @@ def _init_summary_line(agent: AgentSpec) -> str:
 # ------------------------------------------------------------------------------
 # What a link reaches
 # ------------------------------------------------------------------------------
-# Claude links its rules directory and its skills; Cursor links its skills only.
-# live_target gives a directory of the clone that an agent config link reaches and
-# a file in it, so one scenario reads a change through a link for either agent:
-# the clone path is CLONE/DIR/FILE and the state path is CONFIG/DIR/FILE.
+# Both agents link the generated rules directory of the clone whole and one link
+# per generated skill. live_target gives a directory an agent config link reaches
+# and a file in it, so one scenario reads a change through a link for either agent:
+# the clone path is CLONE/generated/AGENT/DIR/FILE and the state path is
+# CONFIG/DIR/FILE.
 # ------------------------------------------------------------------------------
 
-def _live_target(agent: AgentSpec) -> tuple[str, str]:
-    if agent.links_rules:
-        return "rules", "sbx-fixture-always.md"
+def _generated_dir(agent: AgentSpec) -> str:
+    return f"generated/{agent.name}"
 
-    return f"skills/{_KEPT_SKILL}", "SKILL.md"
+
+def _live_target(agent: AgentSpec) -> tuple[str, str]:
+    return "rules", f"sbx-fixture-always{agent.rules_extension}"
 
 
 def _config_dir(agent: AgentSpec) -> str:
     return f"{_WORKSPACE}/state/{agent.config_dir_name}"
 
 
-def _fixture_skill_name_list() -> list[str]:
+def _fixture_skill_name_list(agent: AgentSpec) -> list[str]:
     name_list = []
 
-    for skill_dir in sorted((_SUPPORT_DIR / "skills").iterdir()):
+    for skill_dir in sorted((_SUPPORT_DIR / _generated_dir(agent) / "skills").iterdir()):
         name_list.append(skill_dir.name)
 
     return name_list
@@ -146,16 +148,15 @@ def _read_link(container: str, path: str) -> str:
 def _link_problem_list(container: str, agent: AgentSpec, skill_name_list: list[str]) -> list[str]:
     problem_list = []
     config_dir = _config_dir(agent)
+    expected_rules_link = f"../../best-practices/{_generated_dir(agent)}/rules"
+    rules_link = _read_link(container, f"{config_dir}/rules")
 
-    if agent.links_rules:
-        rules_link = _read_link(container, f"{config_dir}/rules")
-
-        if rules_link != "../../best-practices/rules":
-            problem_list.append(f"the rules link is {rules_link!r}, expected '../../best-practices/rules'")
+    if rules_link != expected_rules_link:
+        problem_list.append(f"the rules link is {rules_link!r}, expected {expected_rules_link!r}")
 
     for skill_name in skill_name_list:
         skill_link = _read_link(container, f"{config_dir}/skills/{skill_name}")
-        expected_link = f"../../../best-practices/skills/{skill_name}"
+        expected_link = f"../../../best-practices/{_generated_dir(agent)}/skills/{skill_name}"
 
         if skill_link != expected_link:
             problem_list.append(f"the link of skill {skill_name} is {skill_link!r}, expected {expected_link!r}")
@@ -307,7 +308,7 @@ def test_first_run_refuses_then_inits_from_the_clone(
         assert _last_line(clone.stdout) == _init_summary_line(agent), describe_result(clone)
 
     with step("the links point into the clone"):
-        problem_list = _link_problem_list(container, agent, _fixture_skill_name_list())
+        problem_list = _link_problem_list(container, agent, _fixture_skill_name_list(agent))
         read_through = docker_exec(container, f"cat {config_dir}/{live_dir}/{live_file}")
         fixture_text = (_SUPPORT_DIR / live_dir / live_file).read_text(encoding="utf-8")
 
