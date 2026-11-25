@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the helpers the integration scenarios share
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The step note, the timeout that stops a whole process group, the live runner,
 # the failure text, the container questions, the throwaway sandboxes, the selfcheck
 # reader and the throwaway root certificate. None of the cases needs Docker.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import io
 import json
@@ -37,9 +37,9 @@ from scenario_helpers import (
 )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def process_is_alive(pid: int) -> bool:
     completed = subprocess.run(
@@ -65,9 +65,9 @@ def wait_until_gone(pid: int, seconds: float) -> bool:
     return not process_is_alive(pid)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # step
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_failing_step_adds_the_step_name_as_a_note_and_reraises():
     with pytest.raises(AssertionError) as raised:
@@ -84,9 +84,9 @@ def test_a_passing_step_adds_nothing():
     assert value == 2
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # run_timeout
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_run_timeout_returns_the_code_and_both_streams():
     result = run_timeout(
@@ -146,9 +146,9 @@ def test_run_sbx_finds_the_command_on_the_path_of_the_environment_it_is_given(tm
     assert result.stdout == "probe arg1 env1\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # run_streamed
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_run_streamed_echoes_and_logs_every_line_merged_and_returns_the_code(tmp_path):
     log_file = tmp_path / "run.log"
@@ -194,9 +194,9 @@ def test_run_streamed_stops_the_group_on_a_timeout(tmp_path):
     assert wait_until_gone(sleep_pid, 5)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The container listing
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_container_map_holds_every_sbx_container_but_the_excluded_one():
     text = (
@@ -209,9 +209,9 @@ def test_the_container_map_holds_every_sbx_container_but_the_excluded_one():
     assert container_map_from_text(text, "sbx-two") == {"sbx-one": ("id1", "2026-11-20T01:00:00Z")}
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # describe_result and the container questions
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_result_is_described_with_its_code_and_both_streams():
     result = CommandResult(3, "out1\n", "err1\n", False)
@@ -230,9 +230,9 @@ def test_a_container_docker_does_not_know_is_not_running_and_has_no_id():
     assert container_id_of("sbx-no-such-container-1") == ""
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Throwaway sandboxes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def command_environ(config_dir: Path) -> dict[str, str]:
     environ = {}
@@ -307,9 +307,9 @@ def test_register_sandbox_keeps_one_cleanup_entry_when_the_sandbox_is_added_agai
     assert cleanup_list == ["hosttest-life-claude"]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The selfcheck reader
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def selfcheck_output(pass_count: int, extra_line_list: list[str]) -> str:
     line_list = []
@@ -360,9 +360,9 @@ def test_a_pass_line_saying_no_root_certificate_was_requested_is_a_problem():
     assert problem_list[0].startswith("the test image should carry a root certificate")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The throwaway root certificate (real openssl)
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_root_certificate_is_made_valid_with_a_fingerprint_and_its_key_is_gone(tmp_path):
     cert_file = tmp_path / "ca dir" / "root-ca.pem"

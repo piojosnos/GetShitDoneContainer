@@ -1,13 +1,13 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Scenario: sbx-rm removes the container and keeps every file
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-rm is the one command that removes a container, so this scenario shows what
 # it takes and what it must leave: the directory, the registry entry (unless
 # --unregister), the images and every other sandbox. Volumes are not compared:
 # no scenario sees a volume, and the one-mount check covers them. The scenario
 # deletes no file itself; a directory it moves away goes back by rename in a
 # finally block.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import time
@@ -31,9 +31,9 @@ _SESSIONS_WARNING = "will close its open shells and Claude sessions"
 _DELETED_ENTRY_TEXT = "deleted the registry entry"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # What Docker has
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _network_exists(network: str) -> bool:
     return run_timeout(["docker", "network", "inspect", network], 60).returncode == 0
@@ -43,9 +43,9 @@ def _image_exists(image: str) -> bool:
     return run_timeout(["docker", "image", "inspect", image], 60).returncode == 0
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # What sbx-rm printed and left
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _closing_line(container: str, sandbox_dir: Path) -> str:
     return f"sbx-rm: the container {container} is gone; nothing in {sandbox_dir} was changed"
@@ -83,11 +83,11 @@ def _sentinel_problem_list(project_dir: Path, state_dir: Path, sentinel_text: st
     return problem_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_rm_removes_the_container_and_keeps_every_file
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-rm refused without --yes -> --yes removes container and network -> --unregister -> sbx-add brings the files back
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_rm_removes_the_container_and_keeps_every_file(
     agent: AgentSpec,

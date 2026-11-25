@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Step: turn the Cursor CLI's self-update off
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The image is the version. The static channel makes the CLI skip its update
 # check and refuse an update. The setting lives in cli-config.json under
 # state/cursor, which the image cannot ship, so this step sets it. The image
 # copies this file to /etc/sbx/init.d/cursor/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import json
 import os
@@ -17,9 +17,9 @@ from cursor_shared import CLI_CONFIG_FILE
 from hints import state_writable_hint
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The static channel
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def static_channel_result(config_file: Path) -> CheckResult:
     dir_failure = make_state_dir(config_file.parent)
@@ -41,9 +41,9 @@ def static_channel_result(config_file: Path) -> CheckResult:
     return passed(f"channel is static in {config_file}")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Reading and writing
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _fix_or_delete_failure(config_file: Path, problem_text: str) -> CheckResult:
     return failed(
@@ -95,9 +95,9 @@ def _write_config_map(config_file: Path, config_map: dict) -> CheckResult | None
     return None
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Step entries
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _step_cursor_self_update_off() -> CheckResult:
     return static_channel_result(CLI_CONFIG_FILE)

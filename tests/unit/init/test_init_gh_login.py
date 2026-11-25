@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of sbx-gh-login: it points at sbx-init when the state directories are missing
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The real script runs under bash with a stand-in gh on a temp PATH. The git
 # config file sits in tmp_path, so the dev sandbox's git config is never touched.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import subprocess
@@ -15,9 +15,9 @@ SCRIPT_PATH = REPO_DIR / "base/bin/sbx-gh-login"
 PRECONDITION_LINE = "[sbx] ERROR: the state directories do not exist yet; run sbx-init first.\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def make_sandbox(base_dir: Path) -> dict:
     stand_in_dir = base_dir / "stand-ins"
@@ -52,9 +52,9 @@ def make_git_dir(sandbox: dict) -> None:
     Path(sandbox["environment"]["GIT_CONFIG_GLOBAL"]).parent.mkdir(parents=True)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A missing state directory stops the script before gh runs
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_missing_gh_config_dir_stops_before_gh_runs(tmp_path):
     sandbox = make_sandbox(tmp_path)
@@ -78,9 +78,9 @@ def test_a_git_config_in_a_missing_dir_stops_before_gh_runs(tmp_path):
     assert not sandbox["gh_log_file"].exists()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Both directories present: gh runs as before
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_with_both_dirs_gh_logs_in_and_sets_up_git_and_name_and_email_stay_unset(tmp_path):
     sandbox = make_sandbox(tmp_path)

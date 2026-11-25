@@ -1,12 +1,12 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Links from an agent config directory into the best-practices clone
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The links go into generated/AGENT/ of the clone: the rules directory whole and one
 # link per skill. Init and the check share the link texts, the skill listing, the
 # own-link test (a link whose target lies anywhere under the clone's directory), the
 # clone failures and the passed detail. The image puts this file in
 # /usr/local/lib/sbx-selfcheck/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 from pathlib import Path
@@ -19,12 +19,12 @@ RULES_LINK_TEXT_TEMPLATE = "../../best-practices/generated/{agent}/rules"
 SKILL_LINK_TEXT_TEMPLATE = "../../../best-practices/generated/{agent}/skills/{name}"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # What init and the check share
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The own-link test is purely lexical: no path resolution and no existence test,
 # so a dangling link into the clone still counts as init's own.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def is_best_practices_link(link: Path, target_root: Path) -> bool:
     if not link.is_symlink():
@@ -184,9 +184,9 @@ def _stale_link_problem_list(config_dir: Path, best_practices_dir: Path, skill_n
     return problem_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Best-practices links result
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def best_practices_links_result(config_dir: Path, best_practices_dir: Path, agent_name: str) -> CheckResult:
     clone_problem = clone_failure(best_practices_dir, agent_name)

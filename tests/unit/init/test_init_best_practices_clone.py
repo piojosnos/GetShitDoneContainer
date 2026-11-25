@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of sbx-best-practices-clone: clone the best-practices repo, then run sbx-init
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The real script runs under bash with real git against a local bare origin in
 # tmp_path. A stand-in sbx-init on a temp PATH records that it ran.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import subprocess
@@ -15,9 +15,9 @@ SCRIPT_PATH = REPO_DIR / "base/bin/sbx-best-practices-clone"
 GIT_IDENTITY_ARGUMENT_LIST = ["-c", "user.name=test1", "-c", "user.email=test1@example.invalid"]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def run_git(argument_list: list[str], working_dir: Path) -> None:
     subprocess.run(["git", *argument_list], cwd=working_dir, check=True, capture_output=True)
@@ -77,9 +77,9 @@ def init_run_count(sandbox: dict) -> int:
     return len(sandbox["init_log_file"].read_text().splitlines())
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A fresh clone, then sbx-init
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_clone_is_followed_by_one_sbx_init_run_and_exits_zero(tmp_path):
     origin_dir = make_origin(tmp_path)
@@ -102,9 +102,9 @@ def test_the_exit_status_is_the_one_of_sbx_init(tmp_path):
     assert init_run_count(sandbox) == 1
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # An existing directory is refused
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_second_run_is_refused_names_sbx_init_and_does_not_run_it_again(tmp_path):
     origin_dir = make_origin(tmp_path)
@@ -119,9 +119,9 @@ def test_a_second_run_is_refused_names_sbx_init_and_does_not_run_it_again(tmp_pa
     assert init_run_count(sandbox) == 1
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A missing origin
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_missing_origin_fails_names_sbx_gh_login_and_leaves_no_dir(tmp_path):
     sandbox = make_sandbox(tmp_path)

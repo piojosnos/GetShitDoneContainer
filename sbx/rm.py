@@ -1,13 +1,13 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-rm: removes a sandbox's container; with --unregister also its registry entry
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The only module that deletes a registry entry or removes a container, so what
 # destroys data lives in one file. Compose takes the container and its network,
 # never volumes or images. Nothing in the sandbox directory is read, written or
 # deleted. A running sandbox goes only after a y on the terminal, or with --yes.
 # A broken entry has no directory for Compose, so with --unregister its container
 # is stopped and removed by name.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import sys
@@ -22,9 +22,9 @@ from sbx.names import check_name, container_name, image_tag
 from sbx.registry import Entry, config_dir, entry_file, read_entry, registry_dir
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 COMMAND_NAME = "sbx-rm"
 _USAGE_TEXT = "NAME [--unregister] [--yes]"
@@ -32,12 +32,12 @@ _MAX_ARGUMENT_COUNT = 3
 _BROKEN_DIR_TEXT = "the sandbox directory"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The arguments
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # --unregister and --yes may come before or after the name, once each. A second
 # name, or anything else after the name, is the usage.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class Request:
@@ -77,13 +77,13 @@ def _parse_arguments(argument_list: list[str]) -> Request:
     return Request(name, unregister, skip_confirmation)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The question for a running sandbox
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The question is read only when stdin is a terminal; a script without --yes is
 # refused, so a pipe can never answer for the user. Anything but y or Y, an empty
 # line or a closed input included, keeps the sandbox.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _confirm_if_running(
     docker: Docker,
@@ -118,9 +118,9 @@ def _confirm_if_running(
     raise SbxError(f"{container_name(name)} was not removed; it still runs and nothing was changed")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Taking the container down
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _remove_container(docker: Docker, entry: Entry, tag: str, repo_dir: Path, environ: Mapping[str, str]) -> None:
     result = run_compose(docker, entry, tag, repo_dir, ["down"], environ)
@@ -132,16 +132,16 @@ def _remove_container(docker: Docker, entry: Entry, tag: str, repo_dir: Path, en
         )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A broken entry: the container by name
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Compose needs the directory the entry lacks, so plain docker stops and removes
 # the one container with that exact name; volumes stay. Only a container with the
 # sbx.name label goes: a same-named container without it is not a sandbox and
 # stays. Only with --unregister, because the entry goes too. Docker must answer,
 # or a stopped Docker would read as no container and the entry would go while the
 # container stays.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _require_sandbox_label(docker: Docker, name: str) -> None:
     state_map = container_state_map(docker)
@@ -192,11 +192,11 @@ def _remove_broken_sandbox(
         raise SbxError(f"Docker could not remove the container {container_name(name)}; the registry entry stays")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Deleting the entry, the only delete here
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Both the Compose path and the broken-entry path end here.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _unregister_sandbox(file: Path, name: str, entry: Entry | None, dir_text: str) -> None:
     try:
@@ -215,12 +215,12 @@ def _unregister_sandbox(file: Path, name: str, entry: Entry | None, dir_text: st
         )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The command
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # An entry that exists but is unusable is broken: it comes back as None with its
 # problem. A missing entry is the not-registered error.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _read_entry_or_problem(registry: Path, name: str) -> tuple[Entry | None, SbxError | None]:
     try:
@@ -279,9 +279,9 @@ def main(
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Main / Entry Point
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

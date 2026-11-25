@@ -1,8 +1,8 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of sbx-migrate-registry: old KEY=value entries become NAME.json
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Real files under tmp_path. Every old file must stay byte for byte as it was.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import json
 
@@ -40,9 +40,9 @@ def snapshot(registry):
     return byte_map
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Converting
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_one_old_file_per_agent_is_converted_and_reported(config_dir, registry, capsys):
     plant_old_entry(registry, "sbx1", "SBX_DIR=/x/one dir\nSBX_AGENT=claude\n")
@@ -94,9 +94,9 @@ def test_lines_in_any_order_and_a_last_line_without_a_newline_read_the_same(conf
     assert json.loads((registry / "sbx1.json").read_text()) == {"path": "/x/swapped", "agent": "claude"}
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Files that cannot be converted
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_file_that_cannot_be_converted_is_reported_and_the_exit_is_1(config_dir, registry, capsys):
     plant_old_entry(registry, "Bad_Name", "SBX_DIR=/x/bad\nSBX_AGENT=claude\n")
@@ -141,9 +141,9 @@ def test_a_file_that_is_not_text_is_not_converted(config_dir, registry, capsys):
     assert f"sbx-migrate-registry: sbx1: not converted: cannot read {file}" in capsys.readouterr().out
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Reruns and what is not an old entry
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_an_existing_json_entry_is_left_as_it_is(config_dir, registry, capsys):
     plant_old_entry(registry, "sbx1", "SBX_DIR=/x/old\nSBX_AGENT=claude\n")
@@ -214,9 +214,9 @@ def test_an_empty_or_missing_registry_prints_the_none_line(config_dir, make_regi
     assert capsys.readouterr().out == f"sbx-migrate-registry: no old registry entries in {registry}\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Usage and the image tag
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_an_argument_prints_the_usage_and_exits_2(config_dir, registry, capsys):
     plant_old_entry(registry, "sbx1", "SBX_DIR=/x/one\nSBX_AGENT=claude\n")

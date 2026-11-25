@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the text and plan helpers in the first-run, owner-fix, image and pin
 # digest scenarios
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The scenarios themselves need Docker. The pure helpers they read command output
 # and versions.env with are checked here without it, so a mistake in one shows in
 # the dev sandbox and not only on the host.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import subprocess
 
@@ -23,9 +23,9 @@ _DIGEST_1 = "sha256:" + "1" * 64
 _DIGEST_2 = "sha256:" + "2" * 64
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Reading command output
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_last_line_is_the_final_non_blank_line():
     assert first_run._last_line("a\nb\n\n") == "b"
@@ -48,9 +48,9 @@ def test_fix_line_must_be_a_fix_line_that_names_the_word():
     assert first_run._fix_line_naming("FAIL: step-1: run word-1 first\n", "word-1") is None
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # What a link reaches
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_live_target_exists_in_the_fixture_for_each_agent():
     for agent in [CLAUDE_SPEC, CURSOR_SPEC]:
@@ -91,9 +91,9 @@ def test_stand_in_session_script_parses_and_names_the_agent():
         assert "${PATH#" + first_run._STAND_IN_DIR + ":}" in script
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Root-owned state
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_root_owned_search_skips_exactly_the_cache_directories():
     command = owner_fix._root_owned_command()
@@ -104,9 +104,9 @@ def test_root_owned_search_skips_exactly_the_cache_directories():
         assert f"-not -path '{skipped_path}'" in command
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The image record
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_diff_text_names_the_image_and_stops_at_the_limit():
     record_text = "".join(f"A_{number}=1\n" for number in range(100))
@@ -117,9 +117,9 @@ def test_diff_text_names_the_image_and_stops_at_the_limit():
     assert len(diff_text.splitlines()) == images_match._DIFF_LINE_LIMIT
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The digest pins
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_pinned_image_map_keeps_only_digest_pins():
     pin_map = {

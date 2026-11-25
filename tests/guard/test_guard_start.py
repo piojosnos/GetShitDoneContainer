@@ -1,18 +1,18 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Guard rules on the container start: no entrypoint, agent image, tag
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 from guard_helpers import REPO_DIR, compose_file, dockerfile_list, nowhere_matches
 
 _COMPOSE_IMAGE_LINE = 'image: "sbx-${SBX_AGENT:-claude}:${SBX_IMAGE_TAG:-local}"'
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule container_runs_no_entrypoint: a start only keeps the container alive
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-init, run in a shell, sets the sandbox up. An entrypoint in an image or in
 # compose would bring back setup that runs without anyone asking.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_container_runs_no_entrypoint():
     problem_list = []
@@ -33,12 +33,12 @@ def test_container_runs_no_entrypoint():
     assert not problem_list, "\n".join(problem_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule agents_stay_off_the_path: only the agent wrappers start an agent
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The agents live in /opt/sbx/agents/bin so only their agent wrappers start them;
 # a link in /usr/local/bin would let a plain shell run an uninitialized agent.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_agents_stay_off_the_path():
     problem_list = []
@@ -70,16 +70,16 @@ def test_agents_stay_off_the_path():
     assert not problem_list, "\n".join(problem_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule compose_image_follows_agent_and_tag: the agent and the tag pick the image
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # compose.yml falls back to claude and local when a variable is unset, so a lost
 # hand-off would start a Cursor sandbox on the Claude image, or a test sandbox
 # on the images the user's sandboxes run. This rule keeps the image line of
 # compose.yml. The hand-offs of the agent and the tag to Compose and the build of
 # one image per agent on the base of its own tag are unit tests in tests/unit/sbx/
 # (test_sbx_compose.py and test_sbx_build.py).
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_compose_image_follows_agent_and_tag():
     compose_text = compose_file().read_text(encoding="utf-8")

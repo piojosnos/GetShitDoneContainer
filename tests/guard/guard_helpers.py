@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Helpers the guard rules share: file lists, the line search, the linter runner
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The guard reads files only. Each file list is a glob evaluated when a rule
 # runs, so a file another change deletes drops out of its list by itself.
 # tests/guard/ is in no list: its rule files name the strings they forbid.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import re
 import shutil
@@ -18,9 +18,9 @@ _LAUNCHER_SHEBANG = "#!/bin/sh"
 ROOT_SCRIPT_NAME_LIST = ["build.sh", "clean.sh", "host-test.sh"]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # File lists
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _glob_list(pattern: str) -> list[Path]:
     file_list = []
@@ -124,12 +124,12 @@ def line_list(path: Path) -> list[str]:
     return path.read_text(encoding="utf-8", errors="replace").splitlines()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # nowhere_matches PATTERN PATH_LIST: the lines that match, as hits; none is a pass
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # An empty list is an error, so a rule never passes by scanning nothing. A file
 # that cannot be read is a hit.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def nowhere_matches(pattern: str, path_list: list[Path]) -> list[str]:
     if not path_list:
@@ -156,12 +156,12 @@ def nowhere_matches(pattern: str, path_list: list[Path]) -> list[str]:
     return hit_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # run_linter TOOL ARGUMENT_LIST: runs a linter here, else from the test base image
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The host needs neither shellcheck nor hadolint: the test base image ships both,
 # and the repo is mounted read-only. Returns the exit status and the output.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def run_linter(tool: str, argument_list: list[str]) -> tuple[int, str]:
     if shutil.which(tool):

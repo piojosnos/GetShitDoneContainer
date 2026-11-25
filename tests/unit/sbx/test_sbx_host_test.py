@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the host run: the Compose check, the pytest arguments, the live log
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # main runs against a small repo made in tmp_path, whose three suites hold one
 # test each, so the real pytest child, the log and the exit code are proven
 # without Docker. The names of the run directories and the test sandboxes are
 # tested here too.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import io
 import os
@@ -28,9 +28,9 @@ from sbx_helpers import DockerRecorder
 COMPOSE_MESSAGE = "Docker Compose v2 or newer is required; install Docker Desktop"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def make_repo(repo: Path, sbx_body: str, integration_body: str, guard_body: str) -> None:
     for dir_name, file_name, body in [
@@ -57,9 +57,9 @@ def compose_recorder(version_text: str) -> DockerRecorder:
     return recorder
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The Compose version
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("version_text", ["2.40.0-desktop.1", "v2.29.1", "5.0.1", "10.1"])
 def test_compose_v2_and_later_pass(version_text):
@@ -71,9 +71,9 @@ def test_compose_v1_empty_and_non_version_text_fail(version_text):
     assert not host_test.compose_version_ok(version_text)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The pytest arguments
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_pytest_arguments_run_the_three_suites_in_order_with_verbose_output():
     assert host_test.pytest_argument_list(False) == [
@@ -92,9 +92,9 @@ def test_keep_is_appended_and_no_option_stops_at_the_first_failure():
         assert not argument.startswith("--maxfail")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Refusals
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("argument_list", [["--bogus"], ["--keep", "--keep"], ["one", "two"]])
 def test_main_refuses_an_argument_other_than_keep_with_a_usage_line(argument_list, tmp_path, capsys):
@@ -131,9 +131,9 @@ def test_main_stops_when_docker_does_not_answer(tmp_path):
     assert COMPOSE_MESSAGE in output.getvalue()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The live log
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_run_and_log_returns_the_child_code_and_sends_every_line_in_order_to_both_streams():
     output = io.StringIO()
@@ -184,9 +184,9 @@ def test_run_and_log_leaves_the_real_terminal_empty_and_fills_the_injected_strea
     assert sorted(output.getvalue().splitlines()) == ["err", "out"]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The whole run on a small repo
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_main_runs_the_suites_in_order_with_the_test_tag_and_keep_and_ends_with_the_pass_line(tmp_path):
     make_repo(
@@ -253,9 +253,9 @@ def test_main_leaves_the_real_terminal_empty_when_the_child_fails_and_fills_the_
     assert "test_sbx_suite FAILED" in output.getvalue()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The names of the host run
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_temp_base_is_tmpdir_without_its_trailing_slash_else_tmp():
     assert temp_base_dir({"TMPDIR": "/var/folders/ab/T/"}) == Path("/var/folders/ab/T")

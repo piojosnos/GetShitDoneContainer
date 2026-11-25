@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the agent descriptions
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The libraries reach sys.path through the pytest pythonpath setting in
 # pyproject.toml, the way the launcher puts the image's agents directory there.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 from dataclasses import replace
 from pathlib import Path
@@ -42,7 +42,7 @@ EXPECTED_CURSOR_AGENT = AgentDescription(
 )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
     ("shared_module", "expected_agent"),
@@ -57,14 +57,14 @@ def test_each_agent_description_holds_the_values_its_checks_and_steps_use(shared
     assert shared_module.AGENT.config_dir == shared_module.AGENT_CONFIG_DIR
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_description_with_an_empty_list_fails_to_load():
     with pytest.raises(ValueError, match="agent claude: image_root_list is empty"):
         replace(claude_shared.AGENT, image_root_list=[])
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_description_with_its_login_file_outside_its_config_dir_fails_to_load(tmp_path):
     login1 = tmp_path / "login1.json"

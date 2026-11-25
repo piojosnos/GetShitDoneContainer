@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the sbx-selfcheck runner
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Line format, fix lines, order, load failures and exit codes.
 # They run against real files in tmp_path.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import subprocess
 import sys
@@ -17,9 +17,9 @@ from check_result import Check, CheckResult, failed, passed
 from helpers import AGENT_FILE_TEMPLATE, run_lines, write_agent_file
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants and helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def passing_check(name: str) -> Check:
     def run_passing() -> CheckResult:
@@ -35,9 +35,9 @@ def failing_check(name: str, hint: str) -> Check:
     return Check(name, run_failing)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Output lines and order
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_passing_checks_print_one_pass_line_each_in_list_order(agents1):
     check_list = [passing_check("check1"), passing_check("check2"), passing_check("check3")]
@@ -168,9 +168,9 @@ def test_the_order_is_the_same_on_every_run(tmp_path, group1):
     assert lines1[1] == "PASS: check1: detail_check1"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Load failures
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def expected_no_agent_checks_lines(checks_dir: Path) -> list[str]:
     return [
@@ -283,9 +283,9 @@ def test_an_agent_file_with_a_malformed_check_list_is_one_load_failure(tmp_path,
     ]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Main and the launcher
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_main_with_an_argument_exits_two_with_one_usage_line_on_stderr(tmp_path, capsys):
     status = runner.main(["extra"], tmp_path, tmp_path)
@@ -321,9 +321,9 @@ def test_the_launcher_file_exits_two_for_an_argument(repo_dir):
     assert completed.stderr == "Usage: sbx-selfcheck (no arguments)\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Line format and base files
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_every_line_is_pass_fail_fix_or_the_summary(tmp_path, group1):
     (group1 / "agent1.py").write_text("raise RuntimeError('detail1')\n")

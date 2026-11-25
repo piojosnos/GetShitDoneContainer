@@ -1,13 +1,13 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Scenarios: the first run in a fresh sandbox, and the relink after a pull
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Both scenarios change the best-practices clone, so each works on a throwaway
 # sandbox of its own and the shared sandbox keeps its clean clone. The origin they
 # use is a bare copy of the run's origin, placed inside the throwaway sandbox
 # directory so the container sees it under the workspace path; a push never
 # changes the run's origin. Everything that differs between the agents (wrapper,
 # binary, version pin, links step, step count, rules file extension) comes from AgentSpec.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import json
 import os
@@ -54,11 +54,11 @@ _HOST_GIT_ENVIRON_UPDATE = {
 }
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Git on the host
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The host user's own git configuration and identity are never used.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _git_environ() -> dict[str, str]:
     environ = dict(os.environ)
@@ -75,9 +75,9 @@ def _assert_git(result: CommandResult, what: str) -> None:
     assert result.returncode == 0, f"{what} failed: {describe_result(result)}"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Reading command output
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _last_line(text: str) -> str:
     line_list = text.strip().splitlines()
@@ -110,15 +110,15 @@ def _init_summary_line(agent: AgentSpec) -> str:
     return f"sbx-init: {agent.init_step_count} steps passed; run sbx-selfcheck to check the sandbox"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # What a link reaches
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Both agents link the generated rules directory of the clone whole and one link
 # per generated skill. live_target gives a directory an agent config link reaches
 # and a file in it, so one scenario reads a change through a link for either agent:
 # the clone path is CLONE/generated/AGENT/DIR/FILE and the state path is
 # CONFIG/DIR/FILE.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _generated_dir(agent: AgentSpec) -> str:
     return f"generated/{agent.name}"
@@ -164,12 +164,12 @@ def _link_problem_list(container: str, agent: AgentSpec, skill_name_list: list[s
     return problem_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The user's settings key
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # settings.json may already hold what the GSD sync wrote, so the key is added to
 # the existing object and only the key is checked afterwards.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _plant_settings_key(settings_file: Path, value: str) -> None:
     settings = {}
@@ -197,9 +197,9 @@ def _settings_key_problem(settings_file: Path, value: str) -> str | None:
     return None
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Making a throwaway sandbox with its own origin
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _start_sandbox_with_origin(
     sandbox: RunSandbox,
@@ -221,14 +221,14 @@ def _start_sandbox_with_origin(
     assert container_is_running(sandbox.container), f"{sandbox.container} is not running after sbx-start"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The stand-in agent
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A stand-in binary in a directory of its own replaces that directory at the front
 # of the PATH with the agents directory, which is the PATH the agent wrapper hands
 # the real agent, then starts a login shell that reports where it finds the agent.
 # The image's login files run for real, so a login file that reset the PATH shows.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _stand_in_session_script(agent: AgentSpec) -> str:
     stand_in_file = f"{_STAND_IN_DIR}/{agent.binary}"
@@ -243,12 +243,12 @@ def _stand_in_session_script(agent: AgentSpec) -> str:
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_first_run_refuses_then_inits_from_the_clone
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # fresh sandbox: wrapper refuses -> sbx-init stops at the links step -> clone runs
 # init -> links, push, agent starts
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_first_run_refuses_then_inits_from_the_clone(
     agent: AgentSpec,
@@ -380,12 +380,12 @@ def test_first_run_refuses_then_inits_from_the_clone(
         assert "@latest" not in sync_output, f"the sbx-init output names @latest:\n{sync_output}"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_relink_after_a_pull
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # edit on the host and pull in the sandbox are live -> drop a skill -> sbx-init
 # relinks, keeps your files
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_relink_after_a_pull(
     agent: AgentSpec,

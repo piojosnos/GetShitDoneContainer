@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of sbx-fix-modes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A real git repository under tmp_path and real file modes. The extended attribute
 # is a stand-in function passed as a parameter: it keeps each attribute in a
 # dictionary and, like macOS, refuses to write one on a read-only file.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import stat
@@ -21,9 +21,9 @@ ATTRIBUTE_NAME = "user.containers.override_stat"
 GIT_IDENTITY = ["-c", "user.name=test", "-c", "user.email=test@example.com"]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Stand-ins and helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 class XattrStandIn:
     def __init__(self) -> None:
@@ -115,9 +115,9 @@ def run_fix_modes(config_dir, capsys):
     return run
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Refusals
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("argument_list", [[], ["a", "b"]])
 def test_a_wrong_argument_count_prints_the_usage(argument_list, run_fix_modes, xattr):
@@ -167,9 +167,9 @@ def test_a_project_directory_below_the_top_of_a_repository_is_refused(run_fix_mo
     assert err == f"sbx-fix-modes: {top}/inner is not the top directory of a git repository\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The host modes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_host_modes_follow_git_and_the_counts_line_is_printed(project_dir, run_fix_modes, xattr):
     _drift(project_dir, xattr)
@@ -271,9 +271,9 @@ def test_a_second_run_changes_nothing(project_dir, run_fix_modes, xattr):
     assert out == f"sbx-fix-modes: set 0 host modes and 0 sandbox modes from git in {project_dir}\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The sandbox mode, in the attribute
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_attribute_takes_the_git_mode_and_keeps_the_owner(project_dir, run_fix_modes, xattr):
     xattr.value_map[str(project_dir / "run.sh")] = "501:20:0100644"

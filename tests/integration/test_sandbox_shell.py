@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Scenario: sbx-shell starts the sandbox if needed and opens bash in its directory
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The shell needs a terminal, so a scenario drives it through a pseudo-terminal
 # made with the pty module. The exit status of the shell must reach the caller
 # through the uv process that runs sbx-shell, so the script a shell runs ends with
 # a status that is not 0.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import pty
@@ -40,15 +40,15 @@ _READ_SIZE = 4096
 _NO_TERMINAL_TEXT_LIST = ["not a tty", "not a terminal"]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Driving sbx-shell through a pseudo-terminal
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The script text is written only when a bash runs in the container: input that
 # arrives before Docker has put the terminal in raw mode may be lost on some
 # systems. sbx-shell starts in its own session; when the shell does not end within
 # the time, the whole group is killed, and the closed terminal ends the shell in
 # the container. The terminal output is kept for the failure message.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _bash_is_running(container: str) -> bool:
     probe = run_timeout(["docker", "exec", container, "pgrep", "-x", "bash"], _PROBE_SECONDS)
@@ -143,11 +143,11 @@ def _wrote_directory(project_dir: Path, file_name: str, expected_text: str) -> b
     return path.is_file() and path.read_text(encoding="utf-8").strip() == expected_text
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_shell_opens_bash_in_the_project_dir
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # no container: sbx-shell starts it -> pty shell on running and on stopped sandbox -> bash in the project dir, same container
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_shell_opens_bash_in_the_project_dir(
     agent: AgentSpec,

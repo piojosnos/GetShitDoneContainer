@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the state directories step
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The step makes the base directories and the ones SBX_STATE_DIRS adds, keeps what
 # exists and refuses names that leave the state directory.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 
@@ -17,9 +17,9 @@ state_dirs_step = load_step(REPO_DIR / "base" / "init" / "steps" / "010_state_di
 state_dirs_check = load_step(REPO_DIR / "base" / "selfcheck" / "checks" / "030_state_dirs.py")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Making the directories
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("state_dirs_text", ["", "   "])
 def test_an_unset_or_empty_list_makes_only_the_base_dirs_and_passes(tmp_path, state_dirs_text):
@@ -75,9 +75,9 @@ def test_the_init_step_and_the_check_make_and_verify_the_same_base_list(tmp_path
     assert state_dirs_check.state_dirs_result(state1, "claude").passed
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Refusals and failures
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_regular_file_where_a_state_dir_belongs_fails_naming_it(tmp_path):
     state1 = tmp_path / "state1"

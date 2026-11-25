@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the sbx-init runner
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The lock, the marker, the order of the steps, the stop at the first FAIL, the
 # load failures and the rerun. Every case runs on real files in a temp directory;
 # the lock holder is a real second process.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import errno
 import fcntl
@@ -27,9 +27,9 @@ REBUILD_FIX_LINE = "      fix: " + rebuild_hint()
 BUG_FIX_PREFIX = "      fix: this is a bug in sbx-init or a broken image; "
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Fixtures
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def shared1(tmp_path):
@@ -57,9 +57,9 @@ def lock1(tmp_path):
     return tmp_path / "lock1"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Order and the closing line
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_passing_steps_print_ok_lines_in_file_name_order_and_write_the_marker(shared1, agents1, marker1, lock1):
     write_step_file(shared1, "020_step2", "step2")
@@ -111,9 +111,9 @@ def test_a_step_file_with_an_empty_step_list_adds_no_line(shared1, agents1, mark
     ]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Stop at the first FAIL and the marker
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_failing_step_stops_the_run_and_leaves_no_marker(shared1, agents1, marker1, lock1, tmp_path):
     side_effect1 = tmp_path / "side_effect1"
@@ -177,9 +177,9 @@ def test_a_step_that_returns_a_string_becomes_a_fail_with_the_bug_fix(shared1, a
     assert not marker1.exists()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Load failures
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_step_file_that_raises_at_import_is_one_load_failure_and_stops_the_run(shared1, agents1, marker1, lock1):
     bad_file = agents1 / "group1" / "020_bad.py"
@@ -271,9 +271,9 @@ def test_an_agent_dir_with_only_empty_subdirs_prints_only_the_agent_steps_failur
     assert not marker1.exists()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rerun
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_two_runs_in_a_row_print_the_same_lines_and_both_exit_zero(shared1, agents1, marker1, lock1):
     write_step_file(shared1, "010_step1", "step1")
@@ -301,9 +301,9 @@ def test_a_rerun_runs_every_step_again(shared1, agents1, marker1, lock1, tmp_pat
     assert side_effect1.exists()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Lock
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_run_started_while_another_process_holds_the_lock_changes_nothing(
     shared1, agents1, marker1, lock1, tmp_path
@@ -386,9 +386,9 @@ def test_a_lock_call_that_would_block_closes_the_handle_and_returns_none(tmp_pat
     assert handle_list[0].closed
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Main
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_main_with_an_argument_returns_two_with_one_usage_line_on_stderr(capsys):
     status = init_runner.main(["x"])

@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Scenario: a failed build leaves the running sandbox as it was
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-upgrade warns first, then builds; when the build fails it must not touch
 # the container. A bogus build option makes the build fail at once.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import io
 from pathlib import Path
@@ -13,11 +13,11 @@ from scenario_helpers import RunSandbox, inspect_container, run_streamed, step
 _UPGRADE_SECONDS = 900
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_failed_upgrade_changes_nothing
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-upgrade NAME --no-such-option -> build fails -> same container, still running
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_failed_upgrade_changes_nothing(sandbox: RunSandbox, hosttest_env: dict[str, str], run_dir: Path):
     container = sandbox.container

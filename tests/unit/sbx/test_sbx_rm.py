@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of sbx-rm
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Real registry files under tmp_path. Docker is the recorder; the terminal check
 # and the answer reader are stand-ins passed as parameters, so a question on a
 # terminal is tested without one.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 
@@ -25,9 +25,9 @@ NOT_REMOVED_TEXT = "sbx-rm: sbx-sbx1 was not removed; it still runs and nothing 
 PROMPT_TEXT = "Remove the running sbx-sbx1? [y/N] "
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Fixtures and stand-ins
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 class Console:
     # Stands in for the terminal check and the answer reader. A call of
@@ -103,9 +103,9 @@ def _set_running(recorder):
     recorder.answer(RUNNING_PREFIX, DockerResult(0, "true\n"))
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The arguments
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
     "argument_list",
@@ -148,9 +148,9 @@ def test_the_options_come_before_or_after_the_name_in_any_order(argument_list, r
     assert len(_down_call_list(recorder)) == 1
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Refusals before Docker
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_an_unregistered_name_is_refused(run_rm, recorder):
     exit_code, _, err = run_rm(["ghost"])
@@ -178,9 +178,9 @@ def test_a_tag_other_than_local_or_test_is_refused_first(run_rm, entry_file, rec
     assert entry_file.is_file()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A stopped sandbox
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_stopped_sandbox_goes_with_down_and_the_closing_line(run_rm, entry_file, recorder, tmp_path):
     exit_code, out, err = run_rm(["sbx1"])
@@ -218,9 +218,9 @@ def test_a_failed_down_keeps_the_entry_and_says_so(run_rm, entry_file, recorder,
     assert entry_file.is_file()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A running sandbox
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_running_sandbox_without_yes_and_without_a_terminal_is_refused(run_rm, entry_file, recorder):
     _set_running(recorder)
@@ -295,9 +295,9 @@ def test_a_stopped_sandbox_is_never_asked_about(run_rm, entry_file, recorder):
     assert console.prompt_list == []
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # --unregister
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_unregister_deletes_the_entry_after_a_good_down(run_rm, entry_file, recorder, tmp_path):
     exit_code, out, _ = run_rm(["sbx1", "--unregister"])
@@ -329,9 +329,9 @@ def test_a_delete_that_fails_is_named_and_the_container_is_already_gone(run_rm, 
     assert entry_file.is_file()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A broken entry
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_broken_entry_without_unregister_is_refused_with_the_hint_and_kept(run_rm, broken_entry_file, recorder):
     before = broken_entry_file.read_bytes()
@@ -478,9 +478,9 @@ def test_an_entry_file_whose_name_breaks_the_rule_is_refused_and_kept(run_rm, re
     assert recorder.call_list == []
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Only rm deletes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_good_entry_is_never_deleted_without_unregister(run_rm, entry_file, recorder):
     run_rm(["sbx1", "--yes"])

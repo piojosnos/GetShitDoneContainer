@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of clean.sh as the sbx.clean module
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Real directories under tmp_path stand for the temp base. Docker is a recorder
 # that also answers which directory each test container mounts, so nothing here
 # needs Docker and nothing is removed outside tmp_path.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 
@@ -20,9 +20,9 @@ ROOT_CA_TITLE = "=== Test root certificate directories\n"
 RUN_DIR_TITLE = "=== Host-test run directories\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Fixtures and helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 class MountRecorder(DockerRecorder):
     # A recorder that answers the inspect of each container with the directory
@@ -92,9 +92,9 @@ def _plan_test_containers(temp_base, mount_recorder):
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The verdict on one test container
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_test_container_that_mounts_a_run_directory_is_removed(temp_base):
     source = f"{temp_base}/sbx-hosttest-20261119-101010.abc/claude sandbox"
@@ -143,9 +143,9 @@ def test_a_resolved_temp_base_with_a_private_prefix_still_matches(tmp_path):
     assert clean_module.hosttest_container_verdict("sbx-hosttest-claude", source, link_base) == "remove"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The directory lists
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_run_dir_list_holds_only_the_run_directories(temp_base):
     run_dir1 = _make_dir(temp_base / "sbx-hosttest-20261119-1.x")
@@ -171,9 +171,9 @@ def test_both_lists_are_empty_for_an_empty_temp_base(temp_base):
     assert clean_module.root_ca_dir_list(temp_base) == []
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A dry run
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_without_arguments_it_only_shows_and_removes_nothing(temp_base, mount_recorder, run_clean):
     _plan_test_containers(temp_base, mount_recorder)
@@ -213,9 +213,9 @@ def test_the_certificate_directories_have_their_own_section(temp_base, mount_rec
     assert str(old_dir1) in root_section
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # --yes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_yes_removes_the_test_containers_their_networks_and_the_directories(temp_base, mount_recorder, run_clean):
     _plan_test_containers(temp_base, mount_recorder)
@@ -301,9 +301,9 @@ def test_a_directory_that_cannot_be_removed_is_reported_and_the_rest_goes_on(tem
     assert ["image", "prune", "-a", "-f"] in mount_recorder.call_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Refusals
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_an_unknown_option_is_the_usage_and_touches_nothing(temp_base, mount_recorder, run_clean):
     _make_dir(temp_base / "sbx-hosttest-20261119-1.x")

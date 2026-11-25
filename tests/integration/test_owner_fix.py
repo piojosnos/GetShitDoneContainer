@@ -1,12 +1,12 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Scenario: sbx-init gives root-owned state back to the sandbox user
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The sandbox cannot change owners itself, so a root-owned file in state/ (left by
 # a root container) would break the agent's next write. One named throwaway root
 # container, offline and removed in a finally block, plants such a file on the test
 # sandbox's mount; sbx-init must hand it back. The planted file is removed again by
 # a finalizer, whatever happened.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 
@@ -22,9 +22,9 @@ _ROOT_UID = "0"
 _SKIPPED_STATE_PATH_LIST = ["*/state/cache/npm*", "*/state/cache/uv*", "*/state/m2*"]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Reading the owner and finding root-owned state
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _owner_of(container: str, path: str) -> str:
     return docker_exec(container, f"stat -c %u {path}").stdout.strip()
@@ -39,12 +39,12 @@ def _root_owned_command() -> str:
     return command
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # test_init_gives_root_owned_state_back
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # root container plants a root-owned file in state -> sbx-init -> owned by sandbox,
 # nothing root-owned left
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_init_gives_root_owned_state_back(sandbox: RunSandbox, request: pytest.FixtureRequest):
     agent = sandbox.agent

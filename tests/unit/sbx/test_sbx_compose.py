@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the Compose layer in sbx/docker.py
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # compose_command is pure, so its hand-off of the agent, the tag and the directory
 # is proven on its result. The rest runs against the Docker recorder.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 from pathlib import Path
 
@@ -57,9 +57,9 @@ def entry(tmp_path):
     return Entry("sbx1", str(sandbox_dir), "cursor")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # compose_command
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_compose_command_builds_the_arguments_for_the_project_of_the_sandbox():
     argument_list, _ = compose_command(Entry("sbx1", "/x/one dir", "cursor"), "test", REPO_DIR, ["up", "-d", "--wait"], {})
@@ -106,9 +106,9 @@ def test_the_ambient_agent_never_reaches_compose_whatever_the_agent_of_the_entry
     assert environ["SBX_AGENT"] == agent
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # run_compose
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_run_compose_passes_the_command_and_its_environment_to_docker(recorder):
     entry = Entry("sbx1", "/x/one", "claude")
@@ -130,9 +130,9 @@ def test_run_compose_returns_what_docker_answered(recorder):
     assert result.returncode == 3
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The directories
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_check_sandbox_dirs_passes_when_both_directories_exist(entry, registry):
     check_sandbox_dirs(entry, registry)
@@ -151,9 +151,9 @@ def test_check_sandbox_dirs_names_the_missing_directory_and_the_entry_file(entry
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Docker and the images
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_require_docker_passes_when_docker_answers(recorder):
     require_docker(recorder)
@@ -197,9 +197,9 @@ def test_require_images_checks_the_image_of_the_agent_and_the_tag(recorder, entr
     assert recorder.call_list == [["info"], ["image", "inspect", "sbx-cursor:test"]]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The warning
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_warn_sessions_close_prints_one_line_on_stdout(capsys):
     warn_sessions_close("sbx-upgrade", "demo", "is running; after the build, recreating it")
@@ -213,9 +213,9 @@ def test_warn_sessions_close_prints_one_line_on_stdout(capsys):
     assert captured.err == ""
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # bring_up_sandbox
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_bring_up_sandbox_checks_directories_before_any_docker_call(recorder, entry, registry):
     (registry / "sbx1.json").write_text("{}")

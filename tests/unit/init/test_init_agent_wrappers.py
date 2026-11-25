@@ -1,12 +1,12 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the agent wrappers sbx-claude and sbx-cursor and the sbx-run-agent
 # script they share
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The real scripts run under bash. SBX_INIT_MARKER and SBX_AGENT_BIN_DIR point
 # into tmp_path, and a stand-in agent in the agents directory records how it ran.
 # The repo's base/bin goes first on the PATH, so the agent wrappers find the repo copy
 # of sbx-run-agent ahead of any installed one.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import re
@@ -33,9 +33,9 @@ STAND_IN_BODY = """{
 exit 7"""
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def make_sandbox(tmp_path: Path, agent_name: str) -> dict:
     agent_bin_dir = tmp_path / "agents" / "bin"
@@ -87,9 +87,9 @@ def default_text(script_path: str, variable_name: str) -> str:
     return match.group(1)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # No marker: refusal
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("agent_name,script_path,agent_wrapper_name", AGENT_WRAPPER_CASE_LIST, ids=AGENT_WRAPPER_IDS)
 def test_without_the_marker_the_agent_wrapper_refuses_at_once_and_never_starts_the_agent(
@@ -117,9 +117,9 @@ def test_a_marker_that_is_a_dir_counts_as_missing(tmp_path, agent_name, script_p
     assert not sandbox["record_file"].exists()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # With the marker: exec the agent from the agents directory
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("agent_name,script_path,agent_wrapper_name", AGENT_WRAPPER_CASE_LIST, ids=AGENT_WRAPPER_IDS)
 def test_with_the_marker_the_agent_runs_from_the_agents_dir_with_every_argument(
@@ -139,18 +139,18 @@ def test_with_the_marker_the_agent_runs_from_the_agents_dir_with_every_argument(
     assert record_line_list[2].startswith(f"path={agent_bin_text}{os.pathsep}")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The shell literals equal the Python paths
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_sbx_run_agent_defaults_equal_the_python_paths():
     assert default_text(RUN_AGENT_PATH, "initMarker") == str(paths.INIT_MARKER_FILE)
     assert default_text(RUN_AGENT_PATH, "agentBinDir") == str(paths.AGENT_BIN_DIR)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Symmetry
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_two_agent_wrappers_are_the_same_script_apart_from_the_agent_names():
     claude_text = (REPO_DIR / "claude/bin/sbx-claude").read_text()
@@ -162,9 +162,9 @@ def test_the_two_agent_wrappers_are_the_same_script_apart_from_the_agent_names()
     assert claude_text == cursor_text
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The agent wrappers are one exec line over sbx-run-agent
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("agent_name,script_path,agent_wrapper_name", AGENT_WRAPPER_CASE_LIST, ids=AGENT_WRAPPER_IDS)
 def test_the_agent_wrapper_code_is_set_and_one_exec_line(agent_name, script_path, agent_wrapper_name):
@@ -173,9 +173,9 @@ def test_the_agent_wrapper_code_is_set_and_one_exec_line(agent_name, script_path
     assert code_line_list(script_path) == ["set -eu", exec_line]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-run-agent called directly
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_refusal_names_the_first_argument(tmp_path):
     sandbox = make_sandbox(tmp_path, "agent1")
@@ -207,9 +207,9 @@ def test_sbx_run_agent_names_no_agent():
     assert "cursor" not in script_text
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The image puts the agent wrappers and sbx-run-agent in one directory on the PATH
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_dockerfiles_copy_the_bin_dirs_into_usr_local_bin():
     base_text = (REPO_DIR / "base/Dockerfile").read_text()

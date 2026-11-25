@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-upgrade: rebuilds every image, then recreates one sandbox on them
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Options after NAME go to the build, for example --no-cache. A failed build
 # leaves the sandbox as it was. The last line is the tool versions of the new
 # container.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import sys
@@ -26,23 +26,23 @@ from sbx.names import check_name, container_name, image_tag
 from sbx.registry import Entry, config_dir, read_entry, registry_dir
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 COMMAND_NAME = "sbx-upgrade"
 
 BuildFunction = Callable[[list[str], Mapping[str, str], Docker, Path], int]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The command
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # --force-recreate, because a cached build keeps the image id and a plain up would
 # keep the old container. Up also starts a stopped or new sandbox. The build runs
 # in this process through build_function, so nothing below it runs until it has
 # finished, and a failed build returns before anything touches the sandbox.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _recreate_sandbox(docker: Docker, entry: Entry, tag: str, repo_dir: Path, environ: Mapping[str, str]) -> None:
     result = run_compose(docker, entry, tag, repo_dir, ["up", "-d", "--force-recreate", "--wait"], environ)
@@ -108,9 +108,9 @@ def main(
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Main / Entry Point
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

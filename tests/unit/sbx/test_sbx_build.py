@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of build.sh as the sbx.build module
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Docker is the recorder. The extra root certificate cases use the real openssl on
 # files made under tmp_path. The last test reads the three Dockerfiles, so a bare
 # docker build that lacks a pin is proven to name it without running Docker.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import subprocess
@@ -29,9 +29,9 @@ VERSIONS_TEXT = (
 TAG_RULE_TEXT = "build.sh: SBX_IMAGE_TAG must be local or test, not 'latest'\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Fixtures and helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def repo_dir(tmp_path) -> Path:
@@ -118,9 +118,9 @@ def bundle(tmp_path) -> tuple[Path, list[Path]]:
     return bundle_file, [cert_file1, cert_file2]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # read_pins
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_read_pins_returns_the_pairs_in_file_order_and_skips_comments_and_blank_lines(repo_dir):
     pin_map = build_module.read_pins(repo_dir / "versions.env")
@@ -143,9 +143,9 @@ def test_read_pins_keeps_a_command_substitution_as_text_and_runs_nothing(tmp_pat
     assert not (Path.cwd() / "pwned").exists()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The refusals before any build
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_tag_other_than_local_or_test_is_refused_before_versions_env_is_read(run_build, repo_dir, recorder):
     (repo_dir / "versions.env").unlink()
@@ -180,9 +180,9 @@ def test_a_versions_env_without_a_pin_is_refused(run_build, repo_dir, recorder):
     assert recorder.call_list == []
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The tag and the order of the builds
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("extra_map", [{}, {"SBX_IMAGE_TAG": ""}])
 def test_an_unset_or_empty_tag_builds_the_local_images_without_a_notice(run_build, recorder, extra_map):
@@ -228,9 +228,9 @@ def test_a_missing_docker_is_named(run_build, recorder):
     assert err == "build.sh: cannot run docker; is Docker installed and on the PATH?\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # build_plan
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_plan_builds_the_base_first_then_one_image_per_agent(repo_dir):
     plan = build_module.build_plan("test", ["NODE_VERSION", "GH_VERSION"], ["--no-cache"], repo_dir, None, "")
@@ -285,9 +285,9 @@ def test_the_builds_run_with_output_to_the_terminal(run_build, recorder):
     assert recorder.capture_list == [False, False, False]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # SBX_CA_CERT
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_relative_certificate_path_is_refused(run_build, recorder):
     exit_code, out, err = run_build([], {"SBX_CA_CERT": "certs/ca.pem"})
@@ -427,13 +427,13 @@ def test_a_failed_build_prints_no_closing_banner(run_build, bundle):
     assert out.count("EXTRA ROOT CERTIFICATE") == 1
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A bare docker build names its missing pin
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Every ARG that is a pin ending in _VERSION or _URL is followed by a RUN line that
 # stops with "NAME is not set; build with ./build.sh". A docker build run without
 # build.sh then fails at the first use of the pin and says which one is missing.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _pin_arg_name_list(dockerfile: Path) -> list[tuple[str, int]]:
     line_list = dockerfile.read_text(encoding="utf-8").splitlines()

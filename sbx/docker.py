@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The one place the sbx commands run Docker
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Docker is reached through run_docker only. A command takes it as a parameter
 # (default run_docker), so a test passes a recorder and needs no Docker.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import subprocess
@@ -16,19 +16,19 @@ from sbx.names import agent_image, container_name
 from sbx.registry import Entry, entry_file
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 _NOT_FOUND_EXIT_CODE = 127
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Running Docker
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A missing docker binary reads as Docker not answering. Queries capture stdout
 # and drop stderr; long calls (capture False) inherit both.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class DockerResult:
@@ -64,12 +64,12 @@ def run_docker(
     return DockerResult(completed.returncode, completed.stdout or "")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Questions about containers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The label keeps the old-layout containers out. A failed docker ps is None,
 # never an empty map, so no sandbox is shown as stopped or gone by mistake.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def container_state_map(docker: Docker) -> dict[str, str] | None:
     result = docker(["ps", "-a", "--filter", "label=sbx.name", "--format", "{{.Names}} {{.State}}"], None, True)
@@ -119,15 +119,15 @@ def runs_older_image(docker: Docker, name: str, image: str) -> bool:
     return bool(running_id) and bool(current_id) and running_id != current_id
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Compose
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # -p wins over COMPOSE_PROJECT_NAME and --env-file /dev/null keeps a .env file
 # out. The environment is rebuilt for each call: every COMPOSE_ key of the caller
 # is dropped, and SBX_NAME, SBX_DIR, SBX_AGENT and SBX_IMAGE_TAG come from the
 # entry and the checked tag, never from the caller, so the caller cannot pick
 # another project, directory or image.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def compose_command(
     entry: Entry,
@@ -177,14 +177,14 @@ def run_compose(
     return docker(compose_argument_list, compose_environ, capture)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Refusals before a start
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Docker would make a missing bind source as root, so the directories come first.
 # With Docker stopped every image and container looks missing, so Docker must
 # answer before an image counts as missing, or sbx-upgrade would be the wrong
 # advice.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def check_sandbox_dirs(entry: Entry, registry: Path) -> None:
     for dir_name in [entry.name, "state"]:
@@ -214,13 +214,13 @@ def require_images(docker: Docker, entry: Entry, tag: str) -> None:
         )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Bringing a sandbox up
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # lead says why and ends with the recreate or the removal, e.g. "is running;
 # removing it": one wording for every command that recreates or removes a sandbox.
 # A running sandbox on an older image is recreated by up, after the warning.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def warn_sessions_close(command_name: str, name: str, lead: str) -> None:
     print(f"{command_name}: {container_name(name)} {lead} will close its open shells and Claude sessions")

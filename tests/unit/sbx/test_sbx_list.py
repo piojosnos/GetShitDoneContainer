@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of sbx-list: usage, a Docker failure, the table rows, the notes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # main runs in-process with a Docker recorder and a registry of real files under
 # tmp_path; no case needs Docker.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 from sbx.docker import DockerResult
 from sbx.list_sandboxes import main
@@ -33,9 +33,9 @@ def run_list(config_dir, recorder, argument_list=None, extra_map=None):
     return main(argument_list or [], environ_for(config_dir, extra_map), recorder)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Usage and failures
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_an_argument_prints_the_usage_and_exits_2_before_docker(config_dir, registry, recorder, capsys):
     write_json_entry(registry, "sbx1", "/x/sbx1", "claude")
@@ -70,9 +70,9 @@ def test_an_unknown_image_tag_is_refused_before_docker(config_dir, registry, rec
     assert recorder.call_list == []
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rows
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_an_empty_registry_prints_the_none_line(config_dir, registry, recorder, capsys):
     exit_code = run_list(config_dir, recorder)
@@ -163,9 +163,9 @@ def test_an_older_file_without_the_suffix_is_not_listed_or_mentioned(config_dir,
     assert captured.err == ""
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Older image and leftovers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_running_sandbox_on_an_older_image_is_marked_and_explained(config_dir, registry, recorder, capsys):
     write_json_entry(registry, "sbx1", "/x/sbx1", "claude")

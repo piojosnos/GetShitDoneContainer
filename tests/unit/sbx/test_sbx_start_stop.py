@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of sbx-start and sbx-stop
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Real registry files and directories under tmp_path; Docker is the recorder, so a
 # refusal before Docker is proven by an empty call list.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 from pathlib import Path
 
@@ -64,9 +64,9 @@ def _compose_call_list(recorder):
     return compose_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Usage and names, for both commands
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("command_name", ["start", "stop"])
 @pytest.mark.parametrize("argument_list", [[], ["one", "two"]])
@@ -131,9 +131,9 @@ def test_a_broken_entry_is_refused_with_its_own_error(command_name, run_start, r
     assert recorder.call_list == []
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-start refusals, in order
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("missing_dir", ["sbx1", "state"])
 def test_start_refuses_a_missing_directory_before_any_docker_call(
@@ -184,9 +184,9 @@ def test_start_names_the_logs_when_compose_up_fails(run_start, sandbox_dir, reco
     assert err == "sbx-start: docker compose up failed; docker logs sbx-sbx1 shows why\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-start success
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_start_prints_the_three_lines_and_runs_up_once(run_start, sandbox_dir, recorder):
     exit_code, out, err = run_start(["sbx1"])
@@ -243,9 +243,9 @@ def test_start_warns_before_up_when_the_sandbox_runs_on_an_older_image(run_start
     assert len(_compose_call_list(recorder)) == 1
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # sbx-stop
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_stop_runs_compose_stop_with_the_environment_of_the_entry(run_stop, sandbox_dir, recorder):
     exit_code, out, err = run_stop(["sbx1"])

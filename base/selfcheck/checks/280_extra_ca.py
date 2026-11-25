@@ -1,12 +1,12 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Checks: the extra root certificates are trusted
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # build.sh records the SHA-256 fingerprint of each root certificate it adds in
 # /etc/sbx/extra-ca-fingerprints, one per line. No certificate installed (no
 # /etc/sbx/extra-ca.pem) and no fingerprint means none was requested; a
 # certificate without a recorded fingerprint fails. The image puts this file in
 # /usr/local/lib/sbx-selfcheck/checks/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import hashlib
 import ssl
@@ -26,9 +26,9 @@ _PEM_END_MARKER = "-----END CERTIFICATE-----"
 _KEYTOOL_FINGERPRINT_PREFIX = "Certificate fingerprint (SHA-256): "
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The expected fingerprints
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _expected_fingerprint_list(expected_file: Path) -> list[str]:
     if not expected_file.is_file():
@@ -59,9 +59,9 @@ def _expected_list_or_result(expected_file: Path, installed_file: Path) -> tuple
     return [], passed(_NOT_REQUESTED_TEXT)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Fingerprints found in a store
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _pem_block_list(text: str) -> list[str]:
     block_list = []
@@ -109,9 +109,9 @@ def _missing_result(
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # System bundle
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def system_bundle_result(
     expected_file: Path = _EXPECTED_FINGERPRINTS_FILE,
@@ -134,9 +134,9 @@ def system_bundle_result(
     return _missing_result(expected_list, bundle_fingerprint_set, f"the system bundle {bundle_file}")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Java cacerts
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def java_cacerts_result(
     expected_file: Path = _EXPECTED_FINGERPRINTS_FILE,
@@ -156,9 +156,9 @@ def java_cacerts_result(
     return _missing_result(expected_list, _keytool_fingerprint_set(completed.stdout), "Java cacerts")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Check entries
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _check_extra_ca_system_bundle() -> CheckResult:
     return system_bundle_result()

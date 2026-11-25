@@ -1,6 +1,6 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Guard rules on the supply chain: one GSD package, exact pins, no pipes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import re
 from pathlib import Path
@@ -35,9 +35,9 @@ _IMAGE_PATTERN = r"^[A-Z_]+_IMAGE=[a-z0-9][a-z0-9./-]*:[A-Za-z0-9._-]+@sha256:[0
 _URL_PATTERN = r"^[A-Z_]+_URL=https://[^@\s]+$"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Helpers: the lines of the pin file, a glob of files, the download context
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _pin_line_list() -> list[str]:
     versions_file = REPO_DIR / "versions.env"
@@ -86,12 +86,12 @@ def _download_context_text(dockerfile_path: Path) -> str:
     return " ".join(context_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule no_compromised_gsd_package: GSD comes only from @opengsd/gsd-core
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The list is every file that ships, documents or tests the sandbox, so the old
 # package name in new host code or a new test fails here too.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_no_compromised_gsd_package():
     file_list = sandbox_file_list() + image_script_list()
@@ -120,9 +120,9 @@ def test_no_compromised_gsd_package():
     assert not hit_list, "\n".join(hit_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule gsd_installs_only_the_official_package: the base image installs pinned GSD
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_gsd_installs_only_the_official_package():
     base_text = (REPO_DIR / "base" / "Dockerfile").read_text(encoding="utf-8")
@@ -132,14 +132,14 @@ def test_gsd_installs_only_the_official_package():
     )
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule no_pipe_to_shell_installers: nothing is installed by piping a download to sh
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Each download line is read with the next one, so a pipe two lines down is not
 # seen. Refused: a pipe into sh or bash, and a shell run on a download. The image
 # scripts, the launchers, the build and clean scripts and the host modules are
 # read line by line.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_no_pipe_to_shell_installers():
     problem_list = []
@@ -160,12 +160,12 @@ def test_no_pipe_to_shell_installers():
     assert not problem_list, "\n".join(problem_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule installs_use_pins: every install is NAME@${X_VERSION}, so versions.env decides
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A pin with no ARG expands empty, and each install RUN's own ${X_VERSION:?}
 # check stops the build. npx, npm exec, pip and uv installs have no pin at all.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_installs_use_pins():
     problem_list = []
@@ -187,9 +187,9 @@ def test_installs_use_pins():
     assert not problem_list, "\n".join(problem_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule no_floating_latest_versions: what is in the image changes only with a pin
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_no_floating_latest_versions():
     hit_list = nowhere_matches(r":latest|@latest", sandbox_file_list())
@@ -197,9 +197,9 @@ def test_no_floating_latest_versions():
     assert not hit_list, "\n".join(hit_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule versions_file_has_one_pin_per_line: NAME=value lines, no name set twice
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_versions_file_has_one_pin_per_line():
     assert (REPO_DIR / "versions.env").is_file(), "versions.env is missing"
@@ -221,9 +221,9 @@ def test_versions_file_has_one_pin_per_line():
     assert not problem_list, "\n".join(problem_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule pins_are_exact: _VERSION x.y.z or a dated build, _IMAGE tag@sha256, _URL https
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_pins_are_exact():
     problem_list = []
@@ -248,13 +248,13 @@ def test_pins_are_exact():
     assert not problem_list, "\n".join(problem_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule dockerfile_args_have_no_defaults: no ARG default, every FROM takes a pin
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The one literal stage, FROM scratch AS cacert, is the empty default of the
 # optional root certificate directory that build.sh passes when SBX_CA_CERT is
 # set.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_dockerfile_args_have_no_defaults():
     problem_list = []
@@ -281,11 +281,11 @@ def test_dockerfile_args_have_no_defaults():
     assert not problem_list, "\n".join(problem_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule agent_images_have_one_from_line: each agent image is one stage on the base image
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A second stage could pull an image that no pin in versions.env controls.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_agent_images_have_one_from_line():
     problem_list = []
@@ -307,12 +307,12 @@ def test_agent_images_have_one_from_line():
     assert not problem_list, "\n".join(problem_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Rule every_dockerfile_arg_is_pinned: ARGs and versions.env pins match both ways
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # EXTRA_CA_FINGERPRINTS is the one ARG that is not a pin: the build derives it
 # from SBX_CA_CERT, and empty means no extra root certificate.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_every_dockerfile_arg_is_pinned():
     problem_list = []

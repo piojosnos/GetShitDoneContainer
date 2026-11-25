@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The sbx-selfcheck runner: loads the check files, runs them and prints
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Prints one PASS or FAIL line per check, and a fix line under each FAIL. The
 # image puts this file in /usr/local/lib/sbx-selfcheck/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import sys
 from pathlib import Path
@@ -14,9 +14,9 @@ from check_result import Check
 from step_files import StepFileKind, load_failure_check, load_list, load_module, run_one, write_outcome
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 SHARED_CHECKS_DIR = Path(__file__).resolve().parent / "checks"
 AGENT_CHECKS_DIR = Path("/etc/sbx/selfcheck.d")
@@ -31,9 +31,9 @@ _FILE_KIND = StepFileKind(
 _USAGE_TEXT = "Usage: sbx-selfcheck (no arguments)"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Loading the checks
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def load_check_module(module_path: Path) -> ModuleType:
     return load_module(module_path, _FILE_KIND.module_prefix)
@@ -71,9 +71,9 @@ def collect_checks(shared_checks_dir: Path, agent_checks_dir: Path) -> list[Chec
     return dir_check_list(shared_checks_dir) + collect_agent_checks(agent_checks_dir)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Running and printing
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _run_all_checks(check_list: list[Check], output: TextIO) -> int:
     failed_count = 0

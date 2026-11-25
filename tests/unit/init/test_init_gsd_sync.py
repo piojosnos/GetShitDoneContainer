@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the GSD sync step
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A stand-in installer on a temp PATH runs for real in its own session; one test
 # runs the image's installer itself when it is there.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import shutil
@@ -33,9 +33,9 @@ sleep 30
 """
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def stand_in_environment(tmp_path: Path, body: str, exit_code: int = 0) -> dict[str, str]:
     bin_dir = tmp_path / "bin1"
@@ -62,9 +62,9 @@ def pinned_gsd_version() -> str:
     raise AssertionError("versions.env has no GSD_CORE_VERSION")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The installer call
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_installer_gets_the_agent_option_global_and_the_config_dir(tmp_path):
     environment_map = stand_in_environment(tmp_path, RECORDING_BODY)
@@ -84,9 +84,9 @@ def test_the_installer_reads_an_already_closed_stdin(tmp_path):
     assert (tmp_path / "stdin1.txt").read_text().strip() == "end of file"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Outcomes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_exit_zero_passes_names_the_dir_and_leaves_no_log(tmp_path):
     environment_map = stand_in_environment(tmp_path, RECORDING_BODY)
@@ -198,9 +198,9 @@ def test_an_installer_that_is_not_on_path_fails_with_the_rebuild_hint(tmp_path):
     assert log_file_list(log_dir1) == []
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The image's own installer
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.skipif(shutil.which("gsd-core") is None, reason="gsd-core is not installed in this environment")
 def test_the_image_installer_syncs_the_pinned_version_offline(tmp_path):

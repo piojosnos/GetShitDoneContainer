@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Checks: cursor-agent is the pinned version and stays off the PATH
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The agent lives in the agents directory, off the PATH; its agent wrapper puts the
 # directory first. The image copies this file to /etc/sbx/selfcheck.d/cursor/; the
 # runner loads it after the shared checks.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import shutil
@@ -20,9 +20,9 @@ from tools import agent_path_environment, off_path_result, tool_result
 _THROWAWAY_HOME_PREFIX = "sbx-selfcheck-cursor-"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Cursor version and PATH
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def cursor_version_result(
     expected_version: str,
@@ -53,9 +53,9 @@ def cursor_off_path_result(
     return off_path_result("cursor-agent", agent_bin_dir, environment_map)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Check entries
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _check_tool_cursor_agent() -> CheckResult:
     pin_map, missing_result = pin_map_or_missing(["CURSOR_AGENT_VERSION"])

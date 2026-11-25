@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # build.sh: builds sbx-base, then one image per agent, with the pins in versions.env
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # versions.env is read as NAME=value text and never run. Each pin reaches Docker
 # as a bare --build-arg NAME and a value in the environment of the build, so
 # adding or bumping a pin never changes this file. Extra options go to every
 # build. With SBX_CA_CERT set, the base image also trusts its root certificates.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import re
@@ -22,9 +22,9 @@ from sbx.docker import Docker, run_docker
 from sbx.names import KNOWN_AGENT_LIST, agent_image, base_image, image_tag
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 COMMAND_NAME = "build.sh"
 _PIN_LINE_PATTERN = re.compile(r"([A-Z_][A-Z0-9_]*)=(.*)", re.ASCII)
@@ -34,12 +34,12 @@ _STAR_LINE = "*" * 78
 _NOT_FOUND_EXIT_CODE = 127
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The pins
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A line that is not NAME=value (a comment, a blank line) is skipped. A value is
 # the text after the first equals sign, as written; nothing in it is expanded.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def read_pins(versions_file: Path) -> dict[str, str]:
     try:
@@ -60,14 +60,14 @@ def read_pins(versions_file: Path) -> dict[str, str]:
     return pin_map
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The plan: which images, with which docker arguments
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Paths are absolute under repo_dir, so a build never depends on the working
 # directory. The options come right after docker build. Only the base build gets
 # the certificate directory and the fingerprints; each agent build is told which
 # base to start from, so a test tag never sits on the local base.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _docker_build_arguments(
     repo_dir: Path,
@@ -124,14 +124,14 @@ def build_plan(
     return plan
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The extra root certificate
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Only certificate blocks are kept, so a key in the same file never reaches the
 # build. Each block is a file of its own, checked by openssl. The fingerprints
 # (SHA-256, uppercase hex, no colons) are recorded by the image, so its selfcheck
 # knows what to expect.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def find_openssl_for_cert(cert_path: str, environ: Mapping[str, str]) -> str:
     if not cert_path.startswith("/"):
@@ -223,12 +223,12 @@ def prepare_extra_certs(cert_path: str, cert_dir: Path, openssl_path: str) -> tu
     return cert_file_list, fingerprint_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The banner
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Printed before the first build and after the last. The openssl output is only
 # shown; the fingerprints the image records come from prepare_extra_certs.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def print_cert_banner(cert_path: str, cert_file_list: list[Path], openssl_path: str) -> None:
     print(_STAR_LINE)
@@ -245,9 +245,9 @@ def print_cert_banner(cert_path: str, cert_file_list: list[Path], openssl_path: 
     print(_STAR_LINE, flush=True)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Running the plan
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _run_plan(plan: list[tuple[str, list[str]]], docker: Docker, docker_environ: Mapping[str, str]) -> None:
     for image, docker_argument_list in plan:
@@ -262,9 +262,9 @@ def _run_plan(plan: list[tuple[str, list[str]]], docker: Docker, docker_environ:
             raise SbxError(f"the build of {image} failed")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The command
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _build_images(argument_list: list[str], environ: Mapping[str, str], docker: Docker, repo_dir: Path) -> None:
     tag = image_tag(environ, COMMAND_NAME)
@@ -309,9 +309,9 @@ def main(
     return run_command(COMMAND_NAME, partial(_build_images, argument_list, environ, docker, repo_dir))
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Main / Entry Point
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

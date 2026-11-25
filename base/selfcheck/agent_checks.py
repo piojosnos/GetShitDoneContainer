@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The checks every agent has, built from its agent description
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Each agent image loads them through one thin check file. The image puts this
 # file in /usr/local/lib/sbx-selfcheck/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 from collections.abc import Mapping
@@ -22,9 +22,9 @@ from protected_paths import protected_paths_result
 from versions_text import versions_line_result
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The check list
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def agent_check_list(
     agent: AgentDescription,
@@ -43,9 +43,9 @@ def agent_check_list(
     ]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # One check per concern
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _env_check(agent: AgentDescription, environment_map: Mapping[str, str]) -> Check:
     def check_env() -> CheckResult:
@@ -54,7 +54,7 @@ def _env_check(agent: AgentDescription, environment_map: Mapping[str, str]) -> C
     return Check(f"{agent.name}-env", check_env)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _home_links_check(agent: AgentDescription) -> Check:
     def check_home_links() -> CheckResult:
@@ -68,7 +68,7 @@ def _home_links_check(agent: AgentDescription) -> Check:
     return Check(f"{agent.name}-home-links", check_home_links)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _credentials_check(agent: AgentDescription) -> Check:
     def check_credentials() -> CheckResult:
@@ -77,7 +77,7 @@ def _credentials_check(agent: AgentDescription) -> Check:
     return Check(f"{agent.name}-credentials", check_credentials)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _gsd_synced_check(agent: AgentDescription) -> Check:
     def check_gsd_synced() -> CheckResult:
@@ -86,7 +86,7 @@ def _gsd_synced_check(agent: AgentDescription) -> Check:
     return Check(f"{agent.name}-gsd-synced", check_gsd_synced)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _best_practices_links_check(agent: AgentDescription, best_practices_dir: Path) -> Check:
     def check_best_practices_links() -> CheckResult:
@@ -95,7 +95,7 @@ def _best_practices_links_check(agent: AgentDescription, best_practices_dir: Pat
     return Check(f"{agent.name}-best-practices-links", check_best_practices_links)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _image_root_owned_check(agent: AgentDescription) -> Check:
     def check_image_root_owned() -> CheckResult:
@@ -104,7 +104,7 @@ def _image_root_owned_check(agent: AgentDescription) -> Check:
     return Check(f"{agent.name}-image-root-owned", check_image_root_owned)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _image_paths_protected_check(agent: AgentDescription) -> Check:
     def check_image_paths_protected() -> CheckResult:
@@ -113,7 +113,7 @@ def _image_paths_protected_check(agent: AgentDescription) -> Check:
     return Check(f"{agent.name}-image-paths-protected", check_image_paths_protected)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _versions_line_check(agent: AgentDescription) -> Check:
     def check_versions_line() -> CheckResult:
@@ -132,7 +132,7 @@ def _versions_line_check(agent: AgentDescription) -> Check:
     return Check(f"{agent.name}-versions-line", check_versions_line)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _versions_prefix_text(agent: AgentDescription, pin_map: dict[str, str]) -> str:
     prefix_text = ""

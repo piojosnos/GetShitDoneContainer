@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the host launchers: shape, mode and the refusal of a wrong argument
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A host launcher is a #!/bin/sh file of two lines that runs one Python module
 # through uv. Each one is run as a process from a directory outside the repo, as
 # a user runs it from PATH. None of the cases needs Docker.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import json
 import os
@@ -42,9 +42,9 @@ _LAUNCHER_SHEBANG = "#!/bin/sh"
 _ROOT_LAUNCHER_NAME_LIST = ["build.sh", "clean.sh", "host-test.sh"]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Finding the launchers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _first_line(file: Path) -> str:
     with open(file, encoding="utf-8", errors="replace") as handle:
@@ -81,9 +81,9 @@ def _launcher_environ(config: Path) -> dict[str, str]:
     return environ
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Cases
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_launcher_list_is_not_empty():
     assert LAUNCHER_LIST != []
@@ -182,13 +182,13 @@ def test_the_build_launcher_refuses_a_tag_other_than_local_or_test_from_another_
     assert result.stderr == "build.sh: SBX_IMAGE_TAG must be local or test, not 'latest'\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Every command refuses another image tag before it does anything
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The main of each command runs in process with the recorder and an unknown tag.
 # Each must exit 1 with the tag text, reach no Docker, read no registry entry
 # and make no file or directory.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _run_add(environ, recorder, work_dir):
     return add_module.main(["name1", str(work_dir / "new dir" / "one")], environ)

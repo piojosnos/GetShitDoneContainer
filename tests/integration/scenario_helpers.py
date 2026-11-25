@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Helpers the integration scenarios and fixtures share
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Every command a scenario runs goes through run_timeout or run_streamed: the
 # command starts in its own process group, and a timeout stops the whole group,
 # so no grandchild such as a docker build keeps running. Nothing here calls
 # Docker when the module is imported.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import contextlib
 import json
@@ -29,9 +29,9 @@ _WORKSPACE_MOUNT = "/home/sandbox/workspace"
 _FIX_LINE_PREFIX = "fix: "
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Data
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class CommandResult:
@@ -52,12 +52,12 @@ class RunSandbox:
     entry_file: Path
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # step NAME: a named part of a scenario
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The exception that ends the scenario gets a note, so the pytest report names
 # the failed step under the failing assertion.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @contextlib.contextmanager
 def step(name: str) -> Iterator[None]:
@@ -69,21 +69,21 @@ def step(name: str) -> Iterator[None]:
         raise
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # progress TEXT: a blank line, then TEXT, flushed
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The blank line keeps the text off the end of a verbose test name line.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def progress(text: str) -> None:
     print(f"\n{text}", flush=True)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Stopping a process group
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # TERM first, KILL after the grace period; a group that is already gone is fine.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _signal_group(process: subprocess.Popen, signal_number: int) -> None:
     try:
@@ -112,13 +112,13 @@ def _stop_group(process: subprocess.Popen) -> tuple[str, str]:
     return stdout_text or "", stderr_text or ""
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # run_timeout ARGUMENT_LIST SECONDS: runs a command, captures its output
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # stdin is closed unless STDIN text is given. The command is found on the PATH of
 # ENVIRON when one is passed. On a timeout the whole process group is stopped. A
 # command that cannot be started reads as exit 127 with the reason in stderr.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def run_timeout(
     argument_list: list[str],
@@ -152,12 +152,12 @@ def run_timeout(
     return CommandResult(process.returncode, stdout_text or "", stderr_text or "", False)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # run_streamed ARGUMENT_LIST SECONDS ENVIRON OUTPUT LOG_FILE: a long command
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # stdout and stderr are merged; every line goes live to OUTPUT and LOG_FILE, so a
 # long build shows progress. A timer stops the group on a timeout.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def run_streamed(
     argument_list: list[str],
@@ -210,12 +210,12 @@ def run_streamed(
     return CommandResult(returncode, "".join(line_list), "", timed_out_event.is_set())
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # run_sbx COMMAND ARGUMENT_LIST ENVIRON: runs a command of bin/ by name
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The command is found on the PATH of ENVIRON, which has the repo bin/ first, the
 # way a user runs it.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def run_sbx(
     command: str,
@@ -226,9 +226,9 @@ def run_sbx(
     return run_timeout([command, *argument_list], seconds, environ)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Docker
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def docker_exec(container: str, script: str, seconds: int = 120, user: str | None = None) -> CommandResult:
     argument_list = ["docker", "exec"]
@@ -258,9 +258,9 @@ def inspect_container(container: str) -> dict | None:
     return inspected_list[0]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # describe_result RESULT: the exit code and both streams, for a failure message
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def describe_result(result: CommandResult) -> str:
     text = f"exit {result.returncode}"
@@ -271,12 +271,12 @@ def describe_result(result: CommandResult) -> str:
     return f"{text}\nstdout: {result.stdout.strip()}\nstderr: {result.stderr.strip()}"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # container_is_running CONTAINER, container_id_of CONTAINER
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A container Docker does not know is not running and has the empty id, so a
 # scenario compares ids without a special case for a missing container.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def container_is_running(container: str) -> bool:
     inspected = inspect_container(container)
@@ -293,15 +293,15 @@ def container_id_of(container: str) -> str:
     return str(inspected.get("Id", ""))
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Throwaway sandboxes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A scenario that stops, removes or registers a sandbox twice works on a sandbox
 # of its own, named hosttest-STORY-AGENT, so the shared sandbox stays as it is.
 # The directory name holds a space on purpose. register_sandbox runs the real
 # sbx-add and puts the name on the cleanup list as soon as the add worked, so a
 # failure later in the scenario still ends with sbx-rm of the sandbox.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def throwaway_sandbox(story: str, agent: AgentSpec, run_dir: Path) -> RunSandbox:
     name = f"{TEST_SANDBOX_PREFIX}{story}-{agent.name}"
@@ -331,13 +331,13 @@ def register_sandbox(
     return result
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # one_bind_mount_problem CONTAINER SANDBOX_DIR: None when the mount is as built
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Exactly one mount, a bind at the workspace path, whose source ends in the
 # sandbox directory's own name. Docker Desktop rewrites the front of the path, so
 # only the last part is compared.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def one_bind_mount_problem(container: str, sandbox_dir: Path) -> str | None:
     inspected = inspect_container(container)
@@ -366,12 +366,12 @@ def one_bind_mount_problem(container: str, sandbox_dir: Path) -> str | None:
     return None
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # other_sbx_container_map EXCLUDED_NAME: every other sbx- container
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Name -> (id, start time). A scenario compares the map before and after a
 # command, to prove the command touched no other sandbox.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def container_map_from_text(inspect_text: str, excluded_name: str) -> dict[str, tuple[str, str]]:
     container_map = {}
@@ -415,14 +415,14 @@ def other_sbx_container_map(excluded_name: str) -> dict[str, tuple[str, str]]:
     return container_map_from_text(inspected.stdout, excluded_name)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # selfcheck_problem_list OUTPUT EXPECTED_COUNT: what is wrong with the output
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Every line is a PASS line, a FAIL line, an indented fix line or the closing
 # summary; any other line is a problem. A FAIL line is listed with its fix. The
 # test images carry a root certificate, so a check that says none was requested
 # means the build lost it.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def selfcheck_problem_list(output: str, expected_count: int) -> list[str]:
     problem_list = []
@@ -462,13 +462,13 @@ def selfcheck_problem_list(output: str, expected_count: int) -> list[str]:
     return problem_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The throwaway root certificate
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The private key is deleted at once; the certificate alone signs nothing. A
 # certificate valid for another day is reused, so the test images keep their
 # build cache.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def certificate_is_valid(cert_file: Path) -> bool:
     if not cert_file.is_file():

@@ -1,11 +1,11 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of sbx-upgrade
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Real registry files and directories under tmp_path. Docker is the recorder and
 # the build is a stub function, so the refusals, the failures and the options are
 # proven without Docker. The warning, the recreate and the closing lines are proven
 # on real Docker in tests/integration.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import inspect
 from pathlib import Path
@@ -21,9 +21,9 @@ RULE_TEXT = "breaks the sandbox name rule"
 VERSIONS_PREFIX = ["exec", "sbx-sbx1", "cat", "/etc/sbx/tool-versions"]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Fixtures and stand-ins
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 class BuildStub:
     # Stands in for the build function: notes what it got, prints a line so a test
@@ -83,9 +83,9 @@ def _compose_call_list(recorder):
     return compose_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Refusals, all before the build
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_no_argument_prints_the_usage_and_does_not_build(run_upgrade, build_stub, recorder):
     exit_code, out, err = run_upgrade([])
@@ -155,9 +155,9 @@ def test_a_tag_other_than_local_or_test_is_refused_first(run_upgrade, sandbox_di
     assert recorder.call_list == []
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The warning and the build
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_stopped_sandbox_is_not_warned(run_upgrade, sandbox_dir, build_stub, recorder):
     exit_code, out, _ = run_upgrade(["sbx1"])
@@ -197,9 +197,9 @@ def test_the_default_build_function_is_the_build_module_main():
     assert parameter.default is build_module.main
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The recreate and the closing lines
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_failing_up_after_the_build_names_the_logs(run_upgrade, sandbox_dir, build_stub, recorder):
     recorder.answer(["compose"], DockerResult(1, ""))

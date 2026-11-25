@@ -1,13 +1,13 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # clean.sh: frees Docker disk space and removes leftover host-test runs
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # With no argument it only shows what it would remove; --yes removes it. This
 # module and rm.py are the only host modules that delete anything, so what
 # destroys data lives in two files. A test container goes only when its workspace
 # mount lies in a host-test run directory; a sandbox of yours that is named like
 # a test sandbox is kept. Volumes and containers that are not test containers are
 # never touched.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import shutil
@@ -28,12 +28,12 @@ from sbx.hosttest_names import (
 from sbx.names import container_name
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A test container is named sbx-hosttest (the old single test sandbox) or starts
 # with sbx-hosttest- (one per agent).
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 COMMAND_NAME = "clean.sh"
 VERDICT_ABSENT = "absent"
@@ -47,14 +47,14 @@ _TEST_CONTAINER_PREFIX = container_name(TEST_SANDBOX_PREFIX)
 _ROOT_CA_DIR_NAME_LIST = [ROOT_CA_DIR_NAME, OLD_ROOT_CA_DIR_NAME]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The directories under the temp base
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The run directories start with the run prefix. The test root certificate
 # directories are reused from run to run and sit apart: the old one still starts
 # with the run prefix, so it is left out of the run directory list by name and
 # listed on its own line.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _is_plain_dir(path: Path) -> bool:
     return path.is_dir() and not path.is_symlink()
@@ -85,15 +85,15 @@ def root_ca_dir_list(temp_base: Path) -> list[Path]:
     return dir_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The verdict on one test container
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # mount_source is the host directory mounted at the workspace, None when there is
 # no container. Docker Desktop may report the temp directory with a /private
 # prefix, so the source is searched for the temp base as given and as resolved.
 # Only a source inside a run directory is removed; one inside a certificate
 # directory is kept.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _run_dir_name_in_source(mount_source: str, temp_base: Path) -> str:
     for base_text in [str(temp_base), os.path.realpath(temp_base)]:
@@ -118,9 +118,9 @@ def hosttest_container_verdict(name: str, mount_source: str | None, temp_base: P
     return VERDICT_REMOVE
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The test containers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _is_test_container_name(name: str) -> bool:
     return name == _OLD_TEST_CONTAINER_NAME or name.startswith(_TEST_CONTAINER_PREFIX)
@@ -166,11 +166,11 @@ def _verdict_map(docker: Docker, name_list: list[str], temp_base: Path) -> dict[
     return verdict_by_name_map
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # What a dry run shows
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The dry run lists all images; docker image prune -a decides which of them go.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _print_dir_section(title: str, dir_list: list[Path]) -> None:
     print(f"=== {title}")
@@ -211,13 +211,13 @@ def _show_state(
     print()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # What --yes removes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A container that cannot be removed stops the run before any directory goes: its
 # mount may still be in use. A directory that cannot be removed is reported and
 # the rest goes on; the run then ends with a refusal naming it.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _remove_test_containers(docker: Docker, verdict_by_name_map: dict[str, str]) -> None:
     print("=== Removing the test containers", flush=True)
@@ -273,13 +273,13 @@ def _remove_dir_list(title: str, dir_list: list[Path]) -> list[Path]:
     return failed_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The build cache and the unused images
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Other containers, their images and all volumes are kept. The sbx images go too
 # when no container uses them, under every tag; build.sh and host-test.sh build
 # them again.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _remove_unused_images(docker: Docker) -> None:
     print("=== Removing the build cache", flush=True)
@@ -290,9 +290,9 @@ def _remove_unused_images(docker: Docker) -> None:
     print()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The command
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _parse_arguments(argument_list: list[str]) -> bool:
     if argument_list == []:
@@ -343,9 +343,9 @@ def main(
     return run_command(COMMAND_NAME, partial(_clean, argument_list, environ, docker))
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Main / Entry Point
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

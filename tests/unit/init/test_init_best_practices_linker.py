@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the best-practices links step
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Real directories and links inside tmp_path. The config directory and the clone are
 # siblings under it, as in the container, so the relative link texts resolve.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import os
 import shutil
@@ -22,9 +22,9 @@ RULES_LINK_TEXT_TEMPLATE = "../../best-practices/generated/{agent}/rules"
 SKILL_LINK_TEXT_TEMPLATE = "../../../best-practices/generated/{agent}/skills/{name}"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def make_trees(base_dir: Path, skill_name_list: list[str], agent_name: str) -> tuple[Path, Path]:
     config_dir = base_dir / "state1" / agent_name
@@ -42,9 +42,9 @@ def make_trees(base_dir: Path, skill_name_list: list[str], agent_name: str) -> t
     return config_dir, clone_dir
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # One clone skill and the rules, linked
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("agent_name", [claude_shared.AGENT_NAME, cursor_shared.AGENT_NAME])
 def test_an_empty_config_dir_gets_the_rules_link_and_one_link_per_skill(tmp_path, agent_name):
@@ -66,9 +66,9 @@ def test_an_empty_config_dir_gets_the_rules_link_and_one_link_per_skill(tmp_path
     assert check_result.detail == result.detail
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Clashes with what the user keeps
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_user_dir_with_a_clone_skill_name_is_left_named_and_the_rest_is_linked(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1", "skill2"], "agent1")
@@ -162,9 +162,9 @@ def test_a_user_skill_the_clone_does_not_have_is_untouched(tmp_path):
     assert (config1 / "skills" / "mine1" / "SKILL.md").read_bytes() == b"mine\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Init's own links
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_an_own_link_with_an_old_absolute_text_is_replaced_by_the_relative_text(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"], "agent1")
@@ -234,9 +234,9 @@ def test_a_list_file_from_an_older_image_is_left_byte_for_byte(tmp_path):
     assert (config1 / ".best-practices-skills").read_bytes() == b"skill1\nold1\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The clone's shape
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def incomplete_detail(clone_dir: Path, relative_dir_text: str) -> str:
     return f"{clone_dir} exists but has no {relative_dir_text}/ directory"
@@ -367,9 +367,9 @@ def test_a_clone_dir_with_a_leading_dot_is_not_linked(tmp_path):
     assert not (config1 / "skills" / ".hidden1").is_symlink()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The integration fixture
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("agent_name", [claude_shared.AGENT_NAME, cursor_shared.AGENT_NAME])
 def test_the_integration_fixture_links_and_passes_the_check_for_each_agent(tmp_path, agent_name):

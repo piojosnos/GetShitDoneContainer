@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The sbx-init runner: loads the step files, runs them in order and prints
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Prints one OK or FAIL line per step, and a fix line under each FAIL. The image
 # puts this file in /usr/local/lib/sbx-init/.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import fcntl
 import signal
@@ -18,9 +18,9 @@ from hints import rebuild_hint
 from step_files import StepFileKind, load_failure_check, load_list, load_module, run_one, write_outcome
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 SHARED_STEPS_DIR = Path(__file__).resolve().parent / "steps"
 _FILE_KIND = StepFileKind(
@@ -41,12 +41,12 @@ _INTERRUPTED_TEXT = "sbx-init: interrupted; run sbx-init again"
 _STOP_SIGNAL_LIST = [signal.SIGHUP, signal.SIGTERM]
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Loading the steps
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Shared and agent step files sort together by file name, so the shared 800 step
 # runs between an agent's 050 and 900; sbx-selfcheck runs shared checks first.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def load_step_module(module_path: Path) -> ModuleType:
     return load_module(module_path, _FILE_KIND.module_prefix)
@@ -97,9 +97,9 @@ def collect_steps(shared_steps_dir: Path, agent_steps_dir: Path) -> list[Check]:
     return step_list
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Running and printing
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _write_line(line: str, output: TextIO) -> None:
     output.write(line + "\n")
@@ -128,9 +128,9 @@ def _run_steps(step_list: list[Check], output: TextIO) -> tuple[int, str]:
     return passed_count, ""
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Lock and marker
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _take_lock(lock_file: Path, flock_function: Callable[[TextIO, int], None] = fcntl.flock) -> TextIO | None:
     handle = open(lock_file, "a+")
@@ -206,13 +206,13 @@ def run_init(shared_steps_dir: Path, agent_steps_dir: Path, marker_file: Path, l
         lock_handle.close()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Interruptions
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A closed terminal (SIGHUP) or a stop (SIGTERM) would end Python without running
 # any finally block, so both raise KeyboardInterrupt like Ctrl-C; the GSD step
 # then stops its installer, and the lock closes last.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def _raise_on_stop_signals() -> None:
     for signal_number in _STOP_SIGNAL_LIST:
@@ -226,9 +226,9 @@ def _report_interrupted() -> None:
         pass
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The launcher's entry
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def main(argument_list: list[str]) -> int:
     if argument_list:

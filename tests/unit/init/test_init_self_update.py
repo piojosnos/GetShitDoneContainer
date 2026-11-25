@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the Cursor self-update step
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Real files inside tmp_path; a file the step refuses must stay byte for byte as
 # it was, with no temp file beside it.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import json
 import os
@@ -18,9 +18,9 @@ self_update_step = load_step(REPO_DIR / "cursor" / "init" / "060_self_update_off
 self_update_check = load_step(REPO_DIR / "cursor" / "selfcheck" / "050_self_update_off.py")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Setting the channel
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_missing_file_is_written_with_the_static_channel(tmp_path):
     config_file1 = tmp_path / "config1" / "cli-config.json"
@@ -72,9 +72,9 @@ def test_a_missing_config_dir_is_made_first(tmp_path):
     assert config_file1.is_file()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Files the step refuses
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
     ("file_bytes", "problem_text"),
@@ -138,9 +138,9 @@ def test_a_config_dir_that_cannot_be_written_fails_with_the_writable_fix(tmp_pat
     assert result.hint == hints.state_writable_hint()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Step files and the check twin
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_step_file_holds_one_step_and_reads_the_constant_the_check_reads():
     assert [step.name for step in self_update_step.STEP_LIST] == ["cursor-self-update-off"]

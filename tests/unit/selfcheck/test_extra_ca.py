@@ -1,10 +1,10 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of the extra root certificate checks
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The certificates are made by openssl and the keystores by keytool, both real,
 # inside tmp_path. A file stands for /etc/sbx/extra-ca.pem, the sign that a
 # certificate was installed.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import subprocess
 from pathlib import Path
@@ -16,9 +16,9 @@ from helpers import load_shared_check
 extra_ca = load_shared_check("280_extra_ca")
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Constants and helpers
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 KEYTOOL_PASSWORD = "changeit"
 
@@ -91,9 +91,9 @@ def bundle1(tmp_path, certs1, certs2) -> Path:
     return bundle_file
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # System bundle
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_system_bundle_passes_when_the_requested_certificate_is_in_the_bundle_and_prints_its_fingerprint(
     expected1, bundle1, installed1, certs1
@@ -172,9 +172,9 @@ def test_system_bundle_treats_an_empty_fingerprint_file_as_not_requested_when_no
     assert result.detail == "no extra root certificate requested"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A certificate installed without a recorded fingerprint
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_system_bundle_fails_when_a_certificate_is_installed_but_no_fingerprint_file_exists(
     tmp_path, bundle1, installed1
@@ -208,9 +208,9 @@ def test_system_bundle_fails_when_a_fingerprint_is_recorded_but_no_certificate_i
     assert openssl_fingerprint(certs1) in result.detail
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Java cacerts
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_java_cacerts_passes_when_the_requested_certificate_is_in_the_store_and_prints_its_fingerprint(
     tmp_path, expected1, installed1, certs1

@@ -1,9 +1,9 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Tests of sbx-add: the entry, the directories, every refusal and every overlap
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Real directories, symlinks and registry files under tmp_path. sbx-add calls no
 # Docker, so there is no Docker parameter to pass.
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 import json
 
@@ -48,9 +48,9 @@ def _registry_names(registry):
     return sorted(name_list)
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Registering
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_sandbox_is_registered_and_its_directories_are_made(run_add, registry, tmp_path):
     path = tmp_path / "sbx one"
@@ -128,9 +128,9 @@ def test_a_relative_config_directory_is_refused_and_nothing_is_made(run_add, tmp
     assert not (tmp_path / "x1").exists()
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Usage
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
     "argument_list",
@@ -152,9 +152,9 @@ def test_an_unknown_agent_is_a_usage_error_before_any_other_refusal(run_add, tmp
     assert err == USAGE_TEXT + "\n"
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The image tag and the name
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_test_tag_prints_its_notice_and_registers(run_add, registry, tmp_path):
     exit_code, _, err = run_add(["sbx1", str(tmp_path / "x1")], {"SBX_IMAGE_TAG": "test"})
@@ -198,9 +198,9 @@ def test_a_reserved_name_is_refused(run_add, registry, tmp_path, name):
     assert _registry_names(registry) == []
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A name that is already registered
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_second_add_of_a_registered_name_leaves_the_file_bytes_unchanged(run_add, registry, tmp_path):
     run_add(["sbx1", str(tmp_path / "x1")])
@@ -224,9 +224,9 @@ def test_the_registered_check_comes_before_the_host_path_check(run_add, registry
     assert "is already registered" in err
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The host path text
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
     ("path", "text"),
@@ -258,9 +258,9 @@ def test_the_text_check_runs_before_any_overlap_check(run_add, config_dir, tmp_p
     assert "overlaps" not in err
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # The registry directory and the tools clone
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_the_root_directory_is_refused_because_it_holds_the_registry(run_add, config_dir, registry):
     exit_code, _, err = run_add(["sbx1", "/"])
@@ -341,9 +341,9 @@ def test_a_directory_that_only_shares_a_text_prefix_with_the_tools_clone_is_acce
     assert exit_code == 0
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Other sandboxes
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def sandbox_demo(run_add, tmp_path):
@@ -439,9 +439,9 @@ def test_the_registry_overlap_is_checked_before_the_tools_clone_and_the_sandboxe
     assert "overlaps the registry directory" in err
 
 
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # A directory that cannot be made
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 def test_a_directory_that_cannot_be_made_is_refused_and_no_entry_is_written(run_add, registry, tmp_path):
     blocker = tmp_path / "blocker1"
