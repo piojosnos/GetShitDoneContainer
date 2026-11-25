@@ -135,7 +135,7 @@ def test_the_gsd_synced_and_links_checks_report_on_the_config_dir_and_name_of_th
 
 # ------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("agent_name", ["claude"])
+@pytest.mark.parametrize("agent_name", ["claude", "cursor"])
 def test_the_agent_check_file_loads_with_the_sbx_selfcheck_import_path(
     tmp_path, agent_name, agent_check_list_of, check_name_list_of
 ):

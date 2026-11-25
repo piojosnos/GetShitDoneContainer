@@ -173,13 +173,13 @@ def test_the_cursor_check_names_are_the_eleven_in_order(agent_check_list_of, che
         "cursor-off-path",
         "cursor-env",
         "cursor-home-links",
-        "cursor-self-update-off",
         "cursor-credentials",
         "cursor-gsd-synced",
         "cursor-best-practices-links",
         "cursor-image-root-owned",
         "cursor-image-paths-protected",
         "cursor-versions-line",
+        "cursor-self-update-off",
     ]
 
 
