@@ -214,6 +214,27 @@ def test_a_dangling_own_link_for_a_dropped_skill_is_removed(tmp_path):
     assert (config1 / "skills" / "skill1").is_symlink()
 
 
+def test_the_old_links_into_the_masters_are_replaced_and_a_master_only_skill_link_is_removed(tmp_path):
+    agent_name = claude_shared.AGENT_NAME
+    config1, clone1 = make_trees(tmp_path, ["skill1"], agent_name)
+    (clone1 / "rules").mkdir()
+    (clone1 / "skills" / "skill1").mkdir(parents=True)
+    (clone1 / "skills" / "gone1").mkdir()
+    (config1 / "skills").mkdir()
+    os.symlink("../../best-practices/rules", config1 / "rules")
+    os.symlink("../../../best-practices/skills/skill1", config1 / "skills" / "skill1")
+    os.symlink("../../../best-practices/skills/gone1", config1 / "skills" / "gone1")
+
+    result = link_best_practices(config1, clone1, agent_name)
+
+    assert result.passed
+    assert os.readlink(config1 / "rules") == RULES_LINK_TEXT_TEMPLATE.format(agent=agent_name)
+    assert os.readlink(config1 / "skills" / "skill1") == SKILL_LINK_TEXT_TEMPLATE.format(agent=agent_name, name="skill1")
+    assert not (config1 / "skills" / "gone1").is_symlink()
+    assert not (config1 / "skills" / "gone1").exists()
+    assert best_practices_links.best_practices_links_result(config1, clone1, agent_name).passed
+
+
 def test_a_list_file_from_an_older_image_is_left_byte_for_byte(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"], "agent1")
     (config1 / ".best-practices-skills").write_bytes(b"skill1\nold1\n")
@@ -248,6 +269,23 @@ def test_a_clone_without_a_generated_dir_fails_as_incomplete_and_makes_no_link(t
 
     assert not result.passed
     assert result.detail == incomplete_detail(clone1, f"generated/agent1/{missing_name}")
+    assert_incomplete_fix(result.hint, clone1)
+    assert list(config1.iterdir()) == []
+
+
+def test_a_clone_with_only_the_masters_fails_with_the_pull_fix_and_makes_no_link(tmp_path):
+    config1 = tmp_path / "state1" / "agent1"
+    clone1 = tmp_path / "best-practices"
+    config1.mkdir(parents=True)
+    (clone1 / "rules").mkdir(parents=True)
+    (clone1 / "rules" / "rule1.md").write_text("master rule1\n")
+    (clone1 / "skills" / "skill1").mkdir(parents=True)
+    (clone1 / "skills" / "skill1" / "SKILL.md").write_text("master skill1\n")
+
+    result = link_best_practices(config1, clone1, "agent1")
+
+    assert not result.passed
+    assert result.detail == incomplete_detail(clone1, "generated/agent1/rules")
     assert_incomplete_fix(result.hint, clone1)
     assert list(config1.iterdir()) == []
 
