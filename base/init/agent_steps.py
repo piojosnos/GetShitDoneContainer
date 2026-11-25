@@ -33,8 +33,11 @@ def gsd_sync_step_list(
 # The best-practices links step
 # ------------------------------------------------------------------------------
 
-def best_practices_links_step_list(agent: AgentDescription) -> list[Check]:
+def best_practices_links_step_list(
+    agent: AgentDescription,
+    best_practices_dir: Path = BEST_PRACTICES_DIR,
+) -> list[Check]:
     def step_best_practices_links() -> CheckResult:
-        return link_best_practices(agent.config_dir, BEST_PRACTICES_DIR, agent.name)
+        return link_best_practices(agent.config_dir, best_practices_dir, agent.name)
 
     return [Check(f"{agent.name}-best-practices-links", step_best_practices_links)]

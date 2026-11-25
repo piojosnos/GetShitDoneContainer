@@ -16,9 +16,7 @@ import pytest
 import init_runner
 from agent_description import AgentDescription
 from agent_steps import best_practices_links_step_list, gsd_sync_step_list
-from best_practices_linker import link_best_practices
 from init_helpers import REPO_DIR
-from paths import BEST_PRACTICES_DIR
 
 SHARED_STEPS_DIR = REPO_DIR / "base" / "init" / "steps"
 LAUNCHER_PATH_CODE = """import sys
@@ -58,11 +56,16 @@ def test_the_gsd_sync_step_syncs_the_config_dir_with_the_agent_option_of_the_des
 
 def test_the_best_practices_links_step_links_the_config_dir_for_the_name_of_the_description(tmp_path):
     agent1 = agent1_description(tmp_path)
+    clone1 = make_clone(tmp_path, "agent1")
+    agent1.config_dir.mkdir(parents=True)
 
-    step_list = best_practices_links_step_list(agent1)
+    step_list = best_practices_links_step_list(agent1, best_practices_dir=clone1)
+    result = step_list[0].function()
 
     assert [step.name for step in step_list] == ["agent1-best-practices-links"]
-    assert step_list[0].function() == link_best_practices(agent1.config_dir, BEST_PRACTICES_DIR, "agent1")
+    assert result.passed
+    assert (agent1.config_dir / "rules").resolve() == clone1 / "generated" / "agent1" / "rules"
+    assert (agent1.config_dir / "skills" / "skill1").is_symlink()
 
 
 # ------------------------------------------------------------------------------
@@ -102,6 +105,19 @@ def agent1_description(tmp_path: Path) -> AgentDescription:
         versions_field_list=[("label1", "SBX_TEST_PIN1")],
         gsd_agent_option="--agent1",
     )
+
+
+# ------------------------------------------------------------------------------
+
+def make_clone(tmp_path: Path, agent_name: str) -> Path:
+    clone_dir = tmp_path / "best-practices"
+    generated_dir = clone_dir / "generated" / agent_name
+    (generated_dir / "rules").mkdir(parents=True)
+    (generated_dir / "rules" / "rule1.md").write_text("rule1\n")
+    (generated_dir / "skills" / "skill1").mkdir(parents=True)
+    (generated_dir / "skills" / "skill1" / "SKILL.md").write_text("skill1\n")
+
+    return clone_dir
 
 
 # ------------------------------------------------------------------------------

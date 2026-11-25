@@ -16,10 +16,9 @@ import pytest
 from agent_checks import agent_check_list
 from agent_config import gsd_synced_result
 from agent_description import AgentDescription
-from best_practices_links import best_practices_links_result
+from best_practices_linker import link_best_practices
 from check_result import Check
 from helpers import REPO_DIR, agent_lib_dir, agent_checks_dir
-from paths import BEST_PRACTICES_DIR
 
 AGENT_CHECK_SUFFIX_LIST = [
     "env",
@@ -58,13 +57,14 @@ def test_the_builder_makes_the_eight_checks_named_after_the_agent(tmp_path, chec
 
 # ------------------------------------------------------------------------------
 
-def test_the_env_check_reads_the_environment_values_of_the_description(tmp_path, monkeypatch):
-    monkeypatch.delenv("SBX_TEST_VAR1", raising=False)
+def test_the_env_check_reads_the_environment_values_of_the_description_from_the_given_map(tmp_path):
+    agent1 = agent1_description(tmp_path)
+    environment1 = {"SBX_TEST_VAR1": "value1"}
 
-    result = check_named(agent_check_list(agent1_description(tmp_path)), "agent1-env").function()
+    result = check_named(agent_check_list(agent1, environment_map=environment1), "agent1-env").function()
 
-    assert not result.passed
-    assert result.detail == "SBX_TEST_VAR1 is not set"
+    assert result.passed
+    assert "SBX_TEST_VAR1=value1" in result.detail
 
 
 # ------------------------------------------------------------------------------
@@ -122,15 +122,28 @@ def test_the_versions_line_check_reads_the_pins_of_the_description(tmp_path):
 
 # ------------------------------------------------------------------------------
 
-def test_the_gsd_synced_and_links_checks_report_on_the_config_dir_and_name_of_the_description(tmp_path):
+def test_the_gsd_synced_check_reports_on_the_config_dir_of_the_description(tmp_path):
     agent1 = agent1_description(tmp_path)
-    check_list = agent_check_list(agent1)
 
-    gsd_result = check_named(check_list, "agent1-gsd-synced").function()
-    links_result = check_named(check_list, "agent1-best-practices-links").function()
+    result = check_named(agent_check_list(agent1), "agent1-gsd-synced").function()
 
-    assert gsd_result == gsd_synced_result(agent1.config_dir)
-    assert links_result == best_practices_links_result(agent1.config_dir, BEST_PRACTICES_DIR, "agent1")
+    assert result == gsd_synced_result(agent1.config_dir)
+
+
+# ------------------------------------------------------------------------------
+
+def test_the_links_check_reads_the_config_dir_and_name_of_the_description_in_the_given_clone(tmp_path):
+    agent1 = agent1_description(tmp_path)
+    clone1 = make_clone(tmp_path, "agent1")
+    agent1.config_dir.mkdir(parents=True)
+    check = check_named(agent_check_list(agent1, best_practices_dir=clone1), "agent1-best-practices-links")
+
+    unlinked_result = check.function()
+    link_best_practices(agent1.config_dir, clone1, "agent1")
+    linked_result = check.function()
+
+    assert not unlinked_result.passed
+    assert linked_result.passed
 
 
 # ------------------------------------------------------------------------------
@@ -167,6 +180,19 @@ def agent1_description(tmp_path: Path) -> AgentDescription:
         versions_field_list=[("label1", "SBX_TEST_PIN1")],
         gsd_agent_option="--agent1",
     )
+
+
+# ------------------------------------------------------------------------------
+
+def make_clone(tmp_path: Path, agent_name: str) -> Path:
+    clone_dir = tmp_path / "best-practices"
+    generated_dir = clone_dir / "generated" / agent_name
+    (generated_dir / "rules").mkdir(parents=True)
+    (generated_dir / "rules" / "rule1.md").write_text("rule1\n")
+    (generated_dir / "skills" / "skill1").mkdir(parents=True)
+    (generated_dir / "skills" / "skill1" / "SKILL.md").write_text("skill1\n")
+
+    return clone_dir
 
 
 # ------------------------------------------------------------------------------

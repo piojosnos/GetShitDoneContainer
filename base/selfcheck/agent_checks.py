@@ -5,6 +5,10 @@
 # file in /usr/local/lib/sbx-selfcheck/.
 # ------------------------------------------------------------------------------
 
+import os
+from collections.abc import Mapping
+from pathlib import Path
+
 from agent_config import gsd_synced_result, login_file_result
 from agent_description import AgentDescription
 from best_practices_links import best_practices_links_result
@@ -22,13 +26,17 @@ from versions_text import versions_line_result
 # The check list
 # ------------------------------------------------------------------------------
 
-def agent_check_list(agent: AgentDescription) -> list[Check]:
+def agent_check_list(
+    agent: AgentDescription,
+    best_practices_dir: Path = BEST_PRACTICES_DIR,
+    environment_map: Mapping[str, str] = os.environ,
+) -> list[Check]:
     return [
-        _env_check(agent),
+        _env_check(agent, environment_map),
         _home_links_check(agent),
         _credentials_check(agent),
         _gsd_synced_check(agent),
-        _best_practices_links_check(agent),
+        _best_practices_links_check(agent, best_practices_dir),
         _image_root_owned_check(agent),
         _image_paths_protected_check(agent),
         _versions_line_check(agent),
@@ -39,9 +47,9 @@ def agent_check_list(agent: AgentDescription) -> list[Check]:
 # One check per concern
 # ------------------------------------------------------------------------------
 
-def _env_check(agent: AgentDescription) -> Check:
+def _env_check(agent: AgentDescription, environment_map: Mapping[str, str]) -> Check:
     def check_env() -> CheckResult:
-        return environment_values_result(agent.environment_value_by_name_map)
+        return environment_values_result(agent.environment_value_by_name_map, environment_map)
 
     return Check(f"{agent.name}-env", check_env)
 
@@ -80,9 +88,9 @@ def _gsd_synced_check(agent: AgentDescription) -> Check:
 
 # ------------------------------------------------------------------------------
 
-def _best_practices_links_check(agent: AgentDescription) -> Check:
+def _best_practices_links_check(agent: AgentDescription, best_practices_dir: Path) -> Check:
     def check_best_practices_links() -> CheckResult:
-        return best_practices_links_result(agent.config_dir, BEST_PRACTICES_DIR, agent.name)
+        return best_practices_links_result(agent.config_dir, best_practices_dir, agent.name)
 
     return Check(f"{agent.name}-best-practices-links", check_best_practices_links)
 
