@@ -43,6 +43,8 @@ def _refuse_registered(registry: Path, name: str) -> None:
         raise SbxError(f"{name} is already registered in {file}; nothing was changed")
 
 
+# --------------------------------------------------------------------------------
+
 def _refuse_registry_overlap(new_path: str, config: Path) -> None:
     if paths_overlap(new_path, str(config)):
         raise SbxError(
@@ -51,6 +53,8 @@ def _refuse_registry_overlap(new_path: str, config: Path) -> None:
         )
 
 
+# --------------------------------------------------------------------------------
+
 def _refuse_repo_overlap(new_path: str, repo_dir: Path) -> None:
     if paths_overlap(new_path, str(repo_dir)):
         raise SbxError(
@@ -58,6 +62,8 @@ def _refuse_repo_overlap(new_path: str, repo_dir: Path) -> None:
             "a sandbox there could change the scripts the host runs. Pick another directory."
         )
 
+
+# --------------------------------------------------------------------------------
 
 def _refuse_sandbox_overlap(new_path: str, registry: Path) -> None:
     for other_name in list_entry_names(registry):
@@ -93,6 +99,8 @@ def _agent_of(argument_list: list[str]) -> str:
     return _DEFAULT_AGENT
 
 
+# --------------------------------------------------------------------------------
+
 def _add_sandbox(argument_list: list[str], environ: Mapping[str, str], repo_dir: Path) -> None:
     usage_text = f"NAME HOST_PATH [{'|'.join(KNOWN_AGENT_LIST)}]"
 
@@ -126,6 +134,8 @@ def _add_sandbox(argument_list: list[str], environ: Mapping[str, str], repo_dir:
         f"sbx-start {name} starts it on the images you have"
     )
 
+
+# --------------------------------------------------------------------------------
 
 def main(argument_list: list[str], environ: Mapping[str, str] = os.environ, repo_dir: Path = REPO_DIR) -> int:
     return run_command(COMMAND_NAME, partial(_add_sandbox, argument_list, environ, repo_dir))

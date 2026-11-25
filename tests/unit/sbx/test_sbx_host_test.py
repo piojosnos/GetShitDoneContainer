@@ -48,6 +48,8 @@ def make_repo(repo: Path, sbx_body: str, integration_body: str, guard_body: str)
     )
 
 
+# --------------------------------------------------------------------------------
+
 def compose_recorder(version_text: str) -> DockerRecorder:
     recorder = DockerRecorder()
     recorder.answer(["compose", "version", "--short"], DockerResult(0, version_text + "\n"))
@@ -66,6 +68,8 @@ def test_compose_v2_and_later_pass(version_text):
     assert host_test.compose_version_ok(version_text)
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("version_text", ["1.29.2", "", "abc", "v1.0"])
 def test_compose_v1_empty_and_non_version_text_fail(version_text):
     assert not host_test.compose_version_ok(version_text)
@@ -81,6 +85,8 @@ def test_the_pytest_arguments_run_the_three_suites_in_order_with_verbose_output(
         "tests/unit/sbx", "tests/integration", "tests/guard",
     ]
 
+
+# --------------------------------------------------------------------------------
 
 def test_keep_is_appended_and_no_option_stops_at_the_first_failure():
     argument_list = host_test.pytest_argument_list(True)
@@ -108,6 +114,8 @@ def test_main_refuses_an_argument_other_than_keep_with_a_usage_line(argument_lis
     assert not (tmp_path / "host-test.log").exists()
 
 
+# --------------------------------------------------------------------------------
+
 def test_main_stops_at_compose_v1_and_starts_no_child(tmp_path):
     recorder = compose_recorder("1.29.2")
     output = io.StringIO()
@@ -119,6 +127,8 @@ def test_main_stops_at_compose_v1_and_starts_no_child(tmp_path):
     assert (tmp_path / "host-test.log").read_text() == COMPOSE_MESSAGE + "\n"
     assert recorder.call_list == [["compose", "version", "--short"]]
 
+
+# --------------------------------------------------------------------------------
 
 def test_main_stops_when_docker_does_not_answer(tmp_path):
     recorder = DockerRecorder()
@@ -151,6 +161,8 @@ def test_run_and_log_returns_the_child_code_and_sends_every_line_in_order_to_bot
     assert output.getvalue() == "one\ntwo\n"
 
 
+# --------------------------------------------------------------------------------
+
 def test_run_and_log_merges_the_error_stream_of_the_child():
     output = io.StringIO()
     log_handle = io.StringIO()
@@ -166,6 +178,8 @@ def test_run_and_log_merges_the_error_stream_of_the_child():
     assert sorted(log_handle.getvalue().splitlines()) == ["err", "out"]
     assert sorted(output.getvalue().splitlines()) == ["err", "out"]
 
+
+# --------------------------------------------------------------------------------
 
 def test_run_and_log_leaves_the_real_terminal_empty_and_fills_the_injected_stream(capfd):
     output = io.StringIO()
@@ -213,6 +227,8 @@ def test_main_runs_the_suites_in_order_with_the_test_tag_and_keep_and_ends_with_
     assert log_text.rstrip("\n").endswith(f"host-test.sh: every test passed; log: {tmp_path / 'host-test.log'}")
 
 
+# --------------------------------------------------------------------------------
+
 def test_main_runs_every_suite_after_a_failure_and_returns_the_pytest_code(tmp_path):
     make_repo(
         tmp_path,
@@ -233,6 +249,8 @@ def test_main_runs_every_suite_after_a_failure_and_returns_the_pytest_code(tmp_p
         f"host-test.sh: pytest exited 1; the failures are listed above; log: {tmp_path / 'host-test.log'}"
     )
 
+
+# --------------------------------------------------------------------------------
 
 def test_main_leaves_the_real_terminal_empty_when_the_child_fails_and_fills_the_injected_stream(tmp_path, capfd):
     make_repo(
@@ -264,14 +282,20 @@ def test_the_temp_base_is_tmpdir_without_its_trailing_slash_else_tmp():
     assert temp_base_dir({}) == Path("/tmp")
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_shared_sandbox_name_is_hosttest_and_the_agent():
     assert shared_sandbox_name("claude") == "hosttest-claude"
     assert shared_sandbox_name("cursor") == "hosttest-cursor"
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_test_root_certificate_directory_is_outside_the_run_directory_prefix():
     assert not ROOT_CA_DIR_NAME.startswith(RUN_DIR_PREFIX)
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_workspace_mount_under_the_temp_base_with_the_run_prefix_is_a_run_directory(tmp_path):
     source = f"{tmp_path}/{RUN_DIR_PREFIX}20261120-010101.abc123/claude sandbox"
@@ -279,12 +303,16 @@ def test_a_workspace_mount_under_the_temp_base_with_the_run_prefix_is_a_run_dire
     assert is_run_dir_mount(source, tmp_path)
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_docker_desktop_private_prefix_still_matches():
     assert is_run_dir_mount(
         f"/private/var/folders/ab/T/{RUN_DIR_PREFIX}20261120-010101.abc123/x",
         Path("/var/folders/ab/T"),
     )
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
     "source",

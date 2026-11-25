@@ -42,9 +42,13 @@ def _caller_environ(sbx_name: str, sbx_dir: Path, agent_name: str) -> dict[str, 
     return environ
 
 
+# --------------------------------------------------------------------------------
+
 def _project_name(agent_name: str) -> str:
     return f"sbx-hosttest-refusal-{agent_name}"
 
+
+# --------------------------------------------------------------------------------
 
 def _container_name_list() -> list[str]:
     listing = run_timeout(["docker", "ps", "-a", "--format", "{{.Names}}"], 60)
@@ -52,10 +56,14 @@ def _container_name_list() -> list[str]:
     return listing.stdout.split()
 
 
+# --------------------------------------------------------------------------------
+
 def _remove_attempt(container: str, project: str) -> None:
     run_timeout(["docker", "rm", "-f", container], 120)
     run_timeout(["docker", "network", "rm", f"{project}_default"], 60)
 
+
+# --------------------------------------------------------------------------------
 
 def _compose_up(project: str, environ: dict[str, str]) -> CommandResult:
     return run_timeout(

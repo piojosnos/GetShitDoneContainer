@@ -24,6 +24,8 @@ def config_dir(tmp_path) -> Path:
     return config1
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def registry(config_dir) -> Path:
     registry1 = config_dir / "sandboxes"
@@ -31,6 +33,8 @@ def registry(config_dir) -> Path:
 
     return registry1
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def recorder() -> DockerRecorder:

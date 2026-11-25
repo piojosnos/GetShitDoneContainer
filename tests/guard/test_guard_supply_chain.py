@@ -54,6 +54,8 @@ def _pin_line_list() -> list[str]:
     return pin_list
 
 
+# --------------------------------------------------------------------------------
+
 def _glob_file_list(pattern_list: list[str]) -> list[Path]:
     file_list = []
 
@@ -64,6 +66,8 @@ def _glob_file_list(pattern_list: list[str]) -> list[Path]:
 
     return file_list
 
+
+# --------------------------------------------------------------------------------
 
 def _download_context_text(dockerfile_path: Path) -> str:
     line_value_list = line_list(dockerfile_path)

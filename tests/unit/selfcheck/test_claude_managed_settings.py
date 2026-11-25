@@ -25,6 +25,8 @@ def write_managed_settings(settings_file: Path, directory_list: list[str], deny_
     return settings_file
 
 
+# --------------------------------------------------------------------------------
+
 def deny_entry_list(config_dir: Path) -> list[str]:
     return [f"Edit(/{config_dir}/skills/**)"]
 
@@ -42,6 +44,8 @@ def test_managed_settings_result_passes_for_the_clone_and_the_one_deny_entry(tmp
     assert result.passed
 
 
+# --------------------------------------------------------------------------------
+
 def test_managed_settings_result_fails_for_an_extra_or_missing_deny_entry(tmp_path):
     config1 = tmp_path / "state1" / "agent1"
     clone1 = tmp_path / "clone1"
@@ -51,6 +55,8 @@ def test_managed_settings_result_fails_for_an_extra_or_missing_deny_entry(tmp_pa
     assert not managed_settings.managed_settings_result(extra1, config1, clone1).passed
     assert not managed_settings.managed_settings_result(short1, config1, clone1).passed
 
+
+# --------------------------------------------------------------------------------
 
 def test_managed_settings_result_fails_for_a_second_directory(tmp_path):
     config1 = tmp_path / "state1" / "agent1"
@@ -62,6 +68,8 @@ def test_managed_settings_result_fails_for_a_second_directory(tmp_path):
     assert not result.passed
     assert "additionalDirectories" in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_managed_settings_result_fails_for_text_that_is_not_json_and_for_a_missing_file(tmp_path):
     text1 = tmp_path / "text1.json"
@@ -79,6 +87,8 @@ def test_managed_settings_result_fails_for_text_that_is_not_json_and_for_a_missi
     assert "sbx-upgrade" in missing_result.hint
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.skipif(os.getuid() == 0, reason="root can read a mode 000 file")
 def test_managed_settings_result_reports_an_unreadable_file_as_not_valid_json(tmp_path):
     locked1 = tmp_path / "locked1.json"
@@ -93,6 +103,8 @@ def test_managed_settings_result_reports_an_unreadable_file_as_not_valid_json(tm
     assert not result.passed
     assert result.detail == f"{locked1} is not valid JSON"
 
+
+# --------------------------------------------------------------------------------
 
 def test_managed_settings_result_fails_for_json_that_is_not_an_object(tmp_path):
     list1 = tmp_path / "list1.json"

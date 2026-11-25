@@ -41,6 +41,8 @@ class CommandResult:
     timed_out: bool
 
 
+# --------------------------------------------------------------------------------
+
 @dataclass(frozen=True)
 class RunSandbox:
     name: str
@@ -93,6 +95,8 @@ def _signal_group(process: subprocess.Popen, signal_number: int) -> None:
     except PermissionError:
         return
 
+
+# --------------------------------------------------------------------------------
 
 def _stop_group(process: subprocess.Popen) -> tuple[str, str]:
     _signal_group(process, signal.SIGTERM)
@@ -241,6 +245,8 @@ def docker_exec(container: str, script: str, seconds: int = 120, user: str | Non
     return run_timeout(argument_list, seconds)
 
 
+# --------------------------------------------------------------------------------
+
 def inspect_container(container: str) -> dict | None:
     result = run_timeout(["docker", "container", "inspect", container], 60)
 
@@ -284,6 +290,8 @@ def container_is_running(container: str) -> bool:
     return inspected is not None and inspected.get("State", {}).get("Running") is True
 
 
+# --------------------------------------------------------------------------------
+
 def container_id_of(container: str) -> str:
     inspected = inspect_container(container)
 
@@ -317,6 +325,8 @@ def throwaway_sandbox(story: str, agent: AgentSpec, run_dir: Path) -> RunSandbox
         entry_file=run_dir / "cfg" / "sandboxes" / f"{name}.json",
     )
 
+
+# --------------------------------------------------------------------------------
 
 def register_sandbox(
     sandbox: RunSandbox,
@@ -391,6 +401,8 @@ def container_map_from_text(inspect_text: str, excluded_name: str) -> dict[str, 
 
     return container_map
 
+
+# --------------------------------------------------------------------------------
 
 def other_sbx_container_map(excluded_name: str) -> dict[str, tuple[str, str]]:
     listing = run_timeout(["docker", "ps", "-a", "--format", "{{.Names}}"], 60)
@@ -479,6 +491,8 @@ def certificate_is_valid(cert_file: Path) -> bool:
     return result.returncode == 0
 
 
+# --------------------------------------------------------------------------------
+
 def make_root_certificate(cert_file: Path) -> None:
     cert_dir = cert_file.parent
     key_file = cert_dir / "root-ca.key"
@@ -500,6 +514,8 @@ def make_root_certificate(cert_file: Path) -> None:
     if result.returncode != 0:
         raise RuntimeError(f"openssl could not make the test root certificate: {result.stderr.strip()}")
 
+
+# --------------------------------------------------------------------------------
 
 def certificate_fingerprint(cert_file: Path) -> str:
     result = run_timeout(["openssl", "x509", "-noout", "-fingerprint", "-sha256", "-in", str(cert_file)], 60)

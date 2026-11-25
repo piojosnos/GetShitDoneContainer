@@ -31,6 +31,8 @@ class MountRecorder(DockerRecorder):
         super().__init__()
         self.mount_by_name_map: dict[str, str] = {}
 
+    # --------------------------------------------------------------------------------
+
     def __call__(self, argument_list, environ=None, capture=True):
         result = super().__call__(argument_list, environ, capture)
 
@@ -45,6 +47,8 @@ class MountRecorder(DockerRecorder):
         return DockerResult(0, self.mount_by_name_map[name] + "\n")
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def temp_base(tmp_path):
     base1 = tmp_path / "temp1"
@@ -53,10 +57,14 @@ def temp_base(tmp_path):
     return base1
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def mount_recorder():
     return MountRecorder()
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def run_clean(temp_base, mount_recorder, capsys):
@@ -70,12 +78,16 @@ def run_clean(temp_base, mount_recorder, capsys):
     return run
 
 
+# --------------------------------------------------------------------------------
+
 def _make_dir(path):
     path.mkdir(parents=True)
     (path / "file1.txt").write_text("x", encoding="utf-8")
 
     return path
 
+
+# --------------------------------------------------------------------------------
 
 def _plan_test_containers(temp_base, mount_recorder):
     run_dir1 = _make_dir(temp_base / "sbx-hosttest-20261119-101010.abc" / "claude sandbox")
@@ -102,9 +114,13 @@ def test_a_test_container_that_mounts_a_run_directory_is_removed(temp_base):
     assert clean_module.hosttest_container_verdict("sbx-hosttest-claude", source, temp_base) == "remove"
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_same_name_mounting_a_directory_of_yours_is_kept(temp_base):
     assert clean_module.hosttest_container_verdict("sbx-hosttest-claude", "/Users/x/work", temp_base) == "keep"
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_old_single_test_container_mounting_a_run_directory_is_removed(temp_base):
     source = f"{temp_base}/sbx-hosttest-20261119-1.x"
@@ -112,13 +128,19 @@ def test_the_old_single_test_container_mounting_a_run_directory_is_removed(temp_
     assert clean_module.hosttest_container_verdict("sbx-hosttest", source, temp_base) == "remove"
 
 
+# --------------------------------------------------------------------------------
+
 def test_no_container_is_absent(temp_base):
     assert clean_module.hosttest_container_verdict("sbx-hosttest-claude", None, temp_base) == "absent"
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_container_with_no_workspace_mount_is_kept(temp_base):
     assert clean_module.hosttest_container_verdict("sbx-hosttest-claude", "", temp_base) == "keep"
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_mount_in_a_certificate_directory_is_kept(temp_base):
     for name in ["sbx-test-root-ca", "sbx-hosttest-root-ca"]:
@@ -127,11 +149,15 @@ def test_a_mount_in_a_certificate_directory_is_kept(temp_base):
         assert clean_module.hosttest_container_verdict("sbx-hosttest-claude", source, temp_base) == "keep"
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_mount_outside_the_temp_base_that_names_a_run_directory_is_kept(temp_base):
     source = "/Users/x/sbx-hosttest-20261119-1.x"
 
     assert clean_module.hosttest_container_verdict("sbx-hosttest-claude", source, temp_base) == "keep"
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_resolved_temp_base_with_a_private_prefix_still_matches(tmp_path):
     real_base = tmp_path / "real1"
@@ -157,6 +183,8 @@ def test_run_dir_list_holds_only_the_run_directories(temp_base):
     assert clean_module.run_dir_list(temp_base) == [run_dir1]
 
 
+# --------------------------------------------------------------------------------
+
 def test_root_ca_dir_list_names_the_two_certificate_directories(temp_base):
     _make_dir(temp_base / "sbx-hosttest-20261119-1.x")
     old_dir1 = _make_dir(temp_base / "sbx-hosttest-root-ca")
@@ -165,6 +193,8 @@ def test_root_ca_dir_list_names_the_two_certificate_directories(temp_base):
 
     assert clean_module.root_ca_dir_list(temp_base) == [new_dir1, old_dir1]
 
+
+# --------------------------------------------------------------------------------
 
 def test_both_lists_are_empty_for_an_empty_temp_base(temp_base):
     assert clean_module.run_dir_list(temp_base) == []
@@ -194,6 +224,7 @@ def test_without_arguments_it_only_shows_and_removes_nothing(temp_base, mount_re
         assert "prune" not in call
 
 
+# --------------------------------------------------------------------------------
 
 def test_the_certificate_directories_have_their_own_section(temp_base, mount_recorder, run_clean):
     run_dir1 = _make_dir(temp_base / "sbx-hosttest-20261119-1.x")
@@ -242,6 +273,8 @@ def test_yes_removes_the_test_containers_their_networks_and_the_directories(temp
     assert other_dir1.is_dir()
 
 
+# --------------------------------------------------------------------------------
+
 def test_yes_prunes_the_build_cache_then_the_images_after_the_removals(temp_base, mount_recorder, run_clean):
     _plan_test_containers(temp_base, mount_recorder)
 
@@ -257,6 +290,8 @@ def test_yes_prunes_the_build_cache_then_the_images_after_the_removals(temp_base
     assert out.endswith("=== Docker disk use after\n")
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_missing_network_is_said_and_is_not_an_error(temp_base, mount_recorder, run_clean):
     _plan_test_containers(temp_base, mount_recorder)
     mount_recorder.answer(["network", "rm"], DockerResult(1, ""))
@@ -266,6 +301,8 @@ def test_a_missing_network_is_said_and_is_not_an_error(temp_base, mount_recorder
     assert exit_code == 0
     assert "(no sbx-hosttest-claude_default network)" in out
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_container_that_cannot_be_removed_stops_the_run_before_any_directory_goes(
     temp_base, mount_recorder, run_clean
@@ -280,6 +317,8 @@ def test_a_container_that_cannot_be_removed_stops_the_run_before_any_directory_g
     assert (temp_base / "sbx-hosttest-20261119-101010.abc" / "claude sandbox" / "file1.txt").is_file()
     assert ["image", "prune", "-a", "-f"] not in mount_recorder.call_list
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.skipif(os.geteuid() == 0, reason="root can remove a directory whose parent is read-only")
 def test_a_directory_that_cannot_be_removed_is_reported_and_the_rest_goes_on(temp_base, mount_recorder, run_clean):
@@ -317,6 +356,8 @@ def test_an_unknown_option_is_the_usage_and_touches_nothing(temp_base, mount_rec
     assert (temp_base / "sbx-hosttest-20261119-1.x" / "file1.txt").is_file()
 
 
+# --------------------------------------------------------------------------------
+
 def test_two_arguments_are_the_usage(mount_recorder, run_clean):
     exit_code, out, err = run_clean(["--yes", "--yes"])
 
@@ -324,6 +365,8 @@ def test_two_arguments_are_the_usage(mount_recorder, run_clean):
     assert err == USAGE_TEXT
     assert mount_recorder.call_list == []
 
+
+# --------------------------------------------------------------------------------
 
 def test_without_docker_nothing_is_removed(temp_base, mount_recorder, run_clean):
     _make_dir(temp_base / "sbx-hosttest-20261119-1.x")
@@ -336,6 +379,8 @@ def test_without_docker_nothing_is_removed(temp_base, mount_recorder, run_clean)
     assert mount_recorder.call_list == [["info"]]
     assert (temp_base / "sbx-hosttest-20261119-1.x" / "file1.txt").is_file()
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_failed_docker_ps_removes_nothing(temp_base, mount_recorder, run_clean):
     _make_dir(temp_base / "sbx-hosttest-20261119-1.x")

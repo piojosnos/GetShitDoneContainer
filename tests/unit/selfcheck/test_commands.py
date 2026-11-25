@@ -17,11 +17,15 @@ def test_run_command_captures_text_output_and_closes_stdin():
     assert completed.stdout == ""
 
 
+# --------------------------------------------------------------------------------
+
 def test_run_command_passes_the_given_environment():
     completed = commands.run_command(["env"], {"NAME1": "value1"})
 
     assert completed.stdout.strip() == "NAME1=value1"
 
+
+# --------------------------------------------------------------------------------
 
 def test_first_output_line_takes_stdout_then_stderr(bin1):
     write_stand_in(bin1, "tool1", 'echo; echo "out1"; echo "err1" >&2')

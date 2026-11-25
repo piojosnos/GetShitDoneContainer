@@ -35,12 +35,16 @@ class ImageRules:
     launcher_file_list: list[Path] = field(default_factory=lambda: list(LAUNCHER_FILE_LIST))
 
 
+# --------------------------------------------------------------------------------
+
 def _must_be_executable(path: Path, entry_stat: os.stat_result, rules: ImageRules) -> bool:
     if stat.S_ISDIR(entry_stat.st_mode) or path in rules.launcher_file_list:
         return True
 
     return path.parent == rules.command_dir and path.name.startswith(COMMAND_PREFIX)
 
+
+# --------------------------------------------------------------------------------
 
 def _entry_problem_list(path: Path, entry_stat: os.stat_result, rules: ImageRules) -> list[str]:
     problem_list = []
@@ -75,6 +79,8 @@ def _walk_problem_text(walk_problem: WalkProblem) -> str:
     return f"{walk_problem.path} cannot be opened"
 
 
+# --------------------------------------------------------------------------------
+
 def image_ownership_problem_list(root_list: list[Path], rules: ImageRules = ImageRules()) -> list[str]:
     problem_list = []
 
@@ -88,6 +94,8 @@ def image_ownership_problem_list(root_list: list[Path], rules: ImageRules = Imag
 
     return problem_list
 
+
+# --------------------------------------------------------------------------------
 
 def image_ownership_result(root_list: list[Path], rules: ImageRules = ImageRules()) -> CheckResult:
     problem_list = image_ownership_problem_list(root_list, rules)

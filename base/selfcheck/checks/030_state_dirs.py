@@ -65,6 +65,8 @@ def _check_state_dirs() -> CheckResult:
     return state_dirs_result(STATE_DIR, os.environ.get("SBX_STATE_DIRS", ""))
 
 
+# --------------------------------------------------------------------------------
+
 def _check_state_writable() -> CheckResult:
     return state_writable_result(STATE_DIR)
 

@@ -39,6 +39,8 @@ def _network_exists(network: str) -> bool:
     return run_timeout(["docker", "network", "inspect", network], 60).returncode == 0
 
 
+# --------------------------------------------------------------------------------
+
 def _image_exists(image: str) -> bool:
     return run_timeout(["docker", "image", "inspect", image], 60).returncode == 0
 
@@ -51,6 +53,8 @@ def _closing_line(container: str, sandbox_dir: Path) -> str:
     return f"sbx-rm: the container {container} is gone; nothing in {sandbox_dir} was changed"
 
 
+# --------------------------------------------------------------------------------
+
 def _last_line(text: str) -> str:
     line_list = text.strip().splitlines()
 
@@ -59,6 +63,8 @@ def _last_line(text: str) -> str:
 
     return line_list[-1]
 
+
+# --------------------------------------------------------------------------------
 
 def _sentinel_problem_list(project_dir: Path, state_dir: Path, sentinel_text: str) -> list[str]:
     problem_list = []

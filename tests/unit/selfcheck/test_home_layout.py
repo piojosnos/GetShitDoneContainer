@@ -19,6 +19,8 @@ def test_home_layout_passes_when_bashrc_and_local_exist(tmp_path):
     assert home_layout.home_layout_result(home1).passed
 
 
+# --------------------------------------------------------------------------------
+
 def test_home_layout_fails_naming_the_missing_one(tmp_path):
     home1 = tmp_path / "home1"
     write_file(home1 / ".bashrc")

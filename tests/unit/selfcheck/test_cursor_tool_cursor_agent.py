@@ -27,6 +27,8 @@ def write_cursor_stand_in(dir_path: Path, home_record_file: Path) -> None:
     stand_in.chmod(0o755)
 
 
+# --------------------------------------------------------------------------------
+
 def cursor_environment(dir_path: Path, with_config_dir: bool) -> dict[str, str]:
     environment_map = {"PATH": f"{dir_path}{os.pathsep}{os.environ['PATH']}", "HOME": str(dir_path / "home1")}
 
@@ -54,6 +56,8 @@ def test_cursor_version_result_runs_the_cli_with_a_throwaway_home_that_is_gone_a
     assert not (tmp_path / "home1" / "cli-config.json").exists()
 
 
+# --------------------------------------------------------------------------------
+
 def test_cursor_version_result_hides_the_config_dir_variable_from_the_cli(tmp_path):
     write_cursor_stand_in(tmp_path, tmp_path / "home-record1")
     environment1 = cursor_environment(tmp_path, True)
@@ -64,6 +68,8 @@ def test_cursor_version_result_hides_the_config_dir_variable_from_the_cli(tmp_pa
     assert environment1["CURSOR_CONFIG_DIR"] == str(tmp_path / "state1" / "cursor")
     assert not (tmp_path / "state1").exists()
 
+
+# --------------------------------------------------------------------------------
 
 def test_cursor_version_result_fails_for_another_version(tmp_path):
     home_record1 = tmp_path / "home-record1"
@@ -76,11 +82,15 @@ def test_cursor_version_result_fails_for_another_version(tmp_path):
     assert not Path(home_record1.read_text()).exists()
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_check_runs_and_reports_on_cursor_whatever_the_image_state():
     result = tool_cursor_agent.CHECK_LIST[0].function()
 
     assert "cursor" in (result.detail + result.hint).lower()
 
+
+# --------------------------------------------------------------------------------
 
 def test_cursor_version_result_finds_a_cursor_agent_that_is_only_in_the_agents_dir(tmp_path):
     agent_bin1 = tmp_path / "agent-bin1"
@@ -114,6 +124,8 @@ def test_cursor_off_path_fails_when_cursor_agent_is_also_in_another_path_dir(tmp
     assert str(other1 / "cursor-agent") in result.detail
 
 
+# --------------------------------------------------------------------------------
+
 def test_cursor_off_path_passes_when_cursor_agent_is_only_in_the_agents_dir(bin1):
     write_stand_in(bin1, "cursor-agent", "echo v1")
 
@@ -121,6 +133,8 @@ def test_cursor_off_path_passes_when_cursor_agent_is_only_in_the_agents_dir(bin1
 
     assert result.passed
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_cursor_list_is_tool_cursor_agent_then_cursor_off_path():
     assert [check.name for check in tool_cursor_agent.CHECK_LIST] == ["tool-cursor-agent", "cursor-off-path"]

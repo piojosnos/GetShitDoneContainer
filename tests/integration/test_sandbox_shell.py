@@ -56,6 +56,8 @@ def _bash_is_running(container: str) -> bool:
     return probe.returncode == 0
 
 
+# --------------------------------------------------------------------------------
+
 def _read_available(master_fd: int) -> bytes | None:
     readable_list, _, _ = select.select([master_fd], [], [], _READ_SECONDS)
 
@@ -73,6 +75,8 @@ def _read_available(master_fd: int) -> bytes | None:
     return data
 
 
+# --------------------------------------------------------------------------------
+
 def _kill_group(process: subprocess.Popen) -> None:
     try:
         os.killpg(process.pid, signal.SIGKILL)
@@ -81,6 +85,8 @@ def _kill_group(process: subprocess.Popen) -> None:
 
     process.wait()
 
+
+# --------------------------------------------------------------------------------
 
 def _shell_through_pty(name: str, environ: dict[str, str], script_text: str, seconds: float) -> CommandResult:
     container = f"sbx-{name}"
@@ -136,6 +142,8 @@ def _shell_through_pty(name: str, environ: dict[str, str], script_text: str, sec
 
     return CommandResult(process.returncode, transcript, "", timed_out)
 
+
+# --------------------------------------------------------------------------------
 
 def _wrote_directory(project_dir: Path, file_name: str, expected_text: str) -> bool:
     path = project_dir / file_name

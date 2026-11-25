@@ -23,6 +23,8 @@ def repo_dir() -> Path:
     return REPO_DIR
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def make_certificate(tmp_path):
     def new_certificate(name: str) -> Path:
@@ -44,6 +46,8 @@ def make_certificate(tmp_path):
     return new_certificate
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def restorable_mode():
     restore_list = []
@@ -58,6 +62,8 @@ def restorable_mode():
         path.chmod(mode)
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def check_name_list_of():
     def names_of(check_list: list) -> list[str]:
@@ -71,10 +77,14 @@ def check_name_list_of():
     return names_of
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def shared_check_list():
     return runner.dir_check_list(SHARED_CHECKS_DIR)
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def agent_check_list_of():
@@ -84,10 +94,14 @@ def agent_check_list_of():
     return check_list_of
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def versions1(tmp_path) -> Path:
     return write_versions(tmp_path / "versions1.env")
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def bin1(tmp_path) -> Path:
@@ -97,10 +111,14 @@ def bin1(tmp_path) -> Path:
     return bin_dir
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def line1(tmp_path) -> Path:
     return tmp_path / "line1"
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def shared1(tmp_path) -> Path:
@@ -111,6 +129,8 @@ def shared1(tmp_path) -> Path:
     return shared_dir
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def agents1(tmp_path) -> Path:
     agents_dir = tmp_path / "agents1"
@@ -119,6 +139,8 @@ def agents1(tmp_path) -> Path:
 
     return agents_dir
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def group1(tmp_path) -> Path:

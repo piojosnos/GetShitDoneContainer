@@ -50,6 +50,8 @@ def _status_word(state: str) -> str:
     return "stopped"
 
 
+# --------------------------------------------------------------------------------
+
 def _status_of(name: str, state_map: dict[str, str]) -> str:
     state = state_map.get(container_name(name))
 
@@ -69,6 +71,8 @@ def _format_row(name: str, status: str, path: str) -> str:
     return f"{name:<31} {status:<20} {path}"
 
 
+# --------------------------------------------------------------------------------
+
 def _row_of(registry: Path, name: str, tag: str, state_map: dict[str, str], docker: Docker) -> tuple[str, bool]:
     try:
         check_name(name)
@@ -83,6 +87,8 @@ def _row_of(registry: Path, name: str, tag: str, state_map: dict[str, str], dock
 
     return _format_row(name, status, entry.path), False
 
+
+# --------------------------------------------------------------------------------
 
 def _print_table(registry: Path, tag: str, state_map: dict[str, str], docker: Docker) -> bool:
     name_list = list_entry_names(registry)
@@ -118,6 +124,8 @@ def _has_entry(registry: Path, container: str) -> bool:
 
     return entry_file(registry, container[len(_CONTAINER_PREFIX):]).is_file()
 
+
+# --------------------------------------------------------------------------------
 
 def _print_leftovers(registry: Path, state_map: dict[str, str]) -> None:
     leftover_count = 0
@@ -156,6 +164,8 @@ def _list_sandboxes(argument_list: list[str], environ: Mapping[str, str], docker
 
     _print_leftovers(registry, state_map)
 
+
+# --------------------------------------------------------------------------------
 
 def main(argument_list: list[str], environ: Mapping[str, str] = os.environ, docker: Docker = run_docker) -> int:
     return run_command(COMMAND_NAME, partial(_list_sandboxes, argument_list, environ, docker))

@@ -24,6 +24,8 @@ def test_no_best_practices_copy_passes_when_the_path_is_absent_and_fails_when_pr
     assert "on the host run: sbx-upgrade" in result.hint
 
 
+# --------------------------------------------------------------------------------
+
 def test_no_best_practices_copy_fails_for_a_dangling_link(tmp_path):
     copy1 = tmp_path / "copy1"
     copy1.symlink_to(tmp_path / "missing1")

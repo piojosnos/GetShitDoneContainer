@@ -71,6 +71,8 @@ def _labels_and_entrypoint_problem_list(container: str, expected_project: str) -
     return problem_list
 
 
+# --------------------------------------------------------------------------------
+
 def _unchanged_file_problem_list(expected_map: dict) -> list[str]:
     problem_list = []
 

@@ -29,6 +29,8 @@ def _scanned_name_list(state_dir: Path, from_uid: int) -> list[str]:
     return name_list
 
 
+# --------------------------------------------------------------------------------
+
 def _give_back_round(
     state_dir: Path,
     name_list: list[str],

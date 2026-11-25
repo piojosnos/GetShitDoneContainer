@@ -17,6 +17,8 @@ def _is_empty(value: object) -> bool:
     return value is None or value == [] or value == ""
 
 
+# --------------------------------------------------------------------------------
+
 def _privilege_problem_list(host_config: dict) -> list[str]:
     problem_list = []
     cap_drop = host_config.get("CapDrop")
@@ -54,6 +56,8 @@ def _privilege_problem_list(host_config: dict) -> list[str]:
 
     return problem_list
 
+
+# --------------------------------------------------------------------------------
 
 def _namespace_problem_list(host_config: dict) -> list[str]:
     problem_list = []

@@ -25,6 +25,8 @@ class CheckResult:
     hint: str
 
 
+# --------------------------------------------------------------------------------
+
 @dataclass(frozen=True)
 class Check:
     name: str
@@ -39,12 +41,16 @@ def passed(detail: str) -> CheckResult:
     return CheckResult(True, detail, "")
 
 
+# --------------------------------------------------------------------------------
+
 def failed(detail: str, hint: str) -> CheckResult:
     if not hint.strip():
         raise ValueError("a failed check needs a fix hint")
 
     return CheckResult(False, detail, hint)
 
+
+# --------------------------------------------------------------------------------
 
 def problem_list_result(problem_list: list[str], hint: str, passed_detail: str) -> CheckResult:
     if problem_list:
@@ -53,13 +59,19 @@ def problem_list_result(problem_list: list[str], hint: str, passed_detail: str) 
     return passed(passed_detail)
 
 
+# --------------------------------------------------------------------------------
+
 def capped_list_text(item_list: list[str], separator: str, limit: int = _LIST_LIMIT) -> str:
     return separator.join(item_list[:limit])
 
 
+# --------------------------------------------------------------------------------
+
 def capped_problem_detail(problem_list: list[str], limit: int = _LIST_LIMIT) -> str:
     return f"{len(problem_list)} problems: " + capped_list_text(problem_list, "; ", limit)
 
+
+# --------------------------------------------------------------------------------
 
 def one_line(text: str) -> str:
     return text.replace("\r", " ").replace("\n", " ")

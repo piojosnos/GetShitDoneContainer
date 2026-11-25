@@ -35,6 +35,8 @@ def _row(name: str, status: str, path: Path) -> str:
     return f"{name:<31} {status:<20} {path}"
 
 
+# --------------------------------------------------------------------------------
+
 def _leftover_line(container: str, status: str) -> str:
     return f"  {container:<35} {status}"
 
@@ -60,6 +62,8 @@ def _docker_state(container: str) -> str:
     return ""
 
 
+# --------------------------------------------------------------------------------
+
 def _list_lines(environ: dict[str, str]) -> list[str]:
     listing = run_sbx("sbx-list", [], environ)
 
@@ -67,6 +71,8 @@ def _list_lines(environ: dict[str, str]) -> list[str]:
 
     return listing.stdout.splitlines()
 
+
+# --------------------------------------------------------------------------------
 
 def _row_problem(line_list: list[str], sandbox: RunSandbox, status: str, expected_docker_state: str) -> str | None:
     row = _row(sandbox.name, status, sandbox.sandbox_dir)

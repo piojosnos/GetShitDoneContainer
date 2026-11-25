@@ -31,6 +31,8 @@ def run_command(
     )
 
 
+# --------------------------------------------------------------------------------
+
 def first_output_line(completed: subprocess.CompletedProcess) -> str:
     for output_text in [completed.stdout, completed.stderr]:
         for line in output_text.splitlines():

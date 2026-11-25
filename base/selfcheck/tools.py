@@ -38,6 +38,8 @@ def _elf_machine(path: Path) -> int | None:
     return int.from_bytes(header[_ELF_MACHINE_OFFSET:_ELF_MACHINE_OFFSET + 2], "little")
 
 
+# --------------------------------------------------------------------------------
+
 def _native_machine_problem(real_path: str, command_name: str) -> str:
     expected_machine = ELF_MACHINE_BY_UNAME_MAP.get(platform.machine())
     actual_machine = _elf_machine(Path(real_path))
@@ -55,6 +57,8 @@ def _native_machine_problem(real_path: str, command_name: str) -> str:
 def _version_matches(line: str, expected_text: str) -> bool:
     return line == expected_text or line.startswith(expected_text + " ")
 
+
+# --------------------------------------------------------------------------------
 
 def _version_problem(
     command_name: str,
@@ -141,6 +145,8 @@ def agent_path_environment(agent_bin_dir: Path, environment_map: Mapping[str, st
 
     return agent_environment_map
 
+
+# --------------------------------------------------------------------------------
 
 def off_path_result(
     command_name: str,

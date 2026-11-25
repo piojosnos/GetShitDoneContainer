@@ -30,6 +30,8 @@ def sandbox_dir(registry, tmp_path):
     return project_dir
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def run_start(config_dir, recorder, capsys):
     def run(argument_list, extra_map=None):
@@ -42,6 +44,8 @@ def run_start(config_dir, recorder, capsys):
     return run
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def run_stop(config_dir, recorder, capsys):
     def run(argument_list, extra_map=None):
@@ -53,6 +57,8 @@ def run_stop(config_dir, recorder, capsys):
 
     return run
 
+
+# --------------------------------------------------------------------------------
 
 def _compose_call_list(recorder):
     compose_list = []
@@ -83,6 +89,8 @@ def test_a_wrong_argument_count_prints_the_usage_and_does_not_reach_docker(
     assert recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("command_name", ["start", "stop"])
 def test_an_unregistered_name_is_refused_with_the_add_advice(command_name, run_start, run_stop, recorder):
     run = run_start if command_name == "start" else run_stop
@@ -93,6 +101,8 @@ def test_an_unregistered_name_is_refused_with_the_add_advice(command_name, run_s
     assert err == f"sbx-{command_name}: nosuch is not registered; run: sbx-add nosuch HOST_PATH\n"
     assert recorder.call_list == []
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("command_name", ["start", "stop"])
 @pytest.mark.parametrize("name", ["../x", "Demo", "", "ok\nbad"])
@@ -108,6 +118,8 @@ def test_a_name_that_breaks_the_rule_is_refused_before_the_registry_is_read(
     assert recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("command_name", ["start", "stop"])
 def test_a_tag_other_than_local_or_test_is_refused_first(command_name, run_start, run_stop, sandbox_dir, recorder):
     run = run_start if command_name == "start" else run_stop
@@ -118,6 +130,8 @@ def test_a_tag_other_than_local_or_test_is_refused_first(command_name, run_start
     assert err == f"sbx-{command_name}: SBX_IMAGE_TAG must be local or test, not 'latest'\n"
     assert recorder.call_list == []
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("command_name", ["start", "stop"])
 def test_a_broken_entry_is_refused_with_its_own_error(command_name, run_start, run_stop, registry, recorder):
@@ -151,6 +165,8 @@ def test_start_refuses_a_missing_directory_before_any_docker_call(
     assert recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_start_refuses_when_docker_does_not_answer_and_does_not_advise_upgrade(run_start, sandbox_dir, recorder):
     recorder.answer(["info"], DockerResult(1, ""))
 
@@ -161,6 +177,8 @@ def test_start_refuses_when_docker_does_not_answer_and_does_not_advise_upgrade(r
     assert "sbx-upgrade" not in err
     assert _compose_call_list(recorder) == []
 
+
+# --------------------------------------------------------------------------------
 
 def test_start_refuses_a_missing_image_and_names_the_image_and_upgrade(run_start, sandbox_dir, recorder):
     recorder.answer(["image", "inspect"], DockerResult(1, ""))
@@ -174,6 +192,8 @@ def test_start_refuses_a_missing_image_and_names_the_image_and_upgrade(run_start
     )
     assert _compose_call_list(recorder) == []
 
+
+# --------------------------------------------------------------------------------
 
 def test_start_names_the_logs_when_compose_up_fails(run_start, sandbox_dir, recorder):
     recorder.answer(["compose"], DockerResult(1, ""))
@@ -206,6 +226,8 @@ def test_start_prints_the_three_lines_and_runs_up_once(run_start, sandbox_dir, r
     ]
 
 
+# --------------------------------------------------------------------------------
+
 def test_start_hands_the_entry_and_the_tag_to_compose_and_not_the_caller_values(run_start, sandbox_dir, recorder):
     ambient_map = {"SBX_DIR": "/ambient", "SBX_AGENT": "claude", "COMPOSE_PROJECT_NAME": "ambient", "SBX_IMAGE_TAG": "test"}
 
@@ -220,6 +242,8 @@ def test_start_hands_the_entry_and_the_tag_to_compose_and_not_the_caller_values(
     assert "COMPOSE_PROJECT_NAME" not in compose_environ
 
 
+# --------------------------------------------------------------------------------
+
 def test_start_checks_the_image_of_the_agent_and_the_tag(run_start, sandbox_dir, recorder):
     exit_code, _, err = run_start(["sbx1"], {"SBX_IMAGE_TAG": "test"})
 
@@ -227,6 +251,8 @@ def test_start_checks_the_image_of_the_agent_and_the_tag(run_start, sandbox_dir,
     assert err.startswith("sbx-start: using the test images because SBX_IMAGE_TAG=test")
     assert ["image", "inspect", "sbx-cursor:test"] in recorder.call_list
 
+
+# --------------------------------------------------------------------------------
 
 def test_start_warns_before_up_when_the_sandbox_runs_on_an_older_image(run_start, sandbox_dir, recorder):
     recorder.answer(RUNNING_PREFIX, DockerResult(0, "true\n"))
@@ -263,12 +289,16 @@ def test_stop_runs_compose_stop_with_the_environment_of_the_entry(run_stop, sand
     assert compose_environ["SBX_AGENT"] == "cursor"
 
 
+# --------------------------------------------------------------------------------
+
 def test_stop_drops_the_compose_keys_of_the_caller(run_stop, sandbox_dir, recorder):
     run_stop(["sbx1"], {"COMPOSE_FILE": "/ambient/compose.yml", "COMPOSE_PROFILES": "ambient"})
 
     for key in recorder.environ_list[0]:
         assert not key.startswith("COMPOSE_")
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_failing_stop_is_named(run_stop, sandbox_dir, recorder):
     recorder.answer(["compose"], DockerResult(1, ""))
@@ -279,6 +309,8 @@ def test_a_failing_stop_is_named(run_stop, sandbox_dir, recorder):
     assert out == ""
     assert err == "sbx-stop: docker compose stop failed for sbx-sbx1\n"
 
+
+# --------------------------------------------------------------------------------
 
 def test_stop_works_when_the_project_directory_has_moved(run_stop, sandbox_dir, recorder):
     Path(f"{sandbox_dir}/sbx1").rmdir()

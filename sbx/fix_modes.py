@@ -64,6 +64,8 @@ def _run_xattr(xattr_path: str, argument_list: list[str]) -> XattrResult:
     return XattrResult(result.returncode, result.stdout)
 
 
+# --------------------------------------------------------------------------------
+
 def _find_xattr_function(environ: Mapping[str, str]) -> XattrFunction | None:
     xattr_path = shutil.which("xattr", path=environ.get("PATH"))
 
@@ -93,6 +95,8 @@ def _check_top_of_repository(project_dir: str) -> None:
     if result.returncode != 0 or result.stdout.strip() != "":
         raise SbxError(f"{project_dir} is not the top directory of a git repository")
 
+
+# --------------------------------------------------------------------------------
 
 def _read_index(project_dir: str) -> list[tuple[str, str]]:
     result = subprocess.run(
@@ -139,6 +143,8 @@ def _fix_host_mode(path: str, git_mode: str) -> bool:
 
     return True
 
+
+# --------------------------------------------------------------------------------
 
 def _fix_sandbox_mode(path: str, git_mode: str, xattr_function: XattrFunction) -> bool:
     result = xattr_function(["-p", _OVERRIDE_NAME, path])
@@ -225,6 +231,8 @@ def _fix_modes(
     if xattr_function is None:
         print(f"{COMMAND_NAME}: xattr is not installed, so the sandbox modes were not looked at")
 
+
+# --------------------------------------------------------------------------------
 
 def main(
     argument_list: list[str],

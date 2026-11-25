@@ -87,6 +87,8 @@ def _dir_within(directory: str, ancestor: str) -> bool:
         walk_path = parent
 
 
+# --------------------------------------------------------------------------------
+
 def _tails_overlap(first_list: list[str], second_list: list[str]) -> bool:
     shared_length = min(len(first_list), len(second_list))
 

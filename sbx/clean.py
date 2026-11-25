@@ -60,6 +60,8 @@ def _is_plain_dir(path: Path) -> bool:
     return path.is_dir() and not path.is_symlink()
 
 
+# --------------------------------------------------------------------------------
+
 def run_dir_list(temp_base: Path) -> list[Path]:
     dir_list = []
 
@@ -72,6 +74,8 @@ def run_dir_list(temp_base: Path) -> list[Path]:
 
     return dir_list
 
+
+# --------------------------------------------------------------------------------
 
 def root_ca_dir_list(temp_base: Path) -> list[Path]:
     dir_list = []
@@ -106,6 +110,8 @@ def _run_dir_name_in_source(mount_source: str, temp_base: Path) -> str:
     return ""
 
 
+# --------------------------------------------------------------------------------
+
 def hosttest_container_verdict(name: str, mount_source: str | None, temp_base: Path) -> str:
     if mount_source is None:
         return VERDICT_ABSENT
@@ -126,6 +132,8 @@ def _is_test_container_name(name: str) -> bool:
     return name == _OLD_TEST_CONTAINER_NAME or name.startswith(_TEST_CONTAINER_PREFIX)
 
 
+# --------------------------------------------------------------------------------
+
 def _test_container_name_list(docker: Docker) -> list[str]:
     result = docker(["ps", "-a", "--format", "{{.Names}}"], None, True)
 
@@ -143,6 +151,8 @@ def _test_container_name_list(docker: Docker) -> list[str]:
     return sorted(name_list)
 
 
+# --------------------------------------------------------------------------------
+
 def _mount_source(docker: Docker, name: str) -> str | None:
     format_text = (
         f'{{{{range .Mounts}}}}{{{{if eq .Destination "{_WORKSPACE_DESTINATION}"}}}}'
@@ -155,6 +165,8 @@ def _mount_source(docker: Docker, name: str) -> str | None:
 
     return result.stdout.strip()
 
+
+# --------------------------------------------------------------------------------
 
 def _verdict_map(docker: Docker, name_list: list[str], temp_base: Path) -> dict[str, str]:
     verdict_by_name_map = {}
@@ -183,6 +195,8 @@ def _print_dir_section(title: str, dir_list: list[Path]) -> None:
 
     print()
 
+
+# --------------------------------------------------------------------------------
 
 def _show_state(
     docker: Docker,
@@ -250,6 +264,8 @@ def _remove_test_containers(docker: Docker, verdict_by_name_map: dict[str, str])
     print()
 
 
+# --------------------------------------------------------------------------------
+
 def _remove_dir_list(title: str, dir_list: list[Path]) -> list[Path]:
     print(f"=== {title}")
 
@@ -304,6 +320,8 @@ def _parse_arguments(argument_list: list[str]) -> bool:
     raise UsageError(_USAGE_TEXT)
 
 
+# --------------------------------------------------------------------------------
+
 def _clean(argument_list: list[str], environ: Mapping[str, str], docker: Docker) -> None:
     remove = _parse_arguments(argument_list)
 
@@ -334,6 +352,8 @@ def _clean(argument_list: list[str], environ: Mapping[str, str], docker: Docker)
     if failed_list:
         raise SbxError("some directories could not be removed; the messages above name them")
 
+
+# --------------------------------------------------------------------------------
 
 def main(
     argument_list: list[str],

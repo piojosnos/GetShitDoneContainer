@@ -55,6 +55,8 @@ def _missing_parent_list(path: Path) -> list[Path]:
     return missing_list
 
 
+# --------------------------------------------------------------------------------
+
 def _plant_file(path: Path, text: str, request: pytest.FixtureRequest) -> None:
     missing_list = _missing_parent_list(path)
 
@@ -71,6 +73,8 @@ def _plant_file(path: Path, text: str, request: pytest.FixtureRequest) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
 
+
+# --------------------------------------------------------------------------------
 
 def _remove_on_finalize(path: Path, request: pytest.FixtureRequest) -> None:
     def remove_file() -> None:
@@ -101,12 +105,16 @@ def _remove_history_marker(history_file: Path, marker: str) -> None:
     history_file.write_text("".join(kept_list), encoding="utf-8", errors="surrogateescape")
 
 
+# --------------------------------------------------------------------------------
+
 def _history_has(history_file: Path, marker: str) -> bool:
     if not history_file.is_file():
         return False
 
     return marker in history_file.read_text(encoding="utf-8", errors="surrogateescape")
 
+
+# --------------------------------------------------------------------------------
 
 def _write_history_marker(
     container: str,
@@ -174,6 +182,8 @@ def _cache_location_problem_list(container: str) -> list[str]:
     return problem_list
 
 
+# --------------------------------------------------------------------------------
+
 def _changed_file_list(planted_map: dict[Path, str]) -> list[str]:
     problem_list = []
 
@@ -190,6 +200,8 @@ def _changed_file_list(planted_map: dict[Path, str]) -> list[str]:
 
     return problem_list
 
+
+# --------------------------------------------------------------------------------
 
 def _last_lines(text: str, count: int) -> list[str]:
     line_list = text.strip().splitlines()

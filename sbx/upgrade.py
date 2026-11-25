@@ -51,12 +51,16 @@ def _recreate_sandbox(docker: Docker, entry: Entry, tag: str, repo_dir: Path, en
         raise SbxError(f"docker compose up failed after the build; docker logs {container_name(entry.name)} shows why")
 
 
+# --------------------------------------------------------------------------------
+
 def _print_tool_versions(docker: Docker, name: str) -> None:
     result = docker(["exec", container_name(name), "cat", "/etc/sbx/tool-versions"], None, False)
 
     if result.returncode != 0:
         raise SbxError(f"could not read /etc/sbx/tool-versions in {container_name(name)}")
 
+
+# --------------------------------------------------------------------------------
 
 def _upgrade_sandbox(
     argument_list: list[str],
@@ -94,6 +98,8 @@ def _upgrade_sandbox(
 
     _print_tool_versions(docker, name)
 
+
+# --------------------------------------------------------------------------------
 
 def main(
     argument_list: list[str],

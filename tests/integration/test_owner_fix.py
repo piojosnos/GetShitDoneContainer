@@ -30,6 +30,8 @@ def _owner_of(container: str, path: str) -> str:
     return docker_exec(container, f"stat -c %u {path}").stdout.strip()
 
 
+# --------------------------------------------------------------------------------
+
 def _root_owned_command() -> str:
     command = f"find {_WORKSPACE}/state -user 0"
 

@@ -67,9 +67,13 @@ def _git_environ() -> dict[str, str]:
     return environ
 
 
+# --------------------------------------------------------------------------------
+
 def _git(argument_list: list[str], cwd: Path | None = None) -> CommandResult:
     return run_timeout(["git", *argument_list], 120, _git_environ(), cwd=cwd)
 
+
+# --------------------------------------------------------------------------------
 
 def _assert_git(result: CommandResult, what: str) -> None:
     assert result.returncode == 0, f"{what} failed: {describe_result(result)}"
@@ -88,6 +92,8 @@ def _last_line(text: str) -> str:
     return line_list[-1]
 
 
+# --------------------------------------------------------------------------------
+
 def _line_starting_with(text: str, prefix: str) -> str | None:
     for line in text.splitlines():
         if line.startswith(prefix):
@@ -95,6 +101,8 @@ def _line_starting_with(text: str, prefix: str) -> str | None:
 
     return None
 
+
+# --------------------------------------------------------------------------------
 
 def _fix_line_naming(text: str, word: str) -> str | None:
     for line in text.splitlines():
@@ -105,6 +113,8 @@ def _fix_line_naming(text: str, word: str) -> str | None:
 
     return None
 
+
+# --------------------------------------------------------------------------------
 
 def _init_summary_line(agent: AgentSpec) -> str:
     return f"sbx-init: {agent.init_step_count} steps passed; run sbx-selfcheck to check the sandbox"
@@ -124,13 +134,19 @@ def _generated_dir(agent: AgentSpec) -> str:
     return f"generated/{agent.name}"
 
 
+# --------------------------------------------------------------------------------
+
 def _live_target(agent: AgentSpec) -> tuple[str, str]:
     return "rules", f"sbx-fixture-always{agent.rules_extension}"
 
 
+# --------------------------------------------------------------------------------
+
 def _config_dir(agent: AgentSpec) -> str:
     return f"{_WORKSPACE}/state/{agent.config_dir_name}"
 
+
+# --------------------------------------------------------------------------------
 
 def _fixture_skill_name_list(agent: AgentSpec) -> list[str]:
     name_list = []
@@ -141,9 +157,13 @@ def _fixture_skill_name_list(agent: AgentSpec) -> list[str]:
     return name_list
 
 
+# --------------------------------------------------------------------------------
+
 def _read_link(container: str, path: str) -> str:
     return docker_exec(container, f"readlink {path}").stdout.strip()
 
+
+# --------------------------------------------------------------------------------
 
 def _link_problem_list(container: str, agent: AgentSpec, skill_name_list: list[str]) -> list[str]:
     problem_list = []
@@ -181,6 +201,8 @@ def _plant_settings_key(settings_file: Path, value: str) -> None:
     settings_file.parent.mkdir(parents=True, exist_ok=True)
     settings_file.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
 
+
+# --------------------------------------------------------------------------------
 
 def _settings_key_problem(settings_file: Path, value: str) -> str | None:
     if not settings_file.is_file():

@@ -37,6 +37,8 @@ def _pinned_image_map(pin_map: dict[str, str]) -> dict[str, tuple[str, str]]:
     return pinned_image_map
 
 
+# --------------------------------------------------------------------------------
+
 def _digest_from_inspect(inspect_text: str) -> str:
     for line in inspect_text.splitlines():
         if line.startswith("Digest:"):
@@ -44,6 +46,8 @@ def _digest_from_inspect(inspect_text: str) -> str:
 
     return ""
 
+
+# --------------------------------------------------------------------------------
 
 def _pin_result_line(pin_name: str, image: str, wanted_digest: str, found_digest: str) -> str:
     if not found_digest:

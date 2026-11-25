@@ -18,6 +18,8 @@ def test_versions_record_passes_when_every_shared_pin_has_a_value(versions1):
     assert str(versions1) in result.detail
 
 
+# --------------------------------------------------------------------------------
+
 def test_versions_record_names_the_pins_that_are_missing_or_empty(tmp_path, versions1):
     versions2 = tmp_path / "versions2.env"
     versions2.write_text(versions1.read_text().replace("GH_VERSION=2.102.0", "GH_VERSION=").replace("NODE_VERSION=24.21.0\n", ""))
@@ -30,12 +32,16 @@ def test_versions_record_names_the_pins_that_are_missing_or_empty(tmp_path, vers
     assert "MAVEN_VERSION" not in result.detail
 
 
+# --------------------------------------------------------------------------------
+
 def test_versions_record_fails_when_the_file_is_missing(tmp_path):
     result = versions_record.versions_record_result(tmp_path / "missing1.env")
 
     assert not result.passed
     assert "missing1.env" in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_versions_record_does_not_run_what_the_file_holds(tmp_path, versions1):
     marker1 = tmp_path / "marker1"

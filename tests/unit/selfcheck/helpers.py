@@ -37,25 +37,37 @@ def write_stand_in(dir_path: Path, name: str, script_body: str) -> Path:
     return stand_in
 
 
+# --------------------------------------------------------------------------------
+
 def environment_with(dir_path: Path) -> dict[str, str]:
     return {"PATH": f"{dir_path}{os.pathsep}{os.environ['PATH']}"}
 
+
+# --------------------------------------------------------------------------------
 
 def load_shared_check(name: str):
     return runner.load_check_module(SHARED_CHECKS_DIR / f"{name}.py")
 
 
+# --------------------------------------------------------------------------------
+
 def agent_checks_dir(agent_name: str) -> Path:
     return REPO_DIR / agent_name / "selfcheck"
 
+
+# --------------------------------------------------------------------------------
 
 def agent_lib_dir(agent_name: str) -> Path:
     return REPO_DIR / agent_name / "selfcheck" / "lib"
 
 
+# --------------------------------------------------------------------------------
+
 def load_agent_check(agent_name: str, name: str):
     return runner.load_check_module(agent_checks_dir(agent_name) / f"{name}.py")
 
+
+# --------------------------------------------------------------------------------
 
 def write_mountinfo(mountinfo_file: Path, mount_point_list: list[str]) -> None:
     line_list = [ROOT_MOUNT_LINE]
@@ -66,10 +78,14 @@ def write_mountinfo(mountinfo_file: Path, mount_point_list: list[str]) -> None:
     mountinfo_file.write_text("\n".join(line_list) + "\n")
 
 
+# --------------------------------------------------------------------------------
+
 def write_file(path: Path, text: str = "text1") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
 
+
+# --------------------------------------------------------------------------------
 
 def git_environment(system_file: Path, global_file: Path) -> dict[str, str]:
     return {
@@ -80,6 +96,8 @@ def git_environment(system_file: Path, global_file: Path) -> dict[str, str]:
         "GIT_CONFIG_NOSYSTEM": "1",
     }
 
+
+# --------------------------------------------------------------------------------
 
 def write_versions(versions_file: Path, extra_line_list: list[str] | None = None) -> Path:
     line_list = [
@@ -100,12 +118,16 @@ def write_versions(versions_file: Path, extra_line_list: list[str] | None = None
     return versions_file
 
 
+# --------------------------------------------------------------------------------
+
 def run_lines(check_list: list[Check], agent_checks_dir: Path) -> tuple[int, list[str]]:
     output = io.StringIO()
     status = runner.report_checks(check_list + runner.collect_agent_checks(agent_checks_dir), output)
 
     return status, output.getvalue().splitlines()
 
+
+# --------------------------------------------------------------------------------
 
 def write_agent_file(checks_dir: Path, name: str) -> None:
     checks_dir.mkdir(parents=True, exist_ok=True)

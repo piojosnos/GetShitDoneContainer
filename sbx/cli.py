@@ -29,6 +29,8 @@ class SbxError(Exception):
     pass
 
 
+# --------------------------------------------------------------------------------
+
 class UsageError(Exception):
     def __init__(self, args_text: str) -> None:
         super().__init__(args_text)
@@ -42,6 +44,8 @@ class UsageError(Exception):
 def print_notice(command_name: str, text: str) -> None:
     print(f"{command_name}: {text}", file=sys.stderr)
 
+
+# --------------------------------------------------------------------------------
 
 def run_command(command_name: str, action: Callable[[], None]) -> int:
     try:

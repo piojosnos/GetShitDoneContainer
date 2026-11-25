@@ -34,6 +34,8 @@ def test_tool_result_passes_when_the_line_starts_with_the_pin_and_a_space(bin1):
     assert "tool1 1.2.3 (build1)" in result.detail
 
 
+# --------------------------------------------------------------------------------
+
 def test_tool_result_passes_when_the_line_equals_the_pin(bin1):
     write_stand_in(bin1, "tool1", 'echo "tool1 1.2.3"')
 
@@ -41,6 +43,8 @@ def test_tool_result_passes_when_the_line_equals_the_pin(bin1):
 
     assert result.passed
 
+
+# --------------------------------------------------------------------------------
 
 def test_tool_result_fails_for_a_shorter_version(bin1):
     write_stand_in(bin1, "tool1", 'echo "tool1 1.2"')
@@ -50,6 +54,8 @@ def test_tool_result_fails_for_a_shorter_version(bin1):
     assert not result.passed
     assert "tool1 reports 'tool1 1.2'; the pin is 'tool1 1.2.3'" in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_tool_result_fails_for_a_longer_version_with_the_rebuild_command(bin1):
     write_stand_in(bin1, "tool1", 'echo "tool1 1.2.30"')
@@ -61,6 +67,8 @@ def test_tool_result_fails_for_a_longer_version_with_the_rebuild_command(bin1):
     assert "sbx-upgrade" in result.hint
 
 
+# --------------------------------------------------------------------------------
+
 def test_tool_result_fails_when_the_version_command_exits_non_zero(bin1):
     write_stand_in(bin1, "tool1", 'echo "tool1 1.2.3"; exit 1')
 
@@ -69,6 +77,8 @@ def test_tool_result_fails_when_the_version_command_exits_non_zero(bin1):
     assert not result.passed
     assert "the pin is" in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_tool_result_fails_when_the_required_text_is_missing(bin1):
     write_stand_in(bin1, "tool1", 'echo "tool1 1.2.3 (build1)"')
@@ -81,6 +91,8 @@ def test_tool_result_fails_when_the_required_text_is_missing(bin1):
     assert "tool1 output lacks 'vendor1'" in result.detail
 
 
+# --------------------------------------------------------------------------------
+
 def test_tool_result_passes_when_the_required_text_is_on_stderr(bin1):
     write_stand_in(bin1, "tool1", 'echo "tool1 1.2.3"; echo "vendor1" >&2')
 
@@ -91,6 +103,8 @@ def test_tool_result_passes_when_the_required_text_is_on_stderr(bin1):
     assert result.passed
 
 
+# --------------------------------------------------------------------------------
+
 def test_tool_result_fails_for_a_command_that_is_not_on_the_path(bin1):
     result = tools.tool_result("missing1", environment_map={"PATH": str(bin1)})
 
@@ -98,6 +112,8 @@ def test_tool_result_fails_for_a_command_that_is_not_on_the_path(bin1):
     assert result.detail == "missing1 is not on PATH"
     assert "sbx-upgrade" in result.hint
 
+
+# --------------------------------------------------------------------------------
 
 def test_tool_result_fails_when_the_tool_resolves_under_the_forbidden_root(bin1):
     write_stand_in(bin1, "tool1", 'echo "tool1 1.2.3"')
@@ -108,6 +124,8 @@ def test_tool_result_fails_when_the_tool_resolves_under_the_forbidden_root(bin1)
     assert f"tool1 resolves to {bin1 / 'tool1'}, under {bin1.parent}, not the image" in result.detail
     assert "remove it" in result.hint
 
+
+# --------------------------------------------------------------------------------
 
 def test_tool_result_passes_for_a_tool_in_a_sibling_dir_that_shares_the_root_prefix(tmp_path):
     root1 = tmp_path / "home1"
@@ -121,6 +139,8 @@ def test_tool_result_passes_for_a_tool_in_a_sibling_dir_that_shares_the_root_pre
     assert result.passed
 
 
+# --------------------------------------------------------------------------------
+
 def test_tool_result_follows_a_link_to_the_real_file_before_judging_the_dir(tmp_path, bin1):
     real_dir = tmp_path / "real1"
     real_dir.mkdir()
@@ -132,6 +152,8 @@ def test_tool_result_follows_a_link_to_the_real_file_before_judging_the_dir(tmp_
     assert not result.passed
     assert str(real_dir / "tool1") in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_tool_result_fails_for_a_binary_of_another_machine(bin1):
     other_machine_header = b"\x7fELF" + bytes(14) + (0x28).to_bytes(2, "little") + bytes(8)
@@ -145,6 +167,8 @@ def test_tool_result_fails_for_a_binary_of_another_machine(bin1):
     assert "sbx-upgrade" in result.hint
 
 
+# --------------------------------------------------------------------------------
+
 def test_tool_result_passes_for_a_file_shorter_than_an_elf_header(bin1):
     (bin1 / "tool1").write_bytes(b"\x7fELF")
     (bin1 / "tool1").chmod(0o755)
@@ -152,12 +176,16 @@ def test_tool_result_passes_for_a_file_shorter_than_an_elf_header(bin1):
     assert tools.tool_result("tool1", environment_map=environment_with(bin1)).passed
 
 
+# --------------------------------------------------------------------------------
+
 def test_tool_result_passes_for_the_python_that_runs_the_checks():
     result = tools.tool_result("python3", ["--version"], CURRENT_PYTHON_TEXT)
 
     assert result.passed
     assert os.path.realpath(shutil.which("python3")) in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 def test_tool_result_without_a_version_command_passes_with_the_resolved_path_only():
     result = tools.tool_result("git")
@@ -179,11 +207,15 @@ def test_agent_path_environment_puts_the_agents_dir_first_and_keeps_the_input(bi
     assert input_map == {"PATH": "/a:/b", "X": "1"}
 
 
+# --------------------------------------------------------------------------------
+
 def test_agent_path_environment_without_a_path_holds_the_agents_dir_alone(bin1):
     result_map = tools.agent_path_environment(bin1, {"X": "1"})
 
     assert result_map["PATH"] == str(bin1)
 
+
+# --------------------------------------------------------------------------------
 
 def test_off_path_result_passes_when_the_tool_is_only_in_the_agents_dir(tmp_path, bin1):
     other1 = tmp_path / "other1"
@@ -196,6 +228,8 @@ def test_off_path_result_passes_when_the_tool_is_only_in_the_agents_dir(tmp_path
     assert str(bin1) in result.detail
 
 
+# --------------------------------------------------------------------------------
+
 def test_off_path_result_passes_when_the_agents_dir_is_first_on_the_path(bin1):
     write_stand_in(bin1, "tool1", "echo v1")
 
@@ -203,6 +237,8 @@ def test_off_path_result_passes_when_the_agents_dir_is_first_on_the_path(bin1):
 
     assert result.passed
 
+
+# --------------------------------------------------------------------------------
 
 def test_off_path_result_fails_naming_the_found_path_when_the_tool_is_also_elsewhere(tmp_path, bin1):
     other1 = tmp_path / "other1"
@@ -217,6 +253,8 @@ def test_off_path_result_fails_naming_the_found_path_when_the_tool_is_also_elsew
     assert str(other1 / "tool1") in result.hint
     assert hints.rebuild_hint() in result.hint
 
+
+# --------------------------------------------------------------------------------
 
 def test_off_path_result_fails_when_the_tool_is_only_in_another_dir(tmp_path, bin1):
     other1 = tmp_path / "other1"

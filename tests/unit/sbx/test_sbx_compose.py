@@ -48,6 +48,8 @@ def _compose_call_list(recorder):
     return compose_list
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def entry(tmp_path):
     sandbox_dir = tmp_path / "one dir"
@@ -69,6 +71,8 @@ def test_compose_command_builds_the_arguments_for_the_project_of_the_sandbox():
     ]
 
 
+# --------------------------------------------------------------------------------
+
 def test_compose_command_takes_the_sbx_values_from_the_entry_and_the_checked_tag():
     _, environ = compose_command(Entry("sbx1", "/x/one dir", "cursor"), "test", REPO_DIR, ["stop"], AMBIENT_MAP)
 
@@ -78,6 +82,8 @@ def test_compose_command_takes_the_sbx_values_from_the_entry_and_the_checked_tag
     assert environ["SBX_IMAGE_TAG"] == "test"
 
 
+# --------------------------------------------------------------------------------
+
 def test_compose_command_drops_every_compose_key_of_the_caller():
     _, environ = compose_command(Entry("sbx1", "/x/one", "claude"), "local", REPO_DIR, ["stop"], AMBIENT_MAP)
 
@@ -85,11 +91,15 @@ def test_compose_command_drops_every_compose_key_of_the_caller():
         assert not key.startswith("COMPOSE_")
 
 
+# --------------------------------------------------------------------------------
+
 def test_compose_command_keeps_the_other_keys_of_the_caller():
     _, environ = compose_command(Entry("sbx1", "/x/one", "claude"), "local", REPO_DIR, ["stop"], AMBIENT_MAP)
 
     assert environ["PATH"] == "/usr/bin"
 
+
+# --------------------------------------------------------------------------------
 
 def test_compose_command_does_not_change_the_caller_mapping():
     caller_map = dict(AMBIENT_MAP)
@@ -98,6 +108,8 @@ def test_compose_command_does_not_change_the_caller_mapping():
 
     assert caller_map == AMBIENT_MAP
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("agent", ["claude", "cursor"])
 def test_the_ambient_agent_never_reaches_compose_whatever_the_agent_of_the_entry(agent):
@@ -122,6 +134,8 @@ def test_run_compose_passes_the_command_and_its_environment_to_docker(recorder):
     assert recorder.capture_list == [False]
 
 
+# --------------------------------------------------------------------------------
+
 def test_run_compose_returns_what_docker_answered(recorder):
     recorder.answer(["compose"], DockerResult(3, ""))
 
@@ -137,6 +151,8 @@ def test_run_compose_returns_what_docker_answered(recorder):
 def test_check_sandbox_dirs_passes_when_both_directories_exist(entry, registry):
     check_sandbox_dirs(entry, registry)
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("missing_dir", ["sbx1", "state"])
 def test_check_sandbox_dirs_names_the_missing_directory_and_the_entry_file(entry, registry, missing_dir):
@@ -161,6 +177,8 @@ def test_require_docker_passes_when_docker_answers(recorder):
     assert recorder.call_list == [["info"]]
 
 
+# --------------------------------------------------------------------------------
+
 def test_require_docker_refuses_when_docker_does_not_answer(recorder):
     recorder.answer(["info"], DockerResult(1, ""))
 
@@ -169,6 +187,8 @@ def test_require_docker_refuses_when_docker_does_not_answer(recorder):
 
     assert str(error.value) == "cannot reach Docker; is Docker running?"
 
+
+# --------------------------------------------------------------------------------
 
 def test_require_images_asks_docker_before_the_image(recorder, entry):
     recorder.answer(["info"], DockerResult(1, ""))
@@ -180,6 +200,8 @@ def test_require_images_asks_docker_before_the_image(recorder, entry):
     assert recorder.call_list == [["info"]]
 
 
+# --------------------------------------------------------------------------------
+
 def test_require_images_refuses_a_missing_image_with_the_upgrade_advice(recorder, entry):
     recorder.answer(["image", "inspect"], DockerResult(1, ""))
 
@@ -190,6 +212,8 @@ def test_require_images_refuses_a_missing_image_with_the_upgrade_advice(recorder
         "sbx-cursor:local is not built; run: sbx-upgrade sbx1 (it builds the images and starts the sandbox)"
     )
 
+
+# --------------------------------------------------------------------------------
 
 def test_require_images_checks_the_image_of_the_agent_and_the_tag(recorder, entry):
     require_images(recorder, entry, "test")
@@ -227,6 +251,8 @@ def test_bring_up_sandbox_checks_directories_before_any_docker_call(recorder, en
     assert recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_bring_up_sandbox_runs_up_with_the_output_inherited(recorder, entry, registry):
     bring_up_sandbox("sbx-start", recorder, entry, "local", REPO_DIR, registry, {})
 
@@ -236,6 +262,8 @@ def test_bring_up_sandbox_runs_up_with_the_output_inherited(recorder, entry, reg
     assert compose_list[0][-3:] == ["up", "-d", "--wait"]
     assert recorder.capture_list[recorder.call_list.index(compose_list[0])] is False
 
+
+# --------------------------------------------------------------------------------
 
 def test_bring_up_sandbox_warns_before_up_when_the_running_container_is_on_an_older_image(
     recorder, entry, registry, capsys
@@ -252,6 +280,8 @@ def test_bring_up_sandbox_warns_before_up_when_the_running_container_is_on_an_ol
     )
 
 
+# --------------------------------------------------------------------------------
+
 def test_bring_up_sandbox_does_not_warn_when_the_image_is_current(recorder, entry, registry, capsys):
     recorder.answer(RUNNING_PREFIX, DockerResult(0, "true\n"))
     recorder.answer(RUNNING_IMAGE_PREFIX, DockerResult(0, "sha256:same\n"))
@@ -261,6 +291,8 @@ def test_bring_up_sandbox_does_not_warn_when_the_image_is_current(recorder, entr
 
     assert capsys.readouterr().out == ""
 
+
+# --------------------------------------------------------------------------------
 
 def test_bring_up_sandbox_names_the_logs_when_up_fails(recorder, entry, registry):
     recorder.answer(["compose"], DockerResult(1, ""))

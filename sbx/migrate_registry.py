@@ -51,6 +51,8 @@ def _read_old_entry(file: Path) -> tuple[str, str]:
     return path, agent
 
 
+# --------------------------------------------------------------------------------
+
 def _old_file_list(registry: Path) -> list[Path]:
     if not registry.is_dir():
         return []
@@ -74,11 +76,15 @@ def _say(name: str, text: str) -> None:
     print(f"{COMMAND_NAME}: {name}: {text}")
 
 
+# --------------------------------------------------------------------------------
+
 def _not_converted(name: str, reason: str) -> str:
     _say(name, f"not converted: {reason}")
 
     return _FAILED
 
+
+# --------------------------------------------------------------------------------
 
 def _problem_of(name: str, path: str, agent: str) -> str:
     try:
@@ -94,6 +100,8 @@ def _problem_of(name: str, path: str, agent: str) -> str:
 
     return ""
 
+
+# --------------------------------------------------------------------------------
 
 def _convert_one(registry: Path, file: Path) -> str:
     name = file.name
@@ -154,6 +162,8 @@ def _migrate(argument_list: list[str], environ: Mapping[str, str]) -> None:
     if failed_count > 0:
         raise SbxError(f"{failed_count} not converted; see the lines above")
 
+
+# --------------------------------------------------------------------------------
 
 def main(argument_list: list[str], environ: Mapping[str, str] = os.environ, docker: Docker = run_docker) -> int:
     return run_command(COMMAND_NAME, partial(_migrate, argument_list, environ))

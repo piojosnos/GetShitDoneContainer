@@ -23,6 +23,8 @@ def run_git(argument_list: list[str], working_dir: Path) -> None:
     subprocess.run(["git", *argument_list], cwd=working_dir, check=True, capture_output=True)
 
 
+# --------------------------------------------------------------------------------
+
 def make_origin(base_dir: Path) -> Path:
     seed_dir = base_dir / "seed1"
     (seed_dir / "rules").mkdir(parents=True)
@@ -37,6 +39,8 @@ def make_origin(base_dir: Path) -> Path:
 
     return origin_dir
 
+
+# --------------------------------------------------------------------------------
 
 def make_sandbox(base_dir: Path, init_status: int = 0) -> dict:
     stand_in_dir = base_dir / "stand-ins"
@@ -55,6 +59,8 @@ def make_sandbox(base_dir: Path, init_status: int = 0) -> dict:
     }
 
 
+# --------------------------------------------------------------------------------
+
 def run_clone(sandbox: dict, origin_url: str):
     environment = dict(sandbox["environment"])
     environment["BEST_PRACTICES_REPO_URL"] = origin_url
@@ -69,6 +75,8 @@ def run_clone(sandbox: dict, origin_url: str):
         timeout=60,
     )
 
+
+# --------------------------------------------------------------------------------
 
 def init_run_count(sandbox: dict) -> int:
     if not sandbox["init_log_file"].exists():
@@ -91,6 +99,8 @@ def test_a_clone_is_followed_by_one_sbx_init_run_and_exits_zero(tmp_path):
     assert (sandbox["clone_dir"] / "rules" / "rule1.md").read_text() == "rule1\n"
     assert init_run_count(sandbox) == 1
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_exit_status_is_the_one_of_sbx_init(tmp_path):
     origin_dir = make_origin(tmp_path)

@@ -96,6 +96,8 @@ def _run_installer(
     return _outcome_result(process.returncode, timed_out, config_dir, time_limit_seconds, log_file)
 
 
+# --------------------------------------------------------------------------------
+
 def _wait_or_stop(process: subprocess.Popen, time_limit_seconds: int) -> bool:
     try:
         process.wait(timeout=time_limit_seconds)
@@ -106,6 +108,8 @@ def _wait_or_stop(process: subprocess.Popen, time_limit_seconds: int) -> bool:
 
     return False
 
+
+# --------------------------------------------------------------------------------
 
 def _kill_group(process: subprocess.Popen) -> None:
     try:
@@ -147,6 +151,8 @@ def _outcome_result(
 
     return passed(f"the GSD installer finished into {config_dir}")
 
+
+# --------------------------------------------------------------------------------
 
 def _last_line(log_file: Path) -> str:
     last_line = ""

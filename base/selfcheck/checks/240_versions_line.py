@@ -33,6 +33,8 @@ def _first_lines(text: str) -> str:
     return " / ".join(line_list[:_FIRST_LINES_LIMIT])
 
 
+# --------------------------------------------------------------------------------
+
 def versions_record_result(versions_file: Path = VERSIONS_FILE) -> CheckResult:
     if not versions_file.is_file():
         return failed(f"{versions_file} is missing", rebuild_hint())
@@ -91,6 +93,8 @@ def _history_free_environment(environment_map: Mapping[str, str] = os.environ) -
     return history_free_environment_map
 
 
+# --------------------------------------------------------------------------------
+
 def interactive_versions_line_result(
     versions_line_file: Path = TOOL_VERSIONS_FILE,
     environment_map: Mapping[str, str] = os.environ,
@@ -133,9 +137,13 @@ def _check_versions_line_file() -> CheckResult:
     return versions_line_file_result()
 
 
+# --------------------------------------------------------------------------------
+
 def _check_versions_line_interactive() -> CheckResult:
     return interactive_versions_line_result()
 
+
+# --------------------------------------------------------------------------------
 
 def _check_versions_line_quiet() -> CheckResult:
     return quiet_shells_result()

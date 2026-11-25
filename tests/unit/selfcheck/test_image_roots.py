@@ -24,10 +24,14 @@ def test_the_sbx_commands_are_the_files_with_the_prefix_and_nothing_else_in_the_
     assert image_roots.sbx_command_list(tmp_path / "bin1") == [tmp_path / "bin1" / "sbx-a", tmp_path / "bin1" / "sbx-b"]
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_dir_without_sbx_commands_gives_no_roots_but_the_dirs(tmp_path):
     assert image_roots.sbx_command_list(tmp_path / "missing1") == []
     assert image_roots.base_root_list(tmp_path / "missing1") == image_roots.BASE_DIR_LIST
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_base_roots_are_the_library_dirs_the_config_dir_the_agents_dir_and_the_sbx_commands(tmp_path):
     write_file(tmp_path / "bin1" / "sbx-a")
@@ -41,6 +45,8 @@ def test_the_base_roots_are_the_library_dirs_the_config_dir_the_agents_dir_and_t
     ]
 
 
+# --------------------------------------------------------------------------------
+
 def test_both_launchers_are_listed():
     assert image_roots.LAUNCHER_FILE_LIST == [
         Path("/usr/local/lib/sbx-selfcheck/sbx-selfcheck"),
@@ -48,9 +54,13 @@ def test_both_launchers_are_listed():
     ]
 
 
+# --------------------------------------------------------------------------------
+
 def test_no_start_hook_dir_is_left_in_the_roots():
     assert not hasattr(image_roots, "HOOK_DIR")
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_ownership_check_and_the_protected_paths_check_share_the_base_roots():
     assert image_root_owned.base_root_list is image_roots.base_root_list

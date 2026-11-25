@@ -37,6 +37,8 @@ def test_git_identity_fails_for_an_empty_config_and_then_passes_without_printing
     assert "name1" not in set_result.detail.replace("user.name", "")
 
 
+# --------------------------------------------------------------------------------
+
 def test_git_identity_names_only_the_empty_one(tmp_path):
     global1 = tmp_path / "global1"
     environment1 = git_environment(tmp_path / "system1", global1)

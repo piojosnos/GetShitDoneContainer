@@ -35,6 +35,8 @@ class BuildStub:
         self.docker_call_count_list: list[int] = []
         self.repo_dir_list: list[Path] = []
 
+    # --------------------------------------------------------------------------------
+
     def __call__(self, option_list, environ, docker, repo_dir) -> int:
         self.option_list_list.append(list(option_list))
         self.docker_call_count_list.append(len(self.recorder.call_list))
@@ -43,6 +45,8 @@ class BuildStub:
 
         return self.exit_code
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def sandbox_dir(registry, tmp_path):
@@ -54,10 +58,14 @@ def sandbox_dir(registry, tmp_path):
     return project_dir
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def build_stub(recorder) -> BuildStub:
     return BuildStub(recorder)
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def run_upgrade(config_dir, recorder, build_stub, capsys):
@@ -72,6 +80,8 @@ def run_upgrade(config_dir, recorder, build_stub, capsys):
 
     return run
 
+
+# --------------------------------------------------------------------------------
 
 def _compose_call_list(recorder):
     compose_list = []
@@ -97,6 +107,8 @@ def test_no_argument_prints_the_usage_and_does_not_build(run_upgrade, build_stub
     assert recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_an_unregistered_name_is_refused_before_the_build(run_upgrade, build_stub, recorder):
     exit_code, out, err = run_upgrade(["nosuch"])
 
@@ -107,6 +119,8 @@ def test_an_unregistered_name_is_refused_before_the_build(run_upgrade, build_stu
     assert recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("name", ["../x", "Demo", "ok\nbad"])
 def test_a_name_that_breaks_the_rule_is_refused_before_the_build(name, run_upgrade, build_stub, recorder):
     exit_code, _, err = run_upgrade([name, "--no-cache"])
@@ -116,6 +130,8 @@ def test_a_name_that_breaks_the_rule_is_refused_before_the_build(name, run_upgra
     assert build_stub.option_list_list == []
     assert recorder.call_list == []
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("missing_dir", ["sbx1", "state"])
 def test_a_missing_directory_is_refused_before_the_build(
@@ -135,6 +151,8 @@ def test_a_missing_directory_is_refused_before_the_build(
     assert recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_broken_entry_is_refused_with_its_own_error_before_the_build(run_upgrade, registry, build_stub, recorder):
     (registry / "sbx1.json").write_text("[]")
 
@@ -144,6 +162,8 @@ def test_a_broken_entry_is_refused_with_its_own_error_before_the_build(run_upgra
     assert err == f"sbx-upgrade: the entry {registry / 'sbx1.json'} is not a JSON object\n"
     assert build_stub.option_list_list == []
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_tag_other_than_local_or_test_is_refused_first(run_upgrade, sandbox_dir, build_stub, recorder):
     exit_code, out, err = run_upgrade(["sbx1"], {"SBX_IMAGE_TAG": "latest"})
@@ -166,6 +186,8 @@ def test_a_stopped_sandbox_is_not_warned(run_upgrade, sandbox_dir, build_stub, r
     assert "will close its open shells" not in out
 
 
+# --------------------------------------------------------------------------------
+
 def test_build_options_after_the_name_reach_the_build_in_order(run_upgrade, sandbox_dir, build_stub, recorder):
     run_upgrade(["sbx1", "--no-cache", "--pull"])
 
@@ -173,11 +195,15 @@ def test_build_options_after_the_name_reach_the_build_in_order(run_upgrade, sand
     assert build_stub.repo_dir_list == [REPO_DIR]
 
 
+# --------------------------------------------------------------------------------
+
 def test_no_option_means_an_empty_option_list(run_upgrade, sandbox_dir, build_stub, recorder):
     run_upgrade(["sbx1"])
 
     assert build_stub.option_list_list == [[]]
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_failed_build_leaves_the_sandbox_alone_and_makes_no_compose_call(run_upgrade, sandbox_dir, recorder):
     failing_stub = BuildStub(recorder, exit_code=1)
@@ -190,6 +216,8 @@ def test_a_failed_build_leaves_the_sandbox_alone_and_makes_no_compose_call(run_u
     assert _compose_call_list(recorder) == []
     assert not any(call[0] in ("exec", "stop", "rm") for call in recorder.call_list)
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_default_build_function_is_the_build_module_main():
     parameter = inspect.signature(upgrade_module.main).parameters["build_function"]
@@ -211,6 +239,8 @@ def test_a_failing_up_after_the_build_names_the_logs(run_upgrade, sandbox_dir, b
     assert "runs on the new images" not in out
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_failing_tool_versions_read_is_named(run_upgrade, sandbox_dir, build_stub, recorder):
     recorder.answer(VERSIONS_PREFIX, DockerResult(1, ""))
 
@@ -219,6 +249,8 @@ def test_a_failing_tool_versions_read_is_named(run_upgrade, sandbox_dir, build_s
     assert exit_code == 1
     assert err == "sbx-upgrade: could not read /etc/sbx/tool-versions in sbx-sbx1\n"
 
+
+# --------------------------------------------------------------------------------
 
 def test_upgrade_never_deletes_or_stops_anything(run_upgrade, sandbox_dir, build_stub, recorder, registry):
     run_upgrade(["sbx1"])

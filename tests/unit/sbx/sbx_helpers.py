@@ -29,8 +29,12 @@ class DockerRecorder:
         self.capture_list: list[bool] = []
         self._answer_map: dict[tuple[str, ...], DockerResult] = {}
 
+    # --------------------------------------------------------------------------------
+
     def answer(self, prefix_list: list[str], result: DockerResult) -> None:
         self._answer_map[tuple(prefix_list)] = result
+
+    # --------------------------------------------------------------------------------
 
     def __call__(
         self,
@@ -68,6 +72,8 @@ def environ_for(config: Path, extra_map: dict[str, str] | None = None) -> dict[s
 
     return environ
 
+
+# --------------------------------------------------------------------------------
 
 def write_json_entry(registry: Path, name: str, path: str, agent: str) -> Path:
     registry.mkdir(parents=True, exist_ok=True)

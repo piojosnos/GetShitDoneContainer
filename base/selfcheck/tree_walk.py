@@ -28,6 +28,8 @@ class ProblemKind(Enum):
     UNREADABLE_DIR = "unreadable"
 
 
+# --------------------------------------------------------------------------------
+
 @dataclass(frozen=True)
 class WalkProblem:
     path: Path
@@ -49,6 +51,8 @@ def walk_tree(root_list: list[Path], on_entry: EntryHook) -> list[WalkProblem]:
 
     return problem_list
 
+
+# --------------------------------------------------------------------------------
 
 def _walk_root(root: Path, on_entry: EntryHook, problem_list: list[WalkProblem]) -> None:
     try:
@@ -72,6 +76,8 @@ def _walk_root(root: Path, on_entry: EntryHook, problem_list: list[WalkProblem])
     for current_dir, dir_name_list, file_name_list in root.walk(on_error=on_error, follow_symlinks=False):
         dir_name_list[:] = _visit_dir(current_dir, dir_name_list + file_name_list, on_entry, problem_list)
 
+
+# --------------------------------------------------------------------------------
 
 def _visit_dir(
     current_dir: Path,

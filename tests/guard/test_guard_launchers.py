@@ -37,6 +37,8 @@ def _git_mode(name: str) -> str:
     return fields[0]
 
 
+# --------------------------------------------------------------------------------
+
 def _launcher_problem_list(path) -> list[str]:
     name = relative_name(path)
     line_value_list = path.read_text(encoding="utf-8", errors="replace").splitlines()
@@ -110,6 +112,8 @@ def _tracked_name_list(directory: str) -> list[str]:
     return completed.stdout.splitlines()
 
 
+# --------------------------------------------------------------------------------
+
 def _root_script_problem_list(launcher_name_list: list[str]) -> list[str]:
     problem_list = []
 
@@ -126,6 +130,8 @@ def _root_script_problem_list(launcher_name_list: list[str]) -> list[str]:
     return problem_list
 
 
+# --------------------------------------------------------------------------------
+
 def _tests_shell_problem_list() -> list[str]:
     problem_list = []
 
@@ -138,6 +144,8 @@ def _tests_shell_problem_list() -> list[str]:
 
     return problem_list
 
+
+# --------------------------------------------------------------------------------
 
 def test_no_host_logic_in_shell():
     launcher_name_list = relative_name_list(launcher_list())

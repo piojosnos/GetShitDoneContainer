@@ -35,6 +35,8 @@ def _sorted_text_list(value: object) -> list[str] | None:
     return sorted(text_list)
 
 
+# --------------------------------------------------------------------------------
+
 def managed_settings_result(
     settings_file: Path = _MANAGED_SETTINGS_FILE,
     config_dir: Path = AGENT_CONFIG_DIR,

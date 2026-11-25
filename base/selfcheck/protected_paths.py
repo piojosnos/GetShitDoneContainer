@@ -33,6 +33,8 @@ def _writable_entry_problem_list(path: Path) -> list[str]:
     return problem_list
 
 
+# --------------------------------------------------------------------------------
+
 def _mount_point_problem_list(path: Path, mount_point_found_set: set[str]) -> list[str]:
     problem_list = []
 
@@ -42,6 +44,8 @@ def _mount_point_problem_list(path: Path, mount_point_found_set: set[str]) -> li
 
     return problem_list
 
+
+# --------------------------------------------------------------------------------
 
 def _protected_paths_problem_list(path_list: list[Path], mount_point_found_set: set[str]) -> list[str]:
     problem_list = []

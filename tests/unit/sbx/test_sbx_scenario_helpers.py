@@ -53,6 +53,8 @@ def process_is_alive(pid: int) -> bool:
     return completed.returncode == 0 and state != "" and not state.startswith("Z")
 
 
+# --------------------------------------------------------------------------------
+
 def wait_until_gone(pid: int, seconds: float) -> bool:
     deadline = time.monotonic() + seconds
 
@@ -77,6 +79,8 @@ def test_a_failing_step_adds_the_step_name_as_a_note_and_reraises():
     assert raised.value.__notes__ == ["STEP FAILED: upgrade"]
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_passing_step_adds_nothing():
     with step("upgrade"):
         value = 1 + 1
@@ -100,17 +104,23 @@ def test_run_timeout_returns_the_code_and_both_streams():
     assert result.timed_out is False
 
 
+# --------------------------------------------------------------------------------
+
 def test_run_timeout_hands_the_stdin_text_to_the_command():
     result = run_timeout([sys.executable, "-c", "import sys; print(sys.stdin.read().upper())"], 30, stdin="abc")
 
     assert result.stdout == "ABC\n"
 
 
+# --------------------------------------------------------------------------------
+
 def test_run_timeout_closes_stdin_when_none_is_given():
     result = run_timeout([sys.executable, "-c", "import sys; print(repr(sys.stdin.read()))"], 30)
 
     assert result.stdout == "''\n"
 
+
+# --------------------------------------------------------------------------------
 
 def test_run_timeout_stops_the_whole_group_so_no_grandchild_keeps_running():
     started = time.monotonic()
@@ -125,6 +135,8 @@ def test_run_timeout_stops_the_whole_group_so_no_grandchild_keeps_running():
     assert wait_until_gone(sleep_pid, 5)
 
 
+# --------------------------------------------------------------------------------
+
 def test_run_timeout_reports_a_command_that_cannot_start_as_exit_127(tmp_path):
     result = run_timeout([str(tmp_path / "no-such-command")], 30)
 
@@ -132,6 +144,8 @@ def test_run_timeout_reports_a_command_that_cannot_start_as_exit_127(tmp_path):
     assert result.timed_out is False
     assert "no-such-command" in result.stderr
 
+
+# --------------------------------------------------------------------------------
 
 def test_run_sbx_finds_the_command_on_the_path_of_the_environment_it_is_given(tmp_path):
     bin_dir = tmp_path / "bin1"
@@ -169,6 +183,8 @@ def test_run_streamed_echoes_and_logs_every_line_merged_and_returns_the_code(tmp
     assert sorted(output.getvalue().splitlines()) == ["one", "two"]
 
 
+# --------------------------------------------------------------------------------
+
 def test_run_streamed_leaves_the_real_terminal_empty_and_fills_the_injected_stream(tmp_path, capfd):
     output = io.StringIO()
 
@@ -180,6 +196,8 @@ def test_run_streamed_leaves_the_real_terminal_empty_and_fills_the_injected_stre
     assert captured.err == ""
     assert output.getvalue() == "one\n"
 
+
+# --------------------------------------------------------------------------------
 
 def test_run_streamed_stops_the_group_on_a_timeout(tmp_path):
     started = time.monotonic()
@@ -219,11 +237,15 @@ def test_a_result_is_described_with_its_code_and_both_streams():
     assert describe_result(result) == "exit 3\nstdout: out1\nstderr: err1"
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_timed_out_result_says_so():
     result = CommandResult(-9, "", "", True)
 
     assert describe_result(result).startswith("exit -9 (timed out)")
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_container_docker_does_not_know_is_not_running_and_has_no_id():
     assert not container_is_running("sbx-no-such-container-1")
@@ -250,6 +272,8 @@ def command_environ(config_dir: Path) -> dict[str, str]:
     return environ
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_throwaway_sandbox_is_named_by_story_and_agent_and_its_directory_has_a_space(tmp_path):
     sandbox1 = throwaway_sandbox("life", CLAUDE_SPEC, tmp_path)
     sandbox2 = throwaway_sandbox("life", CURSOR_SPEC, tmp_path)
@@ -263,6 +287,8 @@ def test_a_throwaway_sandbox_is_named_by_story_and_agent_and_its_directory_has_a
     assert sandbox2.name == "hosttest-life-cursor"
     assert sandbox2.sandbox_dir != sandbox1.sandbox_dir
 
+
+# --------------------------------------------------------------------------------
 
 def test_register_sandbox_runs_the_real_sbx_add_and_puts_the_name_on_the_cleanup_list_once(tmp_path):
     config1 = tmp_path / "cfg"
@@ -279,6 +305,8 @@ def test_register_sandbox_runs_the_real_sbx_add_and_puts_the_name_on_the_cleanup
     assert cleanup_list == ["hosttest-life-cursor"]
 
 
+# --------------------------------------------------------------------------------
+
 def test_register_sandbox_adds_nothing_to_the_cleanup_list_when_sbx_add_refuses(tmp_path):
     environ1 = command_environ(tmp_path / "cfg")
     sandbox1 = throwaway_sandbox("life", CLAUDE_SPEC, tmp_path)
@@ -293,6 +321,8 @@ def test_register_sandbox_adds_nothing_to_the_cleanup_list_when_sbx_add_refuses(
     assert "is already registered" in second.stderr
     assert cleanup_list == []
 
+
+# --------------------------------------------------------------------------------
 
 def test_register_sandbox_keeps_one_cleanup_entry_when_the_sandbox_is_added_again(tmp_path):
     environ1 = command_environ(tmp_path / "cfg")
@@ -323,13 +353,19 @@ def selfcheck_output(pass_count: int, extra_line_list: list[str]) -> str:
     return "\n".join(line_list) + "\n"
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_clean_output_with_the_expected_count_has_no_problem():
     assert selfcheck_problem_list(selfcheck_output(3, []), 3) == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_wrong_count_is_a_problem():
     assert selfcheck_problem_list(selfcheck_output(2, []), 3) == ["2 check lines, expected 3"]
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_fail_line_is_listed_with_its_fix_line():
     output = selfcheck_output(2, ["FAIL: git-identity: no user.name", "      fix: git config --global user.name NAME"])
@@ -339,17 +375,23 @@ def test_a_fail_line_is_listed_with_its_fix_line():
     assert problem_list == ["FAIL: git-identity: no user.name\n      fix: git config --global user.name NAME"]
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_fail_line_without_a_fix_line_is_still_listed():
     output = selfcheck_output(2, ["FAIL: git-identity: no user.name"])
 
     assert selfcheck_problem_list(output, 3) == ["FAIL: git-identity: no user.name"]
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_line_that_is_none_of_the_known_kinds_is_a_problem():
     output = selfcheck_output(3, ["Traceback (most recent call last):"])
 
     assert selfcheck_problem_list(output, 3) == ["unexpected line: Traceback (most recent call last):"]
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_pass_line_saying_no_root_certificate_was_requested_is_a_problem():
     output = "PASS: extra-ca-system-bundle: no extra root certificate requested\nsbx-selfcheck: 1 checks, 0 failed\n"
@@ -377,9 +419,13 @@ def test_the_root_certificate_is_made_valid_with_a_fingerprint_and_its_key_is_go
     assert len(certificate_fingerprint(cert_file)) == 64
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_fingerprint_of_a_missing_file_is_empty(tmp_path):
     assert certificate_fingerprint(tmp_path / "missing.pem") == ""
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_file_that_is_not_a_certificate_is_not_valid(tmp_path):
     bad_file = Path(tmp_path) / "bad.pem"

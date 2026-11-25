@@ -47,6 +47,8 @@ def _stop_sandbox(argument_list: list[str], environ: Mapping[str, str], docker: 
     print(f"{COMMAND_NAME}: {container_name(name)} is stopped; nothing in {entry.path} was changed")
 
 
+# --------------------------------------------------------------------------------
+
 def main(
     argument_list: list[str],
     environ: Mapping[str, str] = os.environ,

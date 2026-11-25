@@ -24,6 +24,8 @@ def test_hint_builders_name_the_sandbox_from_sbx_name():
     assert hints.init_hint(environment1).startswith("run sbx-init in the sandbox shell")
 
 
+# --------------------------------------------------------------------------------
+
 def test_hint_builders_say_name_when_sbx_name_is_unset_or_empty():
     assert hints.rebuild_hint({}).endswith("on the host run: sbx-upgrade NAME")
     assert hints.restart_hint({}).endswith("sbx-stop NAME, then sbx-start NAME")
@@ -33,9 +35,13 @@ def test_hint_builders_say_name_when_sbx_name_is_unset_or_empty():
     assert hints.init_hint({}).endswith("sbx-shell NAME opens it")
 
 
+# --------------------------------------------------------------------------------
+
 def test_host_hint_puts_the_action_before_the_command():
     assert hints.host_hint("do action1", "command1") == "do action1: on the host run: command1"
 
+
+# --------------------------------------------------------------------------------
 
 def test_state_writable_hint_names_the_fix_and_no_sandbox():
     assert hints.state_writable_hint() == (

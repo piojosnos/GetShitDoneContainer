@@ -27,6 +27,8 @@ def test_self_update_result_passes_for_the_static_channel_and_names_no_other_key
     assert "other1" not in result.detail + result.hint
 
 
+# --------------------------------------------------------------------------------
+
 def test_self_update_result_fails_for_another_channel_bad_text_and_a_missing_file(tmp_path):
     stable1 = tmp_path / "stable1.json"
     stable1.write_text(json.dumps({"channel": "stable", "other1": 1}))

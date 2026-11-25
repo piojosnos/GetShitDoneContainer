@@ -100,6 +100,8 @@ def layout1(tmp_path) -> dict[str, Path]:
     return layout
 
 
+# --------------------------------------------------------------------------------
+
 def run_launcher(layout: dict[str, Path], argument_list: list[str], state_dirs_text: str = "") -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, "-I", str(layout["launcher"])] + argument_list,
@@ -125,6 +127,8 @@ def test_an_argument_exits_two_with_the_usage_line_and_touches_no_file(layout1):
     assert not layout1["lock"].exists()
     assert not layout1["state"].exists()
 
+
+# --------------------------------------------------------------------------------
 
 def test_one_run_makes_the_state_dirs_runs_the_agent_step_gives_state_back_and_writes_the_marker(layout1):
     completed = run_launcher(layout1, [], "cache/npm claude")
@@ -160,12 +164,16 @@ def wait_for_text_file(text_file: Path, deadline_seconds: float) -> str:
     raise AssertionError(f"{text_file} was not written within {deadline_seconds} s")
 
 
+# --------------------------------------------------------------------------------
+
 def kill_group_quietly(group_id: int) -> None:
     try:
         os.killpg(group_id, signal.SIGKILL)
     except (ProcessLookupError, PermissionError):
         pass
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
     "signal_number",

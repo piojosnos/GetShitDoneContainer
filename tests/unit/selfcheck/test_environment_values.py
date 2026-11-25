@@ -19,6 +19,8 @@ def test_environment_values_result_passes_for_a_matching_mapping():
     assert result.detail == "VAR1=value1, VAR2=value2"
 
 
+# --------------------------------------------------------------------------------
+
 def test_environment_values_result_names_each_wrong_or_missing_variable():
     result = environment_values.environment_values_result(
         {"VAR1": "value1", "VAR2": "value2", "VAR3": "value3"},

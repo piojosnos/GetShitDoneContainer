@@ -69,6 +69,8 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
+# --------------------------------------------------------------------------------
+
 def _keep(request: pytest.FixtureRequest) -> bool:
     return bool(request.config.getoption("--keep"))
 
@@ -86,10 +88,14 @@ def _describe(result: CommandResult) -> str:
     return f"{text}\nstdout: {result.stdout.strip()}\nstderr: {result.stderr.strip()}"
 
 
+# --------------------------------------------------------------------------------
+
 def _require_success(result: CommandResult, what: str) -> None:
     if result.returncode != 0 or result.timed_out:
         pytest.fail(f"{what} failed: {_describe(result)}", pytrace=False)
 
+
+# --------------------------------------------------------------------------------
 
 def _git_environ() -> dict[str, str]:
     environ = dict(os.environ)
@@ -306,6 +312,8 @@ def _workspace_mount_source(inspected: dict) -> str:
 
     return ""
 
+
+# --------------------------------------------------------------------------------
 
 def _remove_leftover_container(name: str, container: str) -> None:
     inspected = inspect_container(container)

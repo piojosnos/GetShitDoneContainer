@@ -23,6 +23,8 @@ def test_user_passes_for_the_running_user_and_prints_its_ids():
     assert result.detail == f"uid {os.getuid()}, gid {os.getgid()}, name {name}"
 
 
+# --------------------------------------------------------------------------------
+
 def test_user_fails_with_the_shell_hint_for_another_uid():
     result = user._user_result(os.getuid() + 1, os.getgid(), user.user_name_of(os.getuid()))
 

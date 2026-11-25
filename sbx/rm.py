@@ -46,6 +46,8 @@ class Request:
     skip_confirmation: bool
 
 
+# --------------------------------------------------------------------------------
+
 def _parse_arguments(argument_list: list[str]) -> Request:
     if len(argument_list) < 1 or len(argument_list) > _MAX_ARGUMENT_COUNT:
         raise UsageError(_USAGE_TEXT)
@@ -156,6 +158,8 @@ def _require_sandbox_label(docker: Docker, name: str) -> None:
         )
 
 
+# --------------------------------------------------------------------------------
+
 def _remove_broken_sandbox(
     docker: Docker,
     request: Request,
@@ -232,6 +236,8 @@ def _read_entry_or_problem(registry: Path, name: str) -> tuple[Entry | None, Sbx
         return None, problem
 
 
+# --------------------------------------------------------------------------------
+
 def _remove_sandbox(
     argument_list: list[str],
     environ: Mapping[str, str],
@@ -264,6 +270,8 @@ def _remove_sandbox(
 
     print(f"{COMMAND_NAME}: the container {container_name(request.name)} is gone; nothing in {dir_text} was changed")
 
+
+# --------------------------------------------------------------------------------
 
 def main(
     argument_list: list[str],

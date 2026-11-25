@@ -22,6 +22,8 @@ def test_safe_directory_passes_when_the_system_file_trusts_every_dir(tmp_path):
     assert result.passed
 
 
+# --------------------------------------------------------------------------------
+
 def test_safe_directory_fails_when_the_system_file_trusts_one_dir(tmp_path):
     system1 = tmp_path / "system1"
     system1.write_text("[safe]\n\tdirectory = /dir1\n")
@@ -31,6 +33,8 @@ def test_safe_directory_fails_when_the_system_file_trusts_one_dir(tmp_path):
     assert not result.passed
     assert "on the host run: sbx-upgrade" in result.hint
 
+
+# --------------------------------------------------------------------------------
 
 def test_safe_directory_fails_when_the_system_file_is_empty(tmp_path):
     system1 = tmp_path / "system1"

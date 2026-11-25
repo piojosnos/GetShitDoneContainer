@@ -46,6 +46,8 @@ def cursor_version_result(
         shutil.rmtree(throwaway_home, ignore_errors=True)
 
 
+# --------------------------------------------------------------------------------
+
 def cursor_off_path_result(
     agent_bin_dir: Path = AGENT_BIN_DIR,
     environment_map: Mapping[str, str] = os.environ,
@@ -65,6 +67,8 @@ def _check_tool_cursor_agent() -> CheckResult:
 
     return cursor_version_result(pin_map["CURSOR_AGENT_VERSION"])
 
+
+# --------------------------------------------------------------------------------
 
 def _check_cursor_off_path() -> CheckResult:
     return cursor_off_path_result()

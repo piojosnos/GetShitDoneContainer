@@ -29,6 +29,8 @@ def test_home_links_result_passes_when_each_link_holds_its_target_text(tmp_path)
     assert str(link2) in result.detail
 
 
+# --------------------------------------------------------------------------------
+
 def test_home_links_result_fails_for_a_dir_in_place_of_a_link_and_for_another_target(tmp_path):
     target1 = tmp_path / "target1"
     target2 = tmp_path / "target2"

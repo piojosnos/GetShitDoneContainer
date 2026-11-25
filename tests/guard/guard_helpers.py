@@ -32,18 +32,26 @@ def _glob_list(pattern: str) -> list[Path]:
     return file_list
 
 
+# --------------------------------------------------------------------------------
+
 def _first_line(path: Path) -> str:
     with open(path, encoding="utf-8", errors="replace") as handle:
         return handle.readline().rstrip("\n")
 
 
+# --------------------------------------------------------------------------------
+
 def dockerfile_list() -> list[Path]:
     return _glob_list("base/Dockerfile") + _glob_list("claude/Dockerfile") + _glob_list("cursor/Dockerfile")
 
 
+# --------------------------------------------------------------------------------
+
 def compose_file() -> Path:
     return REPO_DIR / "compose.yml"
 
+
+# --------------------------------------------------------------------------------
 
 def launcher_list() -> list[Path]:
     launcher_file_list = _glob_list("bin/*")
@@ -57,9 +65,13 @@ def launcher_list() -> list[Path]:
     return launcher_file_list
 
 
+# --------------------------------------------------------------------------------
+
 def image_script_list() -> list[Path]:
     return _glob_list("base/bin/*") + _glob_list("claude/bin/*") + _glob_list("cursor/bin/*")
 
+
+# --------------------------------------------------------------------------------
 
 def shell_file_list() -> list[Path]:
     shell_list = []
@@ -74,9 +86,13 @@ def shell_file_list() -> list[Path]:
     return shell_list
 
 
+# --------------------------------------------------------------------------------
+
 def host_python_list() -> list[Path]:
     return _glob_list("sbx/*.py")
 
+
+# --------------------------------------------------------------------------------
 
 def test_python_list() -> list[Path]:
     python_list = []
@@ -107,9 +123,13 @@ def sandbox_file_list() -> list[Path]:
     return sandbox_list
 
 
+# --------------------------------------------------------------------------------
+
 def relative_name(path: Path) -> str:
     return str(path.relative_to(REPO_DIR))
 
+
+# --------------------------------------------------------------------------------
 
 def relative_name_list(path_list: list[Path]) -> list[str]:
     name_list = []
@@ -119,6 +139,8 @@ def relative_name_list(path_list: list[Path]) -> list[str]:
 
     return name_list
 
+
+# --------------------------------------------------------------------------------
 
 def line_list(path: Path) -> list[str]:
     return path.read_text(encoding="utf-8", errors="replace").splitlines()
@@ -182,6 +204,8 @@ def run_linter(tool: str, argument_list: list[str]) -> tuple[int, str]:
     return 1, f"{tool} is not installed here and {_LINTER_IMAGE} is missing; ./host-test.sh builds it"
 
 
+# --------------------------------------------------------------------------------
+
 def _test_image_exists() -> bool:
     if not shutil.which("docker"):
         return False
@@ -190,6 +214,8 @@ def _test_image_exists() -> bool:
 
     return status == 0
 
+
+# --------------------------------------------------------------------------------
 
 def _run(command_list: list[str]) -> tuple[int, str]:
     completed = subprocess.run(

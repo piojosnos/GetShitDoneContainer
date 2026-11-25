@@ -22,14 +22,20 @@ class ExecRecorder:
     def __init__(self) -> None:
         self.call_list: list[tuple[str, list[str], dict[str, str]]] = []
 
+    # --------------------------------------------------------------------------------
+
     def __call__(self, file: str, argument_list: list[str], environ: dict[str, str]) -> None:
         self.call_list.append((file, list(argument_list), dict(environ)))
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def exec_recorder() -> ExecRecorder:
     return ExecRecorder()
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def sandbox_dir(registry, tmp_path):
@@ -40,6 +46,8 @@ def sandbox_dir(registry, tmp_path):
 
     return project_dir
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def run_shell(config_dir, recorder, exec_recorder, capsys):
@@ -54,6 +62,8 @@ def run_shell(config_dir, recorder, exec_recorder, capsys):
 
     return run
 
+
+# --------------------------------------------------------------------------------
 
 def _compose_call_list(recorder):
     compose_list = []
@@ -80,6 +90,8 @@ def test_a_wrong_argument_count_prints_the_usage_and_does_nothing(run_shell, rec
     assert exec_recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_an_unregistered_name_is_refused_with_the_add_advice(run_shell, exec_recorder):
     exit_code, _, err = run_shell(["nosuch"])
 
@@ -87,6 +99,8 @@ def test_an_unregistered_name_is_refused_with_the_add_advice(run_shell, exec_rec
     assert err == "sbx-shell: nosuch is not registered; run: sbx-add nosuch HOST_PATH\n"
     assert exec_recorder.call_list == []
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("name", ["../x", "Demo", "", "ok\nbad"])
 def test_a_name_that_breaks_the_rule_is_refused_before_docker(run_shell, recorder, exec_recorder, name):
@@ -98,6 +112,8 @@ def test_a_name_that_breaks_the_rule_is_refused_before_docker(run_shell, recorde
     assert exec_recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_tag_other_than_local_or_test_is_refused_first(run_shell, sandbox_dir, recorder, exec_recorder):
     exit_code, _, err = run_shell(["sbx1"], {"SBX_IMAGE_TAG": "latest"})
 
@@ -106,6 +122,8 @@ def test_a_tag_other_than_local_or_test_is_refused_first(run_shell, sandbox_dir,
     assert recorder.call_list == []
     assert exec_recorder.call_list == []
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("missing_dir", ["sbx1", "state"])
 def test_a_missing_directory_is_refused_before_compose_and_the_exec(
@@ -124,6 +142,8 @@ def test_a_missing_directory_is_refused_before_compose_and_the_exec(
     assert exec_recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_docker_not_answering_is_refused_before_compose_and_the_exec_without_upgrade_advice(
     run_shell, sandbox_dir, recorder, exec_recorder
 ):
@@ -138,6 +158,8 @@ def test_docker_not_answering_is_refused_before_compose_and_the_exec_without_upg
     assert exec_recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_missing_image_is_refused_before_compose_and_the_exec(run_shell, sandbox_dir, recorder, exec_recorder):
     recorder.answer(["image", "inspect"], DockerResult(1, ""))
 
@@ -148,6 +170,8 @@ def test_a_missing_image_is_refused_before_compose_and_the_exec(run_shell, sandb
     assert _compose_call_list(recorder) == []
     assert exec_recorder.call_list == []
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_failing_up_is_refused_before_the_exec(run_shell, sandbox_dir, recorder, exec_recorder):
     recorder.answer(["compose"], DockerResult(1, ""))
@@ -181,6 +205,8 @@ def test_a_running_sandbox_never_calls_compose_and_ends_in_one_exec_of_docker_ex
     assert argument_list == EXEC_ARGUMENT_LIST
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_stopped_sandbox_is_brought_up_and_then_the_same_exec_runs(run_shell, sandbox_dir, recorder, exec_recorder):
     recorder.answer(RUNNING_PREFIX, DockerResult(0, "false\n"))
 
@@ -195,6 +221,8 @@ def test_a_stopped_sandbox_is_brought_up_and_then_the_same_exec_runs(run_shell, 
     assert exec_recorder.call_list[0][1] == EXEC_ARGUMENT_LIST
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_sandbox_with_no_container_is_brought_up_and_then_the_exec_runs(
     run_shell, sandbox_dir, recorder, exec_recorder
 ):
@@ -206,6 +234,8 @@ def test_a_sandbox_with_no_container_is_brought_up_and_then_the_exec_runs(
     assert len(exec_recorder.call_list) == 1
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_exec_gets_the_environment_of_the_caller(run_shell, sandbox_dir, recorder, exec_recorder):
     recorder.answer(RUNNING_PREFIX, DockerResult(0, "true\n"))
 
@@ -213,6 +243,8 @@ def test_the_exec_gets_the_environment_of_the_caller(run_shell, sandbox_dir, rec
 
     assert exec_recorder.call_list[0][2]["TERM"] == "xterm-256color"
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_exec_is_the_last_call_and_comes_after_up(run_shell, sandbox_dir, recorder, exec_recorder):
     recorder.answer(RUNNING_PREFIX, DockerResult(0, "false\n"))

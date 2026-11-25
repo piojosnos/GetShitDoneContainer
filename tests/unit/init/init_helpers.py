@@ -57,6 +57,8 @@ def write_step_file(
     return step_path
 
 
+# --------------------------------------------------------------------------------
+
 def write_stand_in(dir_path: Path, name: str, script_body: str) -> Path:
     stand_in = dir_path / name
     stand_in.write_text("#!/bin/sh\n" + script_body + "\n")
@@ -65,9 +67,13 @@ def write_stand_in(dir_path: Path, name: str, script_body: str) -> Path:
     return stand_in
 
 
+# --------------------------------------------------------------------------------
+
 def environment_with(dir_path: Path) -> dict[str, str]:
     return {"PATH": f"{dir_path}{os.pathsep}{os.environ['PATH']}"}
 
+
+# --------------------------------------------------------------------------------
 
 def process_is_gone(process_id: int) -> bool:
     completed = subprocess.run(
@@ -78,9 +84,13 @@ def process_is_gone(process_id: int) -> bool:
     return state == "" or state.startswith("Z")
 
 
+# --------------------------------------------------------------------------------
+
 def load_step(path: Path):
     return init_runner.load_step_module(path)
 
+
+# --------------------------------------------------------------------------------
 
 def run_lines(
     shared_steps_dir: Path,

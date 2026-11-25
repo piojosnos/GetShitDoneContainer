@@ -35,6 +35,8 @@ def parse_versions_text(text: str) -> dict[str, str]:
     return value_by_name_map
 
 
+# --------------------------------------------------------------------------------
+
 def pin_value(name: str, versions_file: Path = VERSIONS_FILE) -> str:
     if not versions_file.is_file():
         return ""
@@ -42,9 +44,13 @@ def pin_value(name: str, versions_file: Path = VERSIONS_FILE) -> str:
     return parse_versions_text(versions_file.read_text()).get(name, "")
 
 
+# --------------------------------------------------------------------------------
+
 def missing_pin_result(name: str) -> CheckResult:
     return failed(f"{name} is not in {VERSIONS_FILE}", rebuild_hint())
 
+
+# --------------------------------------------------------------------------------
 
 def pin_map_or_missing(
     pin_name_list: list[str],
@@ -70,6 +76,8 @@ def pin_map_or_missing(
 def image_tag(image_pin: str) -> str:
     return image_pin.partition("@")[0].rpartition(":")[2]
 
+
+# --------------------------------------------------------------------------------
 
 def jdk_version(temurin_pin: str) -> str:
     return image_tag(temurin_pin).partition("_")[0]

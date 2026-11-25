@@ -53,9 +53,13 @@ def config_dir(environ: Mapping[str, str]) -> Path:
     return Path(configured)
 
 
+# --------------------------------------------------------------------------------
+
 def registry_dir(config: Path) -> Path:
     return config / "sandboxes"
 
+
+# --------------------------------------------------------------------------------
 
 def entry_file(registry: Path, name: str) -> Path:
     return registry / f"{name}{_ENTRY_SUFFIX}"
@@ -85,6 +89,8 @@ def _load_object(file: Path) -> dict:
 
     return data
 
+
+# --------------------------------------------------------------------------------
 
 def read_entry(registry: Path, name: str) -> Entry:
     file = entry_file(registry, name)

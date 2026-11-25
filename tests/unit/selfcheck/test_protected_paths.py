@@ -33,6 +33,8 @@ def test_protected_paths_fail_for_a_writable_file_and_pass_after_chmod(tmp_path,
     assert protected_paths.protected_paths_result([dir1], mountinfo1).passed
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.skipif(os.getuid() == 0, reason="root can write everywhere")
 def test_protected_paths_fail_for_a_mount_below_the_dir(tmp_path, restorable_mode):
     dir1 = tmp_path / "dir1"
@@ -49,6 +51,8 @@ def test_protected_paths_fail_for_a_mount_below_the_dir(tmp_path, restorable_mod
     assert f"{dir1 / 'sub1'} is a mount point" in result.detail
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.skipif(os.getuid() == 0, reason="root can write everywhere")
 def test_protected_paths_ignore_a_mount_beside_the_dir(tmp_path, restorable_mode):
     dir1 = tmp_path / "dir1"
@@ -61,6 +65,8 @@ def test_protected_paths_ignore_a_mount_beside_the_dir(tmp_path, restorable_mode
     assert protected_paths.protected_paths_result([dir1], mountinfo1).passed
 
 
+# --------------------------------------------------------------------------------
+
 def test_protected_paths_fail_for_a_missing_path(tmp_path):
     mountinfo1 = tmp_path / "mountinfo1"
     write_mountinfo(mountinfo1, [])
@@ -70,6 +76,8 @@ def test_protected_paths_fail_for_a_missing_path(tmp_path):
     assert not result.passed
     assert "dir1 is missing" in result.detail
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.skipif(os.getuid() == 0, reason="root can write everywhere")
 def test_protected_paths_name_at_most_ten_entries_and_the_total(tmp_path):
@@ -87,6 +95,8 @@ def test_protected_paths_name_at_most_ten_entries_and_the_total(tmp_path):
     assert "14 problems" in result.detail
     assert result.detail.count(" is writable") == 10
 
+
+# --------------------------------------------------------------------------------
 
 def test_protected_paths_do_not_follow_a_link_while_walking(tmp_path):
     dir1 = tmp_path / "dir1"

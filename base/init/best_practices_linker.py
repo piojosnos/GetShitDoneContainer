@@ -83,6 +83,8 @@ def _place_link(
     clash_list.append(entry)
 
 
+# --------------------------------------------------------------------------------
+
 def _link_skills(
     skills_dir: Path,
     best_practices_dir: Path,
@@ -146,6 +148,8 @@ def _result(
 
     return passed(linked_detail(best_practices_dir, agent_name, skill_count))
 
+
+# --------------------------------------------------------------------------------
 
 def _clash_result(clash_list: list[Path]) -> CheckResult:
     sentence_list = []

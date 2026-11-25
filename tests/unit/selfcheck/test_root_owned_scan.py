@@ -31,6 +31,8 @@ def state_tree(tmp_path):
     return state1
 
 
+# --------------------------------------------------------------------------------
+
 class FailingStatPath(type(Path())):
     def lstat(self):
         raise OSError(errno.EIO, "I/O error")
@@ -43,6 +45,8 @@ class FailingStatPath(type(Path())):
 def test_the_skip_set_holds_the_cache_and_maven_dirs():
     assert root_owned_scan.SKIPPED_STATE_DIR_SET == {"cache/npm", "cache/uv", "m2"}
 
+
+# --------------------------------------------------------------------------------
 
 def test_scan_owned_state_skips_the_skipped_dirs_and_reports_a_sync_dir_like_any_other(state_tree):
     path_list = root_owned_scan.scan_owned_state(state_tree, os.getuid(), {"cache/npm"})
@@ -57,9 +61,13 @@ def test_scan_owned_state_skips_the_skipped_dirs_and_reports_a_sync_dir_like_any
     ]
 
 
+# --------------------------------------------------------------------------------
+
 def test_scan_owned_state_finds_nothing_for_another_owner(state_tree):
     assert root_owned_scan.scan_owned_state(state_tree, os.getuid() + 1, set()) == []
 
+
+# --------------------------------------------------------------------------------
 
 def test_scan_owned_state_reports_a_link_without_following_it(state_tree):
     path_list = root_owned_scan.scan_owned_state(state_tree, os.getuid(), set())
@@ -70,9 +78,13 @@ def test_scan_owned_state_reports_a_link_without_following_it(state_tree):
         assert not path.startswith("sub1/link1/")
 
 
+# --------------------------------------------------------------------------------
+
 def test_scan_owned_state_finds_nothing_in_a_missing_state_dir(tmp_path):
     assert root_owned_scan.scan_owned_state(tmp_path / "state1", os.getuid(), set()) == []
 
+
+# --------------------------------------------------------------------------------
 
 def test_scan_owned_state_lets_an_entry_error_other_than_permission_surface(tmp_path):
     state1 = tmp_path / "state1"
@@ -83,6 +95,8 @@ def test_scan_owned_state_lets_an_entry_error_other_than_permission_surface(tmp_
 
     assert raised.value.errno == errno.EIO
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_state_walk_never_opens_a_file(state_tree, restorable_mode):
     restorable_mode(state_tree / "sub1" / "notes1", 0o000)
@@ -105,6 +119,8 @@ def test_scan_owned_state_marks_a_reported_dir_it_cannot_open(tmp_path, restorab
     assert root_owned_scan.scan_owned_state(state1, os.getuid(), set()) == ["sub1", "sub1/private1 (unreadable)"]
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 directory")
 def test_scan_owned_state_reports_an_unreadable_dir_of_another_owner(tmp_path, restorable_mode):
     state1 = tmp_path / "state1"
@@ -113,6 +129,8 @@ def test_scan_owned_state_reports_an_unreadable_dir_of_another_owner(tmp_path, r
 
     assert root_owned_scan.scan_owned_state(state1, os.getuid() + 1, set()) == ["sub1/private1 (unreadable)"]
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 444 directory")
 def test_scan_owned_state_marks_a_dir_it_can_list_but_not_search(tmp_path, restorable_mode):
@@ -123,6 +141,8 @@ def test_scan_owned_state_marks_a_dir_it_can_list_but_not_search(tmp_path, resto
 
     assert root_owned_scan.scan_owned_state(state1, os.getuid(), set()) == ["sub1", "sub1/private1 (unreadable)"]
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.skipif(os.getuid() == 0, reason="root can open a mode 000 directory")
 def test_scan_owned_state_marks_an_unreadable_sync_dir_like_any_other(tmp_path, restorable_mode):
@@ -147,6 +167,8 @@ def test_owner_fix_hint_names_the_container_and_the_state_dir(tmp_path):
         f"--volumes-from sbx-name1 sbx-base:local -R 1000:1000 {state1}"
     )
 
+
+# --------------------------------------------------------------------------------
 
 def test_owner_fix_hint_says_name_when_sbx_name_is_unset(tmp_path):
     assert "--volumes-from sbx-NAME sbx-base:local -R 1000:1000" in root_owned_scan.owner_fix_hint(tmp_path, {})

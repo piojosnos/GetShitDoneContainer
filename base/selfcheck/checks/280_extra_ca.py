@@ -43,6 +43,8 @@ def _expected_fingerprint_list(expected_file: Path) -> list[str]:
     return fingerprint_list
 
 
+# --------------------------------------------------------------------------------
+
 def _expected_list_or_result(expected_file: Path, installed_file: Path) -> tuple[list[str], CheckResult | None]:
     expected_list = _expected_fingerprint_list(expected_file)
 
@@ -77,9 +79,13 @@ def _pem_block_list(text: str) -> list[str]:
     return block_list
 
 
+# --------------------------------------------------------------------------------
+
 def _pem_fingerprint(pem_text: str) -> str:
     return hashlib.sha256(ssl.PEM_cert_to_DER_cert(pem_text)).hexdigest().upper()
 
+
+# --------------------------------------------------------------------------------
 
 def _keytool_fingerprint_set(text: str) -> set[str]:
     fingerprint_set = set()
@@ -90,6 +96,8 @@ def _keytool_fingerprint_set(text: str) -> set[str]:
 
     return fingerprint_set
 
+
+# --------------------------------------------------------------------------------
 
 def _missing_result(
     expected_list: list[str],
@@ -163,6 +171,8 @@ def java_cacerts_result(
 def _check_extra_ca_system_bundle() -> CheckResult:
     return system_bundle_result()
 
+
+# --------------------------------------------------------------------------------
 
 def _check_extra_ca_java_cacerts() -> CheckResult:
     return java_cacerts_result()

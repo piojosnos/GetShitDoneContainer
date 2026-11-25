@@ -30,5 +30,7 @@ def sbx_command_list(command_dir: Path = COMMAND_DIR) -> list[Path]:
     return sorted(command_dir.glob(COMMAND_PREFIX + "*"))
 
 
+# --------------------------------------------------------------------------------
+
 def base_root_list(command_dir: Path = COMMAND_DIR) -> list[Path]:
     return BASE_DIR_LIST + sbx_command_list(command_dir)

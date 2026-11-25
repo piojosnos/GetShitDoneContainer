@@ -33,6 +33,8 @@ def make_sandbox(base_dir: Path) -> dict:
     return {"environment": environment, "gh_log_file": gh_log_file}
 
 
+# --------------------------------------------------------------------------------
+
 def run_login(sandbox: dict):
     return subprocess.run(
         ["bash", str(SCRIPT_PATH)],
@@ -44,9 +46,13 @@ def run_login(sandbox: dict):
     )
 
 
+# --------------------------------------------------------------------------------
+
 def make_gh_dir(sandbox: dict) -> None:
     Path(sandbox["environment"]["GH_CONFIG_DIR"]).mkdir(parents=True)
 
+
+# --------------------------------------------------------------------------------
 
 def make_git_dir(sandbox: dict) -> None:
     Path(sandbox["environment"]["GIT_CONFIG_GLOBAL"]).parent.mkdir(parents=True)
@@ -66,6 +72,8 @@ def test_a_missing_gh_config_dir_stops_before_gh_runs(tmp_path):
     assert result.stderr == PRECONDITION_LINE
     assert not sandbox["gh_log_file"].exists()
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_git_config_in_a_missing_dir_stops_before_gh_runs(tmp_path):
     sandbox = make_sandbox(tmp_path)

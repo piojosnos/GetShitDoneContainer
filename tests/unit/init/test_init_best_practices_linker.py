@@ -88,6 +88,8 @@ def test_a_user_dir_with_a_clone_skill_name_is_left_named_and_the_rest_is_linked
     assert os.readlink(config1 / "rules") == RULES_LINK_TEXT_TEMPLATE.format(agent="agent1")
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_real_rules_dir_is_left_named_and_the_skills_are_linked(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"], "agent1")
     (config1 / "rules").mkdir()
@@ -102,6 +104,8 @@ def test_a_real_rules_dir_is_left_named_and_the_skills_are_linked(tmp_path):
     assert os.readlink(config1 / "skills" / "skill1") == SKILL_LINK_TEXT_TEMPLATE.format(agent="agent1", name="skill1")
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_foreign_rules_link_is_left_and_fails_the_step(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"], "agent1")
     (tmp_path / "other1").mkdir()
@@ -113,6 +117,8 @@ def test_a_foreign_rules_link_is_left_and_fails_the_step(tmp_path):
     assert str(config1 / "rules") in result.detail
     assert os.readlink(config1 / "rules") == "../../other1"
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_link_outside_the_clone_is_left_and_named(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"], "agent1")
@@ -127,6 +133,8 @@ def test_a_link_outside_the_clone_is_left_and_named(tmp_path):
     assert os.readlink(config1 / "skills" / "skill1") == str(tmp_path / "other1")
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_copy_of_a_clone_skill_is_left_and_named(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"], "agent1")
     (config1 / "skills" / "skill1").mkdir(parents=True)
@@ -139,6 +147,8 @@ def test_a_copy_of_a_clone_skill_is_left_and_named(tmp_path):
     assert not (config1 / "skills" / "skill1").is_symlink()
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_gsd_skill_dir_that_shares_a_clone_skill_name_is_left_and_named(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["gsd-skill1"], "agent1")
     (config1 / "skills" / "gsd-skill1").mkdir(parents=True)
@@ -150,6 +160,8 @@ def test_a_gsd_skill_dir_that_shares_a_clone_skill_name_is_left_and_named(tmp_pa
     assert str(config1 / "skills" / "gsd-skill1") in result.detail
     assert (config1 / "skills" / "gsd-skill1" / "SKILL.md").read_bytes() == b"gsd\n"
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_user_skill_the_clone_does_not_have_is_untouched(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"], "agent1")
@@ -179,6 +191,8 @@ def test_an_own_link_with_an_old_absolute_text_is_replaced_by_the_relative_text(
     assert os.readlink(config1 / "rules") == RULES_LINK_TEXT_TEMPLATE.format(agent="agent1")
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_rerun_gives_the_same_result_and_the_same_links(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1", "skill2"], "agent1")
 
@@ -191,6 +205,8 @@ def test_a_rerun_gives_the_same_result_and_the_same_links(tmp_path):
     assert sorted(entry.name for entry in (config1 / "skills").iterdir()) == ["skill1", "skill2"]
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_dangling_own_link_for_a_dropped_skill_is_removed(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"], "agent1")
     (config1 / "skills").mkdir()
@@ -202,6 +218,8 @@ def test_a_dangling_own_link_for_a_dropped_skill_is_removed(tmp_path):
     assert not (config1 / "skills" / "dropped1").is_symlink()
     assert (config1 / "skills" / "skill1").is_symlink()
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_old_links_into_the_masters_are_replaced_and_a_master_only_skill_link_is_removed(tmp_path):
     agent_name = claude_shared.AGENT_NAME
@@ -224,6 +242,8 @@ def test_the_old_links_into_the_masters_are_replaced_and_a_master_only_skill_lin
     assert best_practices_links.best_practices_links_result(config1, clone1, agent_name).passed
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_list_file_from_an_older_image_is_left_byte_for_byte(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"], "agent1")
     (config1 / ".best-practices-skills").write_bytes(b"skill1\nold1\n")
@@ -242,12 +262,16 @@ def incomplete_detail(clone_dir: Path, relative_dir_text: str) -> str:
     return f"{clone_dir} exists but has no {relative_dir_text}/ directory"
 
 
+# --------------------------------------------------------------------------------
+
 def assert_incomplete_fix(hint: str, clone_dir: Path) -> None:
     assert f"git -C {clone_dir} pull" in hint
     assert "sbx-init" in hint
     assert "move it aside" in hint
     assert "sbx-best-practices-clone" in hint
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("missing_name", ["rules", "skills"])
 def test_a_clone_without_a_generated_dir_fails_as_incomplete_and_makes_no_link(tmp_path, missing_name):
@@ -261,6 +285,8 @@ def test_a_clone_without_a_generated_dir_fails_as_incomplete_and_makes_no_link(t
     assert_incomplete_fix(result.hint, clone1)
     assert list(config1.iterdir()) == []
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize(("empty_name", "entry_noun"), [("rules", "rule"), ("skills", "skill")])
 def test_a_clone_with_an_empty_generated_dir_fails_as_incomplete_and_keeps_the_links(tmp_path, empty_name, entry_noun):
@@ -282,6 +308,8 @@ def test_a_clone_with_an_empty_generated_dir_fails_as_incomplete_and_keeps_the_l
     assert os.readlink(config1 / "rules") == RULES_LINK_TEXT_TEMPLATE.format(agent="agent1")
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_clone_with_only_the_masters_fails_with_the_pull_fix_and_makes_no_link(tmp_path):
     config1 = tmp_path / "state1" / "agent1"
     clone1 = tmp_path / "best-practices"
@@ -299,6 +327,8 @@ def test_a_clone_with_only_the_masters_fails_with_the_pull_fix_and_makes_no_link
     assert list(config1.iterdir()) == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_no_clone_dir_fails_with_the_clone_fix(tmp_path):
     config1 = tmp_path / "state1" / "agent1"
     config1.mkdir(parents=True)
@@ -313,6 +343,8 @@ def test_no_clone_dir_fails_with_the_clone_fix(tmp_path):
     assert "move it aside" not in result.hint
     assert list(config1.iterdir()) == []
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("kind", ["directory", "file", "link"])
 def test_an_empty_dir_a_file_or_a_dangling_link_at_the_clone_path_is_incomplete_not_missing(tmp_path, kind):
@@ -335,6 +367,8 @@ def test_an_empty_dir_a_file_or_a_dangling_link_at_the_clone_path_is_incomplete_
     assert list(config1.iterdir()) == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_init_and_the_self_check_give_the_same_text_for_an_incomplete_clone(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"], "agent1")
     shutil.rmtree(clone1 / "generated" / "agent1" / "rules")
@@ -347,6 +381,8 @@ def test_init_and_the_self_check_give_the_same_text_for_an_incomplete_clone(tmp_
     assert init_result.hint == check_result.hint
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_missing_skills_dir_in_the_config_dir_is_made(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1"], "agent1")
 
@@ -356,6 +392,8 @@ def test_a_missing_skills_dir_in_the_config_dir_is_made(tmp_path):
 
     assert (config1 / "skills").is_dir()
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_clone_dir_with_a_leading_dot_is_not_linked(tmp_path):
     config1, clone1 = make_trees(tmp_path, ["skill1", ".hidden1"], "agent1")

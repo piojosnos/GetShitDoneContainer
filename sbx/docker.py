@@ -90,6 +90,8 @@ def container_state_map(docker: Docker) -> dict[str, str] | None:
     return state_map
 
 
+# --------------------------------------------------------------------------------
+
 def sandbox_is_running(docker: Docker, name: str) -> bool:
     result = docker(["container", "inspect", "--format", "{{.State.Running}}", container_name(name)], None, True)
 
@@ -98,6 +100,8 @@ def sandbox_is_running(docker: Docker, name: str) -> bool:
 
     return result.stdout.strip() == "true"
 
+
+# --------------------------------------------------------------------------------
 
 def runs_older_image(docker: Docker, name: str, image: str) -> bool:
     if not sandbox_is_running(docker, name):
@@ -163,6 +167,8 @@ def compose_command(
     return compose_argument_list, compose_environ
 
 
+# --------------------------------------------------------------------------------
+
 def run_compose(
     docker: Docker,
     entry: Entry,
@@ -195,12 +201,16 @@ def check_sandbox_dirs(entry: Entry, registry: Path) -> None:
             )
 
 
+# --------------------------------------------------------------------------------
+
 def require_docker(docker: Docker) -> None:
     result = docker(["info"], None, True)
 
     if result.returncode != 0:
         raise SbxError("cannot reach Docker; is Docker running?")
 
+
+# --------------------------------------------------------------------------------
 
 def require_images(docker: Docker, entry: Entry, tag: str) -> None:
     require_docker(docker)
@@ -225,6 +235,8 @@ def require_images(docker: Docker, entry: Entry, tag: str) -> None:
 def warn_sessions_close(command_name: str, name: str, lead: str) -> None:
     print(f"{command_name}: {container_name(name)} {lead} will close its open shells and Claude sessions")
 
+
+# --------------------------------------------------------------------------------
 
 def bring_up_sandbox(
     command_name: str,

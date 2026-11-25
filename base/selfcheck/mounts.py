@@ -27,5 +27,7 @@ def _mount_point_set(mountinfo_text: str) -> set[str]:
     return mount_point_found_set
 
 
+# --------------------------------------------------------------------------------
+
 def read_mount_point_set(mountinfo_file: Path = MOUNTINFO_FILE) -> set[str]:
     return _mount_point_set(mountinfo_file.read_text())

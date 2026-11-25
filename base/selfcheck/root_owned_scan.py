@@ -29,6 +29,8 @@ def _mark_unreadable_dir(reported_list: list[str], relative_dir: Path) -> None:
     reported_list.append(relative_dir.as_posix() + UNREADABLE_SUFFIX)
 
 
+# --------------------------------------------------------------------------------
+
 def scan_owned_state(state_dir: Path, owner_uid: int, skipped_relative_set: set[str]) -> list[str]:
     reported_list = []
 

@@ -40,9 +40,13 @@ def is_best_practices_link(link: Path, target_root: Path) -> bool:
     return is_under(target, str(target_root))
 
 
+# --------------------------------------------------------------------------------
+
 def generated_dir(best_practices_dir: Path, agent_name: str) -> Path:
     return best_practices_dir / "generated" / agent_name
 
+
+# --------------------------------------------------------------------------------
 
 def clone_failure(best_practices_dir: Path, agent_name: str) -> CheckResult | None:
     if not path_is_present(best_practices_dir):
@@ -70,9 +74,13 @@ def clone_failure(best_practices_dir: Path, agent_name: str) -> CheckResult | No
     return None
 
 
+# --------------------------------------------------------------------------------
+
 def linked_detail(best_practices_dir: Path, agent_name: str, skill_count: int) -> str:
     return f"{skill_count} skills linked from {generated_dir(best_practices_dir, agent_name)}, rules linked"
 
+
+# --------------------------------------------------------------------------------
 
 def _missing_clone_result(best_practices_dir: Path) -> CheckResult:
     return failed(
@@ -80,6 +88,8 @@ def _missing_clone_result(best_practices_dir: Path) -> CheckResult:
         "run sbx-gh-login, then sbx-best-practices-clone; it clones the repo and runs sbx-init again",
     )
 
+
+# --------------------------------------------------------------------------------
 
 def _incomplete_clone_result(best_practices_dir: Path, lacking_text: str) -> CheckResult:
     return failed(
@@ -89,6 +99,8 @@ def _incomplete_clone_result(best_practices_dir: Path, lacking_text: str) -> Che
         "then sbx-init; if not, move it aside, then run sbx-gh-login and sbx-best-practices-clone",
     )
 
+
+# --------------------------------------------------------------------------------
 
 def best_practices_skill_name_list(best_practices_dir: Path, agent_name: str) -> list[str]:
     skills_dir = generated_dir(best_practices_dir, agent_name) / "skills"
@@ -104,6 +116,8 @@ def best_practices_skill_name_list(best_practices_dir: Path, agent_name: str) ->
     return skill_name_list
 
 
+# --------------------------------------------------------------------------------
+
 def _best_practices_rule_name_list(best_practices_dir: Path, agent_name: str) -> list[str]:
     rules_dir = generated_dir(best_practices_dir, agent_name) / "rules"
     rule_name_list = []
@@ -117,6 +131,8 @@ def _best_practices_rule_name_list(best_practices_dir: Path, agent_name: str) ->
 
     return rule_name_list
 
+
+# --------------------------------------------------------------------------------
 
 def _rules_link_problem(config_dir: Path, best_practices_dir: Path, agent_name: str) -> str:
     rules_link = config_dir / "rules"
@@ -135,6 +151,8 @@ def _rules_link_problem(config_dir: Path, best_practices_dir: Path, agent_name: 
 
     return ""
 
+
+# --------------------------------------------------------------------------------
 
 def _skill_link_problem_list(
     config_dir: Path,
@@ -160,12 +178,16 @@ def _skill_link_problem_list(
     return problem_list
 
 
+# --------------------------------------------------------------------------------
+
 def _reaches(link: Path, dir_path: Path) -> bool:
     try:
         return link.samefile(dir_path)
     except OSError:
         return False
 
+
+# --------------------------------------------------------------------------------
 
 def _stale_link_problem_list(config_dir: Path, best_practices_dir: Path, skill_name_list: list[str]) -> list[str]:
     skills_dir = config_dir / "skills"

@@ -75,6 +75,8 @@ def pytest_argument_list(keep: bool) -> list[str]:
     return argument_list
 
 
+# --------------------------------------------------------------------------------
+
 def _child_environ(environ: Mapping[str, str]) -> dict[str, str]:
     child_environ = dict(environ)
     child_environ["SBX_IMAGE_TAG"] = _TEST_TAG
@@ -97,9 +99,13 @@ def _emit(text: str, output: TextIO, log_handle: TextIO) -> None:
     log_handle.flush()
 
 
+# --------------------------------------------------------------------------------
+
 def _emit_line(text: str, output: TextIO, log_handle: TextIO) -> None:
     _emit(f"{text}\n", output, log_handle)
 
+
+# --------------------------------------------------------------------------------
 
 def run_and_log(
     argument_list: list[str],
@@ -145,6 +151,8 @@ def _compose_is_v2(docker: Docker) -> bool:
     return compose_version_ok(result.stdout)
 
 
+# --------------------------------------------------------------------------------
+
 def _git_text(repo_dir: Path, argument_list: list[str]) -> str:
     try:
         completed = subprocess.run(
@@ -165,6 +173,8 @@ def _git_text(repo_dir: Path, argument_list: list[str]) -> str:
     return completed.stdout.strip()
 
 
+# --------------------------------------------------------------------------------
+
 def _image_line() -> str:
     image_list = [base_image(_TEST_TAG)]
 
@@ -174,6 +184,8 @@ def _image_line() -> str:
     return f"images: {', '.join(image_list)}"
 
 
+# --------------------------------------------------------------------------------
+
 def _docker_text(docker: Docker, argument_list: list[str]) -> str:
     result = docker(argument_list, None, True)
 
@@ -182,6 +194,8 @@ def _docker_text(docker: Docker, argument_list: list[str]) -> str:
 
     return result.stdout.strip()
 
+
+# --------------------------------------------------------------------------------
 
 def _write_context(docker: Docker, repo_dir: Path, output: TextIO, log_handle: TextIO) -> None:
     branch = _git_text(repo_dir, ["rev-parse", "--abbrev-ref", "HEAD"]) or "unknown"
@@ -252,6 +266,8 @@ def _run(
 
     return code
 
+
+# --------------------------------------------------------------------------------
 
 def main(
     argument_list: list[str],

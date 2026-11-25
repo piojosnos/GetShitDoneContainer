@@ -50,6 +50,8 @@ def make_sandbox(tmp_path: Path, agent_name: str) -> dict:
     }
 
 
+# --------------------------------------------------------------------------------
+
 def run_agent_wrapper(script_path: str, sandbox: dict, argument_list: list[str]):
     environment = dict(os.environ)
     environment["SBX_INIT_MARKER"] = str(sandbox["marker_file"])
@@ -66,6 +68,8 @@ def run_agent_wrapper(script_path: str, sandbox: dict, argument_list: list[str])
     )
 
 
+# --------------------------------------------------------------------------------
+
 def code_line_list(script_path: str) -> list[str]:
     kept_line_list = []
 
@@ -78,6 +82,8 @@ def code_line_list(script_path: str) -> list[str]:
 
     return kept_line_list
 
+
+# --------------------------------------------------------------------------------
 
 def default_text(script_path: str, variable_name: str) -> str:
     script_text = (REPO_DIR / script_path).read_text()
@@ -104,6 +110,8 @@ def test_without_the_marker_the_agent_wrapper_refuses_at_once_and_never_starts_t
     assert result.stdout == ""
     assert not sandbox["record_file"].exists()
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("agent_name,script_path,agent_wrapper_name", AGENT_WRAPPER_CASE_LIST, ids=AGENT_WRAPPER_IDS)
 def test_a_marker_that_is_a_dir_counts_as_missing(tmp_path, agent_name, script_path, agent_wrapper_name):
@@ -187,6 +195,8 @@ def test_the_refusal_names_the_first_argument(tmp_path):
     assert not sandbox["record_file"].exists()
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("argument_list", [[], ["sbx-x1"]], ids=["none", "one"])
 def test_fewer_than_two_arguments_print_the_usage_line_and_exit_2(tmp_path, argument_list):
     sandbox = make_sandbox(tmp_path, "agent1")
@@ -199,6 +209,8 @@ def test_fewer_than_two_arguments_print_the_usage_line_and_exit_2(tmp_path, argu
     assert result.stdout == ""
     assert not sandbox["record_file"].exists()
 
+
+# --------------------------------------------------------------------------------
 
 def test_sbx_run_agent_names_no_agent():
     script_text = (REPO_DIR / RUN_AGENT_PATH).read_text().lower()

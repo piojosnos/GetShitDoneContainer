@@ -18,6 +18,8 @@ def test_every_state_variable_points_under_the_state_dir():
         assert value.startswith(str(paths.STATE_DIR) + "/"), name
 
 
+# --------------------------------------------------------------------------------
+
 def test_state_variables_pass_when_the_environment_holds_them():
     environment1 = dict(env_state_paths._STATE_PATH_BY_NAME_MAP)
 

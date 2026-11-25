@@ -27,9 +27,13 @@ def path_is_present(path: Path) -> bool:
     return path.is_symlink() or path.exists()
 
 
+# --------------------------------------------------------------------------------
+
 def is_under(path_text: str, root_text: str) -> bool:
     return path_text == root_text or path_text.startswith(root_text + "/")
 
+
+# --------------------------------------------------------------------------------
 
 def link_text(link: Path) -> str | None:
     try:
@@ -37,6 +41,8 @@ def link_text(link: Path) -> str | None:
     except OSError:
         return None
 
+
+# --------------------------------------------------------------------------------
 
 def state_dir_name_list(state_dirs_text: str) -> list[str]:
     name_list = []

@@ -74,6 +74,8 @@ def _shell_into_sandbox(
     _open_shell(name, environ, exec_function)
 
 
+# --------------------------------------------------------------------------------
+
 def main(
     argument_list: list[str],
     environ: Mapping[str, str] = os.environ,

@@ -48,6 +48,8 @@ def _start_sandbox(argument_list: list[str], environ: Mapping[str, str], docker:
     print(f"{COMMAND_NAME}: in a new or recreated container, run sbx-init there before the agent")
 
 
+# --------------------------------------------------------------------------------
+
 def main(
     argument_list: list[str],
     environ: Mapping[str, str] = os.environ,

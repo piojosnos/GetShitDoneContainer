@@ -52,6 +52,8 @@ def _fix_or_delete_failure(config_file: Path, problem_text: str) -> CheckResult:
     )
 
 
+# --------------------------------------------------------------------------------
+
 def _read_config_map(config_file: Path) -> tuple[dict, CheckResult | None]:
     try:
         config_text = config_file.read_text() if config_file.exists() else ""
@@ -71,6 +73,8 @@ def _read_config_map(config_file: Path) -> tuple[dict, CheckResult | None]:
 
     return config_map, None
 
+
+# --------------------------------------------------------------------------------
 
 def _write_config_map(config_file: Path, config_map: dict) -> CheckResult | None:
     temp_file = None

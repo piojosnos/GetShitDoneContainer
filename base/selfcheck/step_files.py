@@ -47,12 +47,16 @@ def load_module(module_path: Path, module_prefix: str) -> ModuleType:
     return module
 
 
+# --------------------------------------------------------------------------------
+
 def load_failure_check(name: str, detail: str) -> Check:
     def report_load_failure() -> CheckResult:
         return failed(detail, rebuild_hint())
 
     return Check(name, report_load_failure)
 
+
+# --------------------------------------------------------------------------------
 
 def _is_check_list(value: object) -> bool:
     if not isinstance(value, list):
@@ -64,6 +68,8 @@ def _is_check_list(value: object) -> bool:
 
     return True
 
+
+# --------------------------------------------------------------------------------
 
 def load_list(module_path: Path, kind: StepFileKind) -> list[Check]:
     name = "load-" + module_path.parent.name + "-" + module_path.stem.replace("_", "-")
@@ -107,6 +113,8 @@ def run_one(check: Check, kind: StepFileKind) -> CheckResult:
     return result
 
 
+# --------------------------------------------------------------------------------
+
 def outcome_lines(name: str, result: CheckResult, kind: StepFileKind) -> list[str]:
     detail = one_line(result.detail)
 
@@ -115,6 +123,8 @@ def outcome_lines(name: str, result: CheckResult, kind: StepFileKind) -> list[st
 
     return [f"FAIL: {name}: {detail}", f"{_FIX_LINE_INDENT}fix: {one_line(result.hint)}"]
 
+
+# --------------------------------------------------------------------------------
 
 def write_outcome(name: str, result: CheckResult, kind: StepFileKind, output: TextIO) -> None:
     for line in outcome_lines(name, result, kind):

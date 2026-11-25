@@ -32,6 +32,8 @@ def test_a_missing_file_is_written_with_the_static_channel(tmp_path):
     assert json.loads(config_file1.read_text()) == {"channel": "static"}
 
 
+# --------------------------------------------------------------------------------
+
 def test_an_empty_file_is_written_like_a_missing_one(tmp_path):
     config_file1 = tmp_path / "cli-config.json"
     config_file1.write_text("")
@@ -41,6 +43,8 @@ def test_an_empty_file_is_written_like_a_missing_one(tmp_path):
     assert result.passed
     assert json.loads(config_file1.read_text()) == {"channel": "static"}
 
+
+# --------------------------------------------------------------------------------
 
 def test_another_channel_becomes_static_and_every_other_key_stays(tmp_path):
     config_file1 = tmp_path / "cli-config.json"
@@ -52,6 +56,8 @@ def test_another_channel_becomes_static_and_every_other_key_stays(tmp_path):
     assert json.loads(config_file1.read_text()) == {"channel": "static", "key1": 1, "key2": {"nested1": [1, 2]}}
 
 
+# --------------------------------------------------------------------------------
+
 def test_an_already_static_file_passes_with_the_same_content(tmp_path):
     config_file1 = tmp_path / "cli-config.json"
     config_file1.write_text(json.dumps({"key1": 1, "channel": "static"}))
@@ -62,6 +68,8 @@ def test_an_already_static_file_passes_with_the_same_content(tmp_path):
     assert json.loads(config_file1.read_text()) == {"key1": 1, "channel": "static"}
     assert [path.name for path in tmp_path.iterdir()] == ["cli-config.json"]
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_missing_config_dir_is_made_first(tmp_path):
     config_file1 = tmp_path / "deep1" / "deeper1" / "cli-config.json"
@@ -99,6 +107,8 @@ def test_a_file_that_is_not_a_json_object_fails_and_is_left_byte_for_byte(tmp_pa
     assert [path.name for path in tmp_path.iterdir()] == ["cli-config.json"]
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_path_that_cannot_be_read_fails_and_leaves_no_temp_file(tmp_path):
     config_dir1 = tmp_path / "cli-config.json"
     config_dir1.mkdir()
@@ -109,6 +119,8 @@ def test_a_path_that_cannot_be_read_fails_and_leaves_no_temp_file(tmp_path):
     assert str(config_dir1) in result.detail
     assert [path.name for path in tmp_path.iterdir()] == ["cli-config.json"]
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_config_dir_that_cannot_be_made_fails_naming_it(tmp_path):
     blocker1 = tmp_path / "blocker1"
@@ -121,6 +133,8 @@ def test_a_config_dir_that_cannot_be_made_fails_naming_it(tmp_path):
     assert result.hint == hints.state_writable_hint()
     assert blocker1.read_text() == "a file where a directory is needed"
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.skipif(os.getuid() == 0, reason="root can write to a read-only directory")
 def test_a_config_dir_that_cannot_be_written_fails_with_the_writable_fix(tmp_path):

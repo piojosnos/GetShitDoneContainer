@@ -20,6 +20,8 @@ def _is_outside_state(name: str) -> bool:
     return name.startswith("/") or ".." in Path(name).parts
 
 
+# --------------------------------------------------------------------------------
+
 def make_state_dirs_result(state_dir: Path, state_dirs_text: str) -> CheckResult:
     dir_name_list = state_dir_name_list(state_dirs_text)
 

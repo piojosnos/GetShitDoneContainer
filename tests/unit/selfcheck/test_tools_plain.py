@@ -43,6 +43,8 @@ def test_every_plain_tool_has_a_check_named_after_it():
     ]
 
 
+# --------------------------------------------------------------------------------
+
 def test_tool_bash_resolves_to_the_image_outside_the_home():
     result = tool_check("bash").function()
     expected_path = os.path.realpath(shutil.which("bash"))
@@ -51,6 +53,8 @@ def test_tool_bash_resolves_to_the_image_outside_the_home():
     assert result.detail == expected_path
     assert not result.detail.startswith("/home/")
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.skipif(shutil.which("keytool") is None, reason="keytool is not installed here")
 def test_tool_keytool_resolves_to_the_jdk_outside_the_home():

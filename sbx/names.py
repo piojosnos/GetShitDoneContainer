@@ -71,13 +71,19 @@ def image_tag(environ: Mapping[str, str], command_name: str) -> str:
     return tag
 
 
+# --------------------------------------------------------------------------------
+
 def agent_image(agent: str, tag: str) -> str:
     return f"sbx-{agent}:{tag}"
 
 
+# --------------------------------------------------------------------------------
+
 def base_image(tag: str) -> str:
     return f"sbx-base:{tag}"
 
+
+# --------------------------------------------------------------------------------
 
 def container_name(name: str) -> str:
     return f"sbx-{name}"

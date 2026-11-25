@@ -95,6 +95,8 @@ def _docker_build_arguments(
     ]
 
 
+# --------------------------------------------------------------------------------
+
 def build_plan(
     tag: str,
     pin_name_list: list[str],
@@ -148,6 +150,8 @@ def find_openssl_for_cert(cert_path: str, environ: Mapping[str, str]) -> str:
     return openssl_path
 
 
+# --------------------------------------------------------------------------------
+
 def _run_openssl(openssl_path: str, argument_list: list[str]) -> subprocess.CompletedProcess:
     return subprocess.run(
         [openssl_path, "x509", *argument_list],
@@ -158,6 +162,8 @@ def _run_openssl(openssl_path: str, argument_list: list[str]) -> subprocess.Comp
         check=False,
     )
 
+
+# --------------------------------------------------------------------------------
 
 def _split_certificates(cert_path: str, cert_dir: Path) -> list[Path]:
     with open(cert_path, encoding="utf-8", errors="surrogateescape") as handle:
@@ -190,6 +196,8 @@ def _split_certificates(cert_path: str, cert_dir: Path) -> list[Path]:
     return cert_file_list
 
 
+# --------------------------------------------------------------------------------
+
 def _certificate_fingerprint(openssl_path: str, cert_file: Path) -> str:
     result = _run_openssl(openssl_path, ["-noout", "-fingerprint", "-sha256", "-in", str(cert_file)])
 
@@ -200,6 +208,8 @@ def _certificate_fingerprint(openssl_path: str, cert_file: Path) -> str:
 
     return text.replace(":", "").strip().upper()
 
+
+# --------------------------------------------------------------------------------
 
 def prepare_extra_certs(cert_path: str, cert_dir: Path, openssl_path: str) -> tuple[list[Path], list[str]]:
     cert_file_list = _split_certificates(cert_path, cert_dir)
@@ -299,6 +309,8 @@ def _build_images(argument_list: list[str], environ: Mapping[str, str], docker: 
         _run_plan(plan, docker, docker_environ)
         print_cert_banner(cert_path, cert_file_list, openssl_path)
 
+
+# --------------------------------------------------------------------------------
 
 def main(
     argument_list: list[str],

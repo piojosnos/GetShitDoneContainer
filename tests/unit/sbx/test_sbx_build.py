@@ -42,6 +42,8 @@ def repo_dir(tmp_path) -> Path:
     return repo1
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def run_build(repo_dir, recorder, capsys):
     def run(argument_list, extra_map=None, docker=None):
@@ -57,6 +59,8 @@ def run_build(repo_dir, recorder, capsys):
 
     return run
 
+
+# --------------------------------------------------------------------------------
 
 def _make_certificate(directory: Path, name: str) -> tuple[Path, Path]:
     key_file = directory / f"{name}.key"
@@ -74,6 +78,8 @@ def _make_certificate(directory: Path, name: str) -> tuple[Path, Path]:
     return key_file, cert_file
 
 
+# --------------------------------------------------------------------------------
+
 def _openssl_fingerprint(cert_file: Path) -> str:
     result = subprocess.run(
         ["openssl", "x509", "-noout", "-fingerprint", "-sha256", "-in", str(cert_file)],
@@ -85,12 +91,16 @@ def _openssl_fingerprint(cert_file: Path) -> str:
     return result.stdout.strip().split("=", 1)[1].replace(":", "").upper()
 
 
+# --------------------------------------------------------------------------------
+
 class CertInspector(DockerRecorder):
     # Looks at the certificate directory while the first build runs, since the
     # command removes the directory when it is done.
     def __init__(self) -> None:
         super().__init__()
         self.cert_file_map: dict[str, str] = {}
+
+    # --------------------------------------------------------------------------------
 
     def __call__(self, argument_list, environ=None, capture=True):
         if not self.call_list and "--build-context" in argument_list:
@@ -102,6 +112,8 @@ class CertInspector(DockerRecorder):
 
         return super().__call__(argument_list, environ, capture)
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def bundle(tmp_path) -> tuple[Path, list[Path]]:
@@ -132,6 +144,8 @@ def test_read_pins_returns_the_pairs_in_file_order_and_skips_comments_and_blank_
     ]
 
 
+# --------------------------------------------------------------------------------
+
 def test_read_pins_keeps_a_command_substitution_as_text_and_runs_nothing(tmp_path):
     versions_file = tmp_path / "versions.env"
     versions_file.write_text("NODE_VERSION=$(touch pwned)\nOTHER_VERSION=`touch pwned2`\n", encoding="utf-8")
@@ -158,6 +172,8 @@ def test_a_tag_other_than_local_or_test_is_refused_before_versions_env_is_read(r
     assert recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_missing_versions_env_is_refused(run_build, repo_dir, recorder):
     (repo_dir / "versions.env").unlink()
 
@@ -168,6 +184,8 @@ def test_a_missing_versions_env_is_refused(run_build, repo_dir, recorder):
     assert err == "build.sh: versions.env is missing next to build.sh\n"
     assert recorder.call_list == []
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_versions_env_without_a_pin_is_refused(run_build, repo_dir, recorder):
     (repo_dir / "versions.env").write_text("# nothing here\n\n", encoding="utf-8")
@@ -198,6 +216,8 @@ def test_an_unset_or_empty_tag_builds_the_local_images_without_a_notice(run_buil
     assert len(recorder.call_list) == 3
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_test_tag_builds_the_test_images_and_names_the_tag_on_stderr(run_build, recorder):
     exit_code, out, err = run_build([], {"SBX_IMAGE_TAG": "test"})
 
@@ -209,6 +229,8 @@ def test_the_test_tag_builds_the_test_images_and_names_the_tag_on_stderr(run_bui
     )
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_failed_build_stops_the_run_and_names_the_image(run_build, recorder):
     recorder.answer(["build"], DockerResult(1, ""))
 
@@ -218,6 +240,8 @@ def test_a_failed_build_stops_the_run_and_names_the_image(run_build, recorder):
     assert err == "build.sh: the build of sbx-base:local failed\n"
     assert len(recorder.call_list) == 1
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_missing_docker_is_named(run_build, recorder):
     recorder.answer(["build"], DockerResult(127, ""))
@@ -252,6 +276,8 @@ def test_the_plan_builds_the_base_first_then_one_image_per_agent(repo_dir):
     assert "BASE_IMAGE=sbx-base:test" in plan[2][1]
 
 
+# --------------------------------------------------------------------------------
+
 def test_only_the_base_build_gets_the_certificate_directory_and_the_fingerprints(repo_dir, tmp_path):
     plan = build_module.build_plan("local", ["NODE_VERSION"], [], repo_dir, tmp_path / "certs", "AA BB")
 
@@ -262,6 +288,8 @@ def test_only_the_base_build_gets_the_certificate_directory_and_the_fingerprints
         assert "--build-context" not in argument_list
         assert "EXTRA_CA_FINGERPRINTS=AA BB" not in argument_list
 
+
+# --------------------------------------------------------------------------------
 
 def test_every_pin_is_a_bare_build_arg_and_its_value_is_in_the_docker_environment(run_build, recorder):
     exit_code, _, _ = run_build(["--pull"], {"HOME": "/x"})
@@ -278,6 +306,8 @@ def test_every_pin_is_a_bare_build_arg_and_its_value_is_in_the_docker_environmen
         assert environ["BEST_PRACTICES_REPO_URL"] == "https://example.com/one.git"
         assert environ["HOME"] == "/x"
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_builds_run_with_output_to_the_terminal(run_build, recorder):
     run_build([])
@@ -298,6 +328,8 @@ def test_a_relative_certificate_path_is_refused(run_build, recorder):
     assert recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("kind", ["missing", "directory"])
 def test_a_certificate_path_that_is_not_a_readable_file_is_refused(run_build, tmp_path, recorder, kind):
     path = tmp_path / "ca.pem"
@@ -312,6 +344,8 @@ def test_a_certificate_path_that_is_not_a_readable_file_is_refused(run_build, tm
     assert recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_missing_openssl_is_refused(run_build, bundle, tmp_path, recorder):
     empty_dir = tmp_path / "empty-path"
     empty_dir.mkdir()
@@ -322,6 +356,8 @@ def test_a_missing_openssl_is_refused(run_build, bundle, tmp_path, recorder):
     assert err == "build.sh: SBX_CA_CERT is set, but openssl is missing to check it\n"
     assert recorder.call_list == []
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_file_with_no_certificate_is_refused_and_leaves_no_temporary_directory(run_build, bundle, tmp_path, recorder):
     key_only = tmp_path / "key-only.pem"
@@ -337,6 +373,8 @@ def test_a_file_with_no_certificate_is_refused_and_leaves_no_temporary_directory
     assert list(temp_dir.iterdir()) == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_an_invalid_certificate_block_is_refused(run_build, tmp_path, recorder):
     bad_file = tmp_path / "bad.pem"
     bad_file.write_text("-----BEGIN CERTIFICATE-----\nnot a certificate\n-----END CERTIFICATE-----\n", encoding="utf-8")
@@ -347,6 +385,8 @@ def test_an_invalid_certificate_block_is_refused(run_build, tmp_path, recorder):
     assert err == f"build.sh: SBX_CA_CERT holds a block that is not a valid certificate: {bad_file}\n"
     assert recorder.call_list == []
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_bundle_with_a_key_and_two_certificates_gives_two_files_and_no_key(run_build, bundle, tmp_path):
     bundle_file, cert_file_list = bundle
@@ -369,6 +409,8 @@ def test_a_bundle_with_a_key_and_two_certificates_gives_two_files_and_no_key(run
     assert list(temp_dir.iterdir()) == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_fingerprints_and_the_context_go_to_the_base_build_only(run_build, bundle):
     bundle_file, cert_file_list = bundle
     recorder = DockerRecorder()
@@ -390,6 +432,8 @@ def test_the_fingerprints_and_the_context_go_to_the_base_build_only(run_build, b
         assert "--build-context" not in argument_list
         assert not any(argument.startswith("EXTRA_CA_FINGERPRINTS=") for argument in argument_list)
 
+
+# --------------------------------------------------------------------------------
 
 def test_the_banner_is_printed_before_the_first_build_and_after_the_last(run_build, bundle):
     bundle_file, cert_file_list = bundle
@@ -416,6 +460,8 @@ def test_the_banner_is_printed_before_the_first_build_and_after_the_last(run_bui
 
         assert out.count(f"Fingerprint={colon_form}") == 2
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_failed_build_prints_no_closing_banner(run_build, bundle):
     recorder = DockerRecorder()
@@ -451,6 +497,8 @@ def _pin_arg_name_list(dockerfile: Path) -> list[tuple[str, int]]:
     return found_list
 
 
+# --------------------------------------------------------------------------------
+
 def _next_run_line(line_list: list[str], start_index: int) -> str:
     for line in line_list[start_index + 1:]:
         if line.startswith("RUN "):
@@ -458,6 +506,8 @@ def _next_run_line(line_list: list[str], start_index: int) -> str:
 
     return ""
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("dockerfile_name", ["base/Dockerfile", "claude/Dockerfile", "cursor/Dockerfile"])
 def test_guard_line_every_pin_arg_is_followed_by_a_run_line_that_names_the_missing_pin(dockerfile_name):
@@ -472,6 +522,8 @@ def test_guard_line_every_pin_arg_is_followed_by_a_run_line_that_names_the_missi
 
         assert "${" + name + ":?" + name + " is not set; build with ./build.sh}" in run_line, name
 
+
+# --------------------------------------------------------------------------------
 
 def test_guard_line_test_sees_a_pin_arg_without_a_guard(tmp_path):
     dockerfile = tmp_path / "Dockerfile"

@@ -38,10 +38,14 @@ class Console:
         self.is_terminal_call_count = 0
         self.prompt_list: list[str] = []
 
+    # --------------------------------------------------------------------------------
+
     def is_terminal(self) -> bool:
         self.is_terminal_call_count += 1
 
         return self.terminal
+
+    # --------------------------------------------------------------------------------
 
     def read_answer(self, prompt: str) -> str:
         self.prompt_list.append(prompt)
@@ -52,6 +56,8 @@ class Console:
         return self.answer_list.pop(0)
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def entry_file(registry, tmp_path):
     project_dir = tmp_path / "one dir"
@@ -60,10 +66,14 @@ def entry_file(registry, tmp_path):
     return registry / "sbx1.json"
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.fixture
 def broken_entry_file(registry):
     return write_json_entry(registry, "sbx1", "relative/dir", "claude")
 
+
+# --------------------------------------------------------------------------------
 
 @pytest.fixture
 def run_rm(config_dir, recorder, capsys):
@@ -85,6 +95,8 @@ def run_rm(config_dir, recorder, capsys):
     return run
 
 
+# --------------------------------------------------------------------------------
+
 def _down_call_list(recorder):
     down_list = []
 
@@ -95,9 +107,13 @@ def _down_call_list(recorder):
     return down_list
 
 
+# --------------------------------------------------------------------------------
+
 def _set_labelled(recorder):
     recorder.answer(["ps", "-a", "--filter", "label=sbx.name"], DockerResult(0, "sbx-sbx1 running\n"))
 
+
+# --------------------------------------------------------------------------------
 
 def _set_running(recorder):
     recorder.answer(RUNNING_PREFIX, DockerResult(0, "true\n"))
@@ -131,6 +147,8 @@ def test_a_wrong_set_of_arguments_prints_the_usage_and_does_not_reach_docker(arg
     assert recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize(
     "argument_list",
     [
@@ -160,6 +178,8 @@ def test_an_unregistered_name_is_refused(run_rm, recorder):
     assert recorder.call_list == []
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("argument_list", [["../x"], ["--unregister", "../x"], ["Demo"]])
 def test_a_name_that_breaks_the_rule_is_refused(argument_list, run_rm, recorder):
     exit_code, _, err = run_rm(argument_list)
@@ -168,6 +188,8 @@ def test_a_name_that_breaks_the_rule_is_refused(argument_list, run_rm, recorder)
     assert "breaks the sandbox name rule" in err
     assert recorder.call_list == []
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_tag_other_than_local_or_test_is_refused_first(run_rm, entry_file, recorder):
     exit_code, _, err = run_rm(["sbx1"], extra_map={"SBX_IMAGE_TAG": "latest"})
@@ -194,6 +216,8 @@ def test_a_stopped_sandbox_goes_with_down_and_the_closing_line(run_rm, entry_fil
     assert entry_file.is_file()
 
 
+# --------------------------------------------------------------------------------
+
 def test_down_is_run_with_the_environment_of_the_entry(run_rm, entry_file, recorder, tmp_path):
     run_rm(["sbx1"], extra_map={"COMPOSE_PROJECT_NAME": "ambient"})
 
@@ -203,6 +227,8 @@ def test_down_is_run_with_the_environment_of_the_entry(run_rm, entry_file, recor
     assert compose_environ["SBX_AGENT"] == "cursor"
     assert "COMPOSE_PROJECT_NAME" not in compose_environ
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_failed_down_keeps_the_entry_and_says_so(run_rm, entry_file, recorder, tmp_path):
     recorder.answer(["compose"], DockerResult(1, ""))
@@ -236,6 +262,8 @@ def test_a_running_sandbox_without_yes_and_without_a_terminal_is_refused(run_rm,
     assert console.prompt_list == []
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("answer", ["y", "Y"])
 def test_a_y_on_a_terminal_removes_the_running_sandbox(answer, run_rm, entry_file, recorder):
     _set_running(recorder)
@@ -249,6 +277,8 @@ def test_a_y_on_a_terminal_removes_the_running_sandbox(answer, run_rm, entry_fil
     assert len(_down_call_list(recorder)) == 1
 
 
+# --------------------------------------------------------------------------------
+
 @pytest.mark.parametrize("answer", ["n", "N", "", "yes", " y"])
 def test_anything_but_y_on_a_terminal_keeps_the_running_sandbox(answer, run_rm, entry_file, recorder):
     _set_running(recorder)
@@ -261,6 +291,8 @@ def test_anything_but_y_on_a_terminal_keeps_the_running_sandbox(answer, run_rm, 
     assert _down_call_list(recorder) == []
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_closed_input_on_a_terminal_reads_as_no(run_rm, entry_file, recorder):
     _set_running(recorder)
     console = Console(terminal=True, answer_list=[])
@@ -271,6 +303,8 @@ def test_a_closed_input_on_a_terminal_reads_as_no(run_rm, entry_file, recorder):
     assert err == NOT_REMOVED_TEXT
     assert _down_call_list(recorder) == []
 
+
+# --------------------------------------------------------------------------------
 
 def test_yes_skips_the_question_and_prints_the_sessions_warning(run_rm, entry_file, recorder):
     _set_running(recorder)
@@ -284,6 +318,8 @@ def test_yes_skips_the_question_and_prints_the_sessions_warning(run_rm, entry_fi
     assert console.is_terminal_call_count == 0
     assert len(_down_call_list(recorder)) == 1
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_stopped_sandbox_is_never_asked_about(run_rm, entry_file, recorder):
     console = Console(terminal=True)
@@ -310,6 +346,8 @@ def test_unregister_deletes_the_entry_after_a_good_down(run_rm, entry_file, reco
         f"sbx-rm: the container sbx-sbx1 is gone; nothing in {tmp_path / 'one dir'} was changed",
     ]
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_delete_that_fails_is_named_and_the_container_is_already_gone(run_rm, entry_file, registry, recorder):
     if os.geteuid() == 0:
@@ -348,6 +386,8 @@ def test_a_broken_entry_without_unregister_is_refused_with_the_hint_and_kept(run
     assert broken_entry_file.read_bytes() == before
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_broken_entry_with_unregister_stops_and_removes_the_container_by_name_and_deletes_the_entry(
     run_rm, broken_entry_file, recorder
 ):
@@ -370,6 +410,8 @@ def test_a_broken_entry_with_unregister_stops_and_removes_the_container_by_name_
     ]
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_broken_entry_whose_container_is_gone_only_clears_the_entry(run_rm, broken_entry_file, recorder):
     recorder.answer(["container", "inspect", "sbx-sbx1"], DockerResult(1, ""))
 
@@ -380,6 +422,8 @@ def test_a_broken_entry_whose_container_is_gone_only_clears_the_entry(run_rm, br
     assert not broken_entry_file.exists()
     assert "removing the container" not in out
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_broken_entry_whose_container_carries_no_sandbox_label_is_refused_and_kept(
     run_rm, broken_entry_file, recorder
@@ -398,6 +442,8 @@ def test_a_broken_entry_whose_container_carries_no_sandbox_label_is_refused_and_
     assert broken_entry_file.is_file()
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_broken_entry_with_docker_unable_to_list_labelled_containers_is_kept(run_rm, broken_entry_file, recorder):
     recorder.answer(["ps", "-a", "--filter", "label=sbx.name"], DockerResult(1, ""))
 
@@ -409,6 +455,8 @@ def test_a_broken_entry_with_docker_unable_to_list_labelled_containers_is_kept(r
     assert broken_entry_file.is_file()
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_broken_entry_with_docker_not_answering_is_kept(run_rm, broken_entry_file, recorder):
     recorder.answer(["info"], DockerResult(1, ""))
 
@@ -419,6 +467,8 @@ def test_a_broken_entry_with_docker_not_answering_is_kept(run_rm, broken_entry_f
     assert broken_entry_file.is_file()
     assert not any(call[0] in ("stop", "rm") for call in recorder.call_list)
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_running_container_of_a_broken_entry_needs_yes_or_a_terminal(run_rm, broken_entry_file, recorder):
     _set_labelled(recorder)
@@ -432,6 +482,8 @@ def test_a_running_container_of_a_broken_entry_needs_yes_or_a_terminal(run_rm, b
     assert not any(call[0] in ("stop", "rm") for call in recorder.call_list)
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_running_container_of_a_broken_entry_goes_with_yes(run_rm, broken_entry_file, recorder):
     _set_labelled(recorder)
     _set_running(recorder)
@@ -443,6 +495,8 @@ def test_a_running_container_of_a_broken_entry_goes_with_yes(run_rm, broken_entr
     assert ["stop", "sbx-sbx1"] in recorder.call_list
     assert not broken_entry_file.exists()
 
+
+# --------------------------------------------------------------------------------
 
 def test_a_failed_stop_keeps_the_entry(run_rm, broken_entry_file, recorder):
     _set_labelled(recorder)
@@ -456,6 +510,8 @@ def test_a_failed_stop_keeps_the_entry(run_rm, broken_entry_file, recorder):
     assert broken_entry_file.is_file()
 
 
+# --------------------------------------------------------------------------------
+
 def test_a_failed_rm_keeps_the_entry(run_rm, broken_entry_file, recorder):
     _set_labelled(recorder)
     recorder.answer(["rm"], DockerResult(1, ""))
@@ -466,6 +522,8 @@ def test_a_failed_rm_keeps_the_entry(run_rm, broken_entry_file, recorder):
     assert err == "sbx-rm: Docker could not remove the container sbx-sbx1; the registry entry stays\n"
     assert broken_entry_file.is_file()
 
+
+# --------------------------------------------------------------------------------
 
 def test_an_entry_file_whose_name_breaks_the_rule_is_refused_and_kept(run_rm, registry, recorder):
     bad_file = write_json_entry(registry, "Bad_Name", "relative/dir", "claude")

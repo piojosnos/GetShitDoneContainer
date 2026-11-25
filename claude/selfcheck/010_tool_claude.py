@@ -33,6 +33,8 @@ def claude_version_result(
     )
 
 
+# --------------------------------------------------------------------------------
+
 def claude_off_path_result(
     agent_bin_dir: Path = AGENT_BIN_DIR,
     environment_map: Mapping[str, str] = os.environ,
@@ -52,6 +54,8 @@ def _check_tool_claude() -> CheckResult:
 
     return claude_version_result(pin_map["CLAUDE_CODE_VERSION"])
 
+
+# --------------------------------------------------------------------------------
 
 def _check_claude_off_path() -> CheckResult:
     return claude_off_path_result()

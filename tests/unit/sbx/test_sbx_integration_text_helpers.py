@@ -33,12 +33,16 @@ def test_last_line_is_the_final_non_blank_line():
     assert first_run._last_line("only") == "only"
 
 
+# --------------------------------------------------------------------------------
+
 def test_line_starting_with_finds_the_first_match_or_none():
     text = "OK: step-1: fine\nFAIL: step-2: broken\nFAIL: step-3: also broken\n"
 
     assert first_run._line_starting_with(text, "FAIL: step-") == "FAIL: step-2: broken"
     assert first_run._line_starting_with(text, "FAIL: step-9") is None
 
+
+# --------------------------------------------------------------------------------
 
 def test_fix_line_must_be_a_fix_line_that_names_the_word():
     text = "FAIL: step-1: run word-1 first\n  fix: run word-1, then word-2\n"
@@ -60,6 +64,8 @@ def test_live_target_exists_in_the_fixture_for_each_agent():
         assert live_path.is_file(), f"{agent.name}: {live_dir}/{live_file}"
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_generated_live_file_differs_from_the_master_for_each_agent():
     master_text = (first_run._SUPPORT_DIR / "rules" / "sbx-fixture-always.md").read_text(encoding="utf-8")
 
@@ -70,15 +76,21 @@ def test_the_generated_live_file_differs_from_the_master_for_each_agent():
         assert live_path.read_text(encoding="utf-8") != master_text, agent.name
 
 
+# --------------------------------------------------------------------------------
+
 def test_kept_and_dropped_skills_are_the_fixture_skills():
     for agent in [CLAUDE_SPEC, CURSOR_SPEC]:
         assert first_run._fixture_skill_name_list(agent) == [first_run._KEPT_SKILL, first_run._DROPPED_SKILL], agent.name
 
 
+# --------------------------------------------------------------------------------
+
 def test_each_agent_spec_names_the_agent_of_its_image():
     assert CLAUDE_SPEC.name == claude_shared.AGENT_NAME
     assert CURSOR_SPEC.name == cursor_shared.AGENT_NAME
 
+
+# --------------------------------------------------------------------------------
 
 def test_stand_in_session_script_parses_and_names_the_agent():
     for agent in [CLAUDE_SPEC, CURSOR_SPEC]:
@@ -137,6 +149,8 @@ def test_pinned_image_map_keeps_only_digest_pins():
     }
 
 
+# --------------------------------------------------------------------------------
+
 def test_the_real_versions_file_yields_digest_pins_with_the_digest_split_off():
     pinned_image_map = pin_digests._pinned_image_map(read_pins(REPO_DIR / "versions.env"))
 
@@ -148,6 +162,8 @@ def test_the_real_versions_file_yields_digest_pins_with_the_digest_split_off():
         assert digest.startswith("sha256:"), pin_name
 
 
+# --------------------------------------------------------------------------------
+
 def test_digest_comes_from_the_digest_line_of_the_inspect_output():
     inspect_text = f"Name:      registry-1/name-1:tag-1\nMediaType: type-1\nDigest:    {_DIGEST_1}\n"
 
@@ -155,6 +171,8 @@ def test_digest_comes_from_the_digest_line_of_the_inspect_output():
     assert pin_digests._digest_from_inspect("ERROR: not found\n") == ""
     assert pin_digests._digest_from_inspect("") == ""
 
+
+# --------------------------------------------------------------------------------
 
 def test_pin_result_line_is_a_pass_an_info_or_a_fail():
     same = pin_digests._pin_result_line("PIN_A", "image-1", _DIGEST_1, _DIGEST_1)

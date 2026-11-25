@@ -52,6 +52,8 @@ def load_step_module(module_path: Path) -> ModuleType:
     return load_module(module_path, _FILE_KIND.module_prefix)
 
 
+# --------------------------------------------------------------------------------
+
 def _step_file_list(shared_steps_dir: Path, agent_steps_dir: Path) -> list[tuple[str, int, Path]]:
     step_file_list = []
 
@@ -69,6 +71,8 @@ def _step_file_list(shared_steps_dir: Path, agent_steps_dir: Path) -> list[tuple
     return step_file_list
 
 
+# --------------------------------------------------------------------------------
+
 def _has_agent_file(step_file_list: list[tuple[str, int, Path]]) -> bool:
     for _, group, _ in step_file_list:
         if group == _AGENT_GROUP:
@@ -76,6 +80,8 @@ def _has_agent_file(step_file_list: list[tuple[str, int, Path]]) -> bool:
 
     return False
 
+
+# --------------------------------------------------------------------------------
 
 def collect_steps(shared_steps_dir: Path, agent_steps_dir: Path) -> list[Check]:
     step_file_list = _step_file_list(shared_steps_dir, agent_steps_dir)
@@ -106,12 +112,16 @@ def _write_line(line: str, output: TextIO) -> None:
     output.flush()
 
 
+# --------------------------------------------------------------------------------
+
 def _stop_at(name: str, result: CheckResult, output: TextIO) -> int:
     write_outcome(name, result, _FILE_KIND, output)
     _write_line(f"sbx-init: stopped at {name}", output)
 
     return 1
 
+
+# --------------------------------------------------------------------------------
 
 def _run_steps(step_list: list[Check], output: TextIO) -> tuple[int, str]:
     passed_count = 0
@@ -149,9 +159,13 @@ def _take_lock(lock_file: Path, flock_function: Callable[[TextIO, int], None] = 
     return handle
 
 
+# --------------------------------------------------------------------------------
+
 def _dir_writable_hint(file: Path) -> str:
     return f"check that {file.parent} is writable; " + rebuild_hint()
 
+
+# --------------------------------------------------------------------------------
 
 def _marker_failure(action_text: str, marker_file: Path, error: OSError) -> CheckResult:
     return failed(
@@ -159,6 +173,8 @@ def _marker_failure(action_text: str, marker_file: Path, error: OSError) -> Chec
         _dir_writable_hint(marker_file),
     )
 
+
+# --------------------------------------------------------------------------------
 
 def _run_locked(shared_steps_dir: Path, agent_steps_dir: Path, marker_file: Path, output: TextIO) -> int:
     try:
@@ -182,6 +198,8 @@ def _run_locked(shared_steps_dir: Path, agent_steps_dir: Path, marker_file: Path
 
     return 0
 
+
+# --------------------------------------------------------------------------------
 
 def run_init(shared_steps_dir: Path, agent_steps_dir: Path, marker_file: Path, lock_file: Path, output: TextIO) -> int:
     try:
@@ -218,6 +236,8 @@ def _raise_on_stop_signals() -> None:
     for signal_number in _STOP_SIGNAL_LIST:
         signal.signal(signal_number, signal.default_int_handler)
 
+
+# --------------------------------------------------------------------------------
 
 def _report_interrupted() -> None:
     try:
