@@ -16,7 +16,6 @@ from init_helpers import REPO_DIR, load_step
 
 self_update_step = load_step(REPO_DIR / "cursor" / "init" / "060_self_update_off.py")
 self_update_check = load_step(REPO_DIR / "cursor" / "selfcheck" / "050_self_update_off.py")
-gsd_sync_step = load_step(REPO_DIR / "cursor" / "init" / "050_gsd_sync.py")
 
 
 # ------------------------------------------------------------------------------
@@ -148,7 +147,3 @@ def test_the_step_file_holds_one_step_and_reads_the_constant_the_check_reads():
     assert self_update_step.CLI_CONFIG_FILE is cursor_shared.CLI_CONFIG_FILE
     assert self_update_check.CLI_CONFIG_FILE is cursor_shared.CLI_CONFIG_FILE
     assert cursor_shared.CLI_CONFIG_FILE == cursor_shared.AGENT_CONFIG_DIR / "cli-config.json"
-
-
-def test_the_cursor_gsd_step_file_holds_one_step_named_for_cursor():
-    assert [step.name for step in gsd_sync_step.STEP_LIST] == ["cursor-gsd-sync"]

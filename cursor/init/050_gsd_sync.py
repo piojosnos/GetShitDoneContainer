@@ -5,22 +5,12 @@
 # by file name.
 # ------------------------------------------------------------------------------
 
-from pathlib import Path
-from typing import Callable
-
-from check_result import Check, CheckResult
-from cursor_shared import AGENT_CONFIG_DIR
-from gsd_sync import gsd_sync_result
+from agent_steps import gsd_sync_step_list
+from cursor_shared import AGENT
 
 
 # ------------------------------------------------------------------------------
 # Step entries
 # ------------------------------------------------------------------------------
 
-def _step_cursor_gsd_sync(
-    sync_function: Callable[[Path, str], CheckResult] = gsd_sync_result,
-) -> CheckResult:
-    return sync_function(AGENT_CONFIG_DIR, "--cursor")
-
-
-STEP_LIST = [Check("cursor-gsd-sync", _step_cursor_gsd_sync)]
+STEP_LIST = gsd_sync_step_list(AGENT)
