@@ -12,9 +12,9 @@ last_activity_desc: Phase 10.1.2 complete, transitioned to Phase 10.2
 state_head: 3197a1e11e2a9fd5c098d2f36e1e199e48f5c898
 progress:
   total_phases: 12
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 80
-  completed_plans: 75
+  completed_plans: 80
   percent: 70
 ---
 
@@ -37,7 +37,7 @@ Last activity: 2026-11-25 — Phase 10.1.2 complete, transitioned to Phase 10.2
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 164
+- Total plans completed: 169
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -66,6 +66,7 @@ Last activity: 2026-11-25 — Phase 10.1.2 complete, transitioned to Phase 10.2
 | 09.1 | 14 | - | - |
 | 10 | 11 | - | - |
 | 10.1 | 5 | - | - |
+| 10.1.1 | 5 | - | - |
 | 10.1.2 | 4 | - | - |
 
 **Recent Trend:**
@@ -233,6 +234,11 @@ Last activity: 2026-11-25 — Phase 10.1.2 complete, transitioned to Phase 10.2
 | Phase 10.1 P02 | 8min | 2 tasks | 4 files |
 | Phase 10.1 P03 | 10 min | 2 tasks | 18 files |
 | Phase 10.1 P04 | not captured | 2 tasks | 33 files |
+| Phase 10.1.1 P01 | 15 min | 2 tasks | 16 files |
+| Phase 10.1.1 P02 | 5min | 2 tasks | 4 files |
+| Phase 10.1.1 P03 | 8min | 2 tasks | 3 files |
+| Phase 10.1.1 P04 | 8min | 2 tasks | 3 files |
+| Phase 10.1.1 P05 | 90min | 3 tasks | 0 files |
 | Phase 10.1.2 P01 | 25min | 2 tasks | 39 files |
 | Phase 10.1.2 P02 | 15min | 2 tasks | 9 files |
 | Phase 10.1.2 P03 | 10min | 2 tasks | 3 files |
@@ -465,6 +471,10 @@ Recent decisions affecting current work:
 - [Phase 10.1]: A skill master with any frontmatter key other than name and description is refused; a missing skills/ folder stops the run like rules/
 - [Phase 10.1]: find_drift returns one entry per file, a changed text file's entry holds its unified diff, so the differing-file count stays a file count
 - [Phase 10.1]: disable-model-invocation is an optional boolean skill key, passed through to both agents; other values and unknown keys are refused
+- [Phase 10.1.1]: The whole clone directory is the own-link root, so old links into the masters move on the next sbx-init
+- [Phase 10.1.1]: A clone missing generated/<agent>/rules or skills fails init and the check with one detail; no fallback to the masters
+- [Phase 10.1.1]: Relink scenario still removes a dropped skill's link although its master copy stays in the clone; the linker reads generated output only
+- [Phase 10.1.1]: Migration checklist runs the pull in the sandbox shell; practice changes go through bp-update-practice to the masters
 - [Phase 10.1.2]: Plan 01: AgentDescription plus agent_check_list builder replace the per-agent selfcheck twins; builder imports nothing from base/init
 - [Phase 10.1.2]: Two step builders (GSD sync, best-practices links) in base/init/agent_steps.py; two thin step files per agent keep the shared 800 step between them
 - [Phase 10.1.2]: Glossary keeps 'shared checks' for the base image's checks; the agent builders are shared between agents, not between images
@@ -498,6 +508,7 @@ None yet.
 | 261114-9ma | Fix the two test-tag review warnings: H-25 rebuild hint and a notice for a non-local SBX_IMAGE_TAG | 2026-11-14 | aa45f08 | [261114-9ma-fix-the-two-test-tag-review-warnings-h-2](./quick/261114-9ma-fix-the-two-test-tag-review-warnings-h-2/) |
 | 261118-02m | PR 52 review fixes: shared agent wrapper and shared step-file runner code | 2026-11-18 | 749c151 | [261118-02m-pr-52-review-fixes-shared-agent-wrapper-](./quick/261118-02m-pr-52-review-fixes-shared-agent-wrapper-/) |
 | 261118-0vx | PR 52 best-practices review fixes: shared hints and helpers, init and self-check symmetry, parameter order | 2026-11-18 | f75a7f5 | [261118-0vx-pr-52-best-practices-review-fixes](./quick/261118-0vx-pr-52-best-practices-review-fixes/) |
+| 261125-2cw | Fail closed on an empty generated practices directory | 2026-11-25 | ed8bb84 | [261125-2cw-fail-closed-on-an-empty-generated-practi](./quick/261125-2cw-fail-closed-on-an-empty-generated-practi/) |
 
 ### Roadmap Evolution
 
