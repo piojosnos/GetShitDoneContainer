@@ -129,45 +129,32 @@ def test_the_links_result_says_there_is_no_clone_when_the_clone_dir_is_absent(tm
     assert "move it aside" not in result.hint
 
 
-def test_the_links_result_names_the_dir_a_clone_dir_lacks(tmp_path):
-    config1 = tmp_path / "state1" / "agent1"
-    config1.mkdir(parents=True)
-    clone1 = tmp_path / "best-practices"
-    (clone1 / "generated" / "agent1" / "rules").mkdir(parents=True)
-
-    skills_result = best_practices_links.best_practices_links_result(config1, clone1, "agent1")
-
-    (clone1 / "generated" / "agent1" / "rules").rmdir()
-    (clone1 / "generated" / "agent1" / "skills").mkdir()
-
-    rules_result = best_practices_links.best_practices_links_result(config1, clone1, "agent1")
-
-    assert not skills_result.passed
-    assert skills_result.detail == f"{clone1} exists but has no generated/agent1/skills/ directory"
-    assert not rules_result.passed
-    assert rules_result.detail == f"{clone1} exists but has no generated/agent1/rules/ directory"
-
-    for result in [skills_result, rules_result]:
-        assert f"git -C {clone1} pull" in result.hint
-        assert "sbx-init" in result.hint
-        assert "move it aside" in result.hint
-        assert "sbx-best-practices-clone" in result.hint
-
-
-@pytest.mark.parametrize(("empty_name", "entry_noun"), [("rules", "rule"), ("skills", "skill")])
-def test_the_links_result_names_the_empty_generated_dir_of_a_clone(tmp_path, empty_name, entry_noun):
+@pytest.mark.parametrize(
+    ("lacking_name", "state", "lacking_text"),
+    [
+        ("rules", "missing", "no generated/agent1/rules/ directory"),
+        ("skills", "missing", "no generated/agent1/skills/ directory"),
+        ("rules", "empty", "no rule in generated/agent1/rules/"),
+        ("skills", "empty", "no skill in generated/agent1/skills/"),
+    ],
+)
+def test_the_links_result_names_what_the_clone_lacks(tmp_path, lacking_name, state, lacking_text):
     config1, clone1 = make_best_practices_tree(tmp_path, ["skill-a"], "agent1")
-    empty_dir = clone1 / "generated" / "agent1" / empty_name
-    shutil.rmtree(empty_dir)
-    empty_dir.mkdir()
-    (empty_dir / ".hidden1").write_text("hidden\n")
+    lacking_dir = clone1 / "generated" / "agent1" / lacking_name
+    shutil.rmtree(lacking_dir)
+
+    if state == "empty":
+        lacking_dir.mkdir()
+        (lacking_dir / ".hidden1").write_text("hidden\n")
 
     result = best_practices_links.best_practices_links_result(config1, clone1, "agent1")
 
     assert not result.passed
-    assert result.detail == f"{clone1} exists but has no {entry_noun} in generated/agent1/{empty_name}/"
+    assert result.detail == f"{clone1} exists but has {lacking_text}"
     assert f"git -C {clone1} pull" in result.hint
+    assert "sbx-init" in result.hint
     assert "move it aside" in result.hint
+    assert "sbx-best-practices-clone" in result.hint
 
 
 def test_best_practices_links_result_fails_for_a_skill_link_with_the_right_text_that_misses_the_clone_dir(tmp_path):
@@ -243,15 +230,9 @@ def test_the_old_links_into_the_masters_fail_the_check_until_init_relinks(tmp_pa
 
 def test_clone_failure_is_none_for_a_clone_with_what_the_agent_needs(tmp_path):
     clone1 = tmp_path / "best-practices"
-    (clone1 / "generated" / "agent1" / "skills").mkdir(parents=True)
-
-    assert best_practices_links.clone_failure(clone1, "agent1").detail == (
-        f"{clone1} exists but has no generated/agent1/rules/ directory"
-    )
-
-    (clone1 / "generated" / "agent1" / "rules").mkdir()
+    (clone1 / "generated" / "agent1" / "rules").mkdir(parents=True)
     (clone1 / "generated" / "agent1" / "rules" / "rule1.md").write_text("generated rule1\n")
-    (clone1 / "generated" / "agent1" / "skills" / "skill-a").mkdir()
+    (clone1 / "generated" / "agent1" / "skills" / "skill-a").mkdir(parents=True)
 
     assert best_practices_links.clone_failure(clone1, "agent1") is None
 
