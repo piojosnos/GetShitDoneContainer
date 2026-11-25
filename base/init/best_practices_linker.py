@@ -1,8 +1,8 @@
 # ------------------------------------------------------------------------------
 # Links from an agent config directory into the best-practices clone
 # ------------------------------------------------------------------------------
-# A link of init's own is one whose target lies under the clone's directory; init
-# replaces it and removes it when the clone drops the skill. Anything else in the
+# A link of init's own is one whose target lies anywhere under the clone's directory;
+# init replaces it and removes it when the clone drops the skill. Anything else in the
 # way (a directory, a file, a copy, a link elsewhere) is left as it is and reported.
 # The only removal in this file is Path.unlink on an own link. The step does not
 # check that a link resolves; sbx-selfcheck does. The image puts this file in
@@ -12,7 +12,7 @@
 from pathlib import Path
 
 from best_practices_links import (
-    RULES_LINK_TEXT,
+    RULES_LINK_TEXT_TEMPLATE,
     SKILL_LINK_TEXT_TEMPLATE,
     best_practices_skill_name_list,
     clone_failure,
@@ -26,8 +26,8 @@ from check_result import CheckResult, capped_problem_detail, failed, passed
 # The linking
 # ------------------------------------------------------------------------------
 
-def link_best_practices(config_dir: Path, best_practices_dir: Path, links_rules: bool) -> CheckResult:
-    clone_problem = clone_failure(best_practices_dir, links_rules)
+def link_best_practices(config_dir: Path, best_practices_dir: Path, agent_name: str) -> CheckResult:
+    clone_problem = clone_failure(best_practices_dir, agent_name)
 
     if clone_problem is not None:
         return clone_problem
@@ -41,16 +41,16 @@ def link_best_practices(config_dir: Path, best_practices_dir: Path, links_rules:
     except OSError as e:
         problem_list.append(f"{skills_dir}: {e.strerror}")
 
-        return _result(config_dir, best_practices_dir, links_rules, 0, clash_list, problem_list)
+        return _result(config_dir, best_practices_dir, agent_name, 0, clash_list, problem_list)
 
-    if links_rules:
-        _place_link(config_dir / "rules", RULES_LINK_TEXT, best_practices_dir / "rules", clash_list, problem_list)
+    rules_link_text = RULES_LINK_TEXT_TEMPLATE.format(agent=agent_name)
+    _place_link(config_dir / "rules", rules_link_text, best_practices_dir, clash_list, problem_list)
 
-    skill_name_list = best_practices_skill_name_list(best_practices_dir)
-    _link_skills(skills_dir, best_practices_dir, skill_name_list, clash_list, problem_list)
+    skill_name_list = best_practices_skill_name_list(best_practices_dir, agent_name)
+    _link_skills(skills_dir, best_practices_dir, agent_name, skill_name_list, clash_list, problem_list)
     _remove_stale_links(skills_dir, best_practices_dir, skill_name_list, problem_list)
 
-    return _result(config_dir, best_practices_dir, links_rules, len(skill_name_list), clash_list, problem_list)
+    return _result(config_dir, best_practices_dir, agent_name, len(skill_name_list), clash_list, problem_list)
 
 
 # ------------------------------------------------------------------------------
@@ -86,15 +86,14 @@ def _place_link(
 def _link_skills(
     skills_dir: Path,
     best_practices_dir: Path,
+    agent_name: str,
     skill_name_list: list[str],
     clash_list: list[Path],
     problem_list: list[str],
 ) -> None:
-    own_root = best_practices_dir / "skills"
-
     for skill_name in skill_name_list:
-        link_text = SKILL_LINK_TEXT_TEMPLATE.format(name=skill_name)
-        _place_link(skills_dir / skill_name, link_text, own_root, clash_list, problem_list)
+        link_text = SKILL_LINK_TEXT_TEMPLATE.format(agent=agent_name, name=skill_name)
+        _place_link(skills_dir / skill_name, link_text, best_practices_dir, clash_list, problem_list)
 
 
 # ------------------------------------------------------------------------------
@@ -107,8 +106,6 @@ def _remove_stale_links(
     skill_name_list: list[str],
     problem_list: list[str],
 ) -> None:
-    own_root = best_practices_dir / "skills"
-
     try:
         entry_list = sorted(skills_dir.iterdir())
     except OSError as e:
@@ -117,7 +114,7 @@ def _remove_stale_links(
         return
 
     for entry in entry_list:
-        if entry.name in skill_name_list or not is_best_practices_link(entry, own_root):
+        if entry.name in skill_name_list or not is_best_practices_link(entry, best_practices_dir):
             continue
 
         try:
@@ -133,7 +130,7 @@ def _remove_stale_links(
 def _result(
     config_dir: Path,
     best_practices_dir: Path,
-    links_rules: bool,
+    agent_name: str,
     skill_count: int,
     clash_list: list[Path],
     problem_list: list[str],
@@ -147,7 +144,7 @@ def _result(
     if clash_list:
         return _clash_result(clash_list)
 
-    return passed(linked_detail(best_practices_dir, links_rules, skill_count))
+    return passed(linked_detail(best_practices_dir, agent_name, skill_count))
 
 
 def _clash_result(clash_list: list[Path]) -> CheckResult:

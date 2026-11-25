@@ -9,6 +9,7 @@ from pathlib import Path
 
 from paths import STATE_DIR
 
+AGENT_NAME = "cursor"
 AGENT_CONFIG_DIR = STATE_DIR / "cursor"
 CLI_CONFIG_FILE = AGENT_CONFIG_DIR / "cli-config.json"
 

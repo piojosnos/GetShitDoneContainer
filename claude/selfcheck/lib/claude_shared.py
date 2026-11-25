@@ -9,6 +9,7 @@ from pathlib import Path
 
 from paths import STATE_DIR
 
+AGENT_NAME = "claude"
 AGENT_CONFIG_DIR = STATE_DIR / "claude"
 
 # The directory the image installs the agent in; the ownership check and the protected
