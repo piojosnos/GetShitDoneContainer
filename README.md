@@ -234,7 +234,7 @@ A full pass in a Claude sandbox:
 OK: state-dirs: shell, gh, git, cache/npm, cache/uv, m2, claude exist under /home/sandbox/workspace/state
 OK: claude-gsd-sync: the GSD installer finished into /home/sandbox/workspace/state/claude
 OK: state-owner: 0 paths given back to sandbox
-OK: claude-best-practices-links: 12 skills linked from /home/sandbox/workspace/best-practices, rules linked
+OK: claude-best-practices-links: 4 skills linked from /home/sandbox/workspace/best-practices/generated/claude, rules linked
 sbx-init: 4 steps passed; run sbx-selfcheck to check the sandbox
 ```
 
@@ -311,13 +311,13 @@ curl -fsSL https://cursor.com/install | grep -oE 'lab/[0-9]{4}\.[0-9]{2}\.[0-9]{
 
 ## Best-practices clone
 
-Every sandbox reads the same standing rules and skills (`/pr-reply`, `/merged`) from its own clone, and can improve them by PR. This section describes a Claude sandbox; a Cursor sandbox is described at its end.
+Every sandbox reads the same standing rules and skills (`/bp-pr-reply`, `/bp-merged`) from its own clone, and can improve them by PR. Each agent reads them in its own format. The tables use a Claude sandbox's paths; the Cursor differences are at the end of this section.
 
 | Where | What |
 |---|---|
-| `piojosnos/claude-best-practices` (private GitHub repo) | The source: `rules/` and `skills/`, plain Markdown. Named by `BEST_PRACTICES_REPO_URL`. |
+| `piojosnos/claude-best-practices` (private GitHub repo) | The source. The masters are `rules/` and `skills/`, plain Markdown. The generated practices for each agent are committed in `generated/claude/` and `generated/cursor/`. Named by `BEST_PRACTICES_REPO_URL`. |
 | `$SBX_DIR/best-practices` (`/home/sandbox/workspace/best-practices`, `SBX_BEST_PRACTICES_DIR`) | This sandbox's own git clone. Usable from the host with the container down. |
-| `$SBX_DIR/state/claude` (`~/.claude`) | Links into the clone: `rules` and one link per best-practices skill |
+| `$SBX_DIR/state/claude` (`~/.claude`) | Links into `generated/claude/` of the clone: `rules` and one link per skill |
 
 First run, once per sandbox:
 
@@ -332,31 +332,39 @@ What `sbx-init` does in `state/claude`:
 
 | In `state/claude` | What `sbx-init` does |
 |---|---|
-| `rules` | Makes or replaces a link to `../../best-practices/rules`, only when `rules` is missing or already such a link. A real `rules` directory is left as it is and FAILs the step. |
-| One link per skill directory of the clone | Makes or replaces it, only when that name is missing or already a link into the clone. A directory of yours, a copy or a GSD skill with the same name is left as it is and FAILs the step. |
-| A link of its own whose skill the clone dropped | Removes it. |
+| `rules` | Makes or replaces a link to `../../best-practices/generated/claude/rules`, only when `rules` is missing or already a link into the clone. A real `rules` directory is left as it is and FAILs the step. |
+| One link per skill directory of `generated/claude/skills/` | Makes or replaces a link to `../../../best-practices/generated/claude/skills/<name>`, only when that name is missing or already a link into the clone. A directory of yours, a copy or a GSD skill with the same name is left as it is and FAILs the step. |
+| A link of its own whose skill the clone dropped | Removes it. Any link into the clone is init's own, so the links an older image made into `rules/` and `skills/` are replaced or removed by the next `sbx-init`. |
 | GSD's skills and your own other skills | Never touched by the links. GSD's skills are synced by GSD (see "GSD"). |
 | `projects/` (memories), `CLAUDE.md`, `settings.json`, the login | Never touched. |
 
 - The clash rule: a name that is not a link into the clone is never replaced. The step links every other skill, then FAILs with `rename or move <path>, then run sbx-init again`. It never deletes anything of yours.
 - With no clone, the best-practices step FAILs: run `sbx-gh-login`, then `sbx-best-practices-clone`. Until `sbx-init` has passed, `sbx-claude` and `sbx-cursor` refuse, so the clone must exist first. `sbx-init` never fetches or pulls, and needs no network.
 - Copies of clone skills from an older layout are not replaced; they clash (see [`MIGRATION.md`](MIGRATION.md)).
-- A rule with no frontmatter loads in every session; one with `paths:` frontmatter (globs in quotes) loads when Claude touches a matching file.
+- Each generated rule carries its agent's frontmatter. A rule for every session loads always; a scoped rule (`paths:` for Claude, `globs:` for Cursor) loads when the agent touches a matching file.
 - Update the practices with `git -C /home/sandbox/workspace/best-practices pull` in a sandbox shell, or ask Claude to pull them.
 - An edit or a pull is on disk at once. A running session sees a changed rule at its next session or after `/clear`. A pull that adds or removes a skill shows after `sbx-init` and a restart of the agent.
 - A clone made on the host while the sandbox runs needs one `sbx-init`.
 - Never run git on the clone from the host, and do not open it in an IDE with git integration. The agent can write the clone's `.git`, and git runs the hooks and config found there. Run git inside the sandbox and review changes in the PR on GitHub.
 
+Move a sandbox to the generated practices, once:
+
+1. In the sandbox shell, `git -C /home/sandbox/workspace/best-practices pull`. The clone has `generated/` only after this pull.
+2. On the host, `sbx-upgrade NAME`. It rebuilds the images and does not touch the clone.
+3. In the sandbox shell, `sbx-init`. It replaces the old links; in a Cursor sandbox it links the rules for the first time.
+
+- With the upgrade first, `sbx-init` FAILs with `... exists but has no generated/claude/rules/ directory` and the pull fix, and the agent wrappers refuse until it passes. Pull, then run `sbx-init` again.
+
 Change a rule or a skill:
 
-1. Edit the file in the clone by its real path (or ask Claude to amend the practices), on a new branch cut from the updated `main`.
+1. Ask the agent to change the practice. The `bp-update-practice` skill edits the master (`rules/<name>.md` or `skills/<name>/SKILL.md`), regenerates `generated/`, runs the drift check and commits on a new branch cut from the updated `main`. Never edit a file under `generated/`; the drift check fails on a hand edit.
 2. Commit, push with your go, and open a PR against `main` with `gh pr create`.
 3. You merge it on GitHub. Other sandboxes get it when they pull.
 
 Edit protection:
 
 - Managed settings let Claude edit the clone from any project directory (`additionalDirectories`).
-- Claude's Edit tool is refused on every path under `state/claude/skills/`, even with permissions bypassed. Edit a best-practices skill in the clone, and your own skills from a shell or a host editor.
+- Claude's Edit tool is refused on every path under `state/claude/skills/`, even with permissions bypassed. Edit a best-practices skill's master in the clone, and your own skills from a shell or a host editor.
 - It is not a security boundary: a script Claude runs can still write there. `state/claude/CLAUDE.md` stays editable.
 
 The trade:
@@ -367,8 +375,8 @@ The trade:
 
 In a Cursor sandbox:
 
-- `sbx-init` links the best-practices skills into `state/cursor/skills` (`~/.cursor/skills`), the same way and with the same clash rule. The rules are not linked, because Cursor reads global rules only from `.mdc` files and every best-practices rule is `.md`.
-- Some skills and rules name Claude paths or slash commands, so they may not work in Cursor as they are.
+- `sbx-init` links the rules directory and the skills from `generated/cursor/` into `state/cursor` (`~/.cursor/rules`, `~/.cursor/skills`), the same way and with the same clash rule.
+- Cursor loads the always-applied rules in every session, and a scoped rule (`globs:`) for matching files. A skill with `disable-model-invocation: true` starts by hand only.
 - Relinking is `sbx-init`.
 
 Memories are not shipped; they belong to each project. A memory that proves general becomes a best-practices rule by PR against the best-practices repo.
@@ -530,7 +538,7 @@ docker run --rm sbx-claude:local /opt/sbx/agents/bin/claude --version
 | `FAIL: claude-best-practices-links: ... is not a link into the best-practices clone` (or `cursor-...`) | A directory or file of yours has the name of a clone skill, or `rules` is a real directory. It was left as it is. Rename or move that path, then run `sbx-init` again. |
 | `FAIL: claude-gsd-sync:` (or `cursor-gsd-sync:`) | Read the log file the line names, fix what it says, then run `sbx-init` again. A hand edit of a GSD file is kept in `state/claude/gsd-local-patches/`. |
 | `FAIL: claude-best-practices-links: no best-practices clone at ...` (or `cursor-...`) | Run `sbx-gh-login`, then `sbx-best-practices-clone`; it clones the repo and runs `sbx-init` again. |
-| `FAIL: claude-best-practices-links: ... exists but has no rules/ directory` (or `skills/`, or `cursor-...`) | Check that the directory is a clone of the best-practices repo. If it is, run `git -C` on it with `pull`, then `sbx-init`. If not, move it aside, then run `sbx-gh-login` and `sbx-best-practices-clone`. |
+| `FAIL: claude-best-practices-links: ... exists but has no generated/claude/rules/ directory` (or `skills/`, or `cursor-...` with `generated/cursor/`) | The clone predates the generated practices, or is not a clone. If it is a clone, run `git -C /home/sandbox/workspace/best-practices pull` in the sandbox shell, then `sbx-init`. If not, move it aside, then run `sbx-gh-login` and `sbx-best-practices-clone`. |
 | `FAIL: state-owner:` | Run the host command of its `fix:` line, then run `sbx-init` again. |
 | Claude hangs at start after an unclean stop | Check no claude is running (`docker exec sbx-demo pgrep -a claude` prints nothing), then delete `$SBX_DIR/state/claude/.claude.json.lock`. Everything else in `state/claude` is safe on the host. |
 | Console keyless sign-in is lost on recreate | It is stored outside `CLAUDE_CONFIG_DIR`. Log in with a claude.ai account instead. |
@@ -555,7 +563,7 @@ docker run --rm sbx-claude:local /opt/sbx/agents/bin/claude --version
 | `up` fails with `... must be lowercase` and names `sbx-<name>-name-check` | `SBX_NAME` has an uppercase letter. Use the lowercase name; see the name rule in Requirements. |
 | `claude --resume` shows nothing | Sessions are keyed by directory; start it from the same directory as before. |
 | A skill of yours named `gsd-...` is gone after `sbx-init` | GSD owns that prefix. Rename the skill. |
-| Claude refuses to edit a best-practices skill under `~/.claude/skills` | Intended. Edit it in the clone by its real path (see "Best-practices clone"). |
+| Claude refuses to edit a best-practices skill under `~/.claude/skills` | Intended. Edit its master in the clone (see "Best-practices clone"). |
 | `sbx-best-practices-clone` says the directory already exists | Pull it (`git -C /home/sandbox/workspace/best-practices pull`), or relink it with `sbx-init`. Move the directory away to clone fresh. |
 | `sbx-best-practices-clone` says it cannot clone | Run `sbx-gh-login` first; the repo is private. |
 | A skill you pulled is missing in Claude | Run `sbx-init`, then restart Claude. |
