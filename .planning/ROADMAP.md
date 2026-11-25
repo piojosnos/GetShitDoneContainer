@@ -365,14 +365,14 @@ Plans:
 **Goal:** The selfcheck files that Claude and Cursor repeat with only a different agent config directory, root list or flag become one shared list of agent checks, built from a small per-agent description. Each agent keeps only its truly specific checks, so the OpenCode image starts from the shared list instead of a third copy. Output stays the same; the check counts in H-34 do not change.
 **Requirements**: TBD
 **Depends on:** Phase 10.1.1
-**Plans:** 1/4 plans executed
+**Plans:** 2/4 plans executed
 
 Plans:
 **Wave 1**
 - [x] 10.1.2-01-PLAN.md: tracer; `AgentDescription`, `agent_check_list` and one `030_agent_checks.py` per agent replace the 16 selfcheck twin files, Claude first, then Cursor; output unchanged (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 10.1.2-02-PLAN.md: `gsd_sync_step_list` and `best_practices_links_step_list` behind two one-line step files per agent; init order unchanged (wave 2)
+- [x] 10.1.2-02-PLAN.md: `gsd_sync_step_list` and `best_practices_links_step_list` behind two one-line step files per agent; init order unchanged (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 10.1.2-03-PLAN.md: README selfcheck paragraph, GLOSSARY row, tests README catches (wave 3)
@@ -417,7 +417,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 10. Host side to Python | v2.0 | 11/11 | Complete    | 2026-11-20 |
 | 10.1. Practices generator | v2.0 | 5/5 | Complete    | 2026-11-24 |
 | 10.1.1. Agents link the generated practices | v2.0 | 0/TBD | Not started | - |
-| 10.1.2. Shared agent checks | v2.0 | 1/4 | In Progress|  |
+| 10.1.2. Shared agent checks | v2.0 | 2/4 | In Progress|  |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
 | 11. CI widened | v2.0 | 0/TBD | Not started | - |
 

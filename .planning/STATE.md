@@ -5,16 +5,16 @@ milestone_name: Simple tooling
 current_phase: 10.1.2
 current_phase_name: Shared agent checks before the third agent
 status: executing
-stopped_at: Completed 10.1.2-01-PLAN.md
-last_updated: "2026-11-25T19:55:37.624Z"
+stopped_at: Completed 10.1.2-02-PLAN.md
+last_updated: "2026-11-25T19:58:18.724Z"
 last_activity: 2026-11-25
 last_activity_desc: Phase 10.1.2 execution started
-state_head: 86ab4d551763df97091aabbb616c850ea9f78a34
+state_head: bc594b477f38eee00d67a4a7f02a2b0a209dccd5
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 80
-  completed_plans: 72
+  completed_plans: 73
   percent: 50
 ---
 
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-11-12)
 ## Current Position
 
 Phase: 10.1.2 (Shared agent checks before the third agent) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-11-25 — Phase 10.1.2 execution started
 
@@ -233,6 +233,7 @@ Last activity: 2026-11-25 — Phase 10.1.2 execution started
 | Phase 10.1 P03 | 10 min | 2 tasks | 18 files |
 | Phase 10.1 P04 | not captured | 2 tasks | 33 files |
 | Phase 10.1.2 P01 | 25min | 2 tasks | 39 files |
+| Phase 10.1.2 P02 | 15min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -463,6 +464,7 @@ Recent decisions affecting current work:
 - [Phase 10.1]: find_drift returns one entry per file, a changed text file's entry holds its unified diff, so the differing-file count stays a file count
 - [Phase 10.1]: disable-model-invocation is an optional boolean skill key, passed through to both agents; other values and unknown keys are refused
 - [Phase 10.1.2]: Plan 01: AgentDescription plus agent_check_list builder replace the per-agent selfcheck twins; builder imports nothing from base/init
+- [Phase 10.1.2]: Two step builders (GSD sync, best-practices links) in base/init/agent_steps.py; two thin step files per agent keep the shared 800 step between them
 
 ### Pending Todos
 
@@ -538,8 +540,8 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-25T19:55:37.468Z
-Stopped at: Completed 10.1.2-01-PLAN.md
+Last session: 2026-11-25T19:58:18.503Z
+Stopped at: Completed 10.1.2-02-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
