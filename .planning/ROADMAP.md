@@ -365,7 +365,7 @@ Plans:
 **Goal:** The selfcheck files that Claude and Cursor repeat with only a different agent config directory, root list or flag become one shared list of agent checks, built from a small per-agent description. Each agent keeps only its truly specific checks, so the OpenCode image starts from the shared list instead of a third copy. Output stays the same; the check counts in H-34 do not change.
 **Requirements**: TBD
 **Depends on:** Phase 10.1.1
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans executed
 
 Plans:
 **Wave 1**
@@ -378,7 +378,7 @@ Plans:
 - [x] 10.1.2-03-PLAN.md: README selfcheck paragraph, GLOSSARY row, tests README catches (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 10.1.2-04-PLAN.md: dev-sandbox phase gate, local PR branches, then the host run of `./host-test.sh` (wave 4, checkpoint)
+- [x] 10.1.2-04-PLAN.md: dev-sandbox phase gate, local PR branches, then the host run of `./host-test.sh` (wave 4, checkpoint)
 
 ### Phase 10.2: OpenCode agent image with full skills and best-practices support (INSERTED)
 
@@ -417,7 +417,7 @@ Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 | 10. Host side to Python | v2.0 | 11/11 | Complete    | 2026-11-20 |
 | 10.1. Practices generator | v2.0 | 5/5 | Complete    | 2026-11-24 |
 | 10.1.1. Agents link the generated practices | v2.0 | 0/TBD | Not started | - |
-| 10.1.2. Shared agent checks | v2.0 | 3/4 | In Progress|  |
+| 10.1.2. Shared agent checks | v2.0 | 4/4 | In Progress|  |
 | 10.2. OpenCode agent image | v2.0 | 0/TBD | Not started | - |
 | 11. CI widened | v2.0 | 0/TBD | Not started | - |
 
