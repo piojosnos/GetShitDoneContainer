@@ -365,10 +365,13 @@ Plans:
 **Goal:** The selfcheck files that Claude and Cursor repeat with only a different agent config directory, root list or flag become one shared list of agent checks, built from a small per-agent description. Each agent keeps only its truly specific checks, so the OpenCode image starts from the shared list instead of a third copy. Output stays the same; the check counts in H-34 do not change.
 **Requirements**: TBD
 **Depends on:** Phase 10.1.1
-**Plans:** 0 plans
+**Plans:** 4 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 10.1.2 to break down)
+- [ ] 10.1.2-01-PLAN.md: tracer; `AgentDescription`, `agent_check_list` and one `030_agent_checks.py` per agent replace the 16 selfcheck twin files, Claude first, then Cursor; output unchanged (wave 1)
+- [ ] 10.1.2-02-PLAN.md: `gsd_sync_step_list` and `best_practices_links_step_list` behind two one-line step files per agent; init order unchanged (wave 2)
+- [ ] 10.1.2-03-PLAN.md: README selfcheck paragraph, GLOSSARY row, tests README catches (wave 3)
+- [ ] 10.1.2-04-PLAN.md: dev-sandbox phase gate, local PR branches, then the host run of `./host-test.sh` (wave 4, checkpoint)
 
 ### Phase 10.2: OpenCode agent image with full skills and best-practices support (INSERTED)
 
