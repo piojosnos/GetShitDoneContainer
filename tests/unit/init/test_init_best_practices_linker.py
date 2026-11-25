@@ -17,6 +17,7 @@ import cursor_shared
 from best_practices_linker import link_best_practices
 from init_helpers import REPO_DIR, load_step
 
+INTEGRATION_FIXTURE_DIR = REPO_DIR / "tests" / "integration" / "support" / "best-practices"
 RULES_LINK_TEXT_TEMPLATE = "../../best-practices/generated/{agent}/rules"
 SKILL_LINK_TEXT_TEMPLATE = "../../../best-practices/generated/{agent}/skills/{name}"
 
@@ -317,3 +318,32 @@ def test_a_clone_dir_with_a_leading_dot_is_not_linked(tmp_path):
     assert result.passed
     assert "1 skills linked" in result.detail
     assert not (config1 / "skills" / ".hidden1").is_symlink()
+
+
+# ------------------------------------------------------------------------------
+# The integration fixture
+# ------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("agent_name", [claude_shared.AGENT_NAME, cursor_shared.AGENT_NAME])
+def test_the_integration_fixture_links_and_passes_the_check_for_each_agent(tmp_path, agent_name):
+    clone1 = tmp_path / "best-practices"
+    config1 = tmp_path / "state1" / agent_name
+    shutil.copytree(INTEGRATION_FIXTURE_DIR, clone1)
+    config1.mkdir(parents=True)
+
+    result = link_best_practices(config1, clone1, agent_name)
+    check_result = best_practices_links.best_practices_links_result(config1, clone1, agent_name)
+
+    assert result.passed
+    assert result.detail == f"2 skills linked from {clone1 / 'generated' / agent_name}, rules linked"
+    assert check_result.passed
+    assert os.readlink(config1 / "rules") == RULES_LINK_TEXT_TEMPLATE.format(agent=agent_name)
+
+    rule_name_list = sorted(entry.name for entry in (config1 / "rules").iterdir())
+
+    assert rule_name_list == sorted(entry.name for entry in (clone1 / "generated" / agent_name / "rules").iterdir())
+
+    master_rule_text = (clone1 / "rules" / "sbx-fixture-always.md").read_text()
+
+    for rule_name in rule_name_list:
+        assert (config1 / "rules" / rule_name).read_text() != master_rule_text
