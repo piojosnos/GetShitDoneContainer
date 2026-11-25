@@ -6,7 +6,7 @@
 # use is a bare copy of the run's origin, placed inside the throwaway sandbox
 # directory so the container sees it under the workspace path; a push never
 # changes the run's origin. Everything that differs between the agents (wrapper,
-# binary, version pin, links step, step count, rules link) comes from AgentSpec.
+# binary, version pin, links step, step count, rules file extension) comes from AgentSpec.
 # ------------------------------------------------------------------------------
 
 import json
@@ -113,27 +113,29 @@ def _init_summary_line(agent: AgentSpec) -> str:
 # ------------------------------------------------------------------------------
 # What a link reaches
 # ------------------------------------------------------------------------------
-# Claude links its rules directory and its skills; Cursor links its skills only.
-# live_target gives a directory of the clone that an agent config link reaches and
-# a file in it, so one scenario reads a change through a link for either agent:
-# the clone path is CLONE/DIR/FILE and the state path is CONFIG/DIR/FILE.
+# Both agents link the generated rules directory of the clone whole and one link
+# per generated skill. live_target gives a directory an agent config link reaches
+# and a file in it, so one scenario reads a change through a link for either agent:
+# the clone path is CLONE/generated/AGENT/DIR/FILE and the state path is
+# CONFIG/DIR/FILE.
 # ------------------------------------------------------------------------------
 
-def _live_target(agent: AgentSpec) -> tuple[str, str]:
-    if agent.links_rules:
-        return "rules", "sbx-fixture-always.md"
+def _generated_dir(agent: AgentSpec) -> str:
+    return f"generated/{agent.name}"
 
-    return f"skills/{_KEPT_SKILL}", "SKILL.md"
+
+def _live_target(agent: AgentSpec) -> tuple[str, str]:
+    return "rules", f"sbx-fixture-always{agent.rules_extension}"
 
 
 def _config_dir(agent: AgentSpec) -> str:
     return f"{_WORKSPACE}/state/{agent.config_dir_name}"
 
 
-def _fixture_skill_name_list() -> list[str]:
+def _fixture_skill_name_list(agent: AgentSpec) -> list[str]:
     name_list = []
 
-    for skill_dir in sorted((_SUPPORT_DIR / "skills").iterdir()):
+    for skill_dir in sorted((_SUPPORT_DIR / _generated_dir(agent) / "skills").iterdir()):
         name_list.append(skill_dir.name)
 
     return name_list
@@ -146,16 +148,15 @@ def _read_link(container: str, path: str) -> str:
 def _link_problem_list(container: str, agent: AgentSpec, skill_name_list: list[str]) -> list[str]:
     problem_list = []
     config_dir = _config_dir(agent)
+    expected_rules_link = f"../../best-practices/{_generated_dir(agent)}/rules"
+    rules_link = _read_link(container, f"{config_dir}/rules")
 
-    if agent.links_rules:
-        rules_link = _read_link(container, f"{config_dir}/rules")
-
-        if rules_link != "../../best-practices/rules":
-            problem_list.append(f"the rules link is {rules_link!r}, expected '../../best-practices/rules'")
+    if rules_link != expected_rules_link:
+        problem_list.append(f"the rules link is {rules_link!r}, expected {expected_rules_link!r}")
 
     for skill_name in skill_name_list:
         skill_link = _read_link(container, f"{config_dir}/skills/{skill_name}")
-        expected_link = f"../../../best-practices/skills/{skill_name}"
+        expected_link = f"../../../best-practices/{_generated_dir(agent)}/skills/{skill_name}"
 
         if skill_link != expected_link:
             problem_list.append(f"the link of skill {skill_name} is {skill_link!r}, expected {expected_link!r}")
@@ -307,9 +308,9 @@ def test_first_run_refuses_then_inits_from_the_clone(
         assert _last_line(clone.stdout) == _init_summary_line(agent), describe_result(clone)
 
     with step("the links point into the clone"):
-        problem_list = _link_problem_list(container, agent, _fixture_skill_name_list())
+        problem_list = _link_problem_list(container, agent, _fixture_skill_name_list(agent))
         read_through = docker_exec(container, f"cat {config_dir}/{live_dir}/{live_file}")
-        fixture_text = (_SUPPORT_DIR / live_dir / live_file).read_text(encoding="utf-8")
+        fixture_text = (_SUPPORT_DIR / _generated_dir(agent) / live_dir / live_file).read_text(encoding="utf-8")
 
         assert not problem_list, "\n".join(problem_list)
         assert read_through.stdout == fixture_text, (
@@ -332,7 +333,7 @@ def test_first_run_refuses_then_inits_from_the_clone(
         push = docker_exec(
             container,
             f"cd {_CLONE_DIR} && git checkout -q -b {_PUSHED_BRANCH} && "
-            f"echo first-run-change >> {live_dir}/{live_file} && "
+            f"echo first-run-change >> {_generated_dir(agent)}/{live_dir}/{live_file} && "
             f"git {_CONTAINER_GIT_OPTIONS} commit -q -am first-run-change && "
             f"git push -q origin {_PUSHED_BRANCH}",
         )
@@ -401,6 +402,7 @@ def test_relink_after_a_pull(
     state_config_dir = sandbox.state_dir / agent.config_dir_name
     live_dir, live_file = _live_target(agent)
     sentinel_text = f"relink-{os.getpid()}-{int(time.time())}"
+    pulled_name = f"relink-pulled{agent.rules_extension}"
     planted_path_list: list[Path] = []
 
     with step("make the sandbox with its clone, start it and run sbx-init"):
@@ -416,7 +418,7 @@ def test_relink_after_a_pull(
         assert _last_line(init.stdout) == _init_summary_line(agent), describe_result(init)
 
     with step("an edit on the host is live"):
-        with open(clone_dir / live_dir / live_file, "a", encoding="utf-8") as edited_file:
+        with open(clone_dir / _generated_dir(agent) / live_dir / live_file, "a", encoding="utf-8") as edited_file:
             edited_file.write(f"{sentinel_text} edit\n")
 
         seen = docker_exec(container, f"cat {config_dir}/{live_dir}/{live_file}")
@@ -427,13 +429,15 @@ def test_relink_after_a_pull(
 
     with step("a pull in the sandbox is live"):
         other_dir = run_dir / f"relink-other-{agent.name}"
-        pulled_name = "relink-pulled.md"
 
         _assert_git(_git(["clone", "-q", str(sandbox.sandbox_dir / _ORIGIN_DIR_NAME), str(other_dir)]), "git clone of the origin copy")
 
-        (other_dir / live_dir / pulled_name).write_text(f"{sentinel_text}\n", encoding="utf-8")
+        (other_dir / _generated_dir(agent) / live_dir / pulled_name).write_text(f"{sentinel_text}\n", encoding="utf-8")
 
-        _assert_git(_git(["add", f"{live_dir}/{pulled_name}"], cwd=other_dir), "git add of the pulled file")
+        _assert_git(
+            _git(["add", f"{_generated_dir(agent)}/{live_dir}/{pulled_name}"], cwd=other_dir),
+            "git add of the pulled file",
+        )
         _assert_git(_git(["commit", "-q", "-m", "add a pulled file"], cwd=other_dir), "git commit of the pulled file")
         _assert_git(_git(["push", "-q", "origin", "main"], cwd=other_dir), "git push to the origin copy")
 
@@ -473,7 +477,7 @@ def test_relink_after_a_pull(
     with step("drop a skill and relink"):
         drop = docker_exec(
             container,
-            f"cd {_CLONE_DIR} && git rm -rq skills/{_DROPPED_SKILL} && "
+            f"cd {_CLONE_DIR} && git rm -rq {_generated_dir(agent)}/skills/{_DROPPED_SKILL} && "
             f"git {_CONTAINER_GIT_OPTIONS} commit -q -m 'drop a skill'",
         )
         relink = docker_exec(container, "sbx-init", _INIT_SECONDS)
@@ -489,13 +493,15 @@ def test_relink_after_a_pull(
 
     with step("the relink keeps your edits and files"):
         kept_problem_list = []
-        edited_text = (clone_dir / live_dir / live_file).read_text(encoding="utf-8")
+        clone_live_path = f"{_generated_dir(agent)}/{live_dir}/{live_file}"
+        clone_pulled_path = f"{_generated_dir(agent)}/{live_dir}/{pulled_name}"
+        edited_text = (clone_dir / clone_live_path).read_text(encoding="utf-8")
 
         if f"{sentinel_text} edit" not in edited_text:
-            kept_problem_list.append(f"the uncommitted edit in {live_dir}/{live_file} of the clone is gone after sbx-init")
+            kept_problem_list.append(f"the uncommitted edit in {clone_live_path} of the clone is gone after sbx-init")
 
-        if not (clone_dir / live_dir / "relink-pulled.md").is_file():
-            kept_problem_list.append(f"the pulled file {live_dir}/relink-pulled.md is gone from the clone after sbx-init")
+        if not (clone_dir / clone_pulled_path).is_file():
+            kept_problem_list.append(f"the pulled file {clone_pulled_path} is gone from the clone after sbx-init")
 
         for planted_path in planted_path_list:
             if not planted_path.is_file():

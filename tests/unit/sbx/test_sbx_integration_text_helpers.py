@@ -9,6 +9,8 @@
 
 import subprocess
 
+import claude_shared
+import cursor_shared
 import test_first_run_and_relink as first_run
 import test_images_match_versions as images_match
 import test_owner_fix as owner_fix
@@ -53,17 +55,29 @@ def test_fix_line_must_be_a_fix_line_that_names_the_word():
 def test_live_target_exists_in_the_fixture_for_each_agent():
     for agent in [CLAUDE_SPEC, CURSOR_SPEC]:
         live_dir, live_file = first_run._live_target(agent)
+        live_path = first_run._SUPPORT_DIR / first_run._generated_dir(agent) / live_dir / live_file
 
-        assert (first_run._SUPPORT_DIR / live_dir / live_file).is_file(), f"{agent.name}: {live_dir}/{live_file}"
+        assert live_path.is_file(), f"{agent.name}: {live_dir}/{live_file}"
 
 
-def test_cursor_reads_a_skill_and_claude_reads_the_rules():
-    assert first_run._live_target(CLAUDE_SPEC)[0] == "rules"
-    assert first_run._live_target(CURSOR_SPEC)[0] == f"skills/{first_run._KEPT_SKILL}"
+def test_the_generated_live_file_differs_from_the_master_for_each_agent():
+    master_text = (first_run._SUPPORT_DIR / "rules" / "sbx-fixture-always.md").read_text(encoding="utf-8")
+
+    for agent in [CLAUDE_SPEC, CURSOR_SPEC]:
+        live_dir, live_file = first_run._live_target(agent)
+        live_path = first_run._SUPPORT_DIR / first_run._generated_dir(agent) / live_dir / live_file
+
+        assert live_path.read_text(encoding="utf-8") != master_text, agent.name
 
 
 def test_kept_and_dropped_skills_are_the_fixture_skills():
-    assert first_run._fixture_skill_name_list() == [first_run._KEPT_SKILL, first_run._DROPPED_SKILL]
+    for agent in [CLAUDE_SPEC, CURSOR_SPEC]:
+        assert first_run._fixture_skill_name_list(agent) == [first_run._KEPT_SKILL, first_run._DROPPED_SKILL], agent.name
+
+
+def test_each_agent_spec_names_the_agent_of_its_image():
+    assert CLAUDE_SPEC.name == claude_shared.AGENT_NAME
+    assert CURSOR_SPEC.name == cursor_shared.AGENT_NAME
 
 
 def test_stand_in_session_script_parses_and_names_the_agent():

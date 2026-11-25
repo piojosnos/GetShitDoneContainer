@@ -1,6 +1,6 @@
 # Host checklist
 
-What cannot live in code: one check by hand, and how to read the log of the host run.
+What cannot live in code: two checks by hand, and how to read the log of the host run.
 
 - **When:** once after building a new version of the images or `compose.yml`.
 - **Setup and daily use:** see [`README.md`](../README.md).
@@ -16,6 +16,16 @@ No scenario runs an agent, so a real Cursor login is checked by hand.
 3. Run `sbx-cursor`, send one prompt, and exit.
 4. On the host, run `sbx-upgrade NAME`, open `sbx-shell NAME`, run `sbx-init`, then `sbx-cursor`.
 5. It must start with no login prompt. The login (`auth.json`) lives in `$SBX_DIR/state/cursor`, so the upgrade keeps it.
+
+## Check that the agents load the practices
+
+No scenario runs an agent, so what an agent loads is checked by hand.
+
+1. Use a sandbox whose agent is logged in, once per agent. In the sandbox shell, `git -C /home/sandbox/workspace/best-practices pull`; on the host, `sbx-upgrade NAME`, then `sbx-shell NAME`; in the sandbox shell, `sbx-init`.
+2. `ls -ld "$CURSOR_CONFIG_DIR/rules"` and `ls -l "$CURSOR_CONFIG_DIR/skills"` (in a Claude sandbox, `$CLAUDE_CONFIG_DIR`): `rules` links to `../../best-practices/generated/cursor/rules`, each best-practices skill to `../../../best-practices/generated/cursor/skills/<name>`. `sbx-selfcheck` passes.
+3. Start the agent (`sbx-cursor` or `sbx-claude`) and ask: "List every rule and skill you have loaded. Then quote the first bullet of the prose style rule."
+4. It must list the always-applied rules and the best-practices skills next to GSD's, and quote the bullet word for word. A scoped rule (`globs:` or `paths:`) shows only when a matching file is in play; a skill with `disable-model-invocation: true` starts by hand only, so it may be missing.
+5. Optional: ask the agent to read a `.py` file, then ask again; `bp-python` shows.
 
 ## Read host-test.log
 

@@ -15,7 +15,8 @@ from dataclasses import dataclass
 # session_dir is formatted with the sandbox name; None when the agent keeps no
 # session files that a scenario plants. settings_file and instructions_file are
 # the user's own files in the config directory that the GSD sync must leave as
-# they are; None when the agent has no such file.
+# they are; None when the agent has no such file. rules_extension is the extension
+# of the agent's generated rule files.
 # ------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
@@ -31,7 +32,7 @@ class AgentSpec:
     version_pin: str
     selfcheck_count: int
     init_step_count: int
-    links_rules: bool
+    rules_extension: str
     links_step: str
 
 
@@ -51,7 +52,7 @@ CLAUDE_SPEC = AgentSpec(
     version_pin="CLAUDE_CODE_VERSION",
     selfcheck_count=55,
     init_step_count=4,
-    links_rules=True,
+    rules_extension=".md",
     links_step="claude-best-practices-links",
 )
 
@@ -67,7 +68,7 @@ CURSOR_SPEC = AgentSpec(
     version_pin="CURSOR_AGENT_VERSION",
     selfcheck_count=53,
     init_step_count=5,
-    links_rules=False,
+    rules_extension=".mdc",
     links_step="cursor-best-practices-links",
 )
 

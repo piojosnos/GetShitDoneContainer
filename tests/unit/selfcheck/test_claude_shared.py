@@ -15,3 +15,7 @@ import paths
 
 def test_the_config_dir_is_the_agent_dir_under_the_state_dir():
     assert claude_shared.AGENT_CONFIG_DIR == paths.STATE_DIR / "claude"
+
+
+def test_the_agent_name_is_claude():
+    assert claude_shared.AGENT_NAME == "claude"
