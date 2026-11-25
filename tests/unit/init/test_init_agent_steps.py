@@ -15,8 +15,10 @@ import pytest
 
 import init_runner
 from agent_description import AgentDescription
-from agent_steps import gsd_sync_step_list
+from agent_steps import best_practices_links_step_list, gsd_sync_step_list
+from best_practices_linker import link_best_practices
 from init_helpers import REPO_DIR
+from paths import BEST_PRACTICES_DIR
 
 SHARED_STEPS_DIR = REPO_DIR / "base" / "init" / "steps"
 LAUNCHER_PATH_CODE = """import sys
@@ -50,6 +52,17 @@ def test_the_gsd_sync_step_syncs_the_config_dir_with_the_agent_option_of_the_des
     assert [step.name for step in step_list] == ["agent1-gsd-sync"]
     assert step_list[0].function() == "recorded"
     assert call_list == [(agent1.config_dir, "--agent1")]
+
+
+# ------------------------------------------------------------------------------
+
+def test_the_best_practices_links_step_links_the_config_dir_for_the_name_of_the_description(tmp_path):
+    agent1 = agent1_description(tmp_path)
+
+    step_list = best_practices_links_step_list(agent1)
+
+    assert [step.name for step in step_list] == ["agent1-best-practices-links"]
+    assert step_list[0].function() == link_best_practices(agent1.config_dir, BEST_PRACTICES_DIR, "agent1")
 
 
 # ------------------------------------------------------------------------------

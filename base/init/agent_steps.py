@@ -9,8 +9,10 @@ from pathlib import Path
 from typing import Callable
 
 from agent_description import AgentDescription
+from best_practices_linker import link_best_practices
 from check_result import Check, CheckResult
 from gsd_sync import gsd_sync_result
+from paths import BEST_PRACTICES_DIR
 
 
 # ------------------------------------------------------------------------------
@@ -25,3 +27,14 @@ def gsd_sync_step_list(
         return sync_function(agent.config_dir, agent.gsd_agent_option)
 
     return [Check(f"{agent.name}-gsd-sync", step_gsd_sync)]
+
+
+# ------------------------------------------------------------------------------
+# The best-practices links step
+# ------------------------------------------------------------------------------
+
+def best_practices_links_step_list(agent: AgentDescription) -> list[Check]:
+    def step_best_practices_links() -> CheckResult:
+        return link_best_practices(agent.config_dir, BEST_PRACTICES_DIR, agent.name)
+
+    return [Check(f"{agent.name}-best-practices-links", step_best_practices_links)]

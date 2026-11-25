@@ -15,7 +15,7 @@ import best_practices_links
 import claude_shared
 import cursor_shared
 from best_practices_linker import link_best_practices
-from init_helpers import REPO_DIR, load_step
+from init_helpers import REPO_DIR
 
 INTEGRATION_FIXTURE_DIR = REPO_DIR / "tests" / "integration" / "support" / "best-practices"
 RULES_LINK_TEXT_TEMPLATE = "../../best-practices/generated/{agent}/rules"
@@ -64,18 +64,6 @@ def test_an_empty_config_dir_gets_the_rules_link_and_one_link_per_skill(tmp_path
 
     assert check_result.passed
     assert check_result.detail == result.detail
-
-
-def test_the_claude_step_file_holds_one_step_named_for_the_agent():
-    step_module = load_step(REPO_DIR / "claude" / "init" / "900_best_practices_links.py")
-
-    assert [check.name for check in step_module.STEP_LIST] == ["claude-best-practices-links"]
-
-
-def test_the_cursor_step_file_holds_one_step_named_for_the_agent():
-    step_module = load_step(REPO_DIR / "cursor" / "init" / "900_best_practices_links.py")
-
-    assert [check.name for check in step_module.STEP_LIST] == ["cursor-best-practices-links"]
 
 
 # ------------------------------------------------------------------------------
